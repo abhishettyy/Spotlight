@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model clubs {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String
+  email      String    @unique
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  events     events[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model events {
+  id                    String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  club_id               String?         @db.Uuid
+  name                  String
+  description           String?
+  event_type            String?
+  fee                   Int?            @default(0)
+  registration_limit    Int?
+  registration_deadline DateTime?       @db.Timestamptz(6)
+  event_date            DateTime?       @db.Timestamptz(6)
+  qr_url                String?
+  created_at            DateTime?       @default(now()) @db.Timestamptz(6)
+  clubs                 clubs?          @relation(fields: [club_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  registrations         registrations[]
+  teams                 teams[]
+}
+
+model profiles {
+  id            String          @id
+  full_name     String?
+  usn           String?         @unique
+  email         String?         @unique
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  registrations registrations[]
+  teams         teams[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model registrations {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id          String?   @db.Uuid
+  user_id           String?
+  team_id           String?   @db.Uuid
+  payment_proof_url String?
+  status            String?   @default("pending")
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  events            events?   @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  teams             teams?    @relation(fields: [team_id], references: [id], onUpdate: NoAction)
+  profiles          profiles? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model teams {
+  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id      String?         @db.Uuid
+  team_name     String
+  passkey       String          @unique
+  leader_id     String?
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  registrations registrations[]
+  events        events?         @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles      profiles?       @relation(fields: [leader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
