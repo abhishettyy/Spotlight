@@ -1,85 +1,93 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
 }
 
-model clubs {
-  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String
-  email      String    @unique
-  logo_url   String?
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  events     events[]
+generator client {
+  provider = "prisma-client-js"
 }
 
-model events {
-  id                    String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  club_id               String?         @db.Uuid
-  name                  String
-  description           String?
-  event_type            String?
-  fee                   Int?            @default(0)
-  registration_limit    Int?
-  registration_deadline DateTime?       @db.Timestamptz(6)
-  event_date            DateTime?       @db.Timestamptz(6)
-  qr_url                String?
-  created_at            DateTime?       @default(now()) @db.Timestamptz(6)
-  clubs                 clubs?          @relation(fields: [club_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  registrations         registrations[]
-  teams                 teams[]
-}
-
-model profiles {
-  id            String          @id
-  full_name     String?
-  usn           String?         @unique
-  email         String?         @unique
-  password      String?
+model Profile {
+  id            String         @id // Linked directly to Clerk User ID
+  fullName      String         @map("full_name")
+  email         String         @unique
+  password      String?        // Used for legacy custom JWT fallback
+  usn           String?        @unique // Captured during onboarding
   branch        String?
   phone         String?
-  year          String?
-  sem           String?
-  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
-  registrations registrations[]
-  teams         teams[]
-  notifications notifications[]
+  year          Int?
+  sem           Int?
+  clubId        String?        @map("club_id") // If they are a club admin
+  club          Club?          @relation(fields: [clubId], references: [id])
+  registrations Registration[]
 }
 
-model registrations {
-  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  event_id          String?   @db.Uuid
-  user_id           String?
-  team_id           String?   @db.Uuid
-  payment_proof_url String?
-  status            String?   @default("pending")
-  created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  events            events?   @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  teams             teams?    @relation(fields: [team_id], references: [id], onUpdate: NoAction)
-  profiles          profiles? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Club {
+  id       String    @id @default(uuid())
+  name     String
+  email    String    @unique
+  password String?   // For direct legacy/custom club login verification
+  logoUrl  String?   @map("logo_url")
+  upiId    String?   @map("upi_id")
+  qrUrl    String?   @map("qr_url")
+  events   Event[]
+  admins   Profile[]
 }
 
-model teams {
-  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  event_id      String?         @db.Uuid
-  team_name     String
-  passkey       String          @unique
-  leader_id     String?
-  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
-  registrations registrations[]
-  events        events?         @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles      profiles?       @relation(fields: [leader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model Event {
+  id                  String         @id @default(uuid())
+  clubId              String         @map("club_id")
+  club                Club           @relation(fields: [clubId], references: [id])
+  name                String
+  description         String
+  venue               String?        // Field to store the event location/venue
+  eventType           String         @map("event_type") // Solo or Team
+  teamSizeLimit       Int?           @map("team_size_limit")
+  fee                 Float          @default(0)        // 0 = Free
+  registrationLimit   Int            @map("registration_limit")
+  registrationDeadline DateTime       @map("registration_deadline")
+  eventDate           DateTime       @map("event_date")
+  qrUrl               String?        @map("qr_url")
+  bannerUrl           String?        @map("banner_url") // Added to store event banners/posters
+  registrations       Registration[]
+  teams               Team[]
 }
 
-model notifications {
-  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id    String
-  type       String    // "event_reminder" | "registration_approved" | "registration_pending"
-  title      String
-  body       String
-  is_read    Boolean   @default(false)
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  profiles   profiles  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Team {
+  id            String         @id @default(uuid())
+  eventId       String         @map("event_id")
+  event         Event          @relation(fields: [eventId], references: [id])
+  teamName      String         @map("team_name")
+  passkey       String         @unique // Unique 5-char alphanumeric code (UX optimized)
+  leaderId      String         @map("leader_id")
+  registrations Registration[]
+}
+
+model Registration {
+  id              String             @id @default(uuid())
+  eventId         String             @map("event_id")
+  event           Event              @relation(fields: [eventId], references: [id])
+  userId          String             @map("user_id")
+  profile         Profile            @relation(fields: [userId], references: [id])
+  teamId          String?            @map("team_id")
+  team            Team?              @relation(fields: [teamId], references: [id])
+  paymentProofUrl String?            @map("payment_proof_url")
+  status          RegistrationStatus @default(PENDING)
+  createdAt       DateTime           @default(now())
+
+  @@unique([eventId, userId]) // Duplicate prevention at the database level
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now())
 }

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../widgets/custom_image.dart';
 import 'ticket_details_screen.dart';
 import 'event_details_screen.dart';
+import '../core/smooth_route.dart';
 import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
@@ -283,7 +285,7 @@ class _TicketScreenState extends State<TicketScreen> {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
+        SmoothRoute(
             builder: (_) => EventDetailsScreen(eventId: event.id)),
       ),
       child: Container(
@@ -306,8 +308,8 @@ class _TicketScreenState extends State<TicketScreen> {
                 topLeft: Radius.circular(20),
                 bottomLeft: Radius.circular(20),
               ),
-              child: Image.network(
-                event.imageUrl ??
+              child: CustomImage(
+                url: event.imageUrl ??
                     'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop',
                 width: 100,
                 height: 100,
@@ -467,7 +469,7 @@ class _TicketScreenState extends State<TicketScreen> {
       onTap: ticket.isConfirmed
           ? () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                SmoothRoute(
                   builder: (_) => TicketDetailsScreen(ticket: {
                     'title': title,
                     'venue': venue,
@@ -478,6 +480,12 @@ class _TicketScreenState extends State<TicketScreen> {
                         ? {
                             'name': ticket.team!.name,
                             'passkey': ticket.team!.passkey,
+                            'members': ticket.team!.members
+                                .map((m) => {
+                                      'name': m.name,
+                                      'isLeader': m.isLeader,
+                                    })
+                                .toList(),
                           }
                         : null,
                   }),
@@ -507,8 +515,11 @@ class _TicketScreenState extends State<TicketScreen> {
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(24)),
-                      child: Image.network(
-                        'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop',
+                      child: CustomImage(
+                        url: event?.imageUrl ??
+                            'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop',
+                        width: double.infinity,
+                        height: 140,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) =>
                             Container(color: Colors.grey[800]),
@@ -621,7 +632,7 @@ class _TicketScreenState extends State<TicketScreen> {
                         ElevatedButton(
                           onPressed: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            SmoothRoute(
                               builder: (_) => TicketDetailsScreen(ticket: {
                                 'title': title,
                                 'venue': venue,
@@ -632,6 +643,12 @@ class _TicketScreenState extends State<TicketScreen> {
                                     ? {
                                         'name': ticket.team!.name,
                                         'passkey': ticket.team!.passkey,
+                                        'members': ticket.team!.members
+                                            .map((m) => {
+                                                  'name': m.name,
+                                                  'isLeader': m.isLeader,
+                                                })
+                                            .toList(),
                                       }
                                     : null,
                               }),

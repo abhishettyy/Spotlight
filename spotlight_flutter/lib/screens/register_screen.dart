@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/api_service.dart';
+import '../core/smooth_route.dart';
+import 'payment_screen.dart';
 
 enum RegistrationType { solo, createTeam, joinTeam }
 
 class RegisterScreen extends StatefulWidget {
   final String eventId;
+  final String eventName;
+  final double price;
+  final String? qrUrl;
+  final String? eventType;
+  final int? teamSizeLimit;
 
-  const RegisterScreen({super.key, required this.eventId});
+  const RegisterScreen({
+    super.key,
+    required this.eventId,
+    required this.eventName,
+    this.price = 0,
+    this.qrUrl,
+    this.eventType = 'Solo',
+    this.teamSizeLimit,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -29,6 +44,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.eventType == 'Team') {
+      _selectedType = RegistrationType.createTeam;
+    } else {
+      _selectedType = RegistrationType.solo;
+    }
   }
 
   Future<void> _submit() async {
@@ -90,10 +110,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful!')),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (widget.price > 0 && _selectedType != RegistrationType.joinTeam) {
+          Navigator.pushReplacement(
+            context,
+            SmoothRoute(
+              builder: (_) => PaymentScreen(
+                eventName: widget.eventName,
+                price: widget.price,
+                qrUrl: widget.qrUrl,
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful!')),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -126,19 +159,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Segmented Control
-                  SegmentedButton<RegistrationType>(
-                    segments: const [
-                      ButtonSegment(value: RegistrationType.solo, label: Text('Solo')),
-                      ButtonSegment(value: RegistrationType.createTeam, label: Text('Create Team')),
-                      ButtonSegment(value: RegistrationType.joinTeam, label: Text('Join Team')),
-                    ],
-                    selected: {_selectedType},
-                    onSelectionChanged: (Set<RegistrationType> newSelection) {
-                      setState(() {
-                        _selectedType = newSelection.first;
-                      });
-                    },
-                  ),
+                  if (widget.eventType == 'Team')
+                    SegmentedButton<RegistrationType>(
+                      segments: const [
+                        ButtonSegment(value: RegistrationType.createTeam, label: Text('Create Team')),
+                        ButtonSegment(value: RegistrationType.joinTeam, label: Text('Join Team')),
+                      ],
+                      selected: {_selectedType},
+                      onSelectionChanged: (Set<RegistrationType> newSelection) {
+                        setState(() {
+                          _selectedType = newSelection.first;
+                        });
+                      },
+                    )
+                  else
+                    SegmentedButton<RegistrationType>(
+                      segments: const [
+                        ButtonSegment(value: RegistrationType.solo, label: Text('Solo')),
+                      ],
+                      selected: {_selectedType},
+                      onSelectionChanged: (Set<RegistrationType> newSelection) {
+                        setState(() {
+                          _selectedType = newSelection.first;
+                        });
+                      },
+                    ),
                   const SizedBox(height: 32),
                   
                   // Dynamic Form Fields
@@ -191,7 +236,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'A unique passkey will be generated after you submit. Share it with your teammates.',
+                              'A unique passkey will be generated after you submit. Share it with your teammates. ${widget.teamSizeLimit != null ? 'Team size limit is ${widget.teamSizeLimit} members.' : ''}',
                               style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600]),
                             ),
                           ),
@@ -202,8 +247,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildTextField(
                       controller: _passkeyController,
                       label: 'Team Passkey',
-                      hint: 'Enter 6-character passkey',
-                      validator: (v) => v!.length != 6 ? 'Passkey must be 6 characters' : null,
+                      hint: 'Enter 5-character passkey',
+                      validator: (v) => v!.length != 5 ? 'Passkey must be 5 characters' : null,
                     ),
                   ],
                   

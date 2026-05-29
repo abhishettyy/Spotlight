@@ -12,7 +12,9 @@ import '../core/notifications_provider.dart';
 import '../core/clubs_provider.dart';
 import 'all_events_screen.dart';
 import 'package:spotlight_flutter/models/models.dart';
+import '../core/smooth_route.dart';
 import 'package:provider/provider.dart';
+import '../widgets/custom_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,6 +54,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return ['All', ...categories];
   }
 
+  Future<void> _handleRefresh() async {
+    await Future.wait<void>([
+      context.read<EventsProvider>().loadEvents(),
+      context.read<ClubsProvider>().load(),
+      context.read<NotificationsProvider>().load(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -63,8 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          color: primaryColor,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header ──────────────────────────────────────────
@@ -73,38 +87,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_getGreeting(),
-                            style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: subTextColor,
-                                fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 4),
-                        Consumer<UserProvider>(
-                          builder: (context, userProvider, child) {
-                            final name = userProvider.currentUser?.name ?? "User";
-                            return Text(
-                              name,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_getGreeting(),
                               style: GoogleFonts.inter(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                                letterSpacing: -0.5,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                                  fontSize: 14,
+                                  color: subTextColor,
+                                  fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 4),
+                          Consumer<UserProvider>(
+                            builder: (context, userProvider, child) {
+                              final name = userProvider.currentUser?.name ?? "User";
+                              return Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                  letterSpacing: -0.5,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 16),
                     Row(
                       children: [
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                              SmoothRoute(builder: (_) => const NotificationsScreen()),
                             );
                           },
                           child: Consumer<NotificationsProvider>(
@@ -159,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                              SmoothRoute(builder: (_) => const ProfileScreen()),
                             );
                           },
                           child: Consumer<UserProvider>(
@@ -297,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        SmoothRoute(
                             builder: (_) => const AllEventsScreen()),
                       ),
                       child: Text('See all >',
@@ -376,7 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return GestureDetector(
                           onTap: () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              SmoothRoute(
                                   builder: (_) =>
                                       EventDetailsScreen(eventId: event.id))),
                           child: _buildEventCard(event),
@@ -441,8 +460,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: club.logoUrl != null
                                     ? ClipOval(
-                                        child: Image.network(
-                                          club.logoUrl!,
+                                        child: CustomImage(
+                                          url: club.logoUrl!,
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) =>
                                               Icon(Icons.groups_outlined,
@@ -475,6 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -484,6 +504,27 @@ class _HomeScreenState extends State<HomeScreen> {
     final title = event.title;
     final venue = event.venue;
     final date = event.date ?? 'No Date';
+
+    String daysLabel = 'TBD';
+    if (event.date != null) {
+      final eventDate = DateTime.tryParse(event.date!);
+      if (eventDate != null) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final eDate = DateTime(eventDate.year, eventDate.month, eventDate.day);
+        final difference = eDate.difference(today).inDays;
+        
+        if (difference < 0) {
+          daysLabel = 'Past';
+        } else if (difference == 0) {
+          daysLabel = 'Today';
+        } else if (difference == 1) {
+          daysLabel = 'Tomorrow';
+        } else {
+          daysLabel = '$difference Days';
+        }
+      }
+    }
     
     return Container(
       width: 320,
@@ -497,8 +538,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: Image.network(
-                event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop',
+              child: CustomImage(
+                url: event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop',
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
                     Container(color: Colors.grey[800]),
@@ -536,7 +577,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(
                         color: Colors.white.withOpacity(0.2)),
                   ),
-                  child: Text('3 Days',
+                  child: Text(daysLabel,
                       style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 12,
@@ -603,7 +644,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => RegisterScreen(eventId: event.id)),
+                          SmoothRoute(builder: (_) => RegisterScreen(
+                            eventId: event.id,
+                            eventName: event.title,
+                            price: event.price,
+                            qrUrl: event.qrUrl,
+                            eventType: event.eventType,
+                            teamSizeLimit: event.teamSizeLimit,
+                          )),
                         );
                       },
                       style: ElevatedButton.styleFrom(

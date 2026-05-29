@@ -10,6 +10,7 @@ import '../core/notification_prefs_provider.dart';
 import 'auth_screen.dart';
 import 'ticket_screen.dart';
 import 'registered_clubs_screen.dart';
+import '../core/smooth_route.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -664,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Events',
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          SmoothRoute(
                             builder: (_) => const TicketScreen(initialTab: 0),
                           ),
                         ),
@@ -677,7 +678,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Saved',
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          SmoothRoute(
                             builder: (_) => const TicketScreen(initialTab: 1),
                           ),
                         ),
@@ -690,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Clubs',
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          SmoothRoute(
                             builder: (_) => const RegisteredClubsScreen(),
                           ),
                         ),
@@ -745,7 +746,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (context.mounted) {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (_) => const AuthScreen()),
+                        SmoothRoute(builder: (_) => const AuthScreen()),
                         (route) => false,
                       );
                     }

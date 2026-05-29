@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/notifications_provider.dart';
 import 'home_screen.dart';
 import 'notifications_screen.dart';
 import 'ticket_screen.dart';
@@ -52,7 +54,16 @@ class _MainLayoutState extends State<MainLayout> {
                 children: [
                   _buildNavItem(0, Icons.home_rounded, 'Home'),
                   _buildNavItem(1, Icons.local_activity_outlined, 'Events'),
-                  _buildNavItem(2, Icons.notifications_none_rounded, 'Alerts', badge: 3),
+                  Consumer<NotificationsProvider>(
+                    builder: (context, notifProvider, _) => _buildNavItem(
+                      2,
+                      Icons.notifications_none_rounded,
+                      'Alerts',
+                      badge: notifProvider.unreadCount > 0
+                          ? notifProvider.unreadCount
+                          : null,
+                    ),
+                  ),
                   _buildNavItem(3, Icons.person_outline_rounded, 'Profile'),
                 ],
               ),

@@ -93,6 +93,57 @@ class TicketDetailsScreen extends StatelessWidget {
                               context,
                               Icons.group_outlined,
                               '${team['name']}  ·  ${team['passkey']}'),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[50]!,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: isDark ? Colors.white12 : Colors.grey[200]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.people_alt_outlined, size: 14, color: cs.primary),
+                                    const SizedBox(width: 6),
+                                    Text('Team Members', 
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                ...((team['members'] as List<dynamic>? ?? []).map((m) {
+                                  final isLeader = m['isLeader'] == true;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.person, size: 14, color: subText),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            m['name'] ?? '', 
+                                            style: GoogleFonts.inter(fontSize: 13, color: cs.onBackground)
+                                          )
+                                        ),
+                                        if (isLeader)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: cs.primary.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text('Leader', style: GoogleFonts.inter(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w600)),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList()),
+                              ],
+                            ),
+                          ),
                         ],
                       ],
                     ),

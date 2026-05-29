@@ -131,6 +131,9 @@ class EventModel {
   final double price;
   final String? description;
   final String? date;
+  final String? qrUrl;
+  final String? eventType;
+  final int? teamSizeLimit;
 
   EventModel({
     required this.id,
@@ -141,6 +144,9 @@ class EventModel {
     required this.price,
     this.description,
     this.date,
+    this.qrUrl,
+    this.eventType,
+    this.teamSizeLimit,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -153,6 +159,9 @@ class EventModel {
       price: (json['price'] ?? 0).toDouble(),
       description: json['description'],
       date: json['date'],
+      qrUrl: json['qrUrl'] ?? json['qr_url'],
+      eventType: json['eventType'],
+      teamSizeLimit: json['teamSizeLimit'],
     );
   }
 }
@@ -172,7 +181,7 @@ class ClubModel {
     return ClubModel(
       id: json['id'],
       name: json['name'] ?? 'No Name',
-      logoUrl: json['logo_url'],
+      logoUrl: json['logoUrl'] ?? json['logo_url'],
     );
   }
 }
@@ -187,6 +196,7 @@ class TicketEventInfo {
   final double price;
   final String? qrUrl;
   final String? clubName;
+  final String? imageUrl;
 
   TicketEventInfo({
     required this.id,
@@ -196,6 +206,7 @@ class TicketEventInfo {
     required this.price,
     this.qrUrl,
     this.clubName,
+    this.imageUrl,
   });
 
   factory TicketEventInfo.fromJson(Map<String, dynamic> json) {
@@ -208,6 +219,27 @@ class TicketEventInfo {
       price: (json['price'] ?? 0).toDouble(),
       qrUrl: json['qr_url'],
       clubName: club?['name'],
+      imageUrl: json['image_url'],
+    );
+  }
+}
+
+class TicketTeamMember {
+  final String id;
+  final String name;
+  final bool isLeader;
+
+  TicketTeamMember({
+    required this.id,
+    required this.name,
+    required this.isLeader,
+  });
+
+  factory TicketTeamMember.fromJson(Map<String, dynamic> json) {
+    return TicketTeamMember(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      isLeader: json['isLeader'] ?? false,
     );
   }
 }
@@ -216,11 +248,13 @@ class TicketTeamInfo {
   final String id;
   final String name;
   final String passkey;
+  final List<TicketTeamMember> members;
 
   TicketTeamInfo({
     required this.id,
     required this.name,
     required this.passkey,
+    this.members = const [],
   });
 
   factory TicketTeamInfo.fromJson(Map<String, dynamic> json) {
@@ -228,6 +262,10 @@ class TicketTeamInfo {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       passkey: json['passkey'] ?? '',
+      members: (json['members'] as List<dynamic>?)
+              ?.map((e) => TicketTeamMember.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

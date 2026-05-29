@@ -282,86 +282,88 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Unread accent bar
-          Container(
-            width: 4,
-            decoration: BoxDecoration(
-              color: unreadAccent,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                bottomLeft: Radius.circular(20),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Unread accent bar
+            Container(
+              width: 4,
+              decoration: BoxDecoration(
+                color: unreadAccent,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: iconBg,
-                      shape: BoxShape.circle,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: iconBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(n.icon, color: cs.primary, size: 22),
                     ),
-                    child: Icon(n.icon, color: cs.primary, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(n.title,
-                                  style: GoogleFonts.inter(
-                                      fontSize: 15,
-                                      fontWeight: n.isRead
-                                          ? FontWeight.w600
-                                          : FontWeight.bold,
-                                      color: cs.onBackground),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
-                            ),
-                            if (!n.isRead) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: cs.primary,
-                                  shape: BoxShape.circle,
-                                ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(n.title,
+                                    style: GoogleFonts.inter(
+                                        fontSize: 15,
+                                        fontWeight: n.isRead
+                                            ? FontWeight.w600
+                                            : FontWeight.bold,
+                                        color: cs.onBackground),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
                               ),
+                              if (!n.isRead) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: cs.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(n.body,
-                            style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: subText,
-                                height: 1.5)),
-                        const SizedBox(height: 10),
-                        Text(timeAgo,
-                            style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: timeText)),
-                      ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(n.body,
+                              style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: subText,
+                                  height: 1.5)),
+                          const SizedBox(height: 10),
+                          Text(timeAgo,
+                              style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: timeText)),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

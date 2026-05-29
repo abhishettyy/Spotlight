@@ -4,9 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'register_screen.dart';
 import 'payment_screen.dart';
+import '../core/smooth_route.dart';
 import '../core/events_provider.dart';
 import '../core/saved_events_provider.dart';
 import '../models/models.dart';
+import '../widgets/custom_image.dart';
 
 class EventDetailsScreen extends StatelessWidget {
   final String eventId;
@@ -42,7 +44,7 @@ class EventDetailsScreen extends StatelessWidget {
     final description = event.description ?? 'No Description';
     final date = event.date ?? 'No Date';
     final venue = event.venue;
-    final price = event.price > 0 ? '\$${event.price.toStringAsFixed(2)}' : 'Free';
+    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
     final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1000&auto=format&fit=crop';
 
     return Scaffold(
@@ -52,8 +54,8 @@ class EventDetailsScreen extends StatelessWidget {
           Positioned(
             top: 0, left: 0, right: 0,
             height: MediaQuery.of(context).size.height * 0.45,
-            child: Image.network(
-              imageUrl,
+            child: CustomImage(
+              url: imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(color: Colors.grey[800]),
             ),
@@ -217,26 +219,19 @@ class EventDetailsScreen extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  if (event.price > 0) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PaymentScreen(
-                          eventName: event.title,
-                          price: event.price,
-                        ),
+                  Navigator.push(
+                    context,
+                    SmoothRoute(
+                      builder: (_) => RegisterScreen(
+                        eventId: event.id,
+                        eventName: event.title,
+                        price: event.price,
+                        qrUrl: event.qrUrl,
+                        eventType: event.eventType,
+                        teamSizeLimit: event.teamSizeLimit,
                       ),
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RegisterScreen(
-                          eventId: event.id,
-                        ),
-                      ),
-                    );
-                  }
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,

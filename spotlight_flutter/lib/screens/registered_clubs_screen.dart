@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/api_service.dart';
 import '../core/user_provider.dart';
 import '../models/models.dart';
+import '../widgets/custom_image.dart';
 
 class RegisteredClubsScreen extends StatefulWidget {
   const RegisteredClubsScreen({super.key});
@@ -175,7 +176,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
             ),
             child: club.logoUrl != null
                 ? ClipOval(
-                    child: Image.network(club.logoUrl!,
+                    child: CustomImage(url: club.logoUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Icon(
                             Icons.groups_outlined,

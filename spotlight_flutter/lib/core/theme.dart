@@ -1,6 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Instant fade — feels like a web page render, no slide delay
+class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _SmoothPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // If the route has a very short duration, just show child immediately
+    if (route.transitionDuration <= const Duration(milliseconds: 50)) {
+      return child;
+    }
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeIn,
+      ),
+      child: child,
+    );
+  }
+}
+
+const _pageTransitionsTheme = PageTransitionsTheme(
+  builders: {
+    TargetPlatform.android: _SmoothPageTransitionsBuilder(),
+    TargetPlatform.iOS: _SmoothPageTransitionsBuilder(),
+  },
+);
+
 class SpotlightTheme {
   static const Color pureWhite    = Color(0xFFFFFFFF);
   static const Color deepBlack    = Color(0xFF000000);
@@ -14,7 +47,8 @@ class SpotlightTheme {
     return ThemeData(
       brightness: Brightness.light,
       primaryColor: deepBlack,
-      scaffoldBackgroundColor: const Color(0xFFF9F9F9), // light gray so white cards pop
+      scaffoldBackgroundColor: const Color(0xFFF9F9F9),
+      pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.light(
         primary: deepBlack,
         secondary: darkGray,
@@ -75,6 +109,7 @@ class SpotlightTheme {
       brightness: Brightness.dark,
       primaryColor: crimsonRed,
       scaffoldBackgroundColor: darkBg,
+      pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.dark(
         primary: crimsonRed,
         secondary: darkGray,

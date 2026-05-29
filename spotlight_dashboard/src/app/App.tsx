@@ -4,8 +4,17 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard, Archive,
   CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
-  X, Key, Copy, Settings
+  X, Key, Copy, Settings, LogOut
 } from "lucide-react";
+import {
+  useAuth,
+  useUser,
+  useSignIn,
+  useSignUp,
+} from "@clerk/clerk-react";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats } from "./api";
+import confetti from "canvas-confetti";
+
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const FC = "'Cinzel', serif";
@@ -15,20 +24,197 @@ const FB = "'Manrope', sans-serif";
 type View = "landing" | "auth" | "dashboard";
 type AuthTab = "login" | "register";
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-let globalEvents = [
-  { id: 1, title: "UI/UX Workshop",  date: "Jan 28, 2026", venue: "Innovation Hub",   capacity: 50,  registered: 35,  type: "free", club: "GDSC",         status: "previous" },
-  { id: 2, title: "Hackathon 2026",  date: "Feb 14, 2026", venue: "Main Auditorium",  capacity: 200, registered: 156, type: "paid", club: "TechClub",      status: "upcoming" },
-  { id: 3, title: "Cultural Fest",   date: "Mar 5, 2026",  venue: "Open Ground",      capacity: 500, registered: 289, type: "free", club: "Cultural Comm.", status: "upcoming" },
-  { id: 4, title: "Startup Summit",  date: "Mar 20, 2026", venue: "Conference Hall",  capacity: 150, registered: 98,  type: "paid", club: "E-Cell",        status: "upcoming" },
-  { id: 5, title: "Design Sprint",   date: "Apr 2, 2026",  venue: "Design Studio",   capacity: 30,  registered: 27,  type: "free", club: "DesignHub",     status: "previous" },
-];
-
-let eventsListeners: (() => void)[] = [];
-function addEvent(ev: any) {
-  globalEvents = [...globalEvents, ev];
-  eventsListeners.forEach(l => l());
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface ClubEvent {
+  id: string;
+  title: string;
+  date: string | null;
+  venue: string;
+  capacity: number;
+  type: string;
+  club: string;
+  club_id: string | null;
+  status: "upcoming" | "previous";
+  price: number;
+  bannerUrl?: string | null;
+  qrUrl?: string | null;
 }
+
+interface Registration {
+  id: string;
+  status: string;
+  created_at: string;
+  eventTitle: string;
+  eventId: string;
+  user: { id: string; name: string; email: string; usn: string; branch: string; phone: string } | null;
+  team: { id: string; name: string; passkey: string } | null;
+}
+
+// ─── Real Data Hook ───────────────────────────────────────────────────────────
+function useSpotlightData() {
+  const { getToken, userId, isSignedIn } = useAuth();
+  const { user } = useUser();
+
+  const [clubs, setClubs]                   = useState<any[]>([]);
+  const [profile, setProfile]               = useState<any>(null);
+  const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
+  const [loading, setLoading]               = useState(true);
+
+  // Live PostgreSQL-bound states
+  const [totalEvents, setTotalEvents]             = useState(0);
+  const [totalRegistrations, setTotalRegistrations] = useState(0);
+  const [pendingCount, setPendingCount]           = useState(0);
+  const [recentActivity, setRecentActivity]       = useState<Registration[]>([]);
+  const [clubEvents, setClubEvents]               = useState<ClubEvent[]>([]);
+
+  const loadDashboardStats = async (clubId: string, token: string) => {
+    try {
+      console.log("[SpotlightData] loadDashboardStats called for clubId:", clubId);
+      const stats = await fetchClubDashboardStats(clubId, token);
+      console.log("[SpotlightData] loadDashboardStats response stats:", stats);
+      setTotalEvents(stats.totalEvents);
+      setTotalRegistrations(stats.totalRegistrations);
+      setPendingCount(stats.pendingCount);
+      setRecentActivity(stats.recentActivity);
+      setClubEvents(stats.clubEvents);
+
+      // Populate allRegistrations in the background so the dashboard overview loads instantly
+      fetchAllRegistrationsForEvents(
+        stats.clubEvents.map((e: any) => ({ id: e.id, title: e.title })),
+        token
+      ).then(regs => {
+        setAllRegistrations(regs);
+      }).catch(err => console.error("Background fetch for all registrations failed:", err));
+    } catch (e) {
+      console.error("Failed to load dashboard stats from PostgreSQL:", e);
+    }
+  };
+
+  const refreshEvents = async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.warn("[SpotlightData] refreshEvents returning early because token is null");
+        return;
+      }
+
+      // Re-sync profile to pick up newly assigned clubId
+      const email = user?.primaryEmailAddress?.emailAddress ?? '';
+      const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
+      console.log("[SpotlightData] refreshEvents syncing profile for email:", email);
+      const syncResult = await syncProfile(userId!, email, name, token);
+      const freshProfile = syncResult.profile;
+      console.log("[SpotlightData] refreshEvents syncResult profile:", freshProfile);
+      setProfile(freshProfile);
+
+      console.log("[SpotlightData] refreshEvents fetching clubs...");
+      const clubsData = await fetchClubs();
+      setClubs(clubsData.clubs ?? []);
+
+      const clubId = freshProfile?.clubId;
+      if (clubId) {
+        await loadDashboardStats(clubId, token);
+      }
+    } catch (e) {
+      console.error("Failed to refresh events:", e);
+    }
+  };
+
+  useEffect(() => {
+    console.log("[SpotlightData] useEffect triggered. isSignedIn:", isSignedIn, "userId:", userId, "userLoaded:", !!user);
+    if (!isSignedIn || !userId || !user) {
+      console.log("[SpotlightData] useEffect returning early because: ", { isSignedIn, userId, userLoaded: !!user });
+      return;
+    }
+
+    async function load() {
+      try {
+        console.log("[SpotlightData] load() started");
+        const token = await getToken();
+        console.log("[SpotlightData] load() token obtained:", !!token);
+        if (!token) {
+          console.warn("[SpotlightData] load() returned early because token is null/undefined");
+          return;
+        }
+
+        // 1. Fire syncProfile and fetchClubs concurrently
+        const email = user?.primaryEmailAddress?.emailAddress ?? '';
+        const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
+        console.log("[SpotlightData] load() starting concurrent requests");
+        
+        const [syncResult, clubsData] = await Promise.all([
+          syncProfile(userId!, email, name, token),
+          fetchClubs()
+        ]);
+        
+        console.log("[SpotlightData] load() concurrent requests finished");
+        let freshProfile = syncResult.profile;
+
+        // 2. Auto-provision club if they signed up via email/password credentials
+        // (meaning they have no Google / social connected accounts)
+        const isGoogleOrSocial = user?.externalAccounts && user.externalAccounts.length > 0;
+        
+        if (!freshProfile?.clubId && !isGoogleOrSocial && email && name) {
+          console.log("[SpotlightData] Auto-provisioning club for custom credentials user:", name, email);
+          try {
+            const onboardingRes = await createClub({
+              name,
+              email,
+              logoUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
+              clerkUserId: userId!,
+            }, token ?? undefined);
+            
+            if (onboardingRes.club && onboardingRes.club.id) {
+              console.log("[SpotlightData] Auto-provisioned club successfully:", onboardingRes.club);
+              freshProfile = {
+                ...freshProfile,
+                clubId: onboardingRes.club.id
+              };
+            }
+          } catch (err) {
+            console.error("[SpotlightData] Failed to auto-provision club:", err);
+          }
+        }
+
+        setProfile(freshProfile);
+        setClubs(clubsData.clubs ?? []);
+
+        // 3. If they have a club, load the stats
+        if (freshProfile?.clubId) {
+          console.log("[SpotlightData] load() clubId found, loading dashboard stats for clubId:", freshProfile.clubId);
+          await loadDashboardStats(freshProfile.clubId, token);
+        } else {
+          console.log("[SpotlightData] load() profile has no clubId, skipping stats load.");
+        }
+      } catch (e) {
+        console.error("Failed to load dashboard data:", e);
+      } finally {
+        console.log("[SpotlightData] load() finished, setting loading to false");
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [isSignedIn, userId, user]);
+
+  return {
+    clubEvents,
+    clubs,
+    profile,
+    loading,
+    allRegistrations,
+    totalEvents,
+    totalRegistrations,
+    pendingCount,
+    recentActivity,
+    refreshEvents,
+    setAllRegistrations,
+  };
+}
+
+// ─── Legacy in-memory store (no longer used for real data) ───────────────────
+let globalEvents: any[] = [];
+let eventsListeners: (() => void)[] = [];
 function useEvents() {
   const [events, setEvents] = useState(globalEvents);
   useEffect(() => {
@@ -39,22 +225,12 @@ function useEvents() {
   return events;
 }
 
-const ACTIVITY = [
-  { id: 1, type: "reg",     text: "Kavya Sharma registered for UI/UX Workshop",          time: "2 min ago"  },
-  { id: 2, type: "pay",     text: "Payment verified — Aryan Shetty · Hackathon 2026",     time: "15 min ago" },
-  { id: 3, type: "team",    text: "Team 'Pixel Pushers' created for Hackathon 2026",       time: "1h ago"     },
-  { id: 4, type: "approve", text: "Approved — Rohan Mehta · Startup Summit",              time: "2h ago"     },
-  { id: 5, type: "reg",     text: "Dev Patel registered for Design Sprint",               time: "3h ago"     },
-  { id: 6, type: "pay",     text: "Payment screenshot submitted — Sneha Rao",             time: "5h ago"     },
-];
-
 const QUICK_ACTIONS = [
-  { id: "create",          icon: Plus,        label: "Create Event",     desc: "Launch a new event in minutes"   },
-  { id: "events",          icon: CheckCircle, label: "Review Payments",  desc: "Approve pending verifications"   },
-  { id: "teams",           icon: Users,       label: "Manage Teams",     desc: "Oversee team registrations"      },
-  { id: "settings",        icon: CreditCard,  label: "Payment Settings", desc: "Configure QR and UPI details"   },
+  { id: "create",   icon: Plus,        label: "Create Event",     desc: "Launch a new event in minutes"   },
+  { id: "events",   icon: CheckCircle, label: "Review Payments",  desc: "Approve pending verifications"   },
+  { id: "events",    icon: Users,       label: "Manage Teams",     desc: "Oversee team registrations per event"      },
+  { id: "settings", icon: CreditCard,  label: "Payment Settings", desc: "Configure QR and UPI details"   },
 ];
-
 const FEATURES = [
   { icon: Calendar, title: "Liquid Event Creation", desc: "Craft events with a fluid step-by-step builder. From concept to live in under two minutes."      },
   { icon: Shield,   title: "Payment Moderation",    desc: "QR-based verification with screenshot uploads, manual approval pipelines, and audit trails."     },
@@ -113,6 +289,16 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister: () => void }) {
   const [scrollY, setScrollY] = useState(0);
+  const [stats, setStats] = useState({ liveEvents: 0, registrations: 0 });
+
+  useEffect(() => {
+    fetchPublicStats().then(data => {
+      setStats({
+        liveEvents: data.liveEvents || 0,
+        registrations: data.registrations || 0
+      });
+    }).catch(e => console.error("Failed to fetch public stats", e));
+  }, []);
 
   useEffect(() => {
     const el = document.getElementById("ls");
@@ -167,8 +353,8 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
 
         {/* Floating chips */}
         {[
-          { label: "● 48 LIVE EVENTS", delay: 0, x: "left-12 top-36", y: [0, -14, 0], d: 5.5 },
-          { label: "2,400+ REGISTRATIONS", delay: 1.5, x: "right-16 top-44", y: [0, 12, 0], d: 7 },
+          { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-12 top-36", y: [0, -14, 0], d: 5.5 },
+          { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-16 top-44", y: [0, 12, 0], d: 7 },
         ].map(chip => (
           <motion.div key={chip.label}
             animate={{ y: chip.y }}
@@ -219,7 +405,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             <motion.button
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               onClick={onEnter}
-              className="group flex items-center gap-3 px-9 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
+              className="cursor-pointer group flex items-center gap-3 px-9 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
               onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 40px rgba(240,61,78,0.4)")}
               onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
             >
@@ -230,7 +416,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             <motion.button
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               onClick={onRegister}
-              className="px-9 py-4 text-sm rounded-full text-white/55 hover:text-white transition-all duration-500"
+              className="cursor-pointer px-9 py-4 text-sm rounded-full text-white/55 hover:text-white transition-all duration-500"
               style={{ border: "1px solid rgba(255,255,255,0.1)" }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.28)")}
               onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
@@ -309,25 +495,203 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   );
 }
 
-// ─── Auth Page ────────────────────────────────────────────────────────────────
-function AuthPage({ tab, onTabChange, onLogin, onBack }: {
-  tab: AuthTab; onTabChange: (t: AuthTab) => void;
-  onLogin: (email: string) => void; onBack: () => void;
+// ─── Clerk Auth Page ──────────────────────────────────────────────────────────
+// ─── Custom Auth Page ──────────────────────────────────────────────────────────
+function AuthPage({ tab, onTabChange, onBack }: {
+  tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
 }) {
-  const [email, setEmail]     = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw]   = useState(false);
-  const [clubName, setClubName] = useState("");
-  const [contact, setContact]  = useState("");
-  const [regUsername, setRegUsername] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [error, setError]      = useState("");
-  const [regDone, setRegDone]  = useState(false);
+  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
+  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
 
-  const handleLogin = () => {
-    if (!email || !password) { setError("Enter any email and password to continue."); return; }
-    setError(""); onLogin(email);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [clubName, setClubName] = useState("");
+
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Email verification state
+  const [verifying, setVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+
+  // Toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleGoogleAuth = async () => {
+    try {
+      setError(null);
+      if (tab === "login") {
+        if (!isSignInLoaded) return;
+        await signIn.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/",
+        });
+      } else {
+        if (!isSignUpLoaded) return;
+        await signUp.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/",
+        });
+      }
+    } catch (err: any) {
+      setError(err.message || "Google Redirect Auth failed.");
+    }
   };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSignInLoaded) return;
+    if (!email || !password) {
+      setError("Email and Password are required.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await signIn.create({
+        identifier: email,
+        password: password,
+      });
+
+      if (result.status === "complete") {
+        await setSignInActive({ session: result.createdSessionId });
+      } else {
+        setError("Sign in requires additional verification.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSignUpLoaded) return;
+    if (!clubName || !email || !password) {
+      setError("Club Name, Email, and Password are required.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      await signUp.create({
+        emailAddress: email,
+        password: password,
+        firstName: clubName,
+      });
+
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setVerifying(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to initiate sign up.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSignUpLoaded) return;
+    if (!verificationCode) {
+      setError("Please enter the verification code.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await signUp.attemptEmailAddressVerification({
+        code: verificationCode,
+      });
+
+      if (result.status === "complete") {
+        console.log("[CustomSignUp] Clerk signup verified successfully. Auto-provisioning club...");
+        
+        // Auto-provision the Club in the database, passing the raw password!
+        const res = await createClub({
+          name: clubName,
+          email: email,
+          password: password, // PASS PASSWORD SO IT SAVES IN DB!
+          clerkUserId: result.createdUserId!,
+          logoUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
+        });
+
+        console.log("[CustomSignUp] Database club creation complete:", res);
+
+        // Make the session active
+        await setSignUpActive({ session: result.createdSessionId });
+      } else {
+        setError("Verification not complete.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Verification code is incorrect.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (verifying) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+        className="fixed inset-0 z-20 flex items-center justify-center p-6"
+        style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(10px)" }}
+      >
+        <button onClick={() => setVerifying(false)}
+          className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
+          style={{ color: "#999999", fontFamily: FB }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
+          onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
+        ><ChevronLeft size={14} /> Back</button>
+
+        <div className="w-full max-w-md p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Verify Email</h2>
+            <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>We sent a 6-digit verification code to <span className="text-white font-medium">{email}</span>. Please enter it below.</p>
+          </div>
+
+          <form onSubmit={handleVerify} className="space-y-6">
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Verification Code</label>
+              <input 
+                type="text" 
+                placeholder="e.g. 123456" 
+                required
+                maxLength={6}
+                className="w-full rounded-xl px-4 py-3 text-center text-lg font-semibold tracking-[0.25em] text-white outline-none transition-all focus:border-white/30" 
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FM }} 
+                value={verificationCode} 
+                onChange={e => setVerificationCode(e.target.value)}
+              />
+            </div>
+
+            {error && (
+              <p className="text-xs text-[#F03D4E] text-center font-medium" style={{ fontFamily: FB }}>{error}</p>
+            )}
+
+            <motion.button 
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
+              style={{ fontFamily: FB }}
+            >
+              {loading ? (
+                <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              ) : (
+                <>Continue <ArrowRight size={14} /></>
+              )}
+            </motion.button>
+          </form>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -342,232 +706,422 @@ function AuthPage({ tab, onTabChange, onLogin, onBack }: {
         onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
       ><ChevronLeft size={14} /> Back</button>
 
-      <motion.div
-        key={tab}
-        initial={{ opacity: 0, scale: 0.93, y: 28 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md p-8 rounded-3xl relative"
-        style={{ background: "#070707", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 40px 120px rgba(0,0,0,0.8)" }}
-      >
-        <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)" }} />
-        <p className="text-[10px] tracking-[0.55em] uppercase mb-7" style={{ color: "#bbbbbb", fontFamily: FM }}>SPOTLIGHT</p>
-
-        {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl mb-8" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className="flex flex-col items-center gap-6 w-full max-w-md">
+        {/* Tab toggle */}
+        <div className="flex gap-1 p-1 rounded-xl w-full" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
           {(["login", "register"] as AuthTab[]).map(t => (
-            <button key={t} onClick={() => { onTabChange(t); setError(""); setRegDone(false); }}
+            <button key={t} onClick={() => onTabChange(t)}
               className="flex-1 py-2.5 text-sm rounded-lg font-medium transition-all duration-300"
               style={{ background: tab === t ? "#fff" : "transparent", color: tab === t ? "#000" : "#aaaaaa", fontFamily: FB }}
             >{t === "login" ? "Sign In" : "Register Club"}</button>
           ))}
         </div>
 
-        {tab === "login" ? (
-          <div className="space-y-5">
-            <h2 className="text-2xl font-semibold text-white mb-7" style={{ fontFamily: FC }}>Welcome back.</h2>
-
-            <AuthInput label="Email" type="email" placeholder="admin@club.edu" value={email} onChange={setEmail} />
-            <div className="relative">
-              <AuthInput label="Password" type={showPw ? "text" : "password"} placeholder="••••••••" value={password} onChange={setPassword} />
-              <button onClick={() => setShowPw(p => !p)}
-                className="absolute right-4 bottom-3.5 transition-colors duration-200"
-                style={{ color: "#cccccc" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#cccccc")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#aaaaaa")}
-              >{showPw ? <EyeOff size={13} /> : <Eye size={13} />}</button>
-            </div>
-
-            {error && <p className="text-xs text-center py-2.5 rounded-xl" style={{ color: "#e05555", background: "rgba(224,85,85,0.07)", fontFamily: FM }}>{error}</p>}
-
-            <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleLogin}
-              className="w-full py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl mt-1 transition-all duration-500"
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-              style={{ fontFamily: FB }}
-            >Sign in to Spotlight</motion.button>
-            
-            <div className="relative mt-2 mb-2">
-              <div className="absolute inset-0 flex items-center"><div className="w-full" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }} /></div>
-              <div className="relative text-center"><span className="px-3 text-[10px]" style={{ background: "#070707", color: "#777777", fontFamily: FM }}>or continue with</span></div>
-            </div>
-
-            <button
-              className="w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2.5 transition-all duration-300 mb-2"
-              style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#bbbbbb", fontFamily: FB }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; e.currentTarget.style.color = "#dddddd"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "#bbbbbb"; }}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Continue with Google
-            </button>
-
-            <p className="text-center text-xs pt-1" style={{ color: "#bbbbbb", fontFamily: FM }}>Use any email + password · Demo mode</p>
+        {/* Custom Form Card */}
+        <div className="w-full p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
+              {tab === "login" ? "Club Sign In" : "Register Your Club"}
+            </h2>
+            <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>
+              {tab === "login" ? "Access your club dashboard" : "Welcome! Please fill in the details to get started."}
+            </p>
           </div>
 
-        ) : regDone ? (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-5">
-            <motion.div
-              initial={{ scale: 0 }} animate={{ scale: 1 }}
-              transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
-              className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
-              style={{ border: "1px solid rgba(255,255,255,0.1)" }}
-            ><Check size={18} style={{ color: "rgba(255,255,255,0.5)" }} /></motion.div>
-            <h2 className="text-xl font-semibold text-white" style={{ fontFamily: FC }}>Submitted.</h2>
-            <p className="text-sm leading-relaxed" style={{ color: "#cccccc", fontFamily: FB }}>
-              Your club is <span style={{ color: "#cccccc" }}>Pending Verification</span>.<br />An admin will review within 24 hours.
-            </p>
-            <button onClick={() => { setRegDone(false); onTabChange("login"); }}
-              className="text-xs underline transition-colors duration-200" style={{ color: "#999999" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#666")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
-            >Back to sign in</button>
-          </motion.div>
+          <form onSubmit={tab === "login" ? handleSignIn : handleSignUp} className="space-y-6">
+            {tab === "register" && (
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter club name" 
+                  required
+                  className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+                  value={clubName} 
+                  onChange={e => setClubName(e.target.value)}
+                />
+              </div>
+            )}
 
-        ) : (
-          <div className="space-y-5">
-            <h2 className="text-2xl font-semibold text-white mb-7" style={{ fontFamily: FC }}>Register Your Club.</h2>
-            <div className="space-y-4">
-              <AuthInput label="Club Name" type="text" placeholder="e.g. GDSC BITS Pilani" value={clubName} onChange={setClubName} />
-              <AuthInput label="Primary Contact" type="email" placeholder="contact@club.edu" value={contact} onChange={setContact} />
-              <div className="grid grid-cols-2 gap-3">
-                <AuthInput label="Username" type="text" placeholder="admin_gdsc" value={regUsername} onChange={setRegUsername} />
-                <AuthInput label="Password" type="password" placeholder="••••••••" value={regPassword} onChange={setRegPassword} />
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Email ID</label>
+              <input 
+                type="email" 
+                placeholder="Enter email address" 
+                required
+                className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+                value={email} 
+                onChange={e => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5 relative">
+              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Password</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Enter password" 
+                  required
+                  className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setRegDone(true)}
-              className="w-full py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all duration-500"
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+
+            {error && (
+              <p className="text-xs text-[#F03D4E] text-center font-medium" style={{ fontFamily: FB }}>{error}</p>
+            )}
+
+            <motion.button 
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
               style={{ fontFamily: FB }}
-            >Register Club</motion.button>
-            <p className="text-xs text-center" style={{ color: "#bbbbbb", fontFamily: FM }}>
-              Status: <span style={{ color: "#cccccc" }}>Pending Verification</span> until admin approves.
-            </p>
+            >
+              {loading ? (
+                <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              ) : (
+                <>Continue <ArrowRight size={14} /></>
+              )}
+            </motion.button>
+          </form>
+
+          {/* Social login divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="h-[1px] bg-white/10 flex-1" />
+            <span className="text-[10px] text-white/30 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
+            <div className="h-[1px] bg-white/10 flex-1" />
           </div>
-        )}
-      </motion.div>
+
+          {/* Social login button */}
+          <motion.button
+            onClick={handleGoogleAuth}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
+            style={{ fontFamily: FB }}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
+              <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
+              <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
+              <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
+            </svg>
+            Continue with Google
+          </motion.button>
+        </div>
+      </div>
     </motion.div>
   );
 }
 
 // ─── Events Page ──────────────────────────────────────────────────────────────
-function EventsPage() {
-  const EVENTS = useEvents();
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const [registrations, setRegistrations] = useState([
-    { id: 1, eventId: 2, name: "Rahul Verma", email: "rahul@example.edu", status: "pending", date: "10 mins ago" },
-    { id: 2, eventId: 2, name: "Anjali Nair", email: "anjali@example.edu", status: "pending", date: "30 mins ago" },
-    { id: 3, eventId: 2, name: "Vikram Singh", email: "vikram@example.edu", status: "approved", date: "2 hours ago" },
-    { id: 4, eventId: 1, name: "Priya Sharma", email: "priya@example.edu", status: "pending", date: "5 mins ago" },
-    { id: 5, eventId: 3, name: "Amit Kumar", email: "amit@example.edu", status: "pending", date: "1 day ago" },
-  ]);
+function EventsPage({ EVENTS, allRegistrations, onRegistrationsChange }: {
+  EVENTS: ClubEvent[];
+  allRegistrations: Registration[];
+  onRegistrationsChange: (updater: (prev: Registration[]) => Registration[]) => void;
+}) {
+  const { getToken } = useAuth();
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [showTeams, setShowTeams] = useState(false);
+  const [regsLoading, setRegsLoading] = useState(false);
+
+  // Derive per-event registrations from the shared allRegistrations store
+  const registrations = selectedEventId
+    ? allRegistrations.filter(r => r.eventId === selectedEventId)
+    : [];
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
-  const eventRegs = registrations.filter(r => r.eventId === selectedEventId);
-  const pending = eventRegs.filter(r => r.status === "pending");
-  const approved = eventRegs.filter(r => r.status === "approved");
+  const pending  = registrations.filter(r => r.status?.toLowerCase() === "pending");
+  const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
 
-  const handleApprove = (id: number) => {
-    setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status: "approved" } : r));
+  // Recurring background poll for registrations to ensure real-time dynamic updates
+  useEffect(() => {
+    if (!selectedEventId) return;
+
+    let isMounted = true;
+    
+    // Only show loading spinner on the very first load
+    const already = allRegistrations.some(r => r.eventId === selectedEventId);
+    if (!already) {
+      setRegsLoading(true);
+    }
+
+    const poll = async () => {
+      try {
+        const token = await getToken();
+        if (!token || !isMounted) return;
+        const data = await fetchEventRegistrations(selectedEventId, token);
+        if (!isMounted) return;
+
+        const regs = (data.registrations ?? []).map((r: any) => ({
+          ...r,
+          eventId: selectedEventId,
+          eventTitle: activeEvent?.title ?? '',
+        }));
+
+        onRegistrationsChange(prev => {
+          const otherEventsRegs = prev.filter(r => r.eventId !== selectedEventId);
+          return [...otherEventsRegs, ...regs];
+        });
+      } catch (e) {
+        console.error("Poll registrations failed:", e);
+      } finally {
+        if (isMounted) {
+          setRegsLoading(false);
+        }
+      }
+    };
+
+    // Run immediately
+    poll();
+
+    // Set interval to poll every 4 seconds for real-time dynamic sync
+    const intervalId = setInterval(poll, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [selectedEventId]);
+
+  const handleApprove = async (id: string, e: React.MouseEvent) => {
+    try {
+      // Small localized green drops/burst effect around the clicked button
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      confetti({
+        particleCount: 18,
+        spread: 45,
+        origin: { x, y },
+        colors: ['#10b981', '#34d399', '#6ee7b7'],
+        gravity: 0.8,
+        scalar: 0.65,
+        ticks: 90
+      });
+
+      const token = await getToken();
+      await approveRegistration(id, token ?? undefined);
+
+      // Find the team id of the registration being approved to optimistically update the whole team
+      const reg = allRegistrations.find(r => r.id === id);
+      const teamId = reg?.team?.id;
+
+      // Instant optimistic update — move from pending → confirmed for the user (and their team)
+      onRegistrationsChange(prev =>
+        prev.map(r => {
+          if (r.id === id || (teamId && r.team?.id === teamId)) {
+            return { ...r, status: 'CONFIRMED' };
+          }
+          return r;
+        })
+      );
+    } catch (e) {
+      console.error('Approve failed:', e);
+    }
   };
-  const handleReject = (id: number) => {
-    setRegistrations(prev => prev.filter(r => r.id !== id));
+
+  const handleReject = (id: string) => {
+    onRegistrationsChange(prev => prev.filter(r => r.id !== id));
   };
 
   if (activeEvent) {
+    const teamGroups = new Map<string, { id: string; name: string; passkey: string; members: Registration[] }>();
+    registrations.forEach(r => {
+      if (r.team) {
+        if (!teamGroups.has(r.team.id)) {
+          teamGroups.set(r.team.id, { ...r.team, members: [] });
+        }
+        teamGroups.get(r.team.id)!.members.push(r);
+      }
+    });
+    const teamsList = Array.from(teamGroups.values());
+
     return (
       <div className="p-8 lg:p-10 space-y-8 max-w-6xl">
-        <button onClick={() => setSelectedEventId(null)}
+        <button onClick={() => { setSelectedEventId(null); setShowTeams(false); }}
           className="flex items-center gap-2 text-sm transition-all duration-300"
           style={{ color: "#999999", fontFamily: FB }}
           onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
           onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
         ><ChevronLeft size={14} /> Back to Events</button>
 
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: "#F03D4E", fontFamily: FM }}>{activeEvent.status === "live" ? "Live Now" : "Upcoming"}</span>
-            <span className="text-[10px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
-          <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: "#cccccc", fontFamily: FB }}>
-             <span className="flex items-center gap-1.5"><Calendar size={12} />{activeEvent.date}</span>
-             <span className="flex items-center gap-1.5"><MapPin size={12} />{activeEvent.venue}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: "Total Capacity", value: activeEvent.capacity },
-            { label: "Registered", value: activeEvent.registered },
-            { label: "Pending Approval", value: pending.length },
-          ].map((stat, i) => (
-             <div key={i} className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <p className="text-[10px] tracking-[0.3em] uppercase mb-2" style={{ color: "#bbbbbb", fontFamily: FM }}>{stat.label}</p>
-                <p className="text-3xl font-semibold text-white">{stat.value}</p>
-             </div>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-           {/* Pending */}
-           <div>
-             <p className="text-[10px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-4" style={{ fontFamily: FM }}>Pending Registrations ({pending.length})</p>
-             <div className="space-y-3">
-               {pending.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#bbbbbb]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No pending registrations.</div>}
-               <AnimatePresence>
-                 {pending.map((req) => (
-                   <motion.div key={req.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                     className="p-4 rounded-xl flex items-center justify-between group"
-                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
-                   >
-                      <div>
-                        <p className="text-sm font-medium text-white/90" style={{ fontFamily: FB }}>{req.name}</p>
-                        <p className="text-[10px] mt-0.5 text-[#cccccc]" style={{ fontFamily: FM }}>{req.email} · {req.date}</p>
-                      </div>
-                      <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                         <button onClick={() => handleApprove(req.id)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all"><Check size={14} /></button>
-                         <button onClick={() => handleReject(req.id)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-[#F03D4E]/20 text-white/70 hover:text-[#F03D4E] transition-all"><X size={14} /></button>
-                      </div>
-                   </motion.div>
-                 ))}
-               </AnimatePresence>
-             </div>
-           </div>
-           
-           {/* Approved */}
-           <div>
-             <p className="text-[10px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-4" style={{ fontFamily: FM }}>Approved Attendees ({approved.length})</p>
-             <div className="space-y-3">
-               {approved.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#bbbbbb]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No approved attendees yet.</div>}
-               <AnimatePresence>
-                 {approved.map((req) => (
-                   <motion.div key={req.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                     className="p-4 rounded-xl flex items-center justify-between"
-                     style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)" }}
-                   >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{req.name.charAt(0)}</div>
-                        <div>
-                          <p className="text-sm font-medium text-white/70" style={{ fontFamily: FB }}>{req.name}</p>
-                          <p className="text-[10px] mt-0.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>{req.email}</p>
+        {showTeams ? (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-[12px] tracking-[0.4em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
+              <button onClick={() => setShowTeams(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#bbb] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {teamsList.map(team => (
+                <div key={team.id} className="p-6 rounded-2xl flex flex-col" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="flex justify-between items-start mb-5">
+                    <div>
+                      <h3 className="text-white font-semibold text-lg leading-tight" style={{ fontFamily: FC }}>{team.name}</h3>
+                      <p className="text-[10px] text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey}</p>
+                    </div>
+                    <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-[#bbb]" style={{ fontFamily: FM }}>{team.members.length} MEMBERS</span>
+                  </div>
+                  <div className="space-y-3 mt-auto">
+                    {team.members.map(m => (
+                      <div key={m.id} className="flex justify-between items-center bg-black/20 p-2.5 rounded-lg border border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-[#ddd]" style={{ fontFamily: FB }}>{m.user?.name || m.user?.usn || 'Unknown'}</span>
+                          <span className="text-[9px] text-[#666]" style={{ fontFamily: FM }}>{m.user?.usn || m.user?.email}</span>
                         </div>
+                        <span className="text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm" style={{ 
+                          color: m.status?.toLowerCase() === 'confirmed' ? '#10b981' : '#f59e0b',
+                          background: m.status?.toLowerCase() === 'confirmed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+                          fontFamily: FM
+                        }}>
+                          {m.status}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-green-500/70 uppercase tracking-widest" style={{ fontFamily: FM }}>Approved</span>
-                   </motion.div>
-                 ))}
-               </AnimatePresence>
-             </div>
-           </div>
-        </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {activeEvent.bannerUrl ? (
+              <div className="w-full h-48 md:h-64 rounded-2xl overflow-hidden relative shadow-2xl" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                <img src={activeEvent.bannerUrl} alt={activeEvent.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+              </div>
+            ) : (
+              <div className="w-full h-48 md:h-64 rounded-2xl overflow-hidden relative shadow-2xl flex flex-col justify-end p-6 md:p-8" 
+                style={{ 
+                  background: "linear-gradient(135deg, rgba(240,61,78,0.12) 0%, rgba(5,5,5,0.98) 100%)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                }}
+              >
+                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 80% 20%, rgba(240,61,78,0.08), transparent 50%)" }} />
+                <span className="text-[10px] tracking-[0.4em] uppercase text-[#F03D4E] font-bold" style={{ fontFamily: FM }}>SPOTLIGHT EXPERIENCE</span>
+                <h2 className="text-xl md:text-2xl font-bold text-white mt-1 leading-tight" style={{ fontFamily: FC }}>{activeEvent.title}</h2>
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: "#F03D4E", fontFamily: FM }}>{activeEvent.status === "live" ? "Live Now" : "Upcoming"}</span>
+                <span className="text-[10px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
+              <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: "#cccccc", fontFamily: FB }}>
+                 <span className="flex items-center gap-1.5"><Calendar size={12} />{activeEvent.date}</span>
+                 <span className="flex items-center gap-1.5"><MapPin size={12} />{activeEvent.venue}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: "Total Capacity", value: activeEvent.capacity || '∞' },
+                { label: "Registered",     value: registrations.length },
+                { label: "Pending Approval", value: pending.length },
+              ].map((stat, i) => (
+                 <div key={i} className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p className="text-[10px] tracking-[0.3em] uppercase mb-2" style={{ color: "#bbbbbb", fontFamily: FM }}>{stat.label}</p>
+                    <p className="text-3xl font-semibold text-white">{stat.value}</p>
+                 </div>
+              ))}
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+               {/* Pending */}
+               <div>
+                 <p className="text-[10px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-4" style={{ fontFamily: FM }}>Pending Registrations ({pending.length})</p>
+                 <div className="space-y-3">
+                   {pending.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#bbbbbb]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No pending registrations.</div>}
+                   <AnimatePresence>
+                     {pending.map((req) => (
+                       <motion.div key={req.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                         className="p-4 rounded-xl flex items-center justify-between group"
+                         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
+                       >
+                          <div>
+                            <p className="text-sm font-medium text-white/90" style={{ fontFamily: FB }}>{req.user?.name ?? req.team?.name ?? 'Unknown'}</p>
+                            <p className="text-[10px] mt-0.5 text-[#cccccc]" style={{ fontFamily: FM }}>{req.user?.email ?? req.user?.usn ?? ''} · {req.created_at ? new Date(req.created_at).toLocaleDateString() : ''}</p>
+                          </div>
+                          <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                             <button onClick={(e) => handleApprove(req.id, e)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all"><Check size={14} /></button>
+                             <button onClick={() => handleReject(req.id)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-[#F03D4E]/20 text-white/70 hover:text-[#F03D4E] transition-all"><X size={14} /></button>
+                          </div>
+                       </motion.div>
+                     ))}
+                   </AnimatePresence>
+                 </div>
+               </div>
+               
+               {/* Approved */}
+               <div>
+                 <p className="text-[10px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-4" style={{ fontFamily: FM }}>Approved Attendees ({approved.length})</p>
+                 <div className="space-y-3">
+                   {approved.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#bbbbbb]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No approved attendees yet.</div>}
+                   <AnimatePresence>
+                     {approved.map((req) => (
+                       <motion.div key={req.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                         className="p-4 rounded-xl flex items-center justify-between"
+                         style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)" }}
+                       >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? req.team?.name ?? '?').charAt(0)}</div>
+                            <div>
+                              <p className="text-sm font-medium text-white/70" style={{ fontFamily: FB }}>{req.user?.name ?? req.team?.name ?? 'Unknown'}</p>
+                              <p className="text-[10px] mt-0.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>{req.user?.email ?? req.user?.usn ?? ''}</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-green-500/70 uppercase tracking-widest" style={{ fontFamily: FM }}>Approved</span>
+                       </motion.div>
+                     ))}
+                   </AnimatePresence>
+                 </div>
+               </div>
+            </div>
+
+            {/* Manage Teams Entry Card */}
+            {teamsList.length > 0 && (
+              <div className="mt-8 pt-8" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div 
+                  onClick={() => setShowTeams(true)}
+                  className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
+                  style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "300px" }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.015)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.transform = "none";
+                  }}
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <Users size={20} className="text-white/70" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Manage Teams</h3>
+                    <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Oversee team registrations per event</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     );
   }
@@ -587,7 +1141,8 @@ function EventsPage() {
           <h2 className="text-lg font-medium text-white mb-5" style={{ fontFamily: FB }}>Upcoming Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {EVENTS.filter(e => e.status === "upcoming").map((ev, i) => {
-              const fill = (ev.registered / ev.capacity) * 100;
+              const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
+              const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
               return (
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
@@ -619,11 +1174,11 @@ function EventsPage() {
                   </div>
                   <h3 className="text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
                   <div className="flex items-center gap-3 mb-6" style={{ color: "#bbbbbb" }}>
-                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date}</span>
+                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
                   </div>
                   <div>
                     <div className="flex justify-between text-[10px] mb-2" style={{ color: "#cccccc", fontFamily: FM }}>
-                      <span>{ev.registered} registered</span><span>{ev.capacity} cap</span>
+                      <span>{regCount} registered</span><span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
                       <motion.div
@@ -637,6 +1192,11 @@ function EventsPage() {
                 </motion.div>
               );
             })}
+            {EVENTS.filter(e => e.status === "upcoming").length === 0 && (
+              <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#555]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
+                No upcoming events yet.
+              </div>
+            )}
           </div>
         </div>
 
@@ -645,7 +1205,8 @@ function EventsPage() {
           <h2 className="text-lg font-medium text-[#bbbbbb] mb-5" style={{ fontFamily: FB }}>Previous Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {EVENTS.filter(e => e.status === "previous").map((ev, i) => {
-              const fill = (ev.registered / ev.capacity) * 100;
+              const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
+              const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
               return (
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
@@ -656,20 +1217,15 @@ function EventsPage() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.04)", color: "#bbbbbb", fontFamily: FM }}>{ev.club}</span>
-                    <span className="text-[9px] px-2.5 py-1 rounded-full" style={{
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.03)",
-                      color: "#666666",
-                      fontFamily: FM,
-                    }}>Ended</span>
+                    <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#666666", fontFamily: FM }}>Ended</span>
                   </div>
                   <h3 className="text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
                   <div className="flex items-center gap-3 mb-6" style={{ color: "#666666" }}>
-                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date}</span>
+                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
                   </div>
                   <div>
                     <div className="flex justify-between text-[10px] mb-2" style={{ color: "#666666", fontFamily: FM }}>
-                      <span>{ev.registered} registered</span><span>{ev.capacity} cap</span>
+                      <span>{regCount} registered</span><span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
                       <motion.div
@@ -683,6 +1239,9 @@ function EventsPage() {
                 </motion.div>
               );
             })}
+            {EVENTS.filter(e => e.status === "previous").length === 0 && (
+              <div className="col-span-3 p-6 rounded-2xl text-center text-xs text-[#444]" style={{ fontFamily: FB }}>No past events.</div>
+            )}
           </div>
         </div>
       </div>
@@ -782,29 +1341,61 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
 }
 
 // ─── Create Event Page ────────────────────────────────────────────────────────
-function CreateEventPage({ onCreated }: { onCreated: () => void }) {
+function CreateEventPage({ clubId, onCreated }: { clubId: string; onCreated: () => void }) {
+  const { getToken } = useAuth();
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
+    eventType: "Solo", teamSizeLimit: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
-  
-  const handleSubmit = () => {
-    addEvent({
-      id: Math.floor(Math.random() * 10000),
-      title: formData.title,
-      date: formData.date,
-      venue: formData.venue || "TBA",
-      capacity: parseInt(formData.capacity) || 0,
-      registered: 0,
-      type: formData.type,
-      club: "Demo Club",
-      status: "upcoming",
-      amount: formData.amount,
-      qrCode: formData.qrCode,
-      banner: formData.banner,
-      useDefaultQr: formData.useDefaultQr
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
     });
-    onCreated();
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.title) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const token = await getToken();
+
+      let bannerUrl: string | undefined = undefined;
+      if (formData.bannerFile) {
+        bannerUrl = await fileToBase64(formData.bannerFile);
+      }
+
+      let qrUrl: string | undefined = undefined;
+      if (formData.qrFile) {
+        qrUrl = await fileToBase64(formData.qrFile);
+      }
+
+      await createEvent({
+        name: formData.title,
+        description: formData.desc || undefined,
+        venue: formData.venue || undefined,
+        eventDate: formData.date || undefined,
+        fee: formData.type === "paid" ? parseInt(formData.amount) || 0 : 0,
+        registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
+        eventType: formData.eventType,
+        teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
+        clubId: clubId,
+        bannerUrl,
+        qrUrl,
+      }, token ?? undefined);
+      onCreated();
+    } catch (e: any) {
+      setError(e.message ?? "Failed to create event.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -866,7 +1457,7 @@ function CreateEventPage({ onCreated }: { onCreated: () => void }) {
             <input type="number" placeholder="e.g. 200" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.capacity} onChange={e => setFormData(p => ({...p, capacity: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
           </div>
           <div className="space-y-1.5 relative">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Event Type</label>
+            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Pricing</label>
             <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.type} onChange={e => setFormData(p => ({...p, type: e.target.value, amount: "", qrCode: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
               <option value="free" style={{ background: "#111" }}>Free</option>
               <option value="paid" style={{ background: "#111" }}>Paid</option>
@@ -877,6 +1468,29 @@ function CreateEventPage({ onCreated }: { onCreated: () => void }) {
               </motion.p>
             )}
           </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-1.5 relative">
+            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Participation Type</label>
+            <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+              <option value="Solo" style={{ background: "#111" }}>Solo</option>
+              <option value="Team" style={{ background: "#111" }}>Team</option>
+            </select>
+          </div>
+          <AnimatePresence>
+            {formData.eventType === "Team" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-1.5"
+              >
+                <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                <input type="number" placeholder="e.g. 4" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.teamSizeLimit} onChange={e => setFormData(p => ({...p, teamSizeLimit: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <AnimatePresence>
@@ -921,8 +1535,13 @@ function CreateEventPage({ onCreated }: { onCreated: () => void }) {
           )}
         </AnimatePresence>
         
+        {error && (
+          <p className="text-xs text-[#F03D4E] px-1" style={{ fontFamily: FM }}>{error}</p>
+        )}
         <div className="pt-4 mt-8">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={!formData.title} className="px-8 py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50" style={{ fontFamily: FB }} onMouseEnter={e => !(!formData.title) && (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")} onMouseLeave={e => !(!formData.title) && (e.currentTarget.style.boxShadow = "none")}>Publish Event</motion.button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={!formData.title || submitting} className="cursor-pointer px-8 py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50" style={{ fontFamily: FB }} onMouseEnter={e => !(!formData.title || submitting) && (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")} onMouseLeave={e => !(!formData.title || submitting) && (e.currentTarget.style.boxShadow = "none")}>
+            {submitting ? "Publishing..." : "Publish Event"}
+          </motion.button>
         </div>
       </div>
     </div>
@@ -931,13 +1550,107 @@ function CreateEventPage({ onCreated }: { onCreated: () => void }) {
 
 
 // ─── Settings Page ────────────────────────────────────────────────────────────
-function SettingsPage({ onLogout }: { onLogout: () => void }) {
+function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getToken: () => Promise<string | null>; onUpdate: () => void; onLogout: () => void }) {
+  const [formData, setFormData] = useState({
+    name: club?.name || "",
+    email: club?.email || "",
+    logoUrl: club?.logoUrl || "",
+    upiId: club?.upiId || "",
+    qrUrl: club?.qrUrl || ""
+  });
+  const [qrFile, setQrFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (club) {
+      setFormData({
+        name: club.name || "",
+        email: club.email || "",
+        logoUrl: club.logoUrl || "",
+        upiId: club.upiId || "",
+        qrUrl: club.qrUrl || ""
+      });
+    }
+  }, [club]);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleSaveInit = () => {
+    if (!formData.name || !formData.email) {
+      setError("Club name and email are required.");
+      return;
+    }
+    setError(null);
+    setShowPasswordPrompt(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      let finalQrUrl = formData.qrUrl;
+      if (qrFile) {
+        finalQrUrl = await fileToBase64(qrFile);
+      }
+      
+      let finalLogoUrl = formData.logoUrl;
+      if (logoFile) {
+        finalLogoUrl = await fileToBase64(logoFile);
+      }
+      const token = await getToken();
+
+      await updateClub(club.id, {
+        ...formData,
+        qrUrl: finalQrUrl,
+        logoUrl: finalLogoUrl,
+        password
+      }, token || undefined);
+      
+      setShowPasswordPrompt(false);
+      setPassword("");
+      setSuccessMsg("Settings saved successfully!");
+      setTimeout(() => setSuccessMsg(null), 4000);
+      onUpdate();
+    } catch (e: any) {
+      setError(e.message || "Failed to update club.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
+    <div className="p-8 lg:p-10 space-y-8 max-w-4xl relative">
       <div>
         <p className="text-[10px] tracking-[0.5em] uppercase mb-1.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>Preferences</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
+
+      <AnimatePresence>
+        {successMsg && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium flex items-center gap-2" style={{ fontFamily: FB }}>
+            <Check size={16} />
+            {successMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="space-y-6">
         {/* Profile Section */}
@@ -946,15 +1659,23 @@ function SettingsPage({ onLogout }: { onLogout: () => void }) {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Name</label>
-              <input type="text" placeholder="e.g. Demo Club" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <input type="text" placeholder="e.g. Demo Club" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Contact Email</label>
-              <input type="email" placeholder="club@example.com" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <input type="email" placeholder="club@example.com" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
-          </div>
-          <div className="pt-6">
-            <button className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>Save Changes</button>
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Logo</label>
+              <input type="file" accept="image/*" className="hidden" id="logo-upload-settings" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) setLogoFile(file);
+              }} />
+              <label htmlFor="logo-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
+                <span>{logoFile ? logoFile.name : (formData.logoUrl ? "Logo Uploaded (Click to change)" : "Upload Logo Image...")}</span>
+                <Upload size={14} className={logoFile || formData.logoUrl ? "text-green-400" : ""} />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -964,20 +1685,57 @@ function SettingsPage({ onLogout }: { onLogout: () => void }) {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Default UPI ID</label>
-              <input type="text" placeholder="club@upi" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <input type="text" placeholder="club@upi" value={formData.upiId} onChange={e => setFormData(p => ({ ...p, upiId: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Default QR Code</label>
-              <div className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
-                <span>Upload QR Image...</span>
-                <Upload size={14} />
-              </div>
+              <input type="file" accept="image/*" className="hidden" id="qr-upload-settings" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) setQrFile(file);
+              }} />
+              <label htmlFor="qr-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
+                <span>{qrFile ? qrFile.name : (formData.qrUrl ? "QR Uploaded (Click to change)" : "Upload QR Image...")}</span>
+                <Upload size={14} className={qrFile || formData.qrUrl ? "text-green-400" : ""} />
+              </label>
             </div>
           </div>
-          <div className="pt-6">
-            <button className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>Save Payment Methods</button>
+        </div>
+
+        {/* Save Button for Profile & Payment */}
+        <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white" style={{ fontFamily: FB }}>Save All Settings</p>
+              <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
+            </div>
+            <button onClick={handleSaveInit} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)]" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
         </div>
+        
+        <AnimatePresence>
+          {showPasswordPrompt && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h3>
+                <p className="text-xs text-[#999] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
+                
+                {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl" style={{ fontFamily: FB }}>{error}</div>}
+
+                <div className="space-y-1.5 mb-6">
+                  <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Password</label>
+                  <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
+                  <button onClick={() => { setShowPasswordPrompt(false); setError(null); }} className="px-5 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all" style={{ fontFamily: FB }}>Cancel</button>
+                  <button onClick={handleConfirmSave} disabled={isSaving} className="px-5 py-2.5 text-xs text-white bg-[#F03D4E] hover:bg-[#F03D4E]/80 rounded-xl transition-all font-semibold flex items-center gap-2 disabled:opacity-50" style={{ fontFamily: FB }}>
+                    {isSaving ? "Saving..." : "Confirm Save"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Notifications Section */}
         <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -1040,6 +1798,150 @@ function SettingsPage({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+// ─── Teams Page (stub — full implementation coming) ──────────────────────────
+function TeamsPage() {
+  return (
+    <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
+      <div>
+        <p className="text-[10px] tracking-[0.5em] uppercase mb-1.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>Management</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Teams</h1>
+      </div>
+      <div className="p-10 rounded-2xl text-center" style={{ border: "1px dashed rgba(255,255,255,0.07)" }}>
+        <p className="text-sm text-[#555]" style={{ fontFamily: FB }}>Team management coming soon.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Club Onboarding Page ─────────────────────────────────────────────────────
+interface ClubOnboardingPageProps {
+  onSuccess: (clubId: string) => void;
+}
+
+function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
+  const { getToken, userId } = useAuth();
+  const [formData, setFormData] = useState({ name: "", email: "", logoUrl: "", password: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.password) {
+      setError("Club Name, Contact Email, and Mobile Login Password are required.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await createClub({
+        name: formData.name,
+        email: formData.email,
+        logoUrl: formData.logoUrl || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
+        clerkUserId: userId!,
+        password: formData.password,
+      }, token ?? undefined);
+
+      if (res.club && res.club.id) {
+        onSuccess(res.club.id);
+      } else {
+        throw new Error("Failed to create club.");
+      }
+    } catch (e: any) {
+      setError(e.message ?? "Onboarding failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-12 relative overflow-hidden" style={{ background: "rgba(5,5,5,0.98)" }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(240,61,78,0.08) 0%, transparent 60%)" }} />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="w-full max-w-lg p-8 md:p-10 rounded-3xl relative z-10"
+        style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}
+      >
+        <div className="text-center mb-8">
+          <p className="text-[10px] tracking-[0.5em] uppercase mb-2 text-[#bbbbbb]" style={{ fontFamily: FM }}>Step 1 · Onboarding</p>
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ fontFamily: FC }}>Set Up Your Club</h2>
+          <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details to activate the dashboard.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Name</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Turing Club" 
+              required
+              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" 
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              value={formData.name} 
+              onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Contact Email</label>
+            <input 
+              type="email" 
+              placeholder="club@yourcollege.edu" 
+              required
+              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" 
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              value={formData.email} 
+              onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Logo URL (Optional)</label>
+            <input 
+              type="url" 
+              placeholder="https://example.com/logo.png" 
+              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" 
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              value={formData.logoUrl} 
+              onChange={e => setFormData(p => ({ ...p, logoUrl: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Mobile App Login Password</label>
+            <input 
+              type="password" 
+              placeholder="Create login password for mobile app" 
+              required
+              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              value={formData.password} 
+              onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-[#F03D4E] text-center" style={{ fontFamily: FM }}>{error}</p>
+          )}
+
+          <motion.button 
+            type="submit"
+            whileHover={{ scale: 1.02 }} 
+            whileTap={{ scale: 0.98 }} 
+            disabled={submitting} 
+            className="w-full py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 mt-8" 
+            style={{ fontFamily: FB }}
+          >
+            {submitting ? "Activating Dashboard..." : "Activate Dashboard"}
+          </motion.button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 const DASH_NAV = [
@@ -1051,8 +1953,56 @@ const DASH_NAV = [
 ];
 
 function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut: () => void }) {
-  const name = userEmail.split("@")[0];
+  const {
+    clubEvents,
+    clubs,
+    profile,
+    loading,
+    allRegistrations,
+    totalEvents,
+    totalRegistrations,
+    pendingCount,
+    recentActivity,
+    refreshEvents,
+    setAllRegistrations,
+  } = useSpotlightData();
+
+  const { getToken } = useAuth();
+  const currentClub = clubs.find((c: any) => c.id === profile?.clubId);
+  const name = currentClub?.name ?? profile?.fullName ?? profile?.full_name ?? userEmail.split("@")[0] ?? 'Admin';
   const [activeTab, setActiveTab] = useState("overview");
+
+  useEffect(() => {
+    if (profile) {
+      if (!profile.clubId) {
+        setActiveTab("onboarding");
+      } else {
+        setActiveTab("overview");
+      }
+    }
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
+          <p className="text-xs tracking-[0.4em] uppercase text-[#555]" style={{ fontFamily: FM }}>Loading Dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === "onboarding") {
+    return (
+      <ClubOnboardingPage 
+        onSuccess={async (newClubId) => {
+          await refreshEvents();
+          setActiveTab("overview");
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
@@ -1115,17 +2065,29 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         <AnimatePresence mode="wait">
           {activeTab === "create" && (
             <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <CreateEventPage onCreated={() => setActiveTab("events")} />
+               <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("events"); }} />
             </motion.div>
           )}
           {activeTab === "overview" && (
             <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <OverviewPage name={name} onNavigate={setActiveTab} />
+               <OverviewPage
+                 name={name}
+                 onNavigate={setActiveTab}
+                 totalEvents={totalEvents}
+                 totalRegistrations={totalRegistrations}
+                 pendingCount={pendingCount}
+                 recentActivity={recentActivity}
+                 clubEvents={clubEvents}
+               />
             </motion.div>
           )}
           {activeTab === "events" && (
             <motion.div key="events" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <EventsPage />
+               <EventsPage
+                 EVENTS={clubEvents}
+                 allRegistrations={allRegistrations}
+                 onRegistrationsChange={setAllRegistrations}
+               />
             </motion.div>
           )}
           {activeTab === "teams" && (
@@ -1135,7 +2097,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           )}
           {activeTab === "settings" && (
             <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <SettingsPage onLogout={onSignOut} />
+               <SettingsPage club={clubs.find((c: any) => c.id === profile?.clubId)} getToken={getToken} onUpdate={refreshEvents} onLogout={onSignOut} />
             </motion.div>
           )}
           {activeTab !== "overview" && activeTab !== "teams" && activeTab !== "events" && activeTab !== "settings" && activeTab !== "create" && (
@@ -1150,8 +2112,34 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 }
 
 // ─── Overview Page ────────────────────────────────────────────────────────────
-function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: string) => void }) {
-  const EVENTS = useEvents();
+function OverviewPage({
+  name,
+  onNavigate,
+  totalEvents,
+  totalRegistrations,
+  pendingCount,
+  recentActivity,
+  clubEvents,
+}: {
+  name: string;
+  onNavigate: (tab: string) => void;
+  totalEvents: number;
+  totalRegistrations: number;
+  pendingCount: number;
+  recentActivity: Registration[];
+  clubEvents: ClubEvent[];
+}) {
+  // Relative time helper
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1)  return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)  return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
   return (
     <div className="p-8 lg:p-10 space-y-10 max-w-7xl">
       {/* Greeting */}
@@ -1170,12 +2158,12 @@ function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: st
         <p className="mt-1.5 text-sm" style={{ color: "#cccccc", fontFamily: FB }}>Your dashboard is synced. Everything looks on track.</p>
       </motion.div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — live data */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: "Active Events",       value: 5,   suffix: "",  sub: "2 live right now",      delay: 0    },
-          { label: "Total Registrations", value: 605, suffix: "+", sub: "Across all events",     delay: 0.08 },
-          { label: "Pending Review",      value: 3,   suffix: "",  sub: "Payment verifications", delay: 0.16 },
+          { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => e.status === 'upcoming').length} upcoming`,  delay: 0    },
+          { label: "Total Registrations",   value: totalRegistrations, suffix: "",  sub: "Across all events",                                                   delay: 0.08 },
+          { label: "Pending Approvals",     value: pendingCount,       suffix: "",  sub: "Awaiting your review",                                                delay: 0.16 },
         ].map(k => (
           <motion.div key={k.label}
             initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
@@ -1207,7 +2195,7 @@ function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: st
         ))}
       </div>
 
-      {/* Upcoming Events */}
+      {/* Upcoming Events strip — live */}
       <div>
         <div className="flex items-end justify-between mb-5">
           <div>
@@ -1215,20 +2203,25 @@ function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: st
             <h2 className="text-xl font-semibold text-white" style={{ fontFamily: FC }}>Events</h2>
           </div>
           <button className="flex items-center gap-1 text-xs transition-colors duration-300" style={{ color: "#999999", fontFamily: FB }}
+            onClick={() => onNavigate("events")}
             onMouseEnter={e => (e.currentTarget.style.color = "#dddddd")}
             onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
           >View all <ChevronRight size={12} /></button>
         </div>
 
-        <div className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory" style={{ scrollbarWidth: "none", margin: "0 -2rem", padding: "0 2rem" }}>
-          {EVENTS.map((ev, i) => {
-            const fill = (ev.registered / ev.capacity) * 100;
-            return (
+        {clubEvents.filter(e => e.status === 'upcoming').length === 0 ? (
+          <div className="p-8 rounded-2xl text-center text-sm text-[#555]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
+            No upcoming events yet. <button onClick={() => onNavigate("create")} className="text-[#F03D4E] hover:underline">Create one →</button>
+          </div>
+        ) : (
+          <div className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory" style={{ scrollbarWidth: "none", margin: "0 -2rem", padding: "0 2rem" }}>
+            {clubEvents.filter(e => e.status === 'upcoming').map((ev, i) => (
               <motion.div key={ev.id}
                 initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-shrink-0 w-[340px] p-6 rounded-3xl cursor-pointer snap-start"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", transition: "all 0.45s ease" }}
+                onClick={() => onNavigate("events")}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLDivElement;
                   el.style.background  = "rgba(255,255,255,0.04)";
@@ -1246,38 +2239,27 @@ function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: st
               >
                 <div className="flex items-start justify-between mb-5">
                   <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#cccccc", fontFamily: FM }}>{ev.club}</span>
-                  <span className="text-[9px] px-2.5 py-1 rounded-full" style={{
-                    background: "transparent",
-                    border:     "1px solid rgba(255,255,255,0.06)",
-                    color:      ev.status === "previous" ? "#666666" : "#aaaaaa",
-                    fontFamily: FM,
-                  }}>{ev.status === "previous" ? "Ended" : "Upcoming"}</span>
+                  <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
                 </div>
                 <h3 className="text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>
                 <div className="flex items-center gap-3 mb-4" style={{ color: "#999999" }}>
-                  <span className="flex items-center gap-1 text-[9px]"><Calendar size={9} />{ev.date}</span>
+                  <span className="flex items-center gap-1 text-[9px]"><Calendar size={9} />{ev.date ?? 'TBD'}</span>
                   <span className="flex items-center gap-1 text-[9px]"><MapPin size={9} />{ev.venue}</span>
                 </div>
                 <div>
                   <div className="flex justify-between text-[9px] mb-1.5" style={{ color: "#bbbbbb", fontFamily: FM }}>
-                    <span>{ev.registered} registered</span><span>{ev.capacity} cap</span>
+                    <span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
+                    <span>{ev.type}</span>
                   </div>
-                  <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ background: "linear-gradient(90deg, rgba(240,61,78,0.4), rgba(240,61,78,1))" }}
-                      initial={{ width: 0 }} animate={{ width: `${fill}%` }}
-                      transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.1 + 0.3 }}
-                    />
-                  </div>
+                  <div className="h-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }} />
                 </div>
               </motion.div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Quick Actions + Activity */}
+      {/* Quick Actions + Live Activity Feed */}
       <div className="grid md:grid-cols-3 gap-6 pb-10">
         <div className="md:col-span-2">
           <p className="text-[10px] tracking-[0.5em] uppercase mb-5" style={{ color: "#bbbbbb", fontFamily: FM }}>Quick Actions</p>
@@ -1313,32 +2295,38 @@ function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: st
           </div>
         </div>
 
-        {/* Activity */}
+        {/* Live Activity Feed */}
         <div>
           <p className="text-[10px] tracking-[0.5em] uppercase mb-5" style={{ color: "#bbbbbb", fontFamily: FM }}>Recent Activity</p>
           <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            {ACTIVITY.map((a, i) => (
-              <motion.div key={a.id}
-                initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.06 }}
-                className="flex items-start gap-2.5 py-3 px-2 rounded-lg transition-all duration-300"
-                style={{ borderBottom: i < ACTIVITY.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
-                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.022)"}
-                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
-              >
-                <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{
-                  background:
-                    a.type === "pay"     ? "rgba(255,255,255,0.55)" :
-                    a.type === "approve" ? "rgba(255,255,255,0.38)" :
-                    a.type === "team"    ? "rgba(255,255,255,0.22)" :
-                                          "rgba(255,255,255,0.12)",
-                }} />
-                <div>
-                  <p className="text-xs leading-snug" style={{ color: "#cccccc", fontFamily: FB }}>{a.text}</p>
-                  <p className="text-[9px] mt-0.5" style={{ color: "#777777", fontFamily: FM }}>{a.time}</p>
-                </div>
-              </motion.div>
-            ))}
+            {recentActivity.length === 0 ? (
+              <p className="text-xs text-center py-6" style={{ color: "#555", fontFamily: FB }}>No activity yet.</p>
+            ) : (
+              recentActivity.map((a, i) => (
+                <motion.div key={a.id}
+                  initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.06 }}
+                  className="flex items-start gap-2.5 py-3 px-2 rounded-lg transition-all duration-300"
+                  style={{ borderBottom: i < recentActivity.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.022)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{
+                    background: a.status?.toLowerCase() === 'confirmed'
+                      ? "rgba(255,255,255,0.55)"
+                      : "rgba(255,255,255,0.18)",
+                  }} />
+                  <div>
+                    <p className="text-xs leading-snug" style={{ color: "#cccccc", fontFamily: FB }}>
+                      <span className="text-white/80">{a.user?.name ?? a.team?.name ?? 'Someone'}</span>
+                      {" signed up for "}
+                      <span className="text-white/80">{a.eventTitle}</span>
+                    </p>
+                    <p className="text-[9px] mt-0.5" style={{ color: "#777777", fontFamily: FM }}>{timeAgo(a.created_at)}</p>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -1348,10 +2336,18 @@ function OverviewPage({ name, onNavigate }: { name: string; onNavigate: (tab: st
 
 // ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const { isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
   const [view,      setView]      = useState<View>("landing");
   const [authTab,   setAuthTab]   = useState<AuthTab>("login");
   const [mousePos,  setMousePos]  = useState({ x: -9999, y: -9999 });
-  const [userEmail, setUserEmail] = useState("");
+
+  // Auto-navigate to dashboard when Clerk signs in
+  useEffect(() => {
+    if (isSignedIn && view === "auth") {
+      setView("dashboard");
+    }
+  }, [isSignedIn, view]);
 
   useEffect(() => {
     const fn = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -1365,8 +2361,12 @@ export default function App() {
   }, [view]);
 
   const goAuth    = (tab: AuthTab = "login") => { setAuthTab(tab); setView("auth"); };
-  const doLogin   = (email: string) => { setUserEmail(email); setView("dashboard"); };
-  const doSignOut = () => { setUserEmail(""); setView("landing"); };
+  const doSignOut = async () => {
+    await signOut();
+    setView("landing");
+  };
+
+  const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
 
   return (
     <div className="min-h-screen bg-background text-foreground"
@@ -1384,9 +2384,9 @@ export default function App() {
         <div className="blob blob-3" />
       </div>
 
-      {view === "landing" && <LandingPage onEnter={() => goAuth("login")} onRegister={() => goAuth("register")} />}
-      {view === "auth"    && <AuthPage tab={authTab} onTabChange={setAuthTab} onLogin={doLogin} onBack={() => setView("landing")} />}
-      {view === "dashboard" && (
+      {view === "landing" && <LandingPage onEnter={() => isSignedIn ? setView("dashboard") : goAuth("login")} onRegister={() => goAuth("register")} />}
+      {view === "auth"    && <AuthPage tab={authTab} onTabChange={setAuthTab} onBack={() => setView("landing")} />}
+      {(view === "dashboard" || (isSignedIn && view !== "auth" && view !== "landing")) && (
         <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ height: "100vh" }}
         >

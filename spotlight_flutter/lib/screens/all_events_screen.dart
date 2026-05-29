@@ -6,6 +6,8 @@ import '../core/events_provider.dart';
 import '../core/saved_events_provider.dart';
 import '../models/models.dart';
 import 'event_details_screen.dart';
+import '../core/smooth_route.dart';
+import '../widgets/custom_image.dart';
 
 class AllEventsScreen extends StatefulWidget {
   const AllEventsScreen({super.key});
@@ -175,7 +177,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
+        SmoothRoute(
             builder: (_) => EventDetailsScreen(eventId: event.id)),
       ),
       child: Container(
@@ -198,8 +200,8 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                 topLeft: Radius.circular(20),
                 bottomLeft: Radius.circular(20),
               ),
-              child: Image.network(
-                event.imageUrl ??
+              child: CustomImage(
+                url: event.imageUrl ??
                     'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop',
                 width: 100,
                 height: 100,

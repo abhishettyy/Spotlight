@@ -6,6 +6,7 @@ import 'core/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/main_layout.dart';
 import 'screens/auth_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'core/saved_events_provider.dart';
 import 'core/events_provider.dart';
@@ -49,6 +50,8 @@ class SpotlightApp extends StatelessWidget {
               '/main': (context) => const MainLayout(),
               '/onboarding': (context) => const OnboardingScreen(),
             },
+            // Override default route transition duration to feel instant
+            builder: (context, child) => child!,
           );
         },
       ),
@@ -65,6 +68,7 @@ class AppInitializer extends StatefulWidget {
 
 class _AppInitializerState extends State<AppInitializer> {
   bool _initialized = false;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -73,40 +77,65 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
-    // Show splash screen for at least 2 seconds
-    await Future.delayed(const Duration(seconds: 2));
-    
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.tryAutoLogin();
+    setState(() { _hasError = false; });
 
-    if (authProvider.isAuthenticated) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final apiService = ApiService();
-      
-      // 1. Fetch the existing profile (READ-ONLY)
-      // We no longer call 'sync' here because it was overwriting data.
-      final user = await apiService.getProfile(authProvider.userId!);
+    try {
+      // Keep splash visible for at least 2s while we initialize
+      final minSplash = Future.delayed(const Duration(seconds: 2));
 
-      if (user != null) {
-        userProvider.setCurrentUser(user);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.tryAutoLogin();
+
+      if (authProvider.isAuthenticated) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final apiService = ApiService();
+
+        try {
+          // Try to fetch fresh profile — but don't block login if it fails
+          final user = await apiService.getProfile(authProvider.userId!)
+              .timeout(const Duration(seconds: 8));
+          if (user != null) userProvider.setCurrentUser(user);
+        } catch (_) {
+          // Network issue but user is already logged in — let them through
+          // They'll see stale/empty profile data until connection is restored
+        }
+      }
+
+      await minSplash; // ensure splash shows for at least 2s
+
+      if (mounted) setState(() => _initialized = true);
+    } catch (e) {
+      // Only show error if user is NOT logged in and we can't proceed
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        // Already logged in — go through anyway
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) setState(() => _initialized = true);
+      } else {
+        // Not logged in and network failed — show error
+        if (mounted) setState(() => _hasError = true);
       }
     }
-
-    setState(() {
-      _initialized = true;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Error state — no internet or server unreachable
+    if (_hasError) {
+      return _NoInternetScreen(onRetry: _initializeApp);
+    }
+
+    // Still loading — show splash
     if (!_initialized) {
       return const SplashScreen();
     }
-    
+
+    // Ready — route to correct screen
     return Consumer2<AuthProvider, UserProvider>(
       builder: (context, auth, userProvider, child) {
         if (auth.isAuthenticated) {
-          if (userProvider.currentUser != null && userProvider.currentUser!.isProfileIncomplete) {
+          if (userProvider.currentUser != null &&
+              userProvider.currentUser!.isProfileIncomplete) {
             return const OnboardingScreen();
           }
           return const MainLayout();
@@ -114,6 +143,82 @@ class _AppInitializerState extends State<AppInitializer> {
           return const AuthScreen();
         }
       },
+    );
+  }
+}
+
+class _NoInternetScreen extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _NoInternetScreen({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: SpotlightTheme.deepBlack,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.06),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.wifi_off_rounded,
+                  color: Colors.white54,
+                  size: 52,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                'No Connection',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Please check your internet connection and try again.',
+                style: GoogleFonts.inter(
+                  color: Colors.white38,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 36),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: onRetry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SpotlightTheme.crimsonRed,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Try Again',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

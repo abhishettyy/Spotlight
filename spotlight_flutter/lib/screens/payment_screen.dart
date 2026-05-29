@@ -2,12 +2,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import '../core/smooth_route.dart';
+import '../widgets/custom_image.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String eventName;
   final double price;
+  final String? qrUrl;
 
-  const PaymentScreen({super.key, required this.eventName, required this.price});
+  const PaymentScreen({
+    super.key,
+    required this.eventName,
+    required this.price,
+    this.qrUrl,
+  });
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -45,7 +53,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       setState(() => _isSubmitting = false);
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const PaymentPendingScreen()),
+        SmoothRoute(builder: (_) => const PaymentPendingScreen()),
       );
     }
   }
@@ -80,7 +88,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 8),
                       Text(widget.eventName, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
-                      Text('\$${widget.price.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.bold, color: cs.primary)),
+                      Text('₹${widget.price.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.bold, color: cs.primary)),
                     ],
                   ),
                 ),
@@ -100,7 +108,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Colors.grey[300]!),
                         ),
-                        child: Icon(Icons.qr_code_2, size: 150, color: Colors.grey[800]),
+                        child: widget.qrUrl != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: CustomImage(url: widget.qrUrl!, fit: BoxFit.cover),
+                              )
+                            : Icon(Icons.qr_code_2, size: 150, color: Colors.grey[800]),
                       ),
                     ],
                   ),

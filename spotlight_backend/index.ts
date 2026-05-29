@@ -18,8 +18,20 @@ declare global {
 }
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Dynamically mirror any requesting origin for flawless local and mobile Wi-Fi development
+    callback(null, true);
+  },
+  credentials: true
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+app.use((req, res, next) => {
+  console.log(`[HTTP] ${req.method} ${req.path}`);
+  next();
+});
 
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
 const pool = new Pool({ connectionString });
@@ -61,7 +73,7 @@ async function checkPassword(
   if (match) {
     // Silently upgrade to bcrypt
     const hashed = await bcrypt.hash(plain, SALT_ROUNDS);
-    await prisma.profiles.update({ where: { id: upgradeId }, data: { password: hashed } });
+    await prisma.profile.update({ where: { id: upgradeId }, data: { password: hashed } });
   }
   return match;
 }
@@ -82,25 +94,32 @@ app.post('/api/auth/signup', async (req: Request, res: Response): Promise<any> =
   }
 
   try {
-    const existing = await prisma.profiles.findUnique({ where: { email: email.toLowerCase() } });
+    const existing = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
     if (existing) {
       return res.status(400).json({ error: 'An account with this email already exists.' });
+    }
+
+    if (usn) {
+      const existingUsn = await prisma.profile.findUnique({ where: { usn: usn.trim() } });
+      if (existingUsn) {
+        return res.status(400).json({ error: 'An account with this USN already exists.' });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const userId = `user_${crypto.randomBytes(6).toString('hex')}`;
 
-    const profile = await prisma.profiles.create({
+    const profile = await prisma.profile.create({
       data: {
         id: userId,
         email: email.toLowerCase(),
         password: hashedPassword,
-        full_name: name,
+        fullName: name,
         usn: usn || null,
         branch: branch || null,
         phone: phone || null,
-        year: year || null,
-        sem: sem || null,
+        year: year ? parseInt(year, 10) : null,
+        sem: sem ? parseInt(sem, 10) : null,
       }
     });
 
@@ -123,10 +142,32 @@ app.post('/api/auth/login', async (req: Request, res: Response): Promise<any> =>
   }
 
   try {
-    const profile = await prisma.profiles.findUnique({ where: { email: email.toLowerCase() } });
+    let profile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
 
     if (!profile) {
-      return res.status(404).json({ error: 'No account found with this email. Please sign up first.' });
+      // Fallback: Check if a Club with this email exists!
+      const club = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
+      if (club && club.password) {
+        const isMatch = await bcrypt.compare(password, club.password);
+        if (!isMatch) {
+          return res.status(401).json({ error: 'Incorrect password for club account. Please try again.' });
+        }
+
+        // Auto-generate a Profile linked to this club so they can cleanly log in and access the dashboard
+        const userId = `user_${crypto.randomBytes(6).toString('hex')}`;
+        profile = await prisma.profile.create({
+          data: {
+            id: userId,
+            email: email.toLowerCase(),
+            password: club.password, // Keep password hash in sync
+            fullName: `${club.name} Admin`,
+            clubId: club.id,
+          }
+        });
+        console.log(`Auto-created profile ${profile.email} from existing club during login fallback`);
+      } else {
+        return res.status(404).json({ error: 'No account found with this email. Please sign up first.' });
+      }
     }
 
     if (!profile.password) {
@@ -157,7 +198,7 @@ app.post('/api/auth/verify-password', async (req: Request, res: Response): Promi
   }
 
   try {
-    const profile = await prisma.profiles.findUnique({ where: { id: userId } });
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
 
     if (!profile) {
       return res.status(404).json({ error: 'User not found.' });
@@ -183,19 +224,80 @@ app.post('/api/auth/verify-password', async (req: Request, res: Response): Promi
 
 app.post('/api/auth/sync', async (req: Request, res: Response): Promise<any> => {
   try {
-    const clerkUserId = req.auth?.userId || req.body.clerkUserId;
+    const clerkUserId = (req as any).auth?.userId || req.body.clerkUserId;
     const { email, name } = req.body;
+
+    console.log("[Sync] Incoming payload: clerkUserId:", clerkUserId, "email:", email, "name:", name);
 
     if (!clerkUserId) {
       return res.status(401).json({ error: 'Unauthorized: No clerkUserId found.' });
     }
 
-    const profile = await prisma.profiles.upsert({
-      where: { id: clerkUserId },
-      update: { full_name: name || undefined, email: email || undefined },
-      create: { id: clerkUserId, full_name: name || 'Spotlight User', email: email || '' }
-    });
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required to sync profile.' });
+    }
 
+    // Gracefully handle case where a profile with this email already exists under a different Clerk ID
+    let profile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
+    if (profile) {
+      if (profile.id !== clerkUserId) {
+        console.log(`[Sync] Profile with email ${email} already exists under different ID: ${profile.id}. Merging to new Clerk ID: ${clerkUserId}`);
+        const existingClubId = profile.clubId;
+        const usn = profile.usn;
+        const branch = profile.branch;
+        const phone = profile.phone;
+        const year = profile.year;
+        const sem = profile.sem;
+
+        // Delete stale profile first to release the unique email/usn constraints
+        await prisma.profile.delete({ where: { id: profile.id } });
+
+        profile = await prisma.profile.create({
+          data: {
+            id: clerkUserId,
+            fullName: name || profile.fullName,
+            email: email.toLowerCase(),
+            clubId: existingClubId,
+            usn,
+            branch,
+            phone,
+            year,
+            sem,
+          }
+        });
+      } else {
+        // Just update the name
+        profile = await prisma.profile.update({
+          where: { id: clerkUserId },
+          data: { fullName: name || undefined },
+        });
+      }
+    } else {
+      // Upsert by ID if no email conflict exists
+      profile = await prisma.profile.upsert({
+        where: { id: clerkUserId },
+        update: { fullName: name || undefined, email: email || undefined },
+        create: { id: clerkUserId, fullName: name || 'Spotlight User', email: email || '' },
+      });
+    }
+
+    // Check if a club is already registered with this administrator's email!
+    if (!profile.clubId) {
+      const existingClub = await prisma.club.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+
+      if (existingClub) {
+        // Automatically link their profile to the existing club!
+        profile = await prisma.profile.update({
+          where: { id: clerkUserId },
+          data: { clubId: existingClub.id },
+        });
+        console.log(`Auto-linked user ${profile.email} to existing club ID: ${existingClub.id}`);
+      }
+    }
+
+    console.log("[Sync] Synced profile result in DB:", JSON.stringify(profile, null, 2));
     return res.status(200).json({ message: 'Profile synced', profile });
   } catch (error: any) {
     console.error('Profile Sync Error:', error);
@@ -207,7 +309,7 @@ app.post('/api/auth/sync', async (req: Request, res: Response): Promise<any> => 
 
 app.get('/api/profiles/:id', async (req: Request, res: Response): Promise<any> => {
   try {
-    const profile = await prisma.profiles.findUnique({ where: { id: req.params.id as string } });
+    const profile = await prisma.profile.findUnique({ where: { id: req.params.id as string } });
 
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
@@ -228,7 +330,7 @@ app.put('/api/profiles/update', async (req: Request, res: Response): Promise<any
 
     const { usn, branch, phone } = req.body;
 
-    const profile = await prisma.profiles.update({
+    const profile = await prisma.profile.update({
       where: { id: userId },
       data: { usn, branch, phone }
     });
@@ -249,21 +351,21 @@ app.put('/api/profiles/edit', async (req: Request, res: Response): Promise<any> 
     const { full_name, usn, branch, phone, year, sem } = req.body;
 
     if (usn) {
-      const existing = await prisma.profiles.findUnique({ where: { usn } });
+      const existing = await prisma.profile.findUnique({ where: { usn } });
       if (existing && existing.id !== userId) {
         return res.status(400).json({ error: 'This USN is already registered to another account.' });
       }
     }
 
-    const profile = await prisma.profiles.update({
+    const profile = await prisma.profile.update({
       where: { id: userId },
       data: {
-        full_name: full_name || undefined,
+        fullName: full_name || undefined,
         usn: usn || undefined,
         branch: branch || undefined,
         phone: phone || undefined,
-        year: year || undefined,
-        sem: sem || undefined,
+        year: year ? parseInt(year, 10) : undefined,
+        sem: sem ? parseInt(sem, 10) : undefined,
       }
     });
 
@@ -279,23 +381,27 @@ app.put('/api/profiles/edit', async (req: Request, res: Response): Promise<any> 
 
 app.get('/api/events', async (req: Request, res: Response): Promise<any> => {
   try {
-    const events = await prisma.events.findMany({
-      include: { clubs: true },
-      orderBy: { event_date: 'asc' },
+    const events = await prisma.event.findMany({
+      include: { club: true },
+      orderBy: { eventDate: 'asc' },
     });
 
     const mapped = events.map((e) => ({
       id: e.id,
       title: e.name,
-      venue: e.clubs?.name ?? 'TBD',
-      image_url: e.qr_url ?? null,
-      category: e.event_type ?? 'Other',
+      venue: e.venue ?? 'TBD',
+      image_url: e.bannerUrl ?? null,
+      category: e.eventType ?? 'Other',
       price: e.fee ?? 0,
       description: e.description ?? '',
-      date: e.event_date ? e.event_date.toISOString().split('T')[0] : null,
-      registration_deadline: e.registration_deadline,
-      registration_limit: e.registration_limit,
-      club: e.clubs ? { id: e.clubs.id, name: e.clubs.name } : null,
+      date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
+      eventType: e.eventType ?? 'Solo',
+      teamSizeLimit: e.teamSizeLimit,
+      registration_deadline: e.registrationDeadline,
+      registration_limit: e.registrationLimit,
+      club: e.club ? { id: e.club.id, name: e.club.name, upiId: e.club.upiId } : null,
+      qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
+      bannerUrl: e.bannerUrl ?? null,
     }));
 
     return res.status(200).json({ events: mapped });
@@ -307,16 +413,123 @@ app.get('/api/events', async (req: Request, res: Response): Promise<any> => {
 
 app.get('/api/clubs', async (req: Request, res: Response): Promise<any> => {
   try {
-    const clubs = await prisma.clubs.findMany({ orderBy: { name: 'asc' } });
+    const clubs = await prisma.club.findMany({
+      include: { admins: true },
+      orderBy: { name: 'asc' },
+    });
 
     const mapped = clubs.map((c) => ({
-      id: c.id,
-      name: c.name,
-      logo_url: c.logo_url ?? null,
+      id:       c.id,
+      name:     c.name,
+      email:    c.email,
+      logoUrl:  c.logoUrl ?? null,
+      logo_url: c.logoUrl ?? null,
+      upiId:    c.upiId ?? null,
+      qrUrl:    c.qrUrl ?? null,
+      adminIds: (c.admins ?? []).map(a => a.id),
     }));
 
     return res.status(200).json({ clubs: mapped });
   } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new club (called during first-time onboarding)
+// NOTE: This is intentionally placed before the Clerk middleware so it can
+// accept both Clerk-authenticated requests (req.auth.userId) and the
+// clerkUserId body fallback used during the onboarding flow.
+app.post('/api/clubs', async (req: Request, res: Response): Promise<any> => {
+  try {
+    // Accept userId from Clerk auth header OR from body (onboarding flow sends both)
+    const userId = (req as any).auth?.userId || req.body.clerkUserId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized. No user ID provided.' });
+
+    const { name, email, logoUrl, password } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Club name and email are required.' });
+    }
+
+    // Verify the profile exists before creating the club (or auto-create it if this is the first-time custom registration)
+    // To prevent unique constraint violations, if a profile with the same email already exists under a different ID, delete it first.
+    let profile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile) {
+      const existingProfile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
+      if (existingProfile) {
+        console.log(`[Clubs] Stale profile with email ${email} already exists under ID: ${existingProfile.id}. Deleting it first.`);
+        await prisma.profile.delete({ where: { id: existingProfile.id } });
+      }
+
+      profile = await prisma.profile.create({
+        data: {
+          id: userId,
+          fullName: name || 'Club Admin',
+          email: email.toLowerCase(),
+        }
+      });
+      console.log(`Auto-created profile ${profile.email} during club creation fallback`);
+    }
+
+    // If this user already has a club, return it instead of creating a duplicate
+    if (profile.clubId) {
+      const existingClub = await prisma.club.findUnique({ where: { id: profile.clubId } });
+      if (existingClub) {
+        return res.status(200).json({ club: existingClub, alreadyExists: true });
+      }
+    }
+
+    // Check if a club with this email already exists
+    // If it does, we link the user's profile to it and update the password rather than throwing a duplicate error!
+    const existingClub = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
+    if (existingClub) {
+      console.log(`[Clubs] Club with email ${email} already exists. Linking and updating password...`);
+      const hashedPassword = password ? await bcrypt.hash(password, SALT_ROUNDS) : existingClub.password;
+      
+      const club = await prisma.$transaction(async (tx) => {
+        const updatedClub = await tx.club.update({
+          where: { id: existingClub.id },
+          data: {
+            password: hashedPassword,
+          }
+        });
+
+        await tx.profile.update({
+          where: { id: userId },
+          data: { clubId: updatedClub.id },
+        });
+
+        return updatedClub;
+      });
+
+      return res.status(200).json({ club, alreadyLinked: true });
+    }
+
+    // Hash the password if provided for legacy custom logins
+    const hashedPassword = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
+
+    // Atomic write: create club row + assign clubId to profile in one transaction
+    const club = await prisma.$transaction(async (tx) => {
+      const newClub = await tx.club.create({
+        data: {
+          name,
+          email: email.toLowerCase(),
+          logoUrl: logoUrl || null,
+          password: hashedPassword,
+        },
+      });
+
+      await tx.profile.update({
+        where: { id: userId },
+        data: { clubId: newClub.id },
+      });
+
+      return newClub;
+    });
+
+    console.log(`Club created: "${club.name}" (${club.id}) by user ${userId}`);
+    return res.status(201).json({ club });
+  } catch (error: any) {
+    console.error('Create club error:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -335,7 +548,7 @@ const generateUniquePasskey = async (): Promise<string> => {
     for (let i = 0; i < 5; i++) {
       passkey += chars.charAt(bytes[i] % chars.length);
     }
-    const existing = await prisma.teams.findUnique({ where: { passkey } });
+    const existing = await prisma.team.findUnique({ where: { passkey } });
     if (!existing) isUnique = true;
   }
   return passkey;
@@ -346,26 +559,40 @@ app.get('/api/user/tickets', async (req: Request, res: Response): Promise<any> =
     const userId = req.auth?.userId || req.query.userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized.' });
 
-    const registrations = await prisma.registrations.findMany({
-      where: { user_id: userId },
-      include: { events: { include: { clubs: true } }, teams: true },
-      orderBy: { created_at: 'desc' },
+    const registrations = await prisma.registration.findMany({
+      where: { userId: userId },
+      include: { 
+        event: { include: { club: true } }, 
+        team: { include: { registrations: { include: { profile: true } } } } 
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     const tickets = registrations.map((r) => ({
       id: r.id,
       status: r.status,
-      payment_proof_url: r.payment_proof_url,
-      created_at: r.created_at,
-      team: r.teams ? { id: r.teams.id, name: r.teams.team_name, passkey: r.teams.passkey } : null,
-      event: r.events ? {
-        id: r.events.id,
-        title: r.events.name,
-        venue: r.events.clubs?.name ?? 'TBD',
-        date: r.events.event_date ? r.events.event_date.toISOString().split('T')[0] : null,
-        price: r.events.fee ?? 0,
-        qr_url: r.events.qr_url,
-        club: r.events.clubs ? { id: r.events.clubs.id, name: r.events.clubs.name } : null,
+      payment_proof_url: r.paymentProofUrl,
+      created_at: r.createdAt,
+      team: r.team ? { 
+        id: r.team.id, 
+        name: r.team.teamName, 
+        passkey: r.team.passkey,
+        members: r.team.registrations.map((reg: any) => ({
+          id: reg.profile.id,
+          name: reg.profile.fullName,
+          isLeader: reg.profile.id === r.team?.leaderId
+        }))
+      } : null,
+      event: r.event ? {
+        id: r.event.id,
+        title: r.event.name,
+        venue: r.event.venue ?? 'TBD',
+        date: r.event.eventDate ? r.event.eventDate.toISOString().split('T')[0] : null,
+
+        price: r.event.fee ?? 0,
+        image_url: r.event.bannerUrl,
+        qr_url: r.event.qrUrl ?? (r.event.fee > 0 && r.event.club ? r.event.club.qrUrl : null),
+        club: r.event.club ? { id: r.event.club.id, name: r.event.club.name } : null,
       } : null,
     }));
 
@@ -383,22 +610,22 @@ app.post('/api/register', async (req: Request, res: Response): Promise<any> => {
     const { eventId, name, usn } = req.body;
     if (!eventId || !name || !usn) return res.status(400).json({ error: 'Missing fields.' });
 
-    const event = await prisma.events.findUnique({ where: { id: eventId } });
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
-    const alreadyRegistered = await prisma.registrations.findFirst({
-      where: { event_id: eventId, user_id: clerkUserId }
+    const alreadyRegistered = await prisma.registration.findFirst({
+      where: { eventId: eventId, userId: clerkUserId }
     });
     if (alreadyRegistered) return res.status(400).json({ error: 'You are already registered for this event.' });
 
-    if (event.registration_limit) {
-      const count = await prisma.registrations.count({ where: { event_id: eventId } });
-      if (count >= event.registration_limit) return res.status(400).json({ error: 'Event is full.' });
+    if (event.registrationLimit) {
+      const count = await prisma.registration.count({ where: { eventId: eventId } });
+      if (count >= event.registrationLimit) return res.status(400).json({ error: 'Event is full.' });
     }
 
     const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
-    const registration = await prisma.registrations.create({
-      data: { event_id: eventId, user_id: clerkUserId, status }
+    const registration = await prisma.registration.create({
+      data: { eventId: eventId, userId: clerkUserId, status }
     });
 
     return res.status(201).json({ success: true, registration });
@@ -415,23 +642,23 @@ app.post('/api/teams/create', async (req: Request, res: Response): Promise<any> 
     const { eventId, teamName, leaderUsn } = req.body;
     if (!eventId || !teamName || !leaderUsn) return res.status(400).json({ error: 'Missing fields.' });
 
-    const event = await prisma.events.findUnique({ where: { id: eventId } });
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
-    const alreadyRegistered = await prisma.registrations.findFirst({
-      where: { event_id: eventId, user_id: clerkUserId }
+    const alreadyRegistered = await prisma.registration.findFirst({
+      where: { eventId: eventId, userId: clerkUserId }
     });
     if (alreadyRegistered) return res.status(400).json({ error: 'You are already registered for this event.' });
 
     const passkey = await generateUniquePasskey();
 
     const result = await prisma.$transaction(async (tx) => {
-      const team = await tx.teams.create({
-        data: { event_id: eventId, team_name: teamName, passkey, leader_id: clerkUserId }
+      const team = await tx.team.create({
+        data: { eventId: eventId, teamName: teamName, passkey, leaderId: clerkUserId }
       });
       const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
-      const registration = await tx.registrations.create({
-        data: { event_id: eventId, user_id: clerkUserId, team_id: team.id, status }
+      const registration = await tx.registration.create({
+        data: { eventId: eventId, userId: clerkUserId, teamId: team.id, status }
       });
       return { team, registration };
     });
@@ -450,25 +677,113 @@ app.post('/api/teams/join', async (req: Request, res: Response): Promise<any> =>
     const { eventId, passkey } = req.body;
     if (!eventId || !passkey) return res.status(400).json({ error: 'Missing fields.' });
 
-    const team = await prisma.teams.findFirst({
-      where: { event_id: eventId, passkey: passkey.toUpperCase() },
-      include: { events: true }
+    const team = await prisma.team.findFirst({
+      where: { eventId: eventId, passkey: passkey.toUpperCase() },
+      include: { event: true }
     });
     if (!team) return res.status(404).json({ error: 'Invalid passkey.' });
 
-    const alreadyRegistered = await prisma.registrations.findFirst({
-      where: { event_id: eventId, user_id: clerkUserId }
+    const alreadyRegistered = await prisma.registration.findFirst({
+      where: { eventId: eventId, userId: clerkUserId }
     });
     if (alreadyRegistered) return res.status(400).json({ error: 'You are already registered for this event.' });
 
-    const status = (team.events?.fee === 0) ? 'CONFIRMED' : 'PENDING';
-    const registration = await prisma.registrations.create({
-      data: { event_id: eventId, user_id: clerkUserId, team_id: team.id, status }
+    const status = (team.event?.fee === 0) ? 'CONFIRMED' : 'PENDING';
+    const registration = await prisma.registration.create({
+      data: { eventId: eventId, userId: clerkUserId, teamId: team.id, status }
     });
 
     return res.status(201).json({ success: true, registration });
   } catch (error) {
     return res.status(500).json({ error: 'Internal error.' });
+  }
+});
+
+// ── Event Registrations (for dashboard) ──────────────────────────────────────
+
+app.get('/api/events/:id/registrations', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const registrations = await prisma.registration.findMany({
+      where: { eventId: id },
+      include: { profile: true, team: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const mapped = registrations.map(r => ({
+      id: r.id,
+      status: r.status,
+      payment_proof_url: r.paymentProofUrl,
+      created_at: r.createdAt,
+      user: r.profile ? {
+        id: r.profile.id,
+        name: r.profile.fullName,
+        email: r.profile.email,
+        usn: r.profile.usn,
+        branch: r.profile.branch,
+        phone: r.profile.phone,
+      } : null,
+      team: r.team ? {
+        id: r.team.id,
+        name: r.team.teamName,
+        passkey: r.team.passkey,
+      } : null,
+    }));
+
+    return res.status(200).json({ registrations: mapped });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Create Event (for dashboard) ──────────────────────────────────────────────
+
+app.post('/api/events/create', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = req.auth?.userId || req.body.clerkUserId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized.' });
+
+    const { name, description, venue, eventDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, clubId, bannerUrl, qrUrl } = req.body;
+
+    console.log("[CreateEvent] Incoming body keys:", Object.keys(req.body));
+    console.log("[CreateEvent] bannerUrl length:", bannerUrl ? bannerUrl.length : 0);
+    console.log("[CreateEvent] qrUrl length:", qrUrl ? qrUrl.length : 0);
+
+    if (!name) return res.status(400).json({ error: 'Event name is required.' });
+
+    const parsedFee = fee ? parseFloat(fee) : 0;
+    
+    let finalQrUrl = qrUrl || null;
+    if (!finalQrUrl && parsedFee > 0 && clubId) {
+      // Auto-fetch default club QR if not provided
+      const club = await prisma.club.findUnique({ where: { id: clubId } });
+      if (club?.qrUrl) {
+        finalQrUrl = club.qrUrl;
+      }
+    }
+
+    const event = await prisma.event.create({
+      data: {
+        name,
+        description: description || "",
+        venue: venue || "TBD",
+        eventType: eventType || "Solo",
+        teamSizeLimit: eventType === "Team" && teamSizeLimit ? parseInt(teamSizeLimit) : null,
+        fee: parsedFee,
+        registrationLimit: registrationLimit ? parseInt(registrationLimit) : 100,
+        registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),
+        eventDate: eventDate ? new Date(eventDate) : new Date(),
+        clubId: clubId || "",
+        bannerUrl: bannerUrl || null,
+        qrUrl: finalQrUrl,
+      },
+      include: { club: true },
+    });
+
+    return res.status(201).json({ event });
+  } catch (error: any) {
+    console.error('Create event error:', error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -479,19 +794,19 @@ app.get('/api/profiles/:id/stats', async (req: Request, res: Response): Promise<
     const userId = req.params.id;
 
     // Count total registrations (events attended/registered)
-    const eventsCount = await prisma.registrations.count({
-      where: { user_id: userId },
+    const eventsCount = await prisma.registration.count({
+      where: { userId: userId },
     });
 
     // Count distinct clubs from the user's registered events
-    const registrations = await prisma.registrations.findMany({
-      where: { user_id: userId },
-      include: { events: { select: { club_id: true } } },
+    const registrations = await prisma.registration.findMany({
+      where: { userId: userId },
+      include: { event: { select: { clubId: true } } },
     });
 
     const uniqueClubIds = new Set(
       registrations
-        .map(r => r.events?.club_id)
+        .map(r => r.event?.clubId)
         .filter((id): id is string => id != null)
     );
 
@@ -512,13 +827,13 @@ app.get('/api/notifications', async (req: Request, res: Response): Promise<any> 
     const userId = req.auth?.userId || req.query.userId as string;
     if (!userId) return res.status(401).json({ error: 'Unauthorized.' });
 
-    const notifications = await prisma.notifications.findMany({
-      where: { user_id: userId },
-      orderBy: { created_at: 'desc' },
+    const notifications = await prisma.notification.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: 'desc' },
       take: 50,
     });
 
-    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const unreadCount = notifications.filter(n => !n.isRead).length;
 
     return res.status(200).json({ notifications, unreadCount });
   } catch (error: any) {
@@ -532,9 +847,9 @@ app.put('/api/notifications/read', async (req: Request, res: Response): Promise<
     const userId = req.auth?.userId || req.body.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized.' });
 
-    await prisma.notifications.updateMany({
-      where: { user_id: userId, is_read: false },
-      data: { is_read: true },
+    await prisma.notification.updateMany({
+      where: { userId: userId, isRead: false },
+      data: { isRead: true },
     });
 
     return res.status(200).json({ message: 'All notifications marked as read.' });
@@ -549,11 +864,11 @@ app.put('/api/registrations/:id/approve', async (req: Request, res: Response): P
   try {
     const { id } = req.params;
 
-    const registration = await prisma.registrations.findUnique({
+    const registration = await prisma.registration.findUnique({
       where: { id },
       include: {
-        events: { include: { clubs: true } },
-        teams: { include: { registrations: true } },
+        event: { include: { club: true } },
+        team: { include: { registrations: true } },
       },
     });
 
@@ -562,38 +877,41 @@ app.put('/api/registrations/:id/approve', async (req: Request, res: Response): P
       return res.status(400).json({ error: 'Already confirmed.' });
     }
 
-    const eventName = registration.events?.name ?? 'an event';
-    const clubName = registration.events?.clubs?.name ?? 'the club';
+    const eventName = registration.event?.name ?? 'an event';
+    const clubName = registration.event?.club?.name ?? 'the club';
 
     // If it's a team registration, approve all team members' registrations
-    if (registration.team_id && registration.teams) {
-      const teamRegistrations = registration.teams.registrations;
+    if (registration.teamId && registration.team) {
+      const teamRegistrations = registration.team.registrations;
 
       // Confirm all registrations in the team
-      await prisma.registrations.updateMany({
-        where: { team_id: registration.team_id },
+      await prisma.registration.updateMany({
+        where: { teamId: registration.teamId },
         data: { status: 'CONFIRMED' },
       });
 
-      // Notify every team member
-      const notifData = teamRegistrations.map(r => ({
-        user_id: r.user_id!,
+      // Notify only the team members whose registration was PENDING
+      const newlyApproved = teamRegistrations.filter(r => r.status === 'PENDING');
+      const notifData = newlyApproved.map(r => ({
+        userId: r.userId!,
         type: 'registration_approved',
         title: 'Registration Approved! 🎉',
         body: `Your registration for ${eventName} by ${clubName} has been confirmed. See you there!`,
       }));
 
-      await prisma.notifications.createMany({ data: notifData });
+      if (notifData.length > 0) {
+        await prisma.notification.createMany({ data: notifData });
+      }
     } else {
       // Solo registration
-      await prisma.registrations.update({
+      await prisma.registration.update({
         where: { id },
         data: { status: 'CONFIRMED' },
       });
 
-      await prisma.notifications.create({
+      await prisma.notification.create({
         data: {
-          user_id: registration.user_id!,
+          userId: registration.userId!,
           type: 'registration_approved',
           title: 'Registration Approved! 🎉',
           body: `Your registration for ${eventName} by ${clubName} has been confirmed. See you there!`,
@@ -617,11 +935,11 @@ app.post('/api/notifications/event-reminders', async (req: Request, res: Respons
     const endOfDay   = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
     // Find all events happening today
-    const todayEvents = await prisma.events.findMany({
+    const todayEvents = await prisma.event.findMany({
       where: {
-        event_date: { gte: startOfDay, lte: endOfDay },
+        eventDate: { gte: startOfDay, lte: endOfDay },
       },
-      include: { clubs: true },
+      include: { club: true },
     });
 
     if (todayEvents.length === 0) {
@@ -632,26 +950,26 @@ app.post('/api/notifications/event-reminders', async (req: Request, res: Respons
 
     for (const event of todayEvents) {
       // Find all confirmed registrations for this event
-      const registrations = await prisma.registrations.findMany({
-        where: { event_id: event.id, status: 'CONFIRMED' },
+      const registrations = await prisma.registration.findMany({
+        where: { eventId: event.id, status: 'CONFIRMED' },
       });
 
       if (registrations.length === 0) continue;
 
-      const eventTime = event.event_date
-        ? event.event_date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+      const eventTime = event.eventDate
+        ? event.eventDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
         : 'today';
 
       const notifData = registrations
-        .filter(r => r.user_id)
+        .filter(r => r.userId)
         .map(r => ({
-          user_id: r.user_id!,
+          userId: r.userId!,
           type: 'event_reminder',
           title: `${event.name} is Today! 📅`,
-          body: `Your event starts at ${eventTime}. Venue: ${event.clubs?.name ?? 'TBD'}. Don't forget to bring your ticket!`,
+          body: `Your event starts at ${eventTime}. Venue: ${event.club?.name ?? 'TBD'}. Don't forget to bring your ticket!`,
         }));
 
-      await prisma.notifications.createMany({ data: notifData, skipDuplicates: false });
+      await prisma.notification.createMany({ data: notifData });
       totalSent += notifData.length;
     }
 
@@ -662,8 +980,138 @@ app.post('/api/notifications/event-reminders', async (req: Request, res: Respons
   }
 });
 
+app.put('/api/clubs/:id', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const { name, email, logoUrl, upiId, qrUrl, password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to save changes.' });
+    }
+
+    const existingClub = await prisma.club.findUnique({ where: { id } });
+    if (!existingClub) {
+      return res.status(404).json({ error: 'Club not found.' });
+    }
+
+    if (existingClub.password) {
+      const isMatch = await bcrypt.compare(password, existingClub.password);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Incorrect password. Changes not saved.' });
+      }
+    }
+
+    const updatedClub = await prisma.club.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(logoUrl !== undefined && { logoUrl }),
+        ...(upiId !== undefined && { upiId }),
+        ...(qrUrl !== undefined && { qrUrl }),
+      },
+    });
+
+    return res.status(200).json({ club: updatedClub });
+  } catch (error: any) {
+    console.error('Update club error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Dashboard Overview Metrics & Stats ────────────────────────────────────────
+
+app.get('/api/clubs/:id/dashboard-stats', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id: clubId } = req.params;
+
+    // Fetch total events for the club
+    const totalEvents = await prisma.event.count({
+      where: { clubId },
+    });
+
+    // Fetch club events to count upcoming
+    const clubEvents = await prisma.event.findMany({
+      where: { clubId },
+      include: { club: true },
+      orderBy: { eventDate: 'asc' },
+    });
+
+    const upcomingEventsCount = clubEvents.filter(
+      e => e.eventDate && new Date(e.eventDate) >= new Date()
+    ).length;
+
+    // Fetch all registrations across all events of this club
+    const registrations = await prisma.registration.findMany({
+      where: {
+        event: { clubId },
+      },
+      include: {
+        profile: true,
+        team: true,
+        event: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalRegistrations = registrations.length;
+    const pendingCount = registrations.filter(
+      r => r.status === 'PENDING'
+    ).length;
+
+    // Get 5 most recent registrations
+    const recentActivity = registrations.slice(0, 5).map(r => ({
+      id: r.id,
+      status: r.status,
+      created_at: r.createdAt.toISOString(),
+      eventTitle: r.event.name,
+      eventId: r.eventId,
+      user: r.profile ? {
+        id: r.profile.id,
+        name: r.profile.fullName,
+        email: r.profile.email,
+        usn: r.profile.usn,
+        branch: r.profile.branch,
+        phone: r.profile.phone,
+      } : null,
+      team: r.team ? {
+        id: r.team.id,
+        name: r.team.teamName,
+        passkey: r.team.passkey,
+      } : null,
+    }));
+
+    const mappedEvents = clubEvents.map(e => ({
+      id: e.id,
+      title: e.name,
+      date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
+      venue: e.venue ?? 'TBD',
+      capacity: e.registrationLimit ?? 0,
+      type: e.fee > 0 ? 'paid' : 'free',
+      club: e.club?.name ?? '',
+      club_id: e.clubId,
+      status: e.eventDate && new Date(e.eventDate) < new Date() ? 'previous' : 'upcoming',
+      price: e.fee,
+      qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
+      bannerUrl: e.bannerUrl ?? null,
+    }));
+
+    return res.status(200).json({
+      totalEvents,
+      upcomingEventsCount,
+      totalRegistrations,
+      pendingCount,
+      recentActivity,
+      clubEvents: mappedEvents,
+    });
+  } catch (error: any) {
+    console.error('Failed to fetch dashboard stats:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // ── Start Server ──────────────────────────────────────────────────────────────
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Spotlight API running on http://0.0.0.0:${PORT}`);
+  console.log("Server cleanly listening on port 5000");
 });
