@@ -5,7 +5,7 @@ import 'package:spotlight_flutter/models/models.dart';
 import 'user_provider.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.20.52.194:5000/api';
+  static const String baseUrl = 'http://10.20.17.201:5000/api';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
