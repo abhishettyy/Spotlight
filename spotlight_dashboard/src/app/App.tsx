@@ -512,6 +512,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
   // Email verification state
   const [verifying, setVerifying] = useState(false);
+  const [verifyingSignIn, setVerifyingSignIn] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
 
   // Toggle password visibility
@@ -558,11 +559,54 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
       if (result.status === "complete") {
         await setSignInActive({ session: result.createdSessionId });
+      } else if (result.status === "needs_first_factor") {
+        // Find the email code strategy from the first factors (e.g. suspicious login from unrecognized device)
+        const emailCodeFactor = result.supportedFirstFactors.find(
+          (f: any) => f.strategy === "email_code"
+        );
+        
+        if (emailCodeFactor) {
+          await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: emailCodeFactor.emailAddressId,
+          });
+          setVerifyingSignIn(true);
+        } else {
+          setError("Sign in requires additional verification, but email code verification is not configured.");
+        }
       } else {
         setError("Sign in requires additional verification.");
       }
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSignInLoaded) return;
+    if (!verificationCode) {
+      setError("Please enter the verification code.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: "email_code",
+        code: verificationCode,
+      });
+
+      if (result.status === "complete") {
+        await setSignInActive({ session: result.createdSessionId });
+      } else {
+        setError("Verification not complete.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Verification code is incorrect.");
     } finally {
       setLoading(false);
     }
@@ -635,14 +679,14 @@ function AuthPage({ tab, onTabChange, onBack }: {
     }
   };
 
-  if (verifying) {
+  if (verifying || verifyingSignIn) {
     return (
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
         className="fixed inset-0 z-20 flex items-center justify-center p-6"
         style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(10px)" }}
       >
-        <button onClick={() => setVerifying(false)}
+        <button onClick={() => { setVerifying(false); setVerifyingSignIn(false); setError(null); setVerificationCode(""); }}
           className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
           style={{ color: "#999999", fontFamily: FB }}
           onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
@@ -651,11 +695,13 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
         <div className="w-full max-w-md p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Verify Email</h2>
+            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
+              {verifyingSignIn ? "Verify Sign In" : "Verify Email"}
+            </h2>
             <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>We sent a 6-digit verification code to <span className="text-white font-medium">{email}</span>. Please enter it below.</p>
           </div>
 
-          <form onSubmit={handleVerify} className="space-y-6">
+          <form onSubmit={verifyingSignIn ? handleVerifySignIn : handleVerify} className="space-y-6">
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Verification Code</label>
               <input 
