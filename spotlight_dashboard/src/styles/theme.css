@@ -173,11 +173,34 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    cursor: pointer;
   }
 
   input {
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+
+  /* Clickable element UX overrides */
+  a,
+  area,
+  button,
+  select,
+  summary,
+  [role="button"],
+  [role="link"],
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  /* Disabled state overrides */
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [disabled],
+  [aria-disabled="true"] {
+    cursor: not-allowed !important;
   }
 }

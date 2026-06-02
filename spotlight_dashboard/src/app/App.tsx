@@ -34,7 +34,7 @@ interface ClubEvent {
   type: string;
   club: string;
   club_id: string | null;
-  status: "upcoming" | "previous";
+  status: "upcoming" | "previous" | "live";
   price: number;
   bannerUrl?: string | null;
   qrUrl?: string | null;
@@ -497,6 +497,29 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
 
 // ─── Clerk Auth Page ──────────────────────────────────────────────────────────
 // ─── Custom Auth Page ──────────────────────────────────────────────────────────
+// Helper to format authentication errors cleanly
+function formatAuthError(err: any, defaultMsg: string): string {
+  if (!err) return defaultMsg;
+  const msg = err.message || "";
+  
+  if (
+    msg.toLowerCase().includes("network error") || 
+    msg.toLowerCase().includes("failed to fetch") || 
+    msg.toLowerCase().includes("load failed") || 
+    msg.toLowerCase().includes("networkerror") || 
+    (err.name === "TypeError" && msg.toLowerCase().includes("fetch"))
+  ) {
+    return "Connection error. Please check your internet connection and try again.";
+  }
+
+  if (err.errors && err.errors.length > 0) {
+    return err.errors[0].longMessage || err.errors[0].message || defaultMsg;
+  }
+  
+  return msg || defaultMsg;
+}
+
+// ─── Custom Auth Page ──────────────────────────────────────────────────────────
 function AuthPage({ tab, onTabChange, onBack }: {
   tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
 }) {
@@ -522,14 +545,14 @@ function AuthPage({ tab, onTabChange, onBack }: {
     try {
       setError(null);
       if (tab === "login") {
-        if (!isSignInLoaded) return;
+        if (!isSignInLoaded || !signIn) return;
         await signIn.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: "/sso-callback",
           redirectUrlComplete: "/",
         });
       } else {
-        if (!isSignUpLoaded) return;
+        if (!isSignUpLoaded || !signUp) return;
         await signUp.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: "/sso-callback",
@@ -537,13 +560,13 @@ function AuthPage({ tab, onTabChange, onBack }: {
         });
       }
     } catch (err: any) {
-      setError(err.message || "Google Redirect Auth failed.");
+      setError(formatAuthError(err, "Google Redirect Auth failed. Please try again."));
     }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSignInLoaded) return;
+    if (!isSignInLoaded || !signIn) return;
     if (!email || !password) {
       setError("Email and Password are required.");
       return;
@@ -561,14 +584,14 @@ function AuthPage({ tab, onTabChange, onBack }: {
         await setSignInActive({ session: result.createdSessionId });
       } else if (result.status === "needs_first_factor") {
         // Find the email code strategy from the first factors (e.g. suspicious login from unrecognized device)
-        const emailCodeFactor = result.supportedFirstFactors.find(
+        const emailCodeFactor = result.supportedFirstFactors?.find(
           (f: any) => f.strategy === "email_code"
         );
         
         if (emailCodeFactor) {
           await signIn.prepareFirstFactor({
             strategy: "email_code",
-            emailAddressId: emailCodeFactor.emailAddressId,
+            emailAddressId: (emailCodeFactor as any).emailAddressId,
           });
           setVerifyingSignIn(true);
         } else {
@@ -578,7 +601,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
         setError("Sign in requires additional verification.");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please check your credentials.");
+      setError(formatAuthError(err, "Failed to sign in. Please check your credentials."));
     } finally {
       setLoading(false);
     }
@@ -586,7 +609,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
   const handleVerifySignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSignInLoaded) return;
+    if (!isSignInLoaded || !signIn) return;
     if (!verificationCode) {
       setError("Please enter the verification code.");
       return;
@@ -606,7 +629,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
         setError("Verification not complete.");
       }
     } catch (err: any) {
-      setError(err.message || "Verification code is incorrect.");
+      setError(formatAuthError(err, "Verification code is incorrect."));
     } finally {
       setLoading(false);
     }
@@ -614,7 +637,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSignUpLoaded) return;
+    if (!isSignUpLoaded || !signUp) return;
     if (!clubName || !email || !password) {
       setError("Club Name, Email, and Password are required.");
       return;
@@ -632,7 +655,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setVerifying(true);
     } catch (err: any) {
-      setError(err.message || "Failed to initiate sign up.");
+      setError(formatAuthError(err, "Failed to initiate sign up."));
     } finally {
       setLoading(false);
     }
@@ -640,7 +663,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSignUpLoaded) return;
+    if (!isSignUpLoaded || !signUp) return;
     if (!verificationCode) {
       setError("Please enter the verification code.");
       return;
@@ -673,7 +696,7 @@ function AuthPage({ tab, onTabChange, onBack }: {
         setError("Verification not complete.");
       }
     } catch (err: any) {
-      setError(err.message || "Verification code is incorrect.");
+      setError(formatAuthError(err, "Verification code is incorrect."));
     } finally {
       setLoading(false);
     }
@@ -879,9 +902,76 @@ function EventsPage({ EVENTS, allRegistrations, onRegistrationsChange }: {
   onRegistrationsChange: (updater: (prev: Registration[]) => Registration[]) => void;
 }) {
   const { getToken } = useAuth();
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [showTeams, setShowTeams] = useState(false);
+
+  // Parse initial eventId and showTeams from URL
+  const getInitialEventId = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("eventId");
+  };
+
+  const getInitialShowTeams = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("showTeams") === "true";
+  };
+
+  const [selectedEventId, setSelectedEventIdState] = useState<string | null>(getInitialEventId());
+  const [showTeams, setShowTeamsState] = useState(getInitialShowTeams());
   const [regsLoading, setRegsLoading] = useState(false);
+
+  // Custom setters that update URL history
+  const setSelectedEventId = (eventId: string | null, pushHistory = true) => {
+    setSelectedEventIdState(eventId);
+    if (!pushHistory) return;
+
+    const url = new URL(window.location.href);
+    if (eventId) {
+      url.searchParams.set("eventId", eventId);
+    } else {
+      url.searchParams.delete("eventId");
+      url.searchParams.delete("showTeams");
+    }
+
+    const currentParams = new URLSearchParams(window.location.search);
+    if (currentParams.get("eventId") !== eventId) {
+      window.history.pushState({ view: "dashboard", tab: "events", eventId, showTeams: eventId ? showTeams : false }, "", url.toString());
+    }
+  };
+
+  const setShowTeams = (val: boolean, pushHistory = true) => {
+    setShowTeamsState(val);
+    if (!pushHistory) return;
+
+    const url = new URL(window.location.href);
+    if (val) {
+      url.searchParams.set("showTeams", "true");
+    } else {
+      url.searchParams.delete("showTeams");
+    }
+
+    const currentParams = new URLSearchParams(window.location.search);
+    if ((currentParams.get("showTeams") === "true") !== val) {
+      window.history.pushState({ view: "dashboard", tab: "events", eventId: selectedEventId, showTeams: val }, "", url.toString());
+    }
+  };
+
+  // Sync state on popstate (browser back/forward button)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.view === "dashboard" && state.tab === "events") {
+        setSelectedEventIdState(state.eventId || null);
+        setShowTeamsState(state.showTeams || false);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("view") === "dashboard" && params.get("tab") === "events") {
+          setSelectedEventIdState(params.get("eventId") || null);
+          setShowTeamsState(params.get("showTeams") === "true");
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [selectedEventId]);
 
   // Derive per-event registrations from the shared allRegistrations store
   const registrations = selectedEventId
@@ -996,7 +1086,7 @@ function EventsPage({ EVENTS, allRegistrations, onRegistrationsChange }: {
 
     return (
       <div className="p-8 lg:p-10 space-y-8 max-w-6xl">
-        <button onClick={() => { setSelectedEventId(null); setShowTeams(false); }}
+        <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
           className="flex items-center gap-2 text-sm transition-all duration-300"
           style={{ color: "#999999", fontFamily: FB }}
           onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
@@ -2016,14 +2106,55 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
   const { getToken } = useAuth();
   const currentClub = clubs.find((c: any) => c.id === profile?.clubId);
   const name = currentClub?.name ?? profile?.fullName ?? profile?.full_name ?? userEmail.split("@")[0] ?? 'Admin';
-  const [activeTab, setActiveTab] = useState("overview");
+
+  // Parse initial tab from search params
+  const getInitialTab = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "overview";
+  };
+
+  const [activeTab, setActiveTabState] = useState(getInitialTab());
+
+  // Custom setter that updates URL history
+  const setActiveTab = (tab: string, pushHistory = true) => {
+    setActiveTabState(tab);
+    if (!pushHistory) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    
+    const currentParams = new URLSearchParams(window.location.search);
+    if (currentParams.get("tab") !== tab) {
+      window.history.pushState({ view: "dashboard", tab }, "", url.toString());
+    }
+  };
+
+  // Sync state on popstate (browser back/forward button)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.view === "dashboard" && state.tab) {
+        setActiveTabState(state.tab);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("view") === "dashboard") {
+          setActiveTabState(params.get("tab") || "overview");
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     if (profile) {
       if (!profile.clubId) {
-        setActiveTab("onboarding");
+        setActiveTab("onboarding", false);
       } else {
-        setActiveTab("overview");
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get("tab") || activeTab === "onboarding") {
+          setActiveTab("overview", false);
+        }
       }
     }
   }, [profile]);
@@ -2384,14 +2515,75 @@ function OverviewPage({
 export default function App() {
   const { isSignedIn, signOut } = useAuth();
   const { user } = useUser();
-  const [view,      setView]      = useState<View>("landing");
-  const [authTab,   setAuthTab]   = useState<AuthTab>("login");
+  // Helper to parse initial search parameters
+  const getInitialParams = () => {
+    if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab };
+    const params = new URLSearchParams(window.location.search);
+    const v = (params.get("view") as View) || "landing";
+    const t = (params.get("authTab") as AuthTab) || "login";
+    return { view: v, authTab: t };
+  };
+
+  const initial = getInitialParams();
+  const [view,      setView]      = useState<View>(initial.view);
+  const [authTab,   setAuthTab]   = useState<AuthTab>(initial.authTab);
   const [mousePos,  setMousePos]  = useState({ x: -9999, y: -9999 });
+
+  // Sync state changes with the URL and push to browser history
+  const updateNavigation = (newView: View, newAuthTab?: AuthTab) => {
+    setView(newView);
+    if (newAuthTab) setAuthTab(newAuthTab);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", newView);
+    if (newView === "auth" && (newAuthTab || authTab)) {
+      url.searchParams.set("authTab", newAuthTab || authTab);
+    } else {
+      url.searchParams.delete("authTab");
+    }
+
+    // Keep active tab synced if moving to dashboard
+    if (newView === "dashboard") {
+      const tab = url.searchParams.get("tab") || "overview";
+      url.searchParams.set("tab", tab);
+    } else {
+      url.searchParams.delete("tab");
+      url.searchParams.delete("eventId");
+      url.searchParams.delete("showTeams");
+    }
+
+    const currentParams = new URLSearchParams(window.location.search);
+    const hasChanged = currentParams.get("view") !== newView || 
+                       (newView === "auth" && currentParams.get("authTab") !== (newAuthTab || authTab));
+
+    if (hasChanged) {
+      window.history.pushState({ view: newView, authTab: newAuthTab || authTab }, "", url.toString());
+    }
+  };
+
+  // Sync state on popstate (browser back/forward or mobile swipe gestures)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.view) {
+        setView(state.view);
+        if (state.authTab) setAuthTab(state.authTab);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const v = (params.get("view") as View) || "landing";
+        const t = (params.get("authTab") as AuthTab) || "login";
+        setView(v);
+        setAuthTab(t);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Auto-navigate to dashboard when Clerk signs in
   useEffect(() => {
     if (isSignedIn && view === "auth") {
-      setView("dashboard");
+      updateNavigation("dashboard");
     }
   }, [isSignedIn, view]);
 
@@ -2406,9 +2598,12 @@ export default function App() {
     return () => { document.body.style.overflow = ""; };
   }, [view]);
 
-  const goAuth    = (tab: AuthTab = "login") => { setAuthTab(tab); setView("auth"); };
+  const goAuth    = (tab: AuthTab = "login") => { updateNavigation("auth", tab); };
   const doSignOut = async () => {
     await signOut();
+    const url = new URL(window.location.href);
+    url.search = ""; // clear all routing parameters
+    window.history.pushState({ view: "landing" }, "", url.toString());
     setView("landing");
   };
 
@@ -2430,7 +2625,7 @@ export default function App() {
         <div className="blob blob-3" />
       </div>
 
-      {view === "landing" && <LandingPage onEnter={() => isSignedIn ? setView("dashboard") : goAuth("login")} onRegister={() => goAuth("register")} />}
+      {view === "landing" && <LandingPage onEnter={() => isSignedIn ? updateNavigation("dashboard") : goAuth("login")} onRegister={() => goAuth("register")} />}
       {view === "auth"    && <AuthPage tab={authTab} onTabChange={setAuthTab} onBack={() => setView("landing")} />}
       {(view === "dashboard" || (isSignedIn && view !== "auth" && view !== "landing")) && (
         <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}

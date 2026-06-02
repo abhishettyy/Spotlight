@@ -29,7 +29,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
     try {
       final userId =
           Provider.of<UserProvider>(context, listen: false).currentUser?.id;
-      if (userId == null) throw Exception('Not logged in');
+      if (userId == null) throw AppException('Not logged in');
 
       // Fetch user tickets and extract unique clubs
       final tickets = await ApiService().fetchUserTickets();
@@ -99,8 +99,22 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
                               const SizedBox(height: 12),
                               Text('Could not load clubs',
                                   style: GoogleFonts.inter(
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 16),
+                                      fontWeight: FontWeight.bold, fontSize: 16)),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                                child: Text(
+                                    (_error != null &&
+                                            (_error!.toLowerCase().contains('socketexception') ||
+                                                _error!.toLowerCase().contains('connection') ||
+                                                _error!.toLowerCase().contains('timeout') ||
+                                                _error!.toLowerCase().contains('clientexception')))
+                                        ? 'Please check your internet connection and try again.'
+                                        : (_error ?? ''),
+                                    style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                                    textAlign: TextAlign.center),
+                              ),
+                              const SizedBox(height: 24),
                               ElevatedButton(
                                   onPressed: _load,
                                   child: const Text('Retry')),

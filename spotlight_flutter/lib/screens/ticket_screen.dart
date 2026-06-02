@@ -162,7 +162,14 @@ class _TicketScreenState extends State<TicketScreen> {
                 style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
-            Text(_error ?? '',
+            Text(
+                (_error != null &&
+                        (_error!.toLowerCase().contains('socketexception') ||
+                            _error!.toLowerCase().contains('connection') ||
+                            _error!.toLowerCase().contains('timeout') ||
+                            _error!.toLowerCase().contains('clientexception')))
+                    ? 'Please check your internet connection and try again.'
+                    : (_error ?? ''),
                 style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),

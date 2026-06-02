@@ -9,6 +9,7 @@ class UserModel {
   final String? phone;
   final String? year;
   final String? sem;
+  final String? clubId;
 
   UserModel({
     required this.id,
@@ -19,6 +20,7 @@ class UserModel {
     this.phone,
     this.year,
     this.sem,
+    this.clubId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class UserModel {
       phone: json['phone'],
       year: json['year']?.toString(),
       sem: json['sem']?.toString(),
+      clubId: json['clubId'] ?? json['club_id'],
     );
   }
 
@@ -44,13 +47,18 @@ class UserModel {
       'phone': phone,
       'year': year,
       'sem': sem,
+      'clubId': clubId,
     };
   }
 
-  bool get isProfileIncomplete =>
-      usn == null || usn!.isEmpty ||
-      branch == null || branch!.isEmpty ||
-      phone == null || phone!.isEmpty;
+  bool get isProfileIncomplete {
+    if (clubId != null && clubId!.isNotEmpty) {
+      return false; // Club admins do not require student onboarding
+    }
+    return usn == null || usn!.isEmpty ||
+        branch == null || branch!.isEmpty ||
+        phone == null || phone!.isEmpty;
+  }
 }
 
 class UserProvider with ChangeNotifier {

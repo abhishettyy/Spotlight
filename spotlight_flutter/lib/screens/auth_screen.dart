@@ -74,7 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
           }
         }
       } else {
-        throw Exception("Failed to sync profile with server.");
+        throw AppException("Failed to sync profile with server.");
       }
     } catch (e) {
       if (mounted) {

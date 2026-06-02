@@ -345,7 +345,62 @@ class _HomeScreenState extends State<HomeScreen> {
                     return SizedBox(
                       height: 280,
                       child: Center(
-                        child: Text('Error: ${provider.errorMessage}'),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.wifi_off_rounded,
+                                size: 48,
+                                color: subTextColor.withOpacity(0.6),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Unable to load events',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                provider.errorMessage.toLowerCase().contains('socketexception') ||
+                                        provider.errorMessage.toLowerCase().contains('connection') ||
+                                        provider.errorMessage.toLowerCase().contains('timeout') ||
+                                        provider.errorMessage.toLowerCase().contains('clientexception')
+                                    ? 'Please check your internet connection and try again.'
+                                    : 'Something went wrong. Please try again later.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: subTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: provider.loadEvents,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 10),
+                                ),
+                                child: Text(
+                                  'Retry',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   }
@@ -424,6 +479,50 @@ class _HomeScreenState extends State<HomeScreen> {
                     return const SizedBox(
                       height: 90,
                       child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (clubsProvider.error.isNotEmpty) {
+                    return SizedBox(
+                      height: 90,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.cloud_off_rounded, size: 16, color: subTextColor),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  clubsProvider.error.toLowerCase().contains('socketexception') ||
+                                          clubsProvider.error.toLowerCase().contains('connection') ||
+                                          clubsProvider.error.toLowerCase().contains('timeout') ||
+                                          clubsProvider.error.toLowerCase().contains('clientexception')
+                                      ? 'Connection error. Please try again.'
+                                      : 'Unable to load active clubs.',
+                                  style: GoogleFonts.inter(color: subTextColor, fontSize: 12),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: clubsProvider.load,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: primaryColor,
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Retry',
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     );
                   }
                   if (clubsProvider.clubs.isEmpty) {

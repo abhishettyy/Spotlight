@@ -4,8 +4,50 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotlight_flutter/models/models.dart';
 import 'user_provider.dart';
 
+class AppException implements Exception {
+  final String message;
+  AppException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
-  static const String baseUrl = 'http://10.20.52.194:5000/api';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:5000/api',
+  );
+
+  static String formatExceptionMessage(dynamic error, String defaultMsg) {
+    final errStr = error.toString().toLowerCase();
+    
+    if (errStr.contains('socketexception') || 
+        errStr.contains('connection timed out') || 
+        errStr.contains('clientexception') ||
+        errStr.contains('connection refused') ||
+        errStr.contains('handshake failed') ||
+        errStr.contains('failed host lookup') ||
+        errStr.contains('host lookup failed')) {
+      return 'Connection error. Please check your internet connection and try again.';
+    }
+    
+    if (errStr.contains('500') || errStr.contains('internal server error')) {
+      return 'Internal server error. Please try again later.';
+    }
+    
+    String cleanMsg = error.toString();
+    if (cleanMsg.startsWith('Exception: ')) {
+      cleanMsg = cleanMsg.substring('Exception: '.length);
+    }
+    if (cleanMsg.startsWith('Error fetching')) {
+      final parts = cleanMsg.split(': ');
+      if (parts.length > 1) {
+        cleanMsg = parts.sublist(1).join(': ');
+      }
+    }
+    
+    return cleanMsg.isNotEmpty ? cleanMsg : defaultMsg;
+  }
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -42,10 +84,10 @@ class ApiService {
         }
         return eventsJson.map((e) => EventModel.fromJson(e as Map<String, dynamic>)).toList();
       } else {
-        throw Exception('Failed to load events: ${response.statusCode}');
+        throw AppException('Failed to load events: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error fetching events: $e');
+      throw AppException(formatExceptionMessage(e, 'Failed to fetch events.'));
     }
   }
 
@@ -69,10 +111,10 @@ class ApiService {
         }
         return clubsJson.map((e) => ClubModel.fromJson(e as Map<String, dynamic>)).toList();
       } else {
-        throw Exception('Failed to load clubs: ${response.statusCode}');
+        throw AppException('Failed to load clubs: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error fetching clubs: $e');
+      throw AppException(formatExceptionMessage(e, 'Failed to fetch clubs.'));
     }
   }
 
@@ -84,24 +126,28 @@ class ApiService {
     required String name,
     required String usn,
   }) async {
-    final headers = await _getHeaders();
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('userId') ?? '';
+    try {
+      final headers = await _getHeaders();
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('userId') ?? '';
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/register'),
-      headers: headers,
-      body: json.encode({
-        'eventId': eventId,
-        'name': name,
-        'usn': usn,
-        'clerkUserId': userId,
-      }),
-    );
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: headers,
+        body: json.encode({
+          'eventId': eventId,
+          'name': name,
+          'usn': usn,
+          'clerkUserId': userId,
+        }),
+      );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      final data = json.decode(response.body);
-      throw Exception(data['error'] ?? 'Registration failed');
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final data = json.decode(response.body);
+        throw AppException(data['error'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Registration failed. Please check your connection.'));
     }
   }
 
@@ -111,26 +157,30 @@ class ApiService {
     required String teamName,
     required String leaderUsn,
   }) async {
-    final headers = await _getHeaders();
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('userId') ?? '';
+    try {
+      final headers = await _getHeaders();
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('userId') ?? '';
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/teams/create'),
-      headers: headers,
-      body: json.encode({
-        'eventId': eventId,
-        'teamName': teamName,
-        'leaderUsn': leaderUsn,
-        'clerkUserId': userId,
-      }),
-    );
+      final response = await http.post(
+        Uri.parse('$baseUrl/teams/create'),
+        headers: headers,
+        body: json.encode({
+          'eventId': eventId,
+          'teamName': teamName,
+          'leaderUsn': leaderUsn,
+          'clerkUserId': userId,
+        }),
+      );
 
-    final data = json.decode(response.body);
-    if (response.statusCode == 201) {
-      return data['passkey'] as String;
-    } else {
-      throw Exception(data['error'] ?? 'Failed to create team');
+      final data = json.decode(response.body);
+      if (response.statusCode == 201) {
+        return data['passkey'] as String;
+      } else {
+        throw AppException(data['error'] ?? 'Failed to create team');
+      }
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Failed to create team. Please check your connection.'));
     }
   }
 
@@ -139,23 +189,27 @@ class ApiService {
     required String eventId,
     required String passkey,
   }) async {
-    final headers = await _getHeaders();
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('userId') ?? '';
+    try {
+      final headers = await _getHeaders();
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('userId') ?? '';
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/teams/join'),
-      headers: headers,
-      body: json.encode({
-        'eventId': eventId,
-        'passkey': passkey,
-        'clerkUserId': userId,
-      }),
-    );
+      final response = await http.post(
+        Uri.parse('$baseUrl/teams/join'),
+        headers: headers,
+        body: json.encode({
+          'eventId': eventId,
+          'passkey': passkey,
+          'clerkUserId': userId,
+        }),
+      );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      final data = json.decode(response.body);
-      throw Exception(data['error'] ?? 'Failed to join team');
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final data = json.decode(response.body);
+        throw AppException(data['error'] ?? 'Failed to join team');
+      }
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Failed to join team. Please check your connection.'));
     }
   }
 
@@ -184,10 +238,10 @@ class ApiService {
             .map((t) => TicketModel.fromJson(t as Map<String, dynamic>))
             .toList();
       } else {
-        throw Exception('Failed to load tickets: ${response.statusCode}');
+        throw AppException('Failed to load tickets: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error fetching tickets: $e');
+      throw AppException(formatExceptionMessage(e, 'Failed to fetch tickets.'));
     }
   }
 
@@ -214,10 +268,10 @@ class ApiService {
           'unreadCount': data['unreadCount'] ?? 0,
         };
       } else {
-        throw Exception('Failed to load notifications: ${response.statusCode}');
+        throw AppException('Failed to load notifications: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error fetching notifications: $e');
+      throw AppException(formatExceptionMessage(e, 'Failed to fetch notifications.'));
     }
   }
 
@@ -271,10 +325,10 @@ class ApiService {
         await prefs.setString('userId', data['profile']['id'] as String);
         return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
       } else {
-        throw Exception(data['error'] ?? 'Signup failed');
+        throw AppException(data['error'] ?? 'Signup failed');
       }
     } catch (e) {
-      rethrow;
+      throw AppException(formatExceptionMessage(e, 'Signup failed. Please check your connection.'));
     }
   }
 
@@ -300,10 +354,10 @@ class ApiService {
         await prefs.setString('userId', data['profile']['id'] as String);
         return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
       } else {
-        throw Exception(data['error'] ?? 'Login failed');
+        throw AppException(data['error'] ?? 'Login failed');
       }
     } catch (e) {
-      rethrow;
+      throw AppException(formatExceptionMessage(e, 'Login failed. Please check your connection.'));
     }
   }
 
@@ -376,12 +430,12 @@ class ApiService {
         return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
       } else {
         final data = json.decode(response.body);
-        throw Exception(data['error'] ?? 'Failed to sync profile');
+        throw AppException(data['error'] ?? 'Failed to sync profile');
       }
     } catch (e) {
       // ignore: avoid_print
       print('Profile sync error: $e');
-      rethrow;
+      throw AppException(formatExceptionMessage(e, 'Failed to sync profile.'));
     }
   }
 
@@ -410,10 +464,10 @@ class ApiService {
         return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
       } else {
         final data = json.decode(response.body);
-        throw Exception(data['error'] ?? 'Failed to update profile');
+        throw AppException(data['error'] ?? 'Failed to update profile');
       }
     } catch (e) {
-      throw Exception('Error updating profile: $e');
+      throw AppException(formatExceptionMessage(e, 'Failed to update profile.'));
     }
   }
 
@@ -437,9 +491,9 @@ class ApiService {
       if (response.statusCode == 200) return true;
 
       final data = json.decode(response.body);
-      throw Exception(data['error'] ?? 'Incorrect password.');
+      throw AppException(data['error'] ?? 'Incorrect password.');
     } catch (e) {
-      rethrow;
+      throw AppException(formatExceptionMessage(e, 'Failed to verify password.'));
     }
   }
 
@@ -474,10 +528,10 @@ class ApiService {
         return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
       } else {
         final data = json.decode(response.body);
-        throw Exception(data['error'] ?? 'Failed to update profile');
+        throw AppException(data['error'] ?? 'Failed to update profile');
       }
     } catch (e) {
-      throw Exception('Error updating profile: $e');
+      throw AppException(formatExceptionMessage(e, 'Failed to update profile.'));
     }
   }
 }
