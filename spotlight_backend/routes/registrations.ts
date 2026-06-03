@@ -164,7 +164,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
 });
 
 // PUT /api/registrations/:id/approve — Approve a pending registration (Protected)
-router.put('/:id/approve', requireAuth, async (req: Request, res: Response): Promise<any> => {
+router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
 
