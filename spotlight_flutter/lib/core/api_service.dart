@@ -15,7 +15,7 @@ class AppException implements Exception {
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:5000/api',
+    defaultValue: 'http://192.168.1.35:5000/api',
   );
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {
@@ -120,8 +120,8 @@ class ApiService {
 
   // ── Registration ─────────────────────────────────────────────────────────
 
-  /// Solo registration for an event.
-  Future<void> registerSolo({
+  /// Solo registration for an event. Returns registration ID.
+  Future<String> registerSolo({
     required String eventId,
     required String name,
     required String usn,
@@ -142,8 +142,10 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        final data = json.decode(response.body);
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return data['registration']['id'] as String;
+      } else {
         throw AppException(data['error'] ?? 'Registration failed');
       }
     } catch (e) {
@@ -151,8 +153,8 @@ class ApiService {
     }
   }
 
-  /// Create a team for an event. Returns the generated passkey.
-  Future<String> createTeam({
+  /// Create a team for an event. Returns the passkey and leader's registrationId.
+  Future<Map<String, String>> createTeam({
     required String eventId,
     required String teamName,
     required String leaderUsn,
@@ -175,7 +177,10 @@ class ApiService {
 
       final data = json.decode(response.body);
       if (response.statusCode == 201) {
-        return data['passkey'] as String;
+        return {
+          'passkey': data['passkey'] as String,
+          'registrationId': data['registrationId'] as String,
+        };
       } else {
         throw AppException(data['error'] ?? 'Failed to create team');
       }
@@ -210,6 +215,32 @@ class ApiService {
       }
     } catch (e) {
       throw AppException(formatExceptionMessage(e, 'Failed to join team. Please check your connection.'));
+    }
+  }
+
+  /// Uploads the payment proof screenshot and transaction ID for a registration.
+  Future<void> uploadPaymentProof({
+    required String registrationId,
+    required String base64Image,
+    required String transactionId,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl/registrations/$registrationId/payment'),
+        headers: headers,
+        body: json.encode({
+          'paymentProof': base64Image,
+          'transactionId': transactionId,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final data = json.decode(response.body);
+        throw AppException(data['error'] ?? 'Failed to upload payment proof');
+      }
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Failed to upload payment proof. Please check your connection.'));
     }
   }
 

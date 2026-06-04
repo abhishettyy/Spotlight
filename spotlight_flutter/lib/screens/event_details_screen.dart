@@ -37,6 +37,7 @@ class EventDetailsScreen extends StatelessWidget {
         price: 0,
         description: 'No details available.',
         date: 'No Date',
+        registrationCount: 0,
       ),
     );
 
@@ -145,7 +146,7 @@ class EventDetailsScreen extends StatelessWidget {
                             Icon(Icons.people_outline,
                                 size: 14, color: pillIcon),
                             const SizedBox(width: 4),
-                            Text('247 going',
+                            Text('${event.registrationCount} going',
                                 style: GoogleFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -229,6 +230,7 @@ class EventDetailsScreen extends StatelessWidget {
                         qrUrl: event.qrUrl,
                         eventType: event.eventType,
                         teamSizeLimit: event.teamSizeLimit,
+                        upiId: event.upiId,
                       ),
                     ),
                   );

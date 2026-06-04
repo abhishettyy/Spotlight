@@ -21,6 +21,13 @@ export async function fetchPublicStats() {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
+export async function clubLogin(email: string, password: string) {
+  return request('/auth/club-login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
 export async function syncProfile(
   clerkUserId: string,
   email: string,

@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { clerkClient } from '@clerk/clerk-sdk-node';
+import { uploadBase64Image, deleteImage } from '../utils/storage';
+
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -70,6 +72,9 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
     if (!profile) {
       const existingProfile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
       if (existingProfile) {
+        if (existingProfile.clubId === null) {
+          return res.status(400).json({ error: 'This email is already registered to a student account.' });
+        }
         console.log(`[Clubs] Stale profile with email ${email} already exists under ID: ${existingProfile.id}. Deleting it first.`);
         await prisma.profile.delete({ where: { id: existingProfile.id } });
       }
@@ -121,16 +126,20 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
     // Hash the password if provided for legacy custom logins
     const hashedPassword = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
 
+    // Upload logo to Supabase Storage if it is base64 encoded
+    const finalLogoUrl = logoUrl ? await uploadBase64Image(logoUrl, 'clubs/logos') : null;
+
     // Atomic write: create club row + assign clubId to profile in one transaction
     const club = await prisma.$transaction(async (tx) => {
       const newClub = await tx.club.create({
         data: {
           name,
           email: email.toLowerCase(),
-          logoUrl: logoUrl || null,
+          logoUrl: finalLogoUrl,
           password: hashedPassword,
         },
       });
+
 
       await tx.profile.update({
         where: { id: userId },
@@ -170,14 +179,52 @@ router.put('/:id', async (req: Request, res: Response): Promise<any> => {
       }
     }
 
+    let finalLogoUrl = existingClub.logoUrl;
+    if (logoUrl !== undefined) {
+      if (logoUrl) {
+        finalLogoUrl = await uploadBase64Image(logoUrl, 'clubs/logos');
+        if (existingClub.logoUrl && existingClub.logoUrl !== finalLogoUrl) {
+          deleteImage(existingClub.logoUrl).catch(err => 
+            console.error('[Storage] Error deleting old logo:', err)
+          );
+        }
+      } else {
+        finalLogoUrl = null;
+        if (existingClub.logoUrl) {
+          deleteImage(existingClub.logoUrl).catch(err => 
+            console.error('[Storage] Error deleting old logo:', err)
+          );
+        }
+      }
+    }
+
+    let finalQrUrl = existingClub.qrUrl;
+    if (qrUrl !== undefined) {
+      if (qrUrl) {
+        finalQrUrl = await uploadBase64Image(qrUrl, 'clubs/qrs');
+        if (existingClub.qrUrl && existingClub.qrUrl !== finalQrUrl) {
+          deleteImage(existingClub.qrUrl).catch(err => 
+            console.error('[Storage] Error deleting old QR:', err)
+          );
+        }
+      } else {
+        finalQrUrl = null;
+        if (existingClub.qrUrl) {
+          deleteImage(existingClub.qrUrl).catch(err => 
+            console.error('[Storage] Error deleting old QR:', err)
+          );
+        }
+      }
+    }
+
     const updatedClub = await prisma.club.update({
       where: { id },
       data: {
         ...(name && { name }),
         ...(email && { email }),
-        ...(logoUrl !== undefined && { logoUrl }),
+        logoUrl: finalLogoUrl,
         ...(upiId !== undefined && { upiId }),
-        ...(qrUrl !== undefined && { qrUrl }),
+        qrUrl: finalQrUrl,
       },
     });
 
@@ -228,18 +275,50 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       orderBy: { createdAt: 'desc' },
     });
 
-    const totalRegistrations = registrations.length;
-    const pendingCount = registrations.filter(
-      r => r.status === 'PENDING'
+    // Helper: Identify which teams have a leader who uploaded a payment proof
+    const teamIdsWithPayment = new Set(
+      registrations
+        .filter(r => r.teamId && r.paymentProofUrl !== null)
+        .map(r => r.teamId)
+    );
+
+    // Filter registrations to show to the club
+    const filteredRegistrations = registrations.filter(r => {
+      if (r.event.fee === 0) return true;
+      if (r.paymentProofUrl !== null) return true;
+      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
+      return false;
+    });
+
+    // Count unique registered teams + individuals
+    const uniqueTeamIds = new Set(
+      filteredRegistrations
+        .map(r => r.teamId)
+        .filter((id): id is string => id !== null)
+    );
+    const soloCount = filteredRegistrations.filter(r => r.teamId === null).length;
+    const totalRegistrations = soloCount + uniqueTeamIds.size;
+
+    // Count unique pending teams + pending individuals
+    const pendingTeamIds = new Set(
+      filteredRegistrations
+        .filter(r => r.status === 'PENDING' && r.teamId !== null)
+        .map(r => r.teamId)
+    );
+    const pendingSoloCount = filteredRegistrations.filter(
+      r => r.status === 'PENDING' && r.teamId === null
     ).length;
+    const pendingCount = pendingSoloCount + pendingTeamIds.size;
 
     // Get 5 most recent registrations
-    const recentActivity = registrations.slice(0, 5).map(r => ({
+    const recentActivity = filteredRegistrations.slice(0, 5).map(r => ({
       id: r.id,
       status: r.status,
       created_at: r.createdAt.toISOString(),
       eventTitle: r.event.name,
       eventId: r.eventId,
+      paymentProofUrl: r.paymentProofUrl,
+      transactionId: r.transactionId,
       user: r.profile ? {
         id: r.profile.id,
         name: r.profile.fullName,

@@ -69,6 +69,11 @@ router.post('/signup', async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'An account with this email already exists.' });
     }
 
+    const existingClub = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
+    if (existingClub) {
+      return res.status(400).json({ error: 'This email is registered to a club account.' });
+    }
+
     if (usn) {
       const existingUsn = await prisma.profile.findUnique({ where: { usn: usn.trim() } });
       if (existingUsn) {
@@ -113,32 +118,15 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
   }
 
   try {
-    let profile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
+    let profile = await prisma.profile.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        clubId: null
+      }
+    });
 
     if (!profile) {
-      // Fallback: Check if a Club with this email exists!
-      const club = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
-      if (club && club.password) {
-        const isMatch = await bcrypt.compare(password, club.password);
-        if (!isMatch) {
-          return res.status(401).json({ error: 'Incorrect password for club account. Please try again.' });
-        }
-
-        // Auto-generate a Profile linked to this club so they can cleanly log in and access the dashboard
-        const userId = `user_${crypto.randomBytes(6).toString('hex')}`;
-        profile = await prisma.profile.create({
-          data: {
-            id: userId,
-            email: email.toLowerCase(),
-            password: club.password, // Keep password hash in sync
-            fullName: `${club.name} Admin`,
-            clubId: club.id,
-          }
-        });
-        console.log(`Auto-created profile ${profile.email} from existing club during login fallback`);
-      } else {
-        return res.status(404).json({ error: 'No account found with this email. Please sign up first.' });
-      }
+      return res.status(404).json({ error: 'No student account found with this email. Please sign up first.' });
     }
 
     if (!profile.password) {
@@ -157,6 +145,54 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
     return res.status(200).json({ message: 'Logged in successfully', profile: safeProfile, token });
   } catch (error: any) {
     console.error('Login Error:', error);
+    return res.status(500).json({ error: 'Login failed: ' + error.message });
+  }
+});
+
+// ── Club Login (Dashboard Direct) ───────────────────────────────────────────
+router.post('/club-login', async (req: Request, res: Response): Promise<any> => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and Password are required.' });
+  }
+
+  try {
+    const club = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
+    if (!club) {
+      return res.status(404).json({ error: 'Club account with this email does not exist.' });
+    }
+
+    if (!club.password) {
+      return res.status(400).json({ error: 'This club account uses social sign-in. Please use the Google button.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, club.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
+    }
+
+    // Find or auto-create a profile linked to this club
+    let profile = await prisma.profile.findFirst({ where: { clubId: club.id } });
+    if (!profile) {
+      const userId = `user_${crypto.randomBytes(6).toString('hex')}`;
+      profile = await prisma.profile.create({
+        data: {
+          id: userId,
+          email: email.toLowerCase(),
+          password: club.password,
+          fullName: `${club.name} Admin`,
+          clubId: club.id,
+        }
+      });
+      console.log(`Auto-created profile ${profile.email} during direct club login`);
+    }
+
+    const token = signToken(profile.id);
+    const { password: _pw, ...safeProfile } = profile as any;
+    return res.status(200).json({ message: 'Logged in successfully', profile: safeProfile, token });
+  } catch (error: any) {
+    console.error('Club Login Error:', error);
     return res.status(500).json({ error: 'Login failed: ' + error.message });
   }
 });

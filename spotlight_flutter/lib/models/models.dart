@@ -134,6 +134,8 @@ class EventModel {
   final String? qrUrl;
   final String? eventType;
   final int? teamSizeLimit;
+  final String? upiId;
+  final int registrationCount;
 
   EventModel({
     required this.id,
@@ -147,9 +149,12 @@ class EventModel {
     this.qrUrl,
     this.eventType,
     this.teamSizeLimit,
+    this.upiId,
+    required this.registrationCount,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
+    final club = json['club'] as Map<String, dynamic>?;
     return EventModel(
       id: json['id'],
       title: json['title'] ?? 'No Title',
@@ -162,6 +167,8 @@ class EventModel {
       qrUrl: json['qrUrl'] ?? json['qr_url'],
       eventType: json['eventType'],
       teamSizeLimit: json['teamSizeLimit'],
+      upiId: club?['upiId'] ?? club?['upi_id'],
+      registrationCount: json['registrationCount'] ?? 0,
     );
   }
 }

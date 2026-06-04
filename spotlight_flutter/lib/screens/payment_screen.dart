@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import '../core/api_service.dart';
 import '../core/smooth_route.dart';
 import '../widgets/custom_image.dart';
 
@@ -9,12 +12,18 @@ class PaymentScreen extends StatefulWidget {
   final String eventName;
   final double price;
   final String? qrUrl;
+  final String? upiId;
+  final String registrationId;
+  final String referenceCode;
 
   const PaymentScreen({
     super.key,
     required this.eventName,
     required this.price,
     this.qrUrl,
+    this.upiId,
+    required this.registrationId,
+    required this.referenceCode,
   });
 
   @override
@@ -24,10 +33,23 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   File? _image;
   bool _isSubmitting = false;
+  final _utrController = TextEditingController();
+
+  @override
+  void dispose() {
+    _utrController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    // Compress image to 50% quality and limit dimensions to 1000px on pick
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+      maxWidth: 1000,
+      maxHeight: 1000,
+    );
 
     if (pickedFile != null) {
       setState(() {
@@ -37,6 +59,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _submitPayment() async {
+    final utr = _utrController.text.trim();
+    if (utr.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your Transaction ID / UTR number.')),
+      );
+      return;
+    }
+
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload a screenshot of your payment.')),
@@ -46,15 +76,33 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     setState(() => _isSubmitting = true);
 
-    // Simulate API call and upload
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final bytes = await _image!.readAsBytes();
+      final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
-    if (mounted) {
-      setState(() => _isSubmitting = false);
-      Navigator.pushReplacement(
-        context,
-        SmoothRoute(builder: (_) => const PaymentPendingScreen()),
+      final apiService = ApiService();
+      await apiService.uploadPaymentProof(
+        registrationId: widget.registrationId,
+        base64Image: base64Image,
+        transactionId: utr,
       );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          SmoothRoute(builder: (_) => const PaymentPendingScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Submission failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
@@ -62,6 +110,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     
+    // Format reference code nicely
+    final displayCode = widget.referenceCode.length > 6
+        ? 'REG-${widget.referenceCode.substring(0, 6).toUpperCase()}'
+        : widget.referenceCode.toUpperCase();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Payment', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -92,7 +145,76 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+
+                // Payment Details Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outlineVariant),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('1. Copy Payment Details', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: cs.primary)),
+                      const SizedBox(height: 16),
+                      if (widget.upiId != null && widget.upiId!.isNotEmpty) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('UPI ID', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                                const SizedBox(height: 4),
+                                Text(widget.upiId!, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.copy_rounded, size: 20),
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: widget.upiId!));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('UPI ID copied to clipboard!'), duration: Duration(seconds: 1)),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
+                      ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Payment Reference / Remarks', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                              const SizedBox(height: 4),
+                              Text(displayCode, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: cs.secondary)),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded, size: 20),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: displayCode));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Reference Code copied!'), duration: Duration(seconds: 1)),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '⚠️ IMPORTANT: You must paste this Reference Code into the remarks/note field of your UPI app when making payment.',
+                        style: GoogleFonts.inter(fontSize: 11, color: Colors.red[400], fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
                 
                 // QR Code Placeholder
                 Center(
@@ -118,8 +240,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 
+                // Transaction ID Input
+                Text('Transaction ID / UTR Number', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _utrController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter 12-digit UPI UTR / Ref No.',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 // Upload Section
                 Text('Upload Payment Proof', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),

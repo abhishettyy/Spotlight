@@ -13,6 +13,7 @@ class RegisterScreen extends StatefulWidget {
   final String? qrUrl;
   final String? eventType;
   final int? teamSizeLimit;
+  final String? upiId;
 
   const RegisterScreen({
     super.key,
@@ -22,7 +23,9 @@ class RegisterScreen extends StatefulWidget {
     this.qrUrl,
     this.eventType = 'Solo',
     this.teamSizeLimit,
+    this.upiId,
   });
+
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -58,19 +61,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final apiService = ApiService();
+      String? registrationId;
+      String? referenceCode;
 
       if (_selectedType == RegistrationType.solo) {
-        await apiService.registerSolo(
+        final regId = await apiService.registerSolo(
           eventId: widget.eventId,
           name: _nameController.text.trim(),
           usn: _usnController.text.trim(),
         );
+        registrationId = regId;
+        referenceCode = regId;
       } else if (_selectedType == RegistrationType.createTeam) {
-        final passkey = await apiService.createTeam(
+        final result = await apiService.createTeam(
           eventId: widget.eventId,
           teamName: _teamNameController.text.trim(),
           leaderUsn: _usnController.text.trim(),
         );
+        final passkey = result['passkey']!;
+        final regId = result['registrationId']!;
+        registrationId = regId;
+        referenceCode = passkey;
+
         // Show the server-generated passkey to the user
         if (mounted) {
           await showDialog(
@@ -118,6 +130,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 eventName: widget.eventName,
                 price: widget.price,
                 qrUrl: widget.qrUrl,
+                registrationId: registrationId!,
+                referenceCode: referenceCode!,
+                upiId: widget.upiId,
               ),
             ),
           );

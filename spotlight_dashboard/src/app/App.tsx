@@ -12,7 +12,7 @@ import {
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin } from "./api";
 import confetti from "canvas-confetti";
 
 
@@ -52,11 +52,27 @@ interface Registration {
 
 // ─── Real Data Hook ───────────────────────────────────────────────────────────
 function useSpotlightData() {
-  const { getToken, userId, isSignedIn } = useAuth();
+  const { getToken: getClerkToken, userId: clerkUserId, isSignedIn: isClerkSignedIn } = useAuth();
   const { user } = useUser();
 
+  // Local storage direct club login session
+  const localToken = localStorage.getItem("spotlight_token");
+  const localProfileRaw = localStorage.getItem("spotlight_profile");
+  const localProfile = localProfileRaw ? JSON.parse(localProfileRaw) : null;
+  const isLocalSignedIn = !!localToken && !!localProfile;
+
+  const isSignedIn = isClerkSignedIn || isLocalSignedIn;
+  const userId = isLocalSignedIn ? localProfile.id : clerkUserId;
+
+  const getToken = async () => {
+    if (isLocalSignedIn) {
+      return localToken;
+    }
+    return getClerkToken();
+  };
+
   const [clubs, setClubs]                   = useState<any[]>([]);
-  const [profile, setProfile]               = useState<any>(null);
+  const [profile, setProfile]               = useState<any>(localProfile);
   const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading]               = useState(true);
 
@@ -98,14 +114,17 @@ function useSpotlightData() {
         return;
       }
 
-      // Re-sync profile to pick up newly assigned clubId
-      const email = user?.primaryEmailAddress?.emailAddress ?? '';
-      const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
-      console.log("[SpotlightData] refreshEvents syncing profile for email:", email);
-      const syncResult = await syncProfile(userId!, email, name, token);
-      const freshProfile = syncResult.profile;
-      console.log("[SpotlightData] refreshEvents syncResult profile:", freshProfile);
-      setProfile(freshProfile);
+      let freshProfile = profile;
+      if (!isLocalSignedIn) {
+        // Re-sync profile to pick up newly assigned clubId
+        const email = user?.primaryEmailAddress?.emailAddress ?? '';
+        const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
+        console.log("[SpotlightData] refreshEvents syncing profile for email:", email);
+        const syncResult = await syncProfile(userId!, email, name, token);
+        freshProfile = syncResult.profile;
+        console.log("[SpotlightData] refreshEvents syncResult profile:", freshProfile);
+        setProfile(freshProfile);
+      }
 
       console.log("[SpotlightData] refreshEvents fetching clubs...");
       const clubsData = await fetchClubs();
@@ -121,9 +140,9 @@ function useSpotlightData() {
   };
 
   useEffect(() => {
-    console.log("[SpotlightData] useEffect triggered. isSignedIn:", isSignedIn, "userId:", userId, "userLoaded:", !!user);
-    if (!isSignedIn || !userId || !user) {
-      console.log("[SpotlightData] useEffect returning early because: ", { isSignedIn, userId, userLoaded: !!user });
+    console.log("[SpotlightData] useEffect triggered. isSignedIn:", isSignedIn, "userId:", userId, "userLoaded:", !!user || isLocalSignedIn);
+    if (!isSignedIn || !userId || (!isLocalSignedIn && !user)) {
+      console.log("[SpotlightData] useEffect returning early because: ", { isSignedIn, userId, userLoaded: !!user || isLocalSignedIn });
       return;
     }
 
@@ -137,7 +156,19 @@ function useSpotlightData() {
           return;
         }
 
-        // 1. Fire syncProfile and fetchClubs concurrently
+        if (isLocalSignedIn) {
+          // Direct direct-db club login: skip Clerk sync
+          setProfile(localProfile);
+          const clubsData = await fetchClubs();
+          setClubs(clubsData.clubs ?? []);
+
+          if (localProfile?.clubId) {
+            await loadDashboardStats(localProfile.clubId, token);
+          }
+          return;
+        }
+
+        // 1. Fire syncProfile and fetchClubs concurrently for social users
         const email = user?.primaryEmailAddress?.emailAddress ?? '';
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
         console.log("[SpotlightData] load() starting concurrent requests");
@@ -149,32 +180,6 @@ function useSpotlightData() {
         
         console.log("[SpotlightData] load() concurrent requests finished");
         let freshProfile = syncResult.profile;
-
-        // 2. Auto-provision club if they signed up via email/password credentials
-        // (meaning they have no Google / social connected accounts)
-        const isGoogleOrSocial = user?.externalAccounts && user.externalAccounts.length > 0;
-        
-        if (!freshProfile?.clubId && !isGoogleOrSocial && email && name) {
-          console.log("[SpotlightData] Auto-provisioning club for custom credentials user:", name, email);
-          try {
-            const onboardingRes = await createClub({
-              name,
-              email,
-              logoUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
-              clerkUserId: userId!,
-            }, token ?? undefined);
-            
-            if (onboardingRes.club && onboardingRes.club.id) {
-              console.log("[SpotlightData] Auto-provisioned club successfully:", onboardingRes.club);
-              freshProfile = {
-                ...freshProfile,
-                clubId: onboardingRes.club.id
-              };
-            }
-          } catch (err) {
-            console.error("[SpotlightData] Failed to auto-provision club:", err);
-          }
-        }
 
         setProfile(freshProfile);
         setClubs(clubsData.clubs ?? []);
@@ -209,6 +214,7 @@ function useSpotlightData() {
     recentActivity,
     refreshEvents,
     setAllRegistrations,
+    getToken,
   };
 }
 
@@ -520,8 +526,9 @@ function formatAuthError(err: any, defaultMsg: string): string {
 }
 
 // ─── Custom Auth Page ──────────────────────────────────────────────────────────
-function AuthPage({ tab, onTabChange, onBack }: {
+function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
+  onLocalSignIn: (token: string, profile: any) => void;
 }) {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
@@ -566,7 +573,6 @@ function AuthPage({ tab, onTabChange, onBack }: {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSignInLoaded || !signIn) return;
     if (!email || !password) {
       setError("Email and Password are required.");
       return;
@@ -575,33 +581,14 @@ function AuthPage({ tab, onTabChange, onBack }: {
     setLoading(true);
     setError(null);
     try {
-      const result = await signIn.create({
-        identifier: email,
-        password: password,
-      });
-
-      if (result.status === "complete") {
-        await setSignInActive({ session: result.createdSessionId });
-      } else if (result.status === "needs_first_factor") {
-        // Find the email code strategy from the first factors (e.g. suspicious login from unrecognized device)
-        const emailCodeFactor = result.supportedFirstFactors?.find(
-          (f: any) => f.strategy === "email_code"
-        );
-        
-        if (emailCodeFactor) {
-          await signIn.prepareFirstFactor({
-            strategy: "email_code",
-            emailAddressId: (emailCodeFactor as any).emailAddressId,
-          });
-          setVerifyingSignIn(true);
-        } else {
-          setError("Sign in requires additional verification, but email code verification is not configured.");
-        }
+      const data = await clubLogin(email, password);
+      if (data && data.token && data.profile) {
+        onLocalSignIn(data.token, data.profile);
       } else {
-        setError("Sign in requires additional verification.");
+        setError("Sign in failed. Invalid server response.");
       }
     } catch (err: any) {
-      setError(formatAuthError(err, "Failed to sign in. Please check your credentials."));
+      setError(err.message || "Failed to sign in. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -867,28 +854,32 @@ function AuthPage({ tab, onTabChange, onBack }: {
             </motion.button>
           </form>
 
-          {/* Social login divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="h-[1px] bg-white/10 flex-1" />
-            <span className="text-[10px] text-white/30 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
-            <div className="h-[1px] bg-white/10 flex-1" />
-          </div>
+          {tab === "login" && (
+            <>
+              {/* Social login divider */}
+              <div className="flex items-center gap-4 my-6">
+                <div className="h-[1px] bg-white/10 flex-1" />
+                <span className="text-[10px] text-white/30 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
+                <div className="h-[1px] bg-white/10 flex-1" />
+              </div>
 
-          {/* Social login button */}
-          <motion.button
-            onClick={handleGoogleAuth}
-            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
-            style={{ fontFamily: FB }}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
-              <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
-              <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
-              <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
-              <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
-            </svg>
-            Continue with Google
-          </motion.button>
+              {/* Social login button */}
+              <motion.button
+                onClick={handleGoogleAuth}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
+                style={{ fontFamily: FB }}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
+                  <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
+                  <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
+                  <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
+                </svg>
+                Continue with Google
+              </motion.button>
+            </>
+          )}
         </div>
       </div>
     </motion.div>
@@ -896,82 +887,27 @@ function AuthPage({ tab, onTabChange, onBack }: {
 }
 
 // ─── Events Page ──────────────────────────────────────────────────────────────
-function EventsPage({ EVENTS, allRegistrations, onRegistrationsChange }: {
+function EventsPage({ 
+  EVENTS, 
+  allRegistrations, 
+  onRegistrationsChange, 
+  getToken,
+  selectedEventId,
+  setSelectedEventId,
+  showTeams,
+  setShowTeams
+}: {
   EVENTS: ClubEvent[];
   allRegistrations: Registration[];
   onRegistrationsChange: (updater: (prev: Registration[]) => Registration[]) => void;
+  getToken: () => Promise<string | null>;
+  selectedEventId: string | null;
+  setSelectedEventId: (eventId: string | null, pushHistory?: boolean) => void;
+  showTeams: boolean;
+  setShowTeams: (val: boolean, pushHistory?: boolean) => void;
 }) {
-  const { getToken } = useAuth();
 
-  // Parse initial eventId and showTeams from URL
-  const getInitialEventId = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("eventId");
-  };
-
-  const getInitialShowTeams = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("showTeams") === "true";
-  };
-
-  const [selectedEventId, setSelectedEventIdState] = useState<string | null>(getInitialEventId());
-  const [showTeams, setShowTeamsState] = useState(getInitialShowTeams());
   const [regsLoading, setRegsLoading] = useState(false);
-
-  // Custom setters that update URL history
-  const setSelectedEventId = (eventId: string | null, pushHistory = true) => {
-    setSelectedEventIdState(eventId);
-    if (!pushHistory) return;
-
-    const url = new URL(window.location.href);
-    if (eventId) {
-      url.searchParams.set("eventId", eventId);
-    } else {
-      url.searchParams.delete("eventId");
-      url.searchParams.delete("showTeams");
-    }
-
-    const currentParams = new URLSearchParams(window.location.search);
-    if (currentParams.get("eventId") !== eventId) {
-      window.history.pushState({ view: "dashboard", tab: "events", eventId, showTeams: eventId ? showTeams : false }, "", url.toString());
-    }
-  };
-
-  const setShowTeams = (val: boolean, pushHistory = true) => {
-    setShowTeamsState(val);
-    if (!pushHistory) return;
-
-    const url = new URL(window.location.href);
-    if (val) {
-      url.searchParams.set("showTeams", "true");
-    } else {
-      url.searchParams.delete("showTeams");
-    }
-
-    const currentParams = new URLSearchParams(window.location.search);
-    if ((currentParams.get("showTeams") === "true") !== val) {
-      window.history.pushState({ view: "dashboard", tab: "events", eventId: selectedEventId, showTeams: val }, "", url.toString());
-    }
-  };
-
-  // Sync state on popstate (browser back/forward button)
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      const state = event.state;
-      if (state && state.view === "dashboard" && state.tab === "events") {
-        setSelectedEventIdState(state.eventId || null);
-        setShowTeamsState(state.showTeams || false);
-      } else {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("view") === "dashboard" && params.get("tab") === "events") {
-          setSelectedEventIdState(params.get("eventId") || null);
-          setShowTeamsState(params.get("showTeams") === "true");
-        }
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [selectedEventId]);
 
   // Derive per-event registrations from the shared allRegistrations store
   const registrations = selectedEventId
@@ -1477,8 +1413,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
 }
 
 // ─── Create Event Page ────────────────────────────────────────────────────────
-function CreateEventPage({ clubId, onCreated }: { clubId: string; onCreated: () => void }) {
-  const { getToken } = useAuth();
+function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
     eventType: "Solo", teamSizeLimit: "",
@@ -1489,9 +1424,44 @@ function CreateEventPage({ clubId, onCreated }: { clubId: string; onCreated: () 
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        return;
+      }
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(event.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = error => reject(error);
+      };
       reader.onerror = error => reject(error);
     });
   };
@@ -1718,9 +1688,44 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        return;
+      }
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(event.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = error => reject(error);
+      };
       reader.onerror = error => reject(error);
     });
   };
@@ -1956,9 +1961,22 @@ interface ClubOnboardingPageProps {
 
 function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
   const { getToken, userId } = useAuth();
+  const { user } = useUser();
   const [formData, setFormData] = useState({ name: "", email: "", logoUrl: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      const email = user.primaryEmailAddress?.emailAddress ?? "";
+      const name = user.fullName ?? user.firstName ?? "";
+      setFormData(prev => ({
+        ...prev,
+        email: prev.email || email,
+        name: prev.name || name
+      }));
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2101,9 +2119,8 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     recentActivity,
     refreshEvents,
     setAllRegistrations,
+    getToken,
   } = useSpotlightData();
-
-  const { getToken } = useAuth();
   const currentClub = clubs.find((c: any) => c.id === profile?.clubId);
   const name = currentClub?.name ?? profile?.fullName ?? profile?.full_name ?? userEmail.split("@")[0] ?? 'Admin';
 
@@ -2115,36 +2132,110 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   const [activeTab, setActiveTabState] = useState(getInitialTab());
 
+  const getInitialEventId = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("eventId");
+  };
+
+  const getInitialShowTeams = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("showTeams") === "true";
+  };
+
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(getInitialEventId());
+  const [showTeams, setShowTeams] = useState(getInitialShowTeams());
+
   // Custom setter that updates URL history
-  const setActiveTab = (tab: string, pushHistory = true) => {
+  const setActiveTab = (tab: string, pushHistory = true, eventId?: string, sTeams = false) => {
     setActiveTabState(tab);
+    setSelectedEventId(eventId || null);
+    setShowTeams(sTeams);
     if (!pushHistory) return;
 
     const url = new URL(window.location.href);
     url.searchParams.set("tab", tab);
-    
+    if (eventId) {
+      url.searchParams.set("eventId", eventId);
+    } else {
+      url.searchParams.delete("eventId");
+    }
+    if (sTeams) {
+      url.searchParams.set("showTeams", "true");
+    } else {
+      url.searchParams.delete("showTeams");
+    }
+
     const currentParams = new URLSearchParams(window.location.search);
-    if (currentParams.get("tab") !== tab) {
-      window.history.pushState({ view: "dashboard", tab }, "", url.toString());
+    const tabChanged = currentParams.get("tab") !== tab;
+    const eventIdChanged = currentParams.get("eventId") !== (eventId || null);
+    const showTeamsChanged = (currentParams.get("showTeams") === "true") !== sTeams;
+
+    if (tabChanged || eventIdChanged || showTeamsChanged) {
+      window.history.pushState({ view: "dashboard", tab, eventId: eventId || null, showTeams: sTeams }, "", url.toString());
     }
   };
+
+  const handleSetSelectedEventId = (eventId: string | null, pushHistory = true) => {
+    setSelectedEventId(eventId);
+    if (eventId === null) {
+      setShowTeams(false);
+    }
+    if (!pushHistory) return;
+
+    const url = new URL(window.location.href);
+    if (eventId) {
+      url.searchParams.set("eventId", eventId);
+    } else {
+      url.searchParams.delete("eventId");
+      url.searchParams.delete("showTeams");
+    }
+
+    const currentParams = new URLSearchParams(window.location.search);
+    const eventIdChanged = currentParams.get("eventId") !== (eventId || null);
+
+    if (eventIdChanged) {
+      window.history.pushState({ view: "dashboard", tab: "events", eventId: eventId || null, showTeams: eventId ? showTeams : false }, "", url.toString());
+    }
+  };
+
+  const handleSetShowTeams = (val: boolean, pushHistory = true) => {
+    setShowTeams(val);
+    if (!pushHistory) return;
+
+    const url = new URL(window.location.href);
+    if (val) {
+      url.searchParams.set("showTeams", "true");
+    } else {
+      url.searchParams.delete("showTeams");
+    }
+
+    const currentParams = new URLSearchParams(window.location.search);
+    if ((currentParams.get("showTeams") === "true") !== val) {
+      window.history.pushState({ view: "dashboard", tab: "events", eventId: selectedEventId, showTeams: val }, "", url.toString());
+    }
+  };
+
 
   // Sync state on popstate (browser back/forward button)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state;
-      if (state && state.view === "dashboard" && state.tab) {
-        setActiveTabState(state.tab);
+      if (state && state.view === "dashboard") {
+        if (state.tab) setActiveTabState(state.tab);
+        setSelectedEventId(state.eventId || null);
+        setShowTeams(state.showTeams || false);
       } else {
         const params = new URLSearchParams(window.location.search);
         if (params.get("view") === "dashboard") {
           setActiveTabState(params.get("tab") || "overview");
+          setSelectedEventId(params.get("eventId") || null);
+          setShowTeams(params.get("showTeams") === "true");
         }
       }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [selectedEventId]);
 
   useEffect(() => {
     if (profile) {
@@ -2242,14 +2333,15 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         <AnimatePresence mode="wait">
           {activeTab === "create" && (
             <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("events"); }} />
+                <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} />
             </motion.div>
           )}
           {activeTab === "overview" && (
             <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <OverviewPage
-                 name={name}
-                 onNavigate={setActiveTab}
+                <OverviewPage
+                  name={name}
+                  onNavigate={(tab, eventId) => setActiveTab(tab, true, eventId)}
+
                  totalEvents={totalEvents}
                  totalRegistrations={totalRegistrations}
                  pendingCount={pendingCount}
@@ -2264,6 +2356,11 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                  EVENTS={clubEvents}
                  allRegistrations={allRegistrations}
                  onRegistrationsChange={setAllRegistrations}
+                 getToken={getToken}
+                 selectedEventId={selectedEventId}
+                 setSelectedEventId={handleSetSelectedEventId}
+                 showTeams={showTeams}
+                 setShowTeams={handleSetShowTeams}
                />
             </motion.div>
           )}
@@ -2299,7 +2396,8 @@ function OverviewPage({
   clubEvents,
 }: {
   name: string;
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, eventId?: string) => void;
+
   totalEvents: number;
   totalRegistrations: number;
   pendingCount: number;
@@ -2398,7 +2496,7 @@ function OverviewPage({
                 transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-shrink-0 w-[340px] p-6 rounded-3xl cursor-pointer snap-start"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", transition: "all 0.45s ease" }}
-                onClick={() => onNavigate("events")}
+                onClick={() => onNavigate("events", ev.id)}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLDivElement;
                   el.style.background  = "rgba(255,255,255,0.04)";
@@ -2513,7 +2611,10 @@ function OverviewPage({
 
 // ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const { isSignedIn, signOut } = useAuth();
+  const { isSignedIn: isClerkSignedIn, signOut: clerkSignOut } = useAuth();
+  const [localToken, setLocalToken] = useState<string | null>(() => localStorage.getItem("spotlight_token"));
+  const isLocalSignedIn = !!localToken;
+  const isSignedIn = isClerkSignedIn || isLocalSignedIn;
   const { user } = useUser();
   // Helper to parse initial search parameters
   const getInitialParams = () => {
@@ -2600,14 +2701,28 @@ export default function App() {
 
   const goAuth    = (tab: AuthTab = "login") => { updateNavigation("auth", tab); };
   const doSignOut = async () => {
-    await signOut();
+    localStorage.removeItem("spotlight_token");
+    localStorage.removeItem("spotlight_profile");
+    setLocalToken(null);
+    if (isClerkSignedIn) {
+      await clerkSignOut();
+    }
     const url = new URL(window.location.href);
     url.search = ""; // clear all routing parameters
     window.history.pushState({ view: "landing" }, "", url.toString());
     setView("landing");
   };
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+  const userEmail = isLocalSignedIn
+    ? (() => {
+        try {
+          const profileRaw = localStorage.getItem("spotlight_profile");
+          return profileRaw ? JSON.parse(profileRaw).email : "";
+        } catch {
+          return "";
+        }
+      })()
+    : (user?.primaryEmailAddress?.emailAddress ?? "");
 
   return (
     <div className="min-h-screen bg-background text-foreground"
@@ -2626,7 +2741,18 @@ export default function App() {
       </div>
 
       {view === "landing" && <LandingPage onEnter={() => isSignedIn ? updateNavigation("dashboard") : goAuth("login")} onRegister={() => goAuth("register")} />}
-      {view === "auth"    && <AuthPage tab={authTab} onTabChange={setAuthTab} onBack={() => setView("landing")} />}
+      {view === "auth"    && (
+        <AuthPage 
+          tab={authTab} 
+          onTabChange={setAuthTab} 
+          onBack={() => setView("landing")} 
+          onLocalSignIn={(token, profile) => {
+            localStorage.setItem("spotlight_token", token);
+            localStorage.setItem("spotlight_profile", JSON.stringify(profile));
+            setLocalToken(token);
+          }}
+        />
+      )}
       {(view === "dashboard" || (isSignedIn && view !== "auth" && view !== "landing")) && (
         <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ height: "100vh" }}

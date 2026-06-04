@@ -412,8 +412,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   }
+                  final now = DateTime.now();
                   final filters = _buildFilters(provider.events);
                   final filteredEvents = provider.events.where((e) {
+                    final date =
+                        e.date != null ? DateTime.tryParse(e.date!) : null;
+                    final isUpcoming =
+                        date == null || date.isAfter(now);
                     final matchesCategory = _activeFilter == 0 ||
                         (_activeFilter < filters.length &&
                             e.category.toLowerCase() ==
@@ -422,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         e.title.toLowerCase().contains(_searchQuery) ||
                         e.venue.toLowerCase().contains(_searchQuery) ||
                         e.category.toLowerCase().contains(_searchQuery);
-                    return matchesCategory && matchesSearch;
+                    return isUpcoming && matchesCategory && matchesSearch;
                   }).toList();
 
                   if (filteredEvents.isEmpty) {
@@ -750,6 +755,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             qrUrl: event.qrUrl,
                             eventType: event.eventType,
                             teamSizeLimit: event.teamSizeLimit,
+                            upiId: event.upiId,
                           )),
                         );
                       },
