@@ -214,60 +214,76 @@ router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<a
     if (profile) {
       if (profile.id !== clerkUserId) {
         console.log(`[Sync] Profile with email ${email} already exists under different ID: ${profile.id}. Merging to new Clerk ID: ${clerkUserId}`);
-        const existingClubId = profile.clubId;
-        const finalUsn = usn || profile.usn;
-        const finalBranch = branch || profile.branch;
-        const finalPhone = phone || profile.phone;
-        const year = profile.year;
-        const sem = profile.sem;
+        
+        // Fetch target profile by the incoming clerkUserId to merge existing fields (e.g. clubId)
+        const targetProfile = await prisma.profile.findUnique({ where: { id: clerkUserId } });
+        
+        const existingClubId = targetProfile?.clubId || profile.clubId;
+        const finalUsn = usn || targetProfile?.usn || profile.usn;
+        const finalBranch = branch || targetProfile?.branch || profile.branch;
+        const finalPhone = phone || targetProfile?.phone || profile.phone;
+        const year = targetProfile?.year || profile.year;
+        const sem = targetProfile?.sem || profile.sem;
+        const passwordVal = targetProfile?.password || profile.password;
 
         // Atomic migration: transfer all references to the new Clerk ID before deleting the old profile record
         profile = await prisma.$transaction(async (tx) => {
-          // 1. Create/upsert the new profile record
-          const newProfile = await tx.profile.upsert({
-            where: { id: clerkUserId },
-            update: {
-              fullName: getPreferredName(profile!.fullName, name),
-              email: email.toLowerCase(),
-              clubId: existingClubId,
-              usn: finalUsn,
-              branch: finalBranch,
-              phone: finalPhone,
-              year,
-              sem,
-            },
-            create: {
-              id: clerkUserId,
-              fullName: getPreferredName(profile!.fullName, name),
-              email: email.toLowerCase(),
-              clubId: existingClubId,
-              usn: finalUsn,
-              branch: finalBranch,
-              phone: finalPhone,
-              year,
-              sem,
+          // 1. Clear unique constraints on the old profile record to avoid unique violations during upsert
+          await tx.profile.update({
+            where: { id: profile!.id },
+            data: {
+              email: `${profile!.id}@temp.local`,
+              usn: null,
             }
           });
 
-          // 2. Transfer registrations
+          // 2. Create/upsert the new profile record with the merged data
+          const newProfile = await tx.profile.upsert({
+            where: { id: clerkUserId },
+            update: {
+              fullName: getPreferredName(targetProfile?.fullName || profile!.fullName, name),
+              email: email.toLowerCase(),
+              clubId: existingClubId,
+              usn: finalUsn,
+              branch: finalBranch,
+              phone: finalPhone,
+              year,
+              sem,
+              password: passwordVal,
+            },
+            create: {
+              id: clerkUserId,
+              fullName: getPreferredName(targetProfile?.fullName || profile!.fullName, name),
+              email: email.toLowerCase(),
+              clubId: existingClubId,
+              usn: finalUsn,
+              branch: finalBranch,
+              phone: finalPhone,
+              year,
+              sem,
+              password: passwordVal,
+            }
+          });
+
+          // 3. Transfer registrations
           await tx.registration.updateMany({
             where: { userId: profile!.id },
             data: { userId: clerkUserId }
           });
 
-          // 3. Transfer notifications
+          // 4. Transfer notifications
           await tx.notification.updateMany({
             where: { userId: profile!.id },
             data: { userId: clerkUserId }
           });
 
-          // 4. Transfer teams led by this user
+          // 5. Transfer teams led by this user
           await tx.team.updateMany({
             where: { leaderId: profile!.id },
             data: { leaderId: clerkUserId }
           });
 
-          // 5. Safely delete the old profile row (it has no active relations remaining)
+          // 6. Safely delete the old profile row (it has no active relations remaining)
           await tx.profile.delete({ where: { id: profile!.id } });
 
           return newProfile;
