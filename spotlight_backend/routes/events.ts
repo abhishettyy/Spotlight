@@ -119,13 +119,24 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
         .map(r => r.teamId)
     );
 
-    // Filter registrations to show to the club
+    // Helper: Identify teams that have at least one CONFIRMED member
+    const confirmedTeamIds = new Set(
+      registrations
+        .filter(r => r.teamId && r.status === 'CONFIRMED')
+        .map(r => r.teamId)
+    );
+
+    // Filter registrations to show to the club:
+    // CONFIRMED regs always show (proof was cleared after approval — that's expected)
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
+      if (r.status === 'CONFIRMED') return true;
       if (r.paymentProofUrl !== null) return true;
       if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
+      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
       return false;
     });
+
 
     const mapped = filteredRegistrations.map(r => ({
       id: r.id,
@@ -140,11 +151,14 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
         usn: r.profile.usn,
         branch: r.profile.branch,
         phone: r.profile.phone,
+        year: r.profile.year,
+        sem: r.profile.sem,
       } : null,
       team: r.team ? {
         id: r.team.id,
         name: r.team.teamName,
         passkey: r.team.passkey,
+        leaderId: r.team.leaderId,
       } : null,
     }));
 

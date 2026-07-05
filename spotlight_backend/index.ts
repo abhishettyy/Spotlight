@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 // Load environment variables immediately before importing anything that depends on them
 dotenv.config();
 
+
 import { ClerkExpressWithAuth, StrictAuthProp } from '@clerk/clerk-sdk-node';
 
 // Import routers

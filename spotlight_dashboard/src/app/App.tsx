@@ -46,8 +46,9 @@ interface Registration {
   created_at: string;
   eventTitle: string;
   eventId: string;
-  user: { id: string; name: string; email: string; usn: string; branch: string; phone: string } | null;
-  team: { id: string; name: string; passkey: string } | null;
+  user: { id: string; name: string; email: string; usn: string; branch: string; phone: string; year?: number | null; sem?: number | null } | null;
+  team: { id: string; name: string; passkey: string; leaderId?: string | null } | null;
+  transaction_id?: string | null;
 }
 
 // ─── Real Data Hook ───────────────────────────────────────────────────────────
@@ -908,6 +909,14 @@ function EventsPage({
 }) {
 
   const [regsLoading, setRegsLoading] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Reset sub-views when active event changes
+  useEffect(() => {
+    setShowParticipants(false);
+    setSearchQuery("");
+  }, [selectedEventId]);
 
   // Derive per-event registrations from the shared allRegistrations store
   const registrations = selectedEventId
@@ -1067,6 +1076,179 @@ function EventsPage({
               ))}
             </div>
           </div>
+        ) : showParticipants ? (
+          <div className="mt-4 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+              <div>
+                <h1 className="text-[12px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
+                <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>Total registrations: {registrations.length} ({approved.length} approved, {pending.length} pending)</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => {
+                    const headers = ["Name", "Email", "USN", "Branch", "Year", "Sem", "Phone", "Registration Type", "Team Name", "Transaction ID / UTR", "Status", "Registration Date"];
+                    const rows = registrations.map(r => {
+                      let txId = "";
+                      if (activeEvent.price === 0) {
+                        txId = "Free";
+                      } else if (r.team) {
+                        txId = r.team.leaderId === r.user?.id ? (r.transaction_id ?? "Pending Upload") : "Member (Leader uploads)";
+                      } else {
+                        txId = r.transaction_id ?? "Pending Upload";
+                      }
+                      return [
+                        r.user?.name ?? 'Unknown',
+                        r.user?.email ?? '',
+                        r.user?.usn ?? '',
+                        r.user?.branch ?? '',
+                        r.user?.year ?? '',
+                        r.user?.sem ?? '',
+                        r.user?.phone ?? '',
+                        r.team ? 'Team' : 'Solo',
+                        r.team?.name ?? '',
+                        txId,
+                        r.status ?? '',
+                        r.created_at ? new Date(r.created_at).toLocaleDateString() : ''
+                      ];
+                    });
+                    const csvContent = [headers, ...rows]
+                      .map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+                      .join("\n");
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", `${activeEvent.title.replace(/\s+/g, "_")}_attendees.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="text-xs px-4 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300 border border-green-500/20 transition-all font-semibold" 
+                  style={{ fontFamily: FB }}
+                >
+                  Export CSV
+                </button>
+                <button onClick={() => setShowParticipants(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#bbb] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
+              </div>
+            </div>
+
+            {/* Search filter bar */}
+            <div className="relative max-w-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search by name, email, USN, branch or team..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#F03D4E]/40 focus:ring-1 focus:ring-[#F03D4E]/40 transition-all"
+                style={{ fontFamily: FB }}
+              />
+            </div>
+
+            {/* Table roster */}
+            <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Name</th>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>USN</th>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Branch / Sem</th>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Contact</th>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Type</th>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Transaction / UTR</th>
+                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb] text-right" style={{ fontFamily: FM }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {registrations.filter(r => {
+                    const q = searchQuery.toLowerCase().trim();
+                    if (!q) return true;
+                    return (
+                      (r.user?.name ?? '').toLowerCase().includes(q) ||
+                      (r.user?.email ?? '').toLowerCase().includes(q) ||
+                      (r.user?.usn ?? '').toLowerCase().includes(q) ||
+                      (r.user?.branch ?? '').toLowerCase().includes(q) ||
+                      (r.team?.name ?? '').toLowerCase().includes(q)
+                    );
+                  }).map(r => {
+                    const isLeader = r.team ? r.team.leaderId === r.user?.id : false;
+                    return (
+                      <tr key={r.id} className="hover:bg-white/[0.01] transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{(r.user?.name ?? '?').charAt(0)}</div>
+                            <div>
+                              <p className="text-sm font-medium text-white/80" style={{ fontFamily: FB }}>{r.user?.name ?? 'Unknown'}</p>
+                              <p className="text-[10px] text-[#666] mt-0.5" style={{ fontFamily: FM }}>{r.user?.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-xs font-mono text-[#aaa]">{r.user?.usn ?? 'N/A'}</td>
+                        <td className="p-4 text-xs text-[#aaa]">
+                          {r.user?.branch ? (
+                            <div>
+                              <p>{r.user.branch}</p>
+                              <p className="text-[10px] text-[#666] mt-0.5 font-mono">
+                                {r.user.year ? `Y${r.user.year}` : ''}
+                                {r.user.year && r.user.sem ? ' · ' : ''}
+                                {r.user.sem ? `Sem ${r.user.sem}` : ''}
+                                {!r.user.year && !r.user.sem ? 'N/A' : ''}
+                              </p>
+                            </div>
+                          ) : 'N/A'}
+                        </td>
+                        <td className="p-4 text-xs text-[#aaa] font-mono">{r.user?.phone ?? 'N/A'}</td>
+                        <td className="p-4">
+                          {r.team ? (
+                            <div>
+                              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
+                              <p className="text-[10px] text-[#666] mt-1 font-mono">{r.team.name} (Passkey: {r.team.passkey})</p>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs font-mono text-[#aaa]">
+                          {activeEvent.price === 0 ? (
+                            <span className="text-[#555]">Free</span>
+                          ) : r.team ? (
+                            isLeader ? (
+                              r.transaction_id ? (
+                                <span className="select-all bg-white/5 px-2 py-1 rounded border border-white/5">{r.transaction_id}</span>
+                              ) : (
+                                <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
+                              )
+                            ) : (
+                              <span className="text-[#555] italic font-normal text-[11px]">Member (Leader uploads)</span>
+                            )
+                          ) : (
+                            r.transaction_id ? (
+                              <span className="select-all bg-white/5 px-2 py-1 rounded border border-white/5">{r.transaction_id}</span>
+                            ) : (
+                              <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
+                            )
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                          <span className="text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-sm" style={{ 
+                            color: r.status?.toLowerCase() === 'confirmed' ? '#10b981' : '#f59e0b',
+                            background: r.status?.toLowerCase() === 'confirmed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+                            fontFamily: FM
+                          }}>
+                            {r.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {registrations.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-xs text-[#666]" style={{ fontFamily: FB }}>No participants registered for this event yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         ) : (
           <>
             {activeEvent.bannerUrl ? (
@@ -1164,13 +1346,39 @@ function EventsPage({
                </div>
             </div>
 
-            {/* Manage Teams Entry Card */}
-            {teamsList.length > 0 && (
-              <div className="mt-8 pt-8" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            {/* Manage Section */}
+            <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              {/* Manage Attendees (Always Available) */}
+              <div 
+                onClick={() => setShowParticipants(true)}
+                className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
+                style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "280px" }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.015)";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <Users size={20} className="text-white/70" />
+                </div>
+                <div>
+                  <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Manage Attendees</h3>
+                  <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Roster database & CSV exports</p>
+                </div>
+              </div>
+
+              {/* Manage Teams Card (Team events only) */}
+              {teamsList.length > 0 && (
                 <div 
                   onClick={() => setShowTeams(true)}
                   className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
-                  style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "300px" }}
+                  style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "280px" }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = "rgba(255,255,255,0.03)";
                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
@@ -1187,11 +1395,11 @@ function EventsPage({
                   </div>
                   <div>
                     <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Manage Teams</h3>
-                    <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Oversee team registrations per event</p>
+                    <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Oversee team slots per event</p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
       </div>
@@ -2611,17 +2819,22 @@ function OverviewPage({
 
 // ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const { isSignedIn: isClerkSignedIn, signOut: clerkSignOut } = useAuth();
+  const { isSignedIn: isClerkSignedIn, isLoaded: isClerkLoaded, signOut: clerkSignOut } = useAuth();
   const [localToken, setLocalToken] = useState<string | null>(() => localStorage.getItem("spotlight_token"));
   const isLocalSignedIn = !!localToken;
   const isSignedIn = isClerkSignedIn || isLocalSignedIn;
   const { user } = useUser();
+
   // Helper to parse initial search parameters
+  // If already signed in on load, always start on dashboard to prevent refresh-to-login flicker
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab };
     const params = new URLSearchParams(window.location.search);
     const v = (params.get("view") as View) || "landing";
     const t = (params.get("authTab") as AuthTab) || "login";
+    // If already authenticated (local token present), always start on dashboard
+    const hasLocalToken = !!localStorage.getItem("spotlight_token");
+    if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t };
     return { view: v, authTab: t };
   };
 
@@ -2681,9 +2894,10 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Auto-navigate to dashboard when Clerk signs in
+  // Auto-navigate to dashboard when signed in (covers both Clerk login and local login)
+  // Triggers from any non-dashboard view so after login you always end up on dashboard
   useEffect(() => {
-    if (isSignedIn && view === "auth") {
+    if (isSignedIn && (view === "auth" || view === "landing")) {
       updateNavigation("dashboard");
     }
   }, [isSignedIn, view]);
@@ -2723,6 +2937,20 @@ export default function App() {
         }
       })()
     : (user?.primaryEmailAddress?.emailAddress ?? "");
+
+  // Wait for Clerk to resolve auth state before rendering.
+  // Without this, on refresh Clerk briefly shows isSignedIn=undefined and the
+  // landing/auth page flashes before the effect can redirect to dashboard.
+  if (!isClerkLoaded && !isLocalSignedIn) {
+    return (
+      <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
+          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#555", fontFamily: FM }}>Loading</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground"

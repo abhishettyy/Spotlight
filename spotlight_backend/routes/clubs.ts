@@ -72,12 +72,15 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
     if (!profile) {
       const existingProfile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
       if (existingProfile) {
-        if (existingProfile.clubId === null) {
+        if (existingProfile.clubId === null && existingProfile.password !== null) {
+          // Only block if the profile was created with a custom password (genuine student signup)
           return res.status(400).json({ error: 'This email is already registered to a student account.' });
         }
-        console.log(`[Clubs] Stale profile with email ${email} already exists under ID: ${existingProfile.id}. Deleting it first.`);
+        // Otherwise it's a stale Clerk-synced profile from a previous failed signup — delete and replace it
+        console.log(`[Clubs] Stale Clerk-synced profile with email ${email} exists under ID: ${existingProfile.id}. Replacing with new Clerk ID: ${userId}.`);
         await prisma.profile.delete({ where: { id: existingProfile.id } });
       }
+
 
       profile = await prisma.profile.create({
         data: {
@@ -282,13 +285,25 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
         .map(r => r.teamId)
     );
 
-    // Filter registrations to show to the club
+    // Helper: Identify teams that have at least one CONFIRMED member
+    const confirmedTeamIds = new Set(
+      registrations
+        .filter(r => r.teamId && r.status === 'CONFIRMED')
+        .map(r => r.teamId)
+    );
+
+    // Filter registrations to show to the club:
+    // - Free events: always show
+    // - Paid events: show if proof uploaded (pending verification), OR already confirmed (proof was cleared after approval), OR in a team with proof/confirmed member
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
-      if (r.paymentProofUrl !== null) return true;
-      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
+      if (r.status === 'CONFIRMED') return true;           // already approved — always show
+      if (r.paymentProofUrl !== null) return true;         // proof uploaded, pending review
+      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;   // team member, leader has proof
+      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;     // team member, team confirmed
       return false;
     });
+
 
     // Count unique registered teams + individuals
     const uniqueTeamIds = new Set(
@@ -326,11 +341,14 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
         usn: r.profile.usn,
         branch: r.profile.branch,
         phone: r.profile.phone,
+        year: r.profile.year,
+        sem: r.profile.sem,
       } : null,
       team: r.team ? {
         id: r.team.id,
         name: r.team.teamName,
         passkey: r.team.passkey,
+        leaderId: r.team.leaderId,
       } : null,
     }));
 
