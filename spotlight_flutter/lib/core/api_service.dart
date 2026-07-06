@@ -323,21 +323,35 @@ class ApiService {
   Future<void> markSingleNotificationRead(String id) async {
     try {
       final headers = await _getHeaders();
-      await http.put(
+      final response = await http.put(
         Uri.parse('$baseUrl/notifications/$id/read'),
         headers: headers,
       );
-    } catch (_) {}
+      if (response.statusCode != 200) {
+        print('[API] markSingleNotificationRead failed: ${response.statusCode} - ${response.body}');
+        throw AppException('Failed to mark notification as read: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[API] Error in markSingleNotificationRead: $e');
+      rethrow;
+    }
   }
 
   Future<void> deleteNotification(String id) async {
     try {
       final headers = await _getHeaders();
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$baseUrl/notifications/$id'),
         headers: headers,
       );
-    } catch (_) {}
+      if (response.statusCode != 200) {
+        print('[API] deleteNotification failed: ${response.statusCode} - ${response.body}');
+        throw AppException('Failed to delete notification: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[API] Error in deleteNotification: $e');
+      rethrow;
+    }
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────

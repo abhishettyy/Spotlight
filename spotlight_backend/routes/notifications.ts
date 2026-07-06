@@ -56,19 +56,29 @@ router.put('/:id/read', requireAuth, async (req: Request, res: Response): Promis
   try {
     const userId = req.auth!.userId;
     const id = req.params.id as string;
+    console.log(`[Notifications] PUT /${id}/read requested by user ${userId}`);
 
     const notif = await prisma.notification.findUnique({ where: { id } });
-    if (!notif || notif.userId !== userId) {
+    if (!notif) {
+      console.log(`[Notifications] PUT /${id}/read - notification not found in database.`);
       return res.status(404).json({ error: 'Notification not found.' });
     }
 
-    await prisma.notification.update({
+    console.log(`[Notifications] PUT /${id}/read - found notification: owner=${notif.userId}, requestUser=${userId}`);
+    if (notif.userId !== userId) {
+      console.log(`[Notifications] PUT /${id}/read - unauthorized: owner ${notif.userId} != requester ${userId}`);
+      return res.status(404).json({ error: 'Notification not found.' });
+    }
+
+    const updated = await prisma.notification.update({
       where: { id },
       data: { isRead: true },
     });
+    console.log(`[Notifications] PUT /${id}/read - successfully updated in DB: isRead=${updated.isRead}`);
 
     return res.status(200).json({ message: 'Notification marked as read.' });
   } catch (error: any) {
+    console.error(`[Notifications] PUT /:id/read error:`, error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -78,18 +88,28 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<
   try {
     const userId = req.auth!.userId;
     const id = req.params.id as string;
+    console.log(`[Notifications] DELETE /${id} requested by user ${userId}`);
 
     const notif = await prisma.notification.findUnique({ where: { id } });
-    if (!notif || notif.userId !== userId) {
+    if (!notif) {
+      console.log(`[Notifications] DELETE /${id} - notification not found in database.`);
+      return res.status(404).json({ error: 'Notification not found.' });
+    }
+
+    console.log(`[Notifications] DELETE /${id} - found notification: owner=${notif.userId}, requestUser=${userId}`);
+    if (notif.userId !== userId) {
+      console.log(`[Notifications] DELETE /${id} - unauthorized: owner ${notif.userId} != requester ${userId}`);
       return res.status(404).json({ error: 'Notification not found.' });
     }
 
     await prisma.notification.delete({
       where: { id },
     });
+    console.log(`[Notifications] DELETE /${id} - successfully deleted from DB.`);
 
     return res.status(200).json({ message: 'Notification deleted.' });
   } catch (error: any) {
+    console.error(`[Notifications] DELETE /:id error:`, error);
     return res.status(500).json({ error: error.message });
   }
 });

@@ -224,6 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                           provider.deleteNotification(n.id);
                                         },
                                         child: GestureDetector(
+                                          behavior: HitTestBehavior.opaque,
                                           onTap: () {
                                             if (!n.isRead) {
                                               provider.markAsRead(n.id);
