@@ -36,9 +36,15 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
       final seen = <String>{};
       final clubs = <ClubModel>[];
       for (final t in tickets) {
+        final clubId = t.event?.clubId ?? t.event?.clubName;
         final clubName = t.event?.clubName;
-        if (clubName != null && clubName.isNotEmpty && seen.add(clubName)) {
-          clubs.add(ClubModel(id: clubName, name: clubName));
+        final clubLogoUrl = t.event?.clubLogoUrl;
+        if (clubId != null && clubId.isNotEmpty && seen.add(clubId)) {
+          clubs.add(ClubModel(
+            id: clubId,
+            name: clubName ?? 'Unknown Club',
+            logoUrl: clubLogoUrl,
+          ));
         }
       }
       if (mounted) setState(() { _clubs = clubs; _isLoading = false; });

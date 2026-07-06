@@ -202,7 +202,9 @@ class TicketEventInfo {
   final String? date;
   final double price;
   final String? qrUrl;
+  final String? clubId;
   final String? clubName;
+  final String? clubLogoUrl;
   final String? imageUrl;
 
   TicketEventInfo({
@@ -212,7 +214,9 @@ class TicketEventInfo {
     this.date,
     required this.price,
     this.qrUrl,
+    this.clubId,
     this.clubName,
+    this.clubLogoUrl,
     this.imageUrl,
   });
 
@@ -225,7 +229,9 @@ class TicketEventInfo {
       date: json['date'],
       price: (json['price'] ?? 0).toDouble(),
       qrUrl: json['qr_url'],
+      clubId: club?['id'],
       clubName: club?['name'],
+      clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'],
       imageUrl: json['image_url'],
     );
   }

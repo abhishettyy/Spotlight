@@ -61,7 +61,11 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
         price: r.event.fee ?? 0,
         image_url: r.event.bannerUrl,
         qr_url: r.event.qrUrl ?? (r.event.fee > 0 && r.event.club ? r.event.club.qrUrl : null),
-        club: r.event.club ? { id: r.event.club.id, name: r.event.club.name } : null,
+        club: r.event.club ? { 
+          id: r.event.club.id, 
+          name: r.event.club.name,
+          logoUrl: r.event.club.logoUrl
+        } : null,
       } : null,
     }));
 
