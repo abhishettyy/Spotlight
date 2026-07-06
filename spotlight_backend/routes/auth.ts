@@ -239,7 +239,6 @@ router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<a
     const clerkUserId = req.auth!.userId;
     const { email, name, usn, branch, phone } = req.body;
 
-    console.log("[Sync] Incoming payload: clerkUserId:", clerkUserId, "email:", email, "name:", name);
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required to sync profile.' });
@@ -364,7 +363,7 @@ router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<a
       }
     }
 
-    console.log("[Sync] Synced profile result in DB:", JSON.stringify(profile, null, 2));
+
     return res.status(200).json({ message: 'Profile synced', profile });
   } catch (error: any) {
     console.error('Profile Sync Error:', error);

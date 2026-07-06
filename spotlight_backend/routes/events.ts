@@ -51,9 +51,6 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
     const userId = req.auth!.userId;
     const { name, description, venue, eventDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, clubId, bannerUrl, qrUrl } = req.body;
 
-    console.log("[CreateEvent] Incoming body keys:", Object.keys(req.body));
-    console.log("[CreateEvent] bannerUrl length:", bannerUrl ? bannerUrl.length : 0);
-    console.log("[CreateEvent] qrUrl length:", qrUrl ? qrUrl.length : 0);
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
 
