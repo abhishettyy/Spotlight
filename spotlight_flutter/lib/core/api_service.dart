@@ -15,7 +15,7 @@ class AppException implements Exception {
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.42:5000/api',
+    defaultValue: 'http://10.40.233.122:5000/api',
   );
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {
@@ -316,6 +316,26 @@ class ApiService {
         Uri.parse('$baseUrl/notifications/read'),
         headers: headers,
         body: json.encode({'userId': userId}),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> markSingleNotificationRead(String id) async {
+    try {
+      final headers = await _getHeaders();
+      await http.put(
+        Uri.parse('$baseUrl/notifications/$id/read'),
+        headers: headers,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> deleteNotification(String id) async {
+    try {
+      final headers = await _getHeaders();
+      await http.delete(
+        Uri.parse('$baseUrl/notifications/$id'),
+        headers: headers,
       );
     } catch (_) {}
   }

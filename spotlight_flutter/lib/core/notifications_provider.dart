@@ -47,4 +47,30 @@ class NotificationsProvider with ChangeNotifier {
     _unreadCount = 0;
     notifyListeners();
   }
+
+  Future<void> markAsRead(String id) async {
+    await _api.markSingleNotificationRead(id);
+    final index = _notifications.indexWhere((n) => n.id == id);
+    if (index != -1 && !_notifications[index].isRead) {
+      _notifications[index] = NotificationModel(
+        id: _notifications[index].id,
+        type: _notifications[index].type,
+        title: _notifications[index].title,
+        body: _notifications[index].body,
+        isRead: true,
+        createdAt: _notifications[index].createdAt,
+      );
+      if (_unreadCount > 0) {
+        _unreadCount--;
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    await _api.deleteNotification(id);
+    _notifications.removeWhere((n) => n.id == id);
+    _unreadCount = _notifications.where((n) => !n.isRead).length;
+    notifyListeners();
+  }
 }

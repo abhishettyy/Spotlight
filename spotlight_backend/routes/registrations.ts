@@ -262,6 +262,7 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
         type: 'registration_approved',
         title: 'Registration Approved! 🎉',
         body: `Your registration for ${eventName} by ${clubName} has been confirmed. See you there!`,
+        eventId: registration.eventId,
       }));
 
       if (notifData.length > 0) {
@@ -289,6 +290,7 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
           type: 'registration_approved',
           title: 'Registration Approved! 🎉',
           body: `Your registration for ${eventName} by ${clubName} has been confirmed. See you there!`,
+          eventId: registration.eventId,
         },
       });
     }

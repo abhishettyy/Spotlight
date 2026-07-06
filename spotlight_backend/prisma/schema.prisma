@@ -50,6 +50,7 @@ model Event {
   bannerUrl           String?        @map("banner_url") // Added to store event banners/posters
   registrations       Registration[]
   teams               Team[]
+  notifications       Notification[]
 }
 
 model Team {
@@ -91,4 +92,6 @@ model Notification {
   body      String
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now())
+  eventId   String?  @map("event_id")
+  event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }

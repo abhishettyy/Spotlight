@@ -5,12 +5,24 @@ import { requireAuth } from '../middlewares/auth';
 const router = Router();
 
 // GET /api/notifications — fetch notifications for the logged-in user (Protected)
+// Automatically filters out notifications associated with past events.
 router.get('/', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
+    const now = new Date();
 
     const notifications = await prisma.notification.findMany({
-      where: { userId: userId },
+      where: { 
+        userId: userId,
+        OR: [
+          { eventId: null },
+          {
+            event: {
+              eventDate: { gte: now }
+            }
+          }
+        ]
+      },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -34,6 +46,49 @@ router.put('/read', requireAuth, async (req: Request, res: Response): Promise<an
     });
 
     return res.status(200).json({ message: 'All notifications marked as read.' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/notifications/:id/read — mark a single notification as read (Protected)
+router.put('/:id/read', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = req.auth!.userId;
+    const id = req.params.id as string;
+
+    const notif = await prisma.notification.findUnique({ where: { id } });
+    if (!notif || notif.userId !== userId) {
+      return res.status(404).json({ error: 'Notification not found.' });
+    }
+
+    await prisma.notification.update({
+      where: { id },
+      data: { isRead: true },
+    });
+
+    return res.status(200).json({ message: 'Notification marked as read.' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/notifications/:id — delete a single notification (Protected)
+router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = req.auth!.userId;
+    const id = req.params.id as string;
+
+    const notif = await prisma.notification.findUnique({ where: { id } });
+    if (!notif || notif.userId !== userId) {
+      return res.status(404).json({ error: 'Notification not found.' });
+    }
+
+    await prisma.notification.delete({
+      where: { id },
+    });
+
+    return res.status(200).json({ message: 'Notification deleted.' });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -79,6 +134,7 @@ router.post('/event-reminders', async (req: Request, res: Response): Promise<any
           type: 'event_reminder',
           title: `${event.name} is Today! 📅`,
           body: `Your event starts at ${eventTime}. Venue: ${event.club?.name ?? 'TBD'}. Don't forget to bring your ticket!`,
+          eventId: event.id,
         }));
 
       await prisma.notification.createMany({ data: notifData });
