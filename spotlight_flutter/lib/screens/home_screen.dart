@@ -604,183 +604,196 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEventCard(EventModel event) {
-    final id = event.id;
-    final title = event.title;
-    final venue = event.venue;
-    final date = event.date ?? 'No Date';
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    String daysLabel = 'TBD';
+    String day = '01';
+    String month = 'JAN';
     if (event.date != null) {
-      final eventDate = DateTime.tryParse(event.date!);
-      if (eventDate != null) {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final eDate = DateTime(eventDate.year, eventDate.month, eventDate.day);
-        final difference = eDate.difference(today).inDays;
-        
-        if (difference < 0) {
-          daysLabel = 'Past';
-        } else if (difference == 0) {
-          daysLabel = 'Today';
-        } else if (difference == 1) {
-          daysLabel = 'Tomorrow';
-        } else {
-          daysLabel = '$difference Days';
+      final parsed = DateTime.tryParse(event.date!);
+      if (parsed != null) {
+        day = parsed.day.toString().padLeft(2, '0');
+        final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        month = months[parsed.month - 1];
+      } else {
+        final parts = event.date!.split('-');
+        if (parts.length == 3) {
+          day = parts[2].padLeft(2, '0');
+          final mIndex = int.tryParse(parts[1]);
+          if (mIndex != null && mIndex >= 1 && mIndex <= 12) {
+            final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            month = months[mIndex - 1];
+          }
         }
       }
     }
-    
+
+    final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop';
+    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
+
     return Container(
       width: 320,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.grey[900],
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: CustomImage(
-                url: event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: Colors.grey[800]),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.9),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 16,
-            left: 16,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Text(daysLabel,
-                      style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Consumer<SavedEventsProvider>(
-              builder: (context, savedProvider, child) {
-                final isSaved = savedProvider.isSaved(id);
-                return GestureDetector(
-                  onTap: () => savedProvider.toggleSave(id),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                        isSaved ? Icons.bookmark : Icons.bookmark_border,
-                        color: isSaved ? Theme.of(context).colorScheme.primary : Colors.white,
-                        size: 20),
-                  ),
-                );
-              },
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(venue.toUpperCase(),
-                    style: GoogleFonts.inter(
-                        color: Colors.grey[400],
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2)),
-                const SizedBox(height: 4),
-                Text(title,
-                    style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today_outlined,
-                        color: Colors.grey, size: 14),
-                    const SizedBox(width: 6),
-                    Text(date,
-                        style: GoogleFonts.inter(
-                            color: Colors.grey[300],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500)),
-                    const Spacer(),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          SmoothRoute(builder: (_) => RegisterScreen(
-                            eventId: event.id,
-                            eventName: event.title,
-                            price: event.price,
-                            qrUrl: event.qrUrl,
-                            eventType: event.eventType,
-                            teamSizeLimit: event.teamSizeLimit,
-                            upiId: event.upiId,
-                          )),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text('Register',
-                          style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+        borderRadius: BorderRadius.circular(28),
+        image: DecorationImage(
+          image: NetworkImage(imageUrl),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            // Dark gradient overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.85),
+                      Colors.black.withOpacity(0.2),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ),
+
+            // Date Box at top right (Glassmorphic)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          day,
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          month,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white70,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Text details at bottom
+            Positioned(
+              bottom: 20,
+              left: 20,
+              right: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.category.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    event.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${event.registrationCount} Participants going',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.white70,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            price,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Consumer<SavedEventsProvider>(
+                            builder: (context, savedProvider, _) {
+                              final isSaved = savedProvider.isSaved(event.id);
+                              return GestureDetector(
+                                onTap: () => savedProvider.toggleSave(event.id),
+                                child: Icon(
+                                  isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                  color: isSaved ? cs.primary : Colors.white70,
+                                  size: 20,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+

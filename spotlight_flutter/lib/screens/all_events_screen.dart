@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -162,149 +163,196 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
   Widget _buildEventTile(BuildContext context, EventModel event) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
-    String formattedDate = event.date ?? 'TBD';
+    String day = '01';
+    String month = 'JAN';
     if (event.date != null) {
-      final dt = DateTime.tryParse(event.date!);
-      if (dt != null) formattedDate = DateFormat('MMM d, yyyy').format(dt);
+      final parsed = DateTime.tryParse(event.date!);
+      if (parsed != null) {
+        day = parsed.day.toString().padLeft(2, '0');
+        final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        month = months[parsed.month - 1];
+      } else {
+        final parts = event.date!.split('-');
+        if (parts.length == 3) {
+          day = parts[2].padLeft(2, '0');
+          final mIndex = int.tryParse(parts[1]);
+          if (mIndex != null && mIndex >= 1 && mIndex <= 12) {
+            final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            month = months[mIndex - 1];
+          }
+        }
+      }
     }
 
-    final price =
-        event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
+    final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop';
+    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
 
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        SmoothRoute(
-            builder: (_) => EventDetailsScreen(eventId: event.id)),
+        SmoothRoute(builder: (_) => EventDetailsScreen(eventId: event.id)),
       ),
       child: Container(
+        height: 280,
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(28),
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+              color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
               blurRadius: 16,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // Thumbnail
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                bottomLeft: Radius.circular(20),
-              ),
-              child: CustomImage(
-                url: event.imageUrl ??
-                    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop',
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 100,
-                  height: 100,
-                  color: Colors.grey[800],
-                  child: Icon(Icons.event, color: Colors.grey[600]),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Stack(
+            children: [
+              // Dark gradient overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.85),
+                        Colors.black.withOpacity(0.2),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            // Info
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+
+              // Date Box at top right (Glassmorphic)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            day,
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            month,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white70,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Text details at bottom
+              Positioned(
+                bottom: 18,
+                left: 20,
+                right: 20,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Category chip
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: cs.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(event.category,
-                              style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: cs.primary)),
-                        ),
-                        const Spacer(),
-                        // Bookmark button
-                        Consumer<SavedEventsProvider>(
-                          builder: (context, savedProvider, _) {
-                            final isSaved = savedProvider.isSaved(event.id);
-                            return GestureDetector(
-                              onTap: () => savedProvider.toggleSave(event.id),
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: Icon(
-                                  isSaved
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_border,
-                                  color: isSaved ? cs.primary : subText,
-                                  size: 20,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(event.title,
-                        style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: cs.onBackground),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      Icon(Icons.location_on_outlined,
-                          size: 12, color: subText),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(event.venue,
-                            style: GoogleFonts.inter(
-                                fontSize: 12, color: subText),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                    Text(
+                      event.category.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: cs.primary,
                       ),
-                    ]),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      event.title,
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(children: [
-                          Icon(Icons.calendar_today_outlined,
-                              size: 12, color: subText),
-                          const SizedBox(width: 3),
-                          Text(formattedDate,
-                              style: GoogleFonts.inter(
-                                  fontSize: 12, color: subText)),
-                        ]),
-                        Text(price,
+                        Expanded(
+                          child: Text(
+                            '${event.registrationCount} Participants going',
                             style: GoogleFonts.inter(
-                                fontSize: 13,
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              price,
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: cs.primary)),
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Consumer<SavedEventsProvider>(
+                              builder: (context, savedProvider, _) {
+                                final isSaved = savedProvider.isSaved(event.id);
+                                return GestureDetector(
+                                  onTap: () => savedProvider.toggleSave(event.id),
+                                  child: Icon(
+                                    isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                    color: isSaved ? cs.primary : Colors.white70,
+                                    size: 20,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
