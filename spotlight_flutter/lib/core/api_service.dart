@@ -13,47 +13,10 @@ class AppException implements Exception {
 }
 
 class ApiService {
-  static const String defaultBaseUrl = String.fromEnvironment(
+  static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://10.40.233.122:5000/api',
   );
-
-  static String? _customBaseUrl;
-
-  static String get baseUrl {
-    if (_customBaseUrl != null && _customBaseUrl!.isNotEmpty) {
-      return _customBaseUrl!;
-    }
-    return defaultBaseUrl;
-  }
-
-  static Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _customBaseUrl = prefs.getString('custom_api_url');
-  }
-
-  static Future<void> updateBaseUrl(String newUrl) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cleanUrl = newUrl.trim();
-    if (cleanUrl.isEmpty) {
-      await prefs.remove('custom_api_url');
-      _customBaseUrl = null;
-    } else {
-      var formatted = cleanUrl;
-      if (!formatted.startsWith('http://') && !formatted.startsWith('https://')) {
-        formatted = 'http://$formatted';
-      }
-      if (!formatted.endsWith('/api') && !formatted.endsWith('/api/')) {
-        if (formatted.endsWith('/')) {
-          formatted = '${formatted}api';
-        } else {
-          formatted = '$formatted/api';
-        }
-      }
-      await prefs.setString('custom_api_url', formatted);
-      _customBaseUrl = formatted;
-    }
-  }
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {
     final errStr = error.toString().toLowerCase();
