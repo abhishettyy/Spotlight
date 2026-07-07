@@ -17,7 +17,9 @@ import 'core/clubs_provider.dart';
 import 'core/notification_prefs_provider.dart';
 import 'screens/onboarding_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiService.init();
   runApp(const SpotlightApp());
 }
 
