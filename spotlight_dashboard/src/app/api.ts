@@ -44,6 +44,16 @@ export async function getProfile(userId: string) {
   return request(`/profiles/${userId}`);
 }
 
+export async function changePassword(data: {
+  oldPassword?: string;
+  newPassword?: string;
+}, token?: string) {
+  return request('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, token);
+}
+
 // ── Events ────────────────────────────────────────────────────────────────────
 
 export async function fetchEvents() {

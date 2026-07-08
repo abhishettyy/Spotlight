@@ -161,13 +161,15 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
 });
 
 // PUT /api/clubs/:id — Update a club (Legacy Verification Required)
-router.put('/:id', async (req: Request, res: Response): Promise<any> => {
+router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
     const { name, email, logoUrl, upiId, qrUrl, password } = req.body;
 
-    if (!password) {
-      return res.status(400).json({ error: 'Password is required to save changes.' });
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile || profile.clubId !== id) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to update this club.' });
     }
 
     const existingClub = await prisma.club.findUnique({ where: { id } });
@@ -175,8 +177,12 @@ router.put('/:id', async (req: Request, res: Response): Promise<any> => {
       return res.status(404).json({ error: 'Club not found.' });
     }
 
-    if (existingClub.password) {
-      const isMatch = await bcrypt.compare(password, existingClub.password);
+    // Only verify password if the admin user has a password set (email/password login flow)
+    if (profile.password) {
+      if (!password) {
+        return res.status(400).json({ error: 'Password is required to save changes.' });
+      }
+      const isMatch = await bcrypt.compare(password, profile.password);
       if (!isMatch) {
         return res.status(401).json({ error: 'Incorrect password. Changes not saved.' });
       }

@@ -15,6 +15,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<any> => {
     }
 
     const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
     return res.status(200).json({ profile: safeProfile });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -33,6 +34,7 @@ router.put('/update', requireAuth, async (req: Request, res: Response): Promise<
     });
 
     const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
     return res.status(200).json({ message: 'Profile updated successfully', profile: safeProfile });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -65,6 +67,7 @@ router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<an
     });
 
     const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
     return res.status(200).json({ message: 'Profile updated successfully', profile: safeProfile });
   } catch (error: any) {
     console.error('Profile edit error:', error);

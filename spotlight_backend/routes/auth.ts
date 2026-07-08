@@ -102,6 +102,7 @@ router.post('/signup', async (req: Request, res: Response): Promise<any> => {
     console.log(`New user signed up: ${profile.email}`);
 
     const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
     return res.status(201).json({ message: 'Account created successfully', profile: safeProfile, token });
   } catch (error: any) {
     console.error('Signup Error:', error);
@@ -142,6 +143,7 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
     console.log(`User logged in: ${profile.email}`);
 
     const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
     return res.status(200).json({ message: 'Logged in successfully', profile: safeProfile, token });
   } catch (error: any) {
     console.error('Login Error:', error);
@@ -190,6 +192,7 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
 
     const token = signToken(profile.id);
     const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
     return res.status(200).json({ message: 'Logged in successfully', profile: safeProfile, token });
   } catch (error: any) {
     console.error('Club Login Error:', error);
@@ -229,6 +232,72 @@ router.post('/verify-password', requireAuth, async (req: Request, res: Response)
 
     return res.status(200).json({ valid: true });
   } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Change Password ──────────────────────────────────────────────────────────
+router.post('/change-password', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'Old password and new password are required.' });
+  }
+
+  try {
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'User profile not found.' });
+    }
+
+    let targetPasswordHash: string | null = null;
+    let club = null;
+
+    if (profile.clubId) {
+      club = await prisma.club.findUnique({ where: { id: profile.clubId } });
+      if (!club) {
+        return res.status(404).json({ error: 'Club associated with this profile not found.' });
+      }
+      targetPasswordHash = club.password;
+    } else {
+      targetPasswordHash = profile.password;
+    }
+
+    if (!targetPasswordHash) {
+      return res.status(400).json({ error: 'No password is set for this account.' });
+    }
+
+    let match = false;
+    if (profile.clubId && club) {
+      match = await bcrypt.compare(oldPassword, targetPasswordHash);
+    } else {
+      match = await checkPassword(oldPassword, targetPasswordHash, userId);
+    }
+
+    if (!match) {
+      return res.status(401).json({ error: 'Incorrect old password.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    await prisma.profile.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    if (profile.clubId) {
+      await prisma.club.update({
+        where: { id: profile.clubId },
+        data: { password: hashedPassword }
+      });
+      console.log(`Updated password for club: ${profile.clubId}`);
+    }
+
+    return res.status(200).json({ message: 'Password updated successfully.' });
+  } catch (error: any) {
+    console.error('Change password error:', error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -364,7 +433,9 @@ router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<a
     }
 
 
-    return res.status(200).json({ message: 'Profile synced', profile });
+    const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
+    return res.status(200).json({ message: 'Profile synced', profile: safeProfile });
   } catch (error: any) {
     console.error('Profile Sync Error:', error);
     return res.status(500).json({ error: `Internal server error: ${error.message}` });
