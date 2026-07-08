@@ -17,7 +17,8 @@ import confetti from "canvas-confetti";
 
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const FC = "'Cinzel', serif";
+const FC = "'Playfair Display', serif";
+const F_LOGO = "'Cinzel', serif";
 const FM = "'JetBrains Mono', monospace";
 const FB = "'Manrope', sans-serif";
 
@@ -270,7 +271,7 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] tracking-[0.4em] uppercase block" style={{ color: "#cccccc", fontFamily: FM }}>
+      <label className="text-[11px] tracking-[0.4em] uppercase block" style={{ color: "#f9fafb", fontFamily: FM }}>
         {label}
       </label>
       <input
@@ -329,14 +330,14 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         }}
       >
         <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-          <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: FC }}>SPOTLIGHT</span>
-          <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: "#cccccc" }}>
+          <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
+          <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: "#f9fafb" }}>
             {["Platform", "Events", "About"].map(l => (
               <a key={l} href="#" className="hover:text-white transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
           <button onClick={onEnter}
-            className="text-sm px-5 py-2 rounded-full text-white/60 hover:text-white transition-all duration-400"
+            className="text-sm px-5 py-2 rounded-full text-white/85 hover:text-white transition-all duration-400"
             style={{ border: "1px solid rgba(255,255,255,0.1)" }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.32)")}
             onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
@@ -366,8 +367,8 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           <motion.div key={chip.label}
             animate={{ y: chip.y }}
             transition={{ duration: chip.d, repeat: Infinity, ease: "easeInOut", delay: chip.delay }}
-            className={`absolute ${chip.x} px-3 py-1.5 rounded-full text-[9px] hidden xl:flex items-center gap-2`}
-            style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.015)", color: "#cccccc", fontFamily: FM, backdropFilter: "blur(12px)" }}
+            className={`absolute ${chip.x} px-3 py-1.5 rounded-full text-[11px] hidden xl:flex items-center gap-2`}
+            style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.015)", color: "#f9fafb", fontFamily: FM, backdropFilter: "blur(12px)" }}
           >{chip.label}</motion.div>
         ))}
 
@@ -381,7 +382,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             initial={{ opacity: 0, letterSpacing: "0.2em" }}
             animate={{ opacity: 1, letterSpacing: "0.55em" }}
             transition={{ duration: 2, delay: 0.2 }}
-            className="text-[10px] uppercase mb-10" style={{ color: "#cccccc", fontFamily: FM }}
+            className="text-[11px] uppercase mb-10" style={{ color: "#f9fafb", fontFamily: FM }}
           >Event Management Platform</motion.p>
 
           <motion.h1
@@ -389,7 +390,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
             transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
             className="leading-none text-white select-none" style={{
-            fontFamily: FC, fontWeight: 600,
+            fontFamily: F_LOGO, fontWeight: 600,
             fontSize: "clamp(4rem, 12vw, 12rem)",
             letterSpacing: "-0.02em",
             textShadow: "0 0 100px rgba(255,255,255,0.15)",
@@ -399,7 +400,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 1.2 }}
             className="mt-8 text-xl md:text-2xl max-w-xl mx-auto"
-            style={{ color: "#cccccc", lineHeight: 1.65, fontFamily: FB }}
+            style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB }}
           >
             Manage Events{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Through Motion.</span>
           </motion.p>
@@ -423,7 +424,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             <motion.button
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               onClick={onRegister}
-              className="cursor-pointer px-9 py-4 text-sm rounded-full text-white/55 hover:text-white transition-all duration-500"
+              className="cursor-pointer px-9 py-4 text-sm rounded-full text-white/80 hover:text-white transition-all duration-500"
               style={{ border: "1px solid rgba(255,255,255,0.1)" }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.28)")}
               onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
@@ -431,7 +432,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
 
             <motion.button
               whileHover={{ scale: 1.03 }}
-              className="px-6 py-4 text-sm text-white/60 hover:text-white/90 transition-colors duration-400"
+              className="px-6 py-4 text-sm text-white/85 hover:text-white/90 transition-colors duration-400"
               onClick={() => document.getElementById("ls")?.scrollBy({ top: window.innerHeight, behavior: "smooth" })}
             >View Events ↓</motion.button>
           </motion.div>
@@ -443,7 +444,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           animate={{ y: [0, 10, 0] }} transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
         >
           <div className="w-px h-14 bg-gradient-to-b from-transparent via-white/15 to-white/45" />
-          <p className="text-[9px] tracking-[0.6em] uppercase" style={{ color: "#bbbbbb", fontFamily: FM }}>Scroll</p>
+          <p className="text-[11px] tracking-[0.6em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>Scroll</p>
         </motion.div>
       </section>
 
@@ -458,7 +459,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             {[{ v: "48", l: "Active Events" }, { v: "2,400+", l: "Registrations" }, { v: "12", l: "Clubs" }, { v: "15k+", l: "Tickets Sold" }].map(s => (
               <div key={s.l} className="text-center">
                 <p className="text-3xl font-semibold text-white mb-1.5">{s.v}</p>
-                <p className="text-[10px] tracking-[0.45em] uppercase" style={{ color: "#bbbbbb", fontFamily: FM }}>{s.l}</p>
+                <p className="text-[11px] tracking-[0.45em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>{s.l}</p>
               </div>
             ))}
           </motion.div>
@@ -477,7 +478,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
                   <f.icon size={15} className="text-muted-foreground group-hover:text-white/70 transition-colors duration-300" />
                 </div>
                 <h3 className="text-white font-semibold mb-2 text-sm">{f.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "#cccccc" }}>{f.desc}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "#f9fafb" }}>{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -489,11 +490,11 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       {/* FOOTER */}
       <footer className="py-10 px-8" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="text-sm tracking-[0.35em]" style={{ fontFamily: FC, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
-          <p className="text-xs" style={{ color: "#777777", fontFamily: FM }}>© 2026 SPOTLIGHT · Event Management Through Motion</p>
-          <div className="flex gap-6 text-xs" style={{ color: "#777777" }}>
+          <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
+          <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 SPOTLIGHT · Event Management Through Motion</p>
+          <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
             {["Privacy", "Terms", "Contact"].map(l => (
-              <a key={l} href="#" className="hover:text-white/40 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
+              <a key={l} href="#" className="hover:text-white/65 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
         </div>
@@ -699,7 +700,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
       >
         <button onClick={() => { setVerifying(false); setVerifyingSignIn(false); setError(null); setVerificationCode(""); }}
           className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
-          style={{ color: "#999999", fontFamily: FB }}
+          style={{ color: "#d1d5db", fontFamily: FB }}
           onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
           onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
         ><ChevronLeft size={14} /> Back</button>
@@ -709,12 +710,12 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
             <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
               {verifyingSignIn ? "Verify Sign In" : "Verify Email"}
             </h2>
-            <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>We sent a 6-digit verification code to <span className="text-white font-medium">{email}</span>. Please enter it below.</p>
+            <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>We sent a 6-digit verification code to <span className="text-white font-medium">{email}</span>. Please enter it below.</p>
           </div>
 
           <form onSubmit={verifyingSignIn ? handleVerifySignIn : handleVerify} className="space-y-6">
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Verification Code</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Verification Code</label>
               <input 
                 type="text" 
                 placeholder="e.g. 123456" 
@@ -758,7 +759,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
     >
       <button onClick={onBack}
         className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
-        style={{ color: "#999999", fontFamily: FB }}
+        style={{ color: "#d1d5db", fontFamily: FB }}
         onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
         onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
       ><ChevronLeft size={14} /> Back</button>
@@ -780,7 +781,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
             <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
               {tab === "login" ? "Club Sign In" : "Register Your Club"}
             </h2>
-            <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>
+            <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>
               {tab === "login" ? "Access your club dashboard" : "Welcome! Please fill in the details to get started."}
             </p>
           </div>
@@ -788,7 +789,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
           <form onSubmit={tab === "login" ? handleSignIn : handleSignUp} className="space-y-6">
             {tab === "register" && (
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Name</label>
+                <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
                 <input 
                   type="text" 
                   placeholder="Enter club name" 
@@ -802,7 +803,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Email ID</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Email ID</label>
               <input 
                 type="email" 
                 placeholder="Enter email address" 
@@ -815,7 +816,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
             </div>
 
             <div className="space-y-1.5 relative">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Password</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
@@ -829,7 +830,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/65 hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -860,7 +861,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
               {/* Social login divider */}
               <div className="flex items-center gap-4 my-6">
                 <div className="h-[1px] bg-white/10 flex-1" />
-                <span className="text-[10px] text-white/30 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
+                <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
                 <div className="h-[1px] bg-white/10 flex-1" />
               </div>
 
@@ -1033,7 +1034,7 @@ function EventsPage({
       <div className="p-8 lg:p-10 space-y-8 max-w-6xl">
         <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
           className="flex items-center gap-2 text-sm transition-all duration-300"
-          style={{ color: "#999999", fontFamily: FB }}
+          style={{ color: "#d1d5db", fontFamily: FB }}
           onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
           onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
         ><ChevronLeft size={14} /> Back to Events</button>
@@ -1041,8 +1042,8 @@ function EventsPage({
         {showTeams ? (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-[12px] tracking-[0.4em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
-              <button onClick={() => setShowTeams(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#bbb] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
+              <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
+              <button onClick={() => setShowTeams(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1051,18 +1052,18 @@ function EventsPage({
                   <div className="flex justify-between items-start mb-5">
                     <div>
                       <h3 className="text-white font-semibold text-lg leading-tight" style={{ fontFamily: FC }}>{team.name}</h3>
-                      <p className="text-[10px] text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey}</p>
+                      <p className="text-[11px] text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey}</p>
                     </div>
-                    <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-[#bbb]" style={{ fontFamily: FM }}>{team.members.length} MEMBERS</span>
+                    <span className="text-[11px] bg-white/5 px-2 py-1 rounded text-[#f3f4f6]" style={{ fontFamily: FM }}>{team.members.length} MEMBERS</span>
                   </div>
                   <div className="space-y-3 mt-auto">
                     {team.members.map(m => (
                       <div key={m.id} className="flex justify-between items-center bg-black/20 p-2.5 rounded-lg border border-white/5">
                         <div className="flex flex-col">
                           <span className="text-xs text-[#ddd]" style={{ fontFamily: FB }}>{m.user?.name || m.user?.usn || 'Unknown'}</span>
-                          <span className="text-[9px] text-[#666]" style={{ fontFamily: FM }}>{m.user?.usn || m.user?.email}</span>
+                          <span className="text-[11px] text-[#94a3b8]" style={{ fontFamily: FM }}>{m.user?.usn || m.user?.email}</span>
                         </div>
-                        <span className="text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm" style={{ 
+                        <span className="text-[11px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm" style={{ 
                           color: m.status?.toLowerCase() === 'confirmed' ? '#10b981' : '#f59e0b',
                           background: m.status?.toLowerCase() === 'confirmed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
                           fontFamily: FM
@@ -1080,7 +1081,7 @@ function EventsPage({
           <div className="mt-4 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
               <div>
-                <h1 className="text-[12px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
+                <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
                 <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>Total registrations: {registrations.length} ({approved.length} approved, {pending.length} pending)</p>
               </div>
               <div className="flex items-center gap-3">
@@ -1128,7 +1129,7 @@ function EventsPage({
                 >
                   Export CSV
                 </button>
-                <button onClick={() => setShowParticipants(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#bbb] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
+                <button onClick={() => setShowParticipants(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
               </div>
             </div>
 
@@ -1149,13 +1150,13 @@ function EventsPage({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Name</th>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>USN</th>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Branch / Sem</th>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Contact</th>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Type</th>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb]" style={{ fontFamily: FM }}>Transaction / UTR</th>
-                    <th className="p-4 text-[10px] tracking-[0.2em] uppercase text-[#bbbbbb] text-right" style={{ fontFamily: FM }}>Status</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch / Sem</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Contact</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Type</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Transaction / UTR</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -1178,7 +1179,7 @@ function EventsPage({
                             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{(r.user?.name ?? '?').charAt(0)}</div>
                             <div>
                               <p className="text-sm font-medium text-white/80" style={{ fontFamily: FB }}>{r.user?.name ?? 'Unknown'}</p>
-                              <p className="text-[10px] text-[#666] mt-0.5" style={{ fontFamily: FM }}>{r.user?.email}</p>
+                              <p className="text-[11px] text-[#94a3b8] mt-0.5" style={{ fontFamily: FM }}>{r.user?.email}</p>
                             </div>
                           </div>
                         </td>
@@ -1187,7 +1188,7 @@ function EventsPage({
                           {r.user?.branch ? (
                             <div>
                               <p>{r.user.branch}</p>
-                              <p className="text-[10px] text-[#666] mt-0.5 font-mono">
+                              <p className="text-[11px] text-[#94a3b8] mt-0.5 font-mono">
                                 {r.user.year ? `Y${r.user.year}` : ''}
                                 {r.user.year && r.user.sem ? ' · ' : ''}
                                 {r.user.sem ? `Sem ${r.user.sem}` : ''}
@@ -1200,36 +1201,36 @@ function EventsPage({
                         <td className="p-4">
                           {r.team ? (
                             <div>
-                              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
-                              <p className="text-[10px] text-[#666] mt-1 font-mono">{r.team.name} (Passkey: {r.team.passkey})</p>
+                              <span className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
+                              <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">{r.team.name} (Passkey: {r.team.passkey})</p>
                             </div>
                           ) : (
-                            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
+                            <span className="text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
                           )}
                         </td>
                         <td className="p-4 text-xs font-mono text-[#aaa]">
                           {activeEvent.price === 0 ? (
-                            <span className="text-[#555]">Free</span>
+                            <span className="text-[#94a3b8]">Free</span>
                           ) : r.team ? (
                             isLeader ? (
                               r.transaction_id ? (
                                 <span className="select-all bg-white/5 px-2 py-1 rounded border border-white/5">{r.transaction_id}</span>
                               ) : (
-                                <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
+                                <span className="text-[#e59866] text-[11px] uppercase tracking-wider">Pending Upload</span>
                               )
                             ) : (
-                              <span className="text-[#555] italic font-normal text-[11px]">Member (Leader uploads)</span>
+                              <span className="text-[#94a3b8] italic font-normal text-[11px]">Member (Leader uploads)</span>
                             )
                           ) : (
                             r.transaction_id ? (
                               <span className="select-all bg-white/5 px-2 py-1 rounded border border-white/5">{r.transaction_id}</span>
                             ) : (
-                              <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
+                              <span className="text-[#e59866] text-[11px] uppercase tracking-wider">Pending Upload</span>
                             )
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          <span className="text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-sm" style={{ 
+                          <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 rounded-sm" style={{ 
                             color: r.status?.toLowerCase() === 'confirmed' ? '#10b981' : '#f59e0b',
                             background: r.status?.toLowerCase() === 'confirmed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
                             fontFamily: FM
@@ -1242,7 +1243,7 @@ function EventsPage({
                   })}
                   {registrations.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-xs text-[#666]" style={{ fontFamily: FB }}>No participants registered for this event yet.</td>
+                      <td colSpan={7} className="p-8 text-center text-xs text-[#94a3b8]" style={{ fontFamily: FB }}>No participants registered for this event yet.</td>
                     </tr>
                   )}
                 </tbody>
@@ -1264,18 +1265,18 @@ function EventsPage({
                 }}
               >
                 <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 80% 20%, rgba(240,61,78,0.08), transparent 50%)" }} />
-                <span className="text-[10px] tracking-[0.4em] uppercase text-[#F03D4E] font-bold" style={{ fontFamily: FM }}>SPOTLIGHT EXPERIENCE</span>
+                <span className="text-[11px] tracking-[0.4em] uppercase text-[#F03D4E] font-bold" style={{ fontFamily: FM }}>SPOTLIGHT EXPERIENCE</span>
                 <h2 className="text-xl md:text-2xl font-bold text-white mt-1 leading-tight" style={{ fontFamily: FC }}>{activeEvent.title}</h2>
               </div>
             )}
 
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: "#F03D4E", fontFamily: FM }}>{activeEvent.status === "live" ? "Live Now" : "Upcoming"}</span>
-                <span className="text-[10px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
+                <span className="text-[11px] tracking-[0.4em] uppercase" style={{ color: "#F03D4E", fontFamily: FM }}>{activeEvent.status === "live" ? "Live Now" : "Upcoming"}</span>
+                <span className="text-[11px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
-              <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: "#cccccc", fontFamily: FB }}>
+              <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: "#f9fafb", fontFamily: FB }}>
                  <span className="flex items-center gap-1.5"><Calendar size={12} />{activeEvent.date}</span>
                  <span className="flex items-center gap-1.5"><MapPin size={12} />{activeEvent.venue}</span>
               </div>
@@ -1288,7 +1289,7 @@ function EventsPage({
                 { label: "Pending Approval", value: pending.length },
               ].map((stat, i) => (
                  <div key={i} className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[10px] tracking-[0.3em] uppercase mb-2" style={{ color: "#bbbbbb", fontFamily: FM }}>{stat.label}</p>
+                    <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: "#f3f4f6", fontFamily: FM }}>{stat.label}</p>
                     <p className="text-3xl font-semibold text-white">{stat.value}</p>
                  </div>
               ))}
@@ -1297,9 +1298,9 @@ function EventsPage({
             <div className="grid lg:grid-cols-2 gap-8">
                {/* Pending */}
                <div>
-                 <p className="text-[10px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-4" style={{ fontFamily: FM }}>Pending Registrations ({pending.length})</p>
+                 <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Pending Registrations ({pending.length})</p>
                  <div className="space-y-3">
-                   {pending.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#bbbbbb]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No pending registrations.</div>}
+                   {pending.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#f3f4f6]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No pending registrations.</div>}
                    <AnimatePresence>
                      {pending.map((req) => (
                        <motion.div key={req.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
@@ -1308,7 +1309,7 @@ function EventsPage({
                        >
                           <div>
                             <p className="text-sm font-medium text-white/90" style={{ fontFamily: FB }}>{req.user?.name ?? req.team?.name ?? 'Unknown'}</p>
-                            <p className="text-[10px] mt-0.5 text-[#cccccc]" style={{ fontFamily: FM }}>{req.user?.email ?? req.user?.usn ?? ''} · {req.created_at ? new Date(req.created_at).toLocaleDateString() : ''}</p>
+                            <p className="text-[11px] mt-0.5 text-[#cccccc]" style={{ fontFamily: FM }}>{req.user?.email ?? req.user?.usn ?? ''} · {req.created_at ? new Date(req.created_at).toLocaleDateString() : ''}</p>
                           </div>
                           <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                              <button onClick={(e) => handleApprove(req.id, e)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all"><Check size={14} /></button>
@@ -1322,9 +1323,9 @@ function EventsPage({
                
                {/* Approved */}
                <div>
-                 <p className="text-[10px] tracking-[0.4em] uppercase text-[#bbbbbb] mb-4" style={{ fontFamily: FM }}>Approved Attendees ({approved.length})</p>
+                 <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Approved Attendees ({approved.length})</p>
                  <div className="space-y-3">
-                   {approved.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#bbbbbb]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No approved attendees yet.</div>}
+                   {approved.length === 0 && <div className="p-6 rounded-xl text-center text-xs text-[#f3f4f6]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)" }}>No approved attendees yet.</div>}
                    <AnimatePresence>
                      {approved.map((req) => (
                        <motion.div key={req.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -1335,10 +1336,10 @@ function EventsPage({
                             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? req.team?.name ?? '?').charAt(0)}</div>
                             <div>
                               <p className="text-sm font-medium text-white/70" style={{ fontFamily: FB }}>{req.user?.name ?? req.team?.name ?? 'Unknown'}</p>
-                              <p className="text-[10px] mt-0.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>{req.user?.email ?? req.user?.usn ?? ''}</p>
+                              <p className="text-[11px] mt-0.5 text-[#f3f4f6]" style={{ fontFamily: FM }}>{req.user?.email ?? req.user?.usn ?? ''}</p>
                             </div>
                           </div>
-                          <span className="text-[10px] text-green-500/70 uppercase tracking-widest" style={{ fontFamily: FM }}>Approved</span>
+                          <span className="text-[11px] text-green-500/70 uppercase tracking-widest" style={{ fontFamily: FM }}>Approved</span>
                        </motion.div>
                      ))}
                    </AnimatePresence>
@@ -1410,7 +1411,7 @@ function EventsPage({
     <div className="p-8 lg:p-10 space-y-8 max-w-7xl">
       <div className="flex items-end justify-between">
          <div>
-            <p className="text-[10px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#bbbbbb", fontFamily: FM }}>Directory</p>
+            <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Directory</p>
             <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>All Events</h1>
          </div>
       </div>
@@ -1444,20 +1445,20 @@ function EventsPage({
                   }}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#cccccc", fontFamily: FM }}>{ev.club}</span>
-                    <span className="text-[9px] px-2.5 py-1 rounded-full" style={{
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
                       background: "rgba(240,61,78,0.05)",
                       border: "1px solid rgba(255,255,255,0.06)",
-                      color: "#cccccc",
+                      color: "#f9fafb",
                       fontFamily: FM,
                     }}>Upcoming</span>
                   </div>
                   <h3 className="text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
-                  <div className="flex items-center gap-3 mb-6" style={{ color: "#bbbbbb" }}>
+                  <div className="flex items-center gap-3 mb-6" style={{ color: "#f3f4f6" }}>
                     <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
                   </div>
                   <div>
-                    <div className="flex justify-between text-[10px] mb-2" style={{ color: "#cccccc", fontFamily: FM }}>
+                    <div className="flex justify-between text-[11px] mb-2" style={{ color: "#f9fafb", fontFamily: FM }}>
                       <span>{regCount} registered</span><span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
@@ -1473,7 +1474,7 @@ function EventsPage({
               );
             })}
             {EVENTS.filter(e => e.status === "upcoming").length === 0 && (
-              <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#555]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
+              <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
                 No upcoming events yet.
               </div>
             )}
@@ -1482,7 +1483,7 @@ function EventsPage({
 
         {/* Previous Events */}
         <div>
-          <h2 className="text-lg font-medium text-[#bbbbbb] mb-5" style={{ fontFamily: FB }}>Previous Events</h2>
+          <h2 className="text-lg font-medium text-[#f3f4f6] mb-5" style={{ fontFamily: FB }}>Previous Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {EVENTS.filter(e => e.status === "previous").map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
@@ -1496,15 +1497,15 @@ function EventsPage({
                   style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.03)", transition: "all 0.3s ease" }}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.04)", color: "#bbbbbb", fontFamily: FM }}>{ev.club}</span>
-                    <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#666666", fontFamily: FM }}>Ended</span>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.04)", color: "#f3f4f6", fontFamily: FM }}>{ev.club}</span>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#94a3b8", fontFamily: FM }}>Ended</span>
                   </div>
                   <h3 className="text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
-                  <div className="flex items-center gap-3 mb-6" style={{ color: "#666666" }}>
+                  <div className="flex items-center gap-3 mb-6" style={{ color: "#94a3b8" }}>
                     <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
                   </div>
                   <div>
-                    <div className="flex justify-between text-[10px] mb-2" style={{ color: "#666666", fontFamily: FM }}>
+                    <div className="flex justify-between text-[11px] mb-2" style={{ color: "#94a3b8", fontFamily: FM }}>
                       <span>{regCount} registered</span><span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
@@ -1563,7 +1564,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
     <div className="relative">
       <div onClick={() => setOpen(!open)} className="w-full rounded-xl px-4 py-3 text-sm text-white cursor-pointer flex items-center justify-between transition-all" style={{ background: "rgba(255,255,255,0.02)", border: open ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
         <span className={value ? "text-white" : "text-[#888]"}>{value ? value.replace("T", " ") : "Select Date & Time"}</span>
-        <Calendar size={14} className="text-[#999]" />
+        <Calendar size={14} className="text-[#d1d5db]" />
       </div>
       
       <AnimatePresence>
@@ -1587,7 +1588,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
 
             {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1 mb-2 text-center">
-              {days.map(d => <div key={d} className="text-[10px] text-[#666]" style={{ fontFamily: FM }}>{d}</div>)}
+              {days.map(d => <div key={d} className="text-[11px] text-[#94a3b8]" style={{ fontFamily: FM }}>{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
               {Array.from({ length: startDay }).map((_, i) => <div key={`empty-${i}`} />)}
@@ -1595,7 +1596,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
                 const d = i + 1;
                 const isSelected = selectedDate?.getDate() === d && selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear;
                 return (
-                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all ${isSelected ? 'bg-[#F03D4E] text-white' : 'text-[#bbb] hover:bg-white/10 hover:text-white'}`} style={{ fontFamily: FB }}>
+                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all ${isSelected ? 'bg-[#F03D4E] text-white' : 'text-[#f3f4f6] hover:bg-white/10 hover:text-white'}`} style={{ fontFamily: FB }}>
                     {d}
                   </button>
                 );
@@ -1715,7 +1716,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
   return (
     <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
       <div>
-        <p className="text-[10px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#bbbbbb", fontFamily: FM }}>Publish</p>
+        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Publish</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Create New Event</h1>
       </div>
 
@@ -1723,7 +1724,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
         
         {/* Banner Upload */}
         <div className="space-y-1.5">
-          <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Event Banner</label>
+          <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Banner</label>
           <input type="file" accept="image/*" className="hidden" id="banner-upload" onChange={e => {
             const file = e.target.files?.[0];
             if (file) {
@@ -1739,7 +1740,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
             </div>
           ) : (
             <label htmlFor="banner-upload" className="w-full h-32 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.1)", fontFamily: FB }}>
-              <Upload size={20} className="text-[#999999]" />
+              <Upload size={20} className="text-[#d1d5db]" />
               <span className="text-sm text-[#cccccc]">Click to upload banner image</span>
             </label>
           )}
@@ -1747,37 +1748,37 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Event Name</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Name</label>
             <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.title} onChange={e => setFormData(p => ({...p, title: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Date & Time</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Date & Time</label>
             <GlassDatePicker value={formData.date} onChange={v => setFormData(p => ({...p, date: v}))} />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Description</label>
+          <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Description</label>
           <textarea placeholder="Describe your event..." className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[100px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.desc} onChange={e => setFormData(p => ({...p, desc: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Venue</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue</label>
             <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.venue} onChange={e => setFormData(p => ({...p, venue: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Capacity</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
             <input type="number" placeholder="e.g. 200" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.capacity} onChange={e => setFormData(p => ({...p, capacity: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
           </div>
           <div className="space-y-1.5 relative">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Pricing</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Pricing</label>
             <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.type} onChange={e => setFormData(p => ({...p, type: e.target.value, amount: "", qrCode: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
               <option value="free" style={{ background: "#111" }}>Free</option>
               <option value="paid" style={{ background: "#111" }}>Paid</option>
             </select>
             {formData.type === "free" && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -bottom-5 left-1 text-[9px] text-[#bbbbbb]" style={{ fontFamily: FM }}>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -bottom-5 left-1 text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>
                 FCFS. No approval needed.
               </motion.p>
             )}
@@ -1786,7 +1787,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5 relative">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Participation Type</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Participation Type</label>
             <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
               <option value="Solo" style={{ background: "#111" }}>Solo</option>
               <option value="Team" style={{ background: "#111" }}>Team</option>
@@ -1800,7 +1801,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
                 exit={{ opacity: 0 }}
                 className="space-y-1.5"
               >
-                <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
                 <input type="number" placeholder="e.g. 4" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.teamSizeLimit} onChange={e => setFormData(p => ({...p, teamSizeLimit: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
               </motion.div>
             )}
@@ -1817,11 +1818,11 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
             >
               <div className="p-6 rounded-2xl grid md:grid-cols-2 gap-6" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Amount (INR)</label>
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Amount (INR)</label>
                   <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.amount} onChange={e => setFormData(p => ({...p, amount: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(240,61,78,0.4)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Payment QR Code</label>
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Payment QR Code</label>
                   <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                     <button onClick={() => setFormData(p => ({...p, useDefaultQr: true}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${formData.useDefaultQr ? "bg-white/10 text-white" : "text-[#888] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Default QR</button>
                     <button onClick={() => setFormData(p => ({...p, useDefaultQr: false}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${!formData.useDefaultQr ? "bg-white/10 text-white" : "text-[#888] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Custom QR</button>
@@ -1841,7 +1842,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
                     </>
                   )}
                   {formData.useDefaultQr && (
-                    <div className="text-xs text-[#999999] px-2" style={{ fontFamily: FB }}>Using the default QR code from your Payment Settings.</div>
+                    <div className="text-xs text-[#d1d5db] px-2" style={{ fontFamily: FB }}>Using the default QR code from your Payment Settings.</div>
                   )}
                 </div>
               </div>
@@ -1988,7 +1989,7 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
   return (
     <div className="p-8 lg:p-10 space-y-8 max-w-4xl relative">
       <div>
-        <p className="text-[10px] tracking-[0.5em] uppercase mb-1.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>Preferences</p>
+        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5 text-[#f3f4f6]" style={{ fontFamily: FM }}>Preferences</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
 
@@ -2007,15 +2008,15 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Profile Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Name</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
               <input type="text" placeholder="e.g. Demo Club" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Contact Email</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Contact Email</label>
               <input type="email" placeholder="club@example.com" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Logo</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Logo</label>
               <input type="file" accept="image/*" className="hidden" id="logo-upload-settings" onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) setLogoFile(file);
@@ -2033,11 +2034,11 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Default UPI ID</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Default UPI ID</label>
               <input type="text" placeholder="club@upi" value={formData.upiId} onChange={e => setFormData(p => ({ ...p, upiId: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Default QR Code</label>
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Default QR Code</label>
               <input type="file" accept="image/*" className="hidden" id="qr-upload-settings" onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) setQrFile(file);
@@ -2055,7 +2056,7 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white" style={{ fontFamily: FB }}>Save All Settings</p>
-              <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
+              <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
             </div>
             <button onClick={handleSaveInit} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)]" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
@@ -2066,12 +2067,12 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
               <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h3>
-                <p className="text-xs text-[#999] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
+                <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
                 
                 {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl" style={{ fontFamily: FB }}>{error}</div>}
 
                 <div className="space-y-1.5 mb-6">
-                  <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Password</label>
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
                   <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
                 </div>
 
@@ -2093,7 +2094,7 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
              <div className="flex items-center justify-between">
                <div>
                  <p className="text-sm text-white" style={{ fontFamily: FB }}>Email Alerts</p>
-                 <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Get notified when someone registers for your event.</p>
+                 <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Get notified when someone registers for your event.</p>
                </div>
                <div className="w-10 h-5 bg-[#F03D4E] rounded-full flex items-center p-1 cursor-pointer">
                  <motion.div className="w-3 h-3 bg-white rounded-full shadow-md" style={{ marginLeft: "auto" }} />
@@ -2102,7 +2103,7 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
              <div className="flex items-center justify-between pt-4 border-t border-white/5">
                <div>
                  <p className="text-sm text-white" style={{ fontFamily: FB }}>Marketing Updates</p>
-                 <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Receive updates about Spotlight features.</p>
+                 <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Receive updates about Spotlight features.</p>
                </div>
                <div className="w-10 h-5 bg-white/10 rounded-full flex items-center p-1 cursor-pointer">
                  <motion.div className="w-3 h-3 bg-white/50 rounded-full shadow-md" />
@@ -2120,14 +2121,14 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
              <div className="flex items-center justify-between">
                <div>
                  <p className="text-sm text-white" style={{ fontFamily: FB }}>Two-Factor Authentication</p>
-                 <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Add an extra layer of security to your account.</p>
+                 <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Add an extra layer of security to your account.</p>
                </div>
                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>Enable 2FA</button>
              </div>
              <div className="flex items-center justify-between pt-4 border-t border-white/5">
                <div>
                  <p className="text-sm text-white" style={{ fontFamily: FB }}>Change Password</p>
-                 <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Update your login credentials securely.</p>
+                 <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Update your login credentials securely.</p>
                </div>
                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>Update</button>
              </div>
@@ -2138,7 +2139,7 @@ function SettingsPage({ club, getToken, onUpdate, onLogout }: { club: any; getTo
         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(240,61,78,0.05)", border: "1px solid rgba(240,61,78,0.1)" }}>
           <div>
             <p className="text-sm font-medium text-[#F03D4E]" style={{ fontFamily: FB }}>Sign Out</p>
-            <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>End your current session.</p>
+            <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>End your current session.</p>
           </div>
           <button onClick={onLogout} className="px-6 py-2.5 bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(240,61,78,0.2)", fontFamily: FB }}>Sign Out</button>
         </div>
@@ -2152,11 +2153,11 @@ function TeamsPage() {
   return (
     <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
       <div>
-        <p className="text-[10px] tracking-[0.5em] uppercase mb-1.5 text-[#bbbbbb]" style={{ fontFamily: FM }}>Management</p>
+        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5 text-[#f3f4f6]" style={{ fontFamily: FM }}>Management</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Teams</h1>
       </div>
       <div className="p-10 rounded-2xl text-center" style={{ border: "1px dashed rgba(255,255,255,0.07)" }}>
-        <p className="text-sm text-[#555]" style={{ fontFamily: FB }}>Team management coming soon.</p>
+        <p className="text-sm text-[#94a3b8]" style={{ fontFamily: FB }}>Team management coming soon.</p>
       </div>
     </div>
   );
@@ -2227,14 +2228,14 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
         style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}
       >
         <div className="text-center mb-8">
-          <p className="text-[10px] tracking-[0.5em] uppercase mb-2 text-[#bbbbbb]" style={{ fontFamily: FM }}>Step 1 · Onboarding</p>
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-2 text-[#f3f4f6]" style={{ fontFamily: FM }}>Step 1 · Onboarding</p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ fontFamily: FC }}>Set Up Your Club</h2>
-          <p className="text-xs text-[#999999]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details to activate the dashboard.</p>
+          <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details to activate the dashboard.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Name</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
             <input 
               type="text" 
               placeholder="e.g. Turing Club" 
@@ -2247,7 +2248,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Contact Email</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Contact Email</label>
             <input 
               type="email" 
               placeholder="club@yourcollege.edu" 
@@ -2260,7 +2261,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Club Logo URL (Optional)</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Logo URL (Optional)</label>
             <input 
               type="url" 
               placeholder="https://example.com/logo.png" 
@@ -2272,7 +2273,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Mobile App Login Password</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Mobile App Login Password</label>
             <input 
               type="password" 
               placeholder="Create login password for mobile app" 
@@ -2463,7 +2464,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
       <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
-          <p className="text-xs tracking-[0.4em] uppercase text-[#555]" style={{ fontFamily: FM }}>Loading Dashboard</p>
+          <p className="text-xs tracking-[0.4em] uppercase text-[#94a3b8]" style={{ fontFamily: FM }}>Loading Dashboard</p>
         </div>
       </div>
     );
@@ -2487,7 +2488,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
-          <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: FC, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+          <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
         </div>
         <div className="px-4 mb-5 flex-shrink-0">
           <motion.button
@@ -2524,12 +2525,12 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
             </div>
             <div className="overflow-hidden">
               <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.75)", fontFamily: FB }}>{name}</p>
-              <p className="text-[9px]" style={{ color: "#bbbbbb", fontFamily: FM }}>Admin</p>
+              <p className="text-[11px]" style={{ color: "#f3f4f6", fontFamily: FM }}>Admin</p>
             </div>
           </div>
           <button onClick={onSignOut}
             className="w-full py-2 text-xs rounded-lg transition-all duration-300"
-            style={{ color: "#bbbbbb", border: "1px solid rgba(255,255,255,0.03)", fontFamily: FB }}
+            style={{ color: "#f3f4f6", border: "1px solid rgba(255,255,255,0.03)", fontFamily: FB }}
             onMouseEnter={e => { e.currentTarget.style.color = "#cccccc"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "#bbbbbb"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.03)"; }}
           >Sign Out</button>
@@ -2634,15 +2635,15 @@ function OverviewPage({
       >
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(255,255,255,0.03) 0%, transparent 60%)" }} />
         <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.06), transparent 55%)" }} />
-        <p className="text-[10px] tracking-[0.5em] uppercase mb-3" style={{ color: "#bbbbbb", fontFamily: FM }}>Dashboard · Synced</p>
+        <p className="text-[11px] tracking-[0.5em] uppercase mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard · Synced</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>
-          Welcome back, {name}.
+          Welcome Back, {name}.
         </h1>
-        <p className="mt-1.5 text-sm" style={{ color: "#cccccc", fontFamily: FB }}>Your dashboard is synced. Everything looks on track.</p>
+        <p className="mt-1.5 text-sm" style={{ color: "#f9fafb", fontFamily: FB }}>Your dashboard is synced. Everything looks on track.</p>
       </motion.div>
 
       {/* KPI Cards — live data */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => e.status === 'upcoming').length} upcoming`,  delay: 0    },
           { label: "Total Registrations",   value: totalRegistrations, suffix: "",  sub: "Across all events",                                                   delay: 0.08 },
@@ -2669,11 +2670,11 @@ function OverviewPage({
             }}
           >
             <div className="absolute top-0 right-0 w-36 h-36 pointer-events-none" style={{ background: "radial-gradient(circle at 85% 15%, rgba(255,255,255,0.05), transparent 65%)" }} />
-            <p className="text-[10px] tracking-[0.42em] uppercase mb-5" style={{ color: "#bbbbbb", fontFamily: FM }}>{k.label}</p>
-            <p className="text-5xl font-semibold text-white mb-2.5" style={{ fontFamily: FB }}>
+            <p className="text-[11px] tracking-[0.42em] uppercase mb-6" style={{ color: "#f3f4f6", fontFamily: FM }}>{k.label}</p>
+            <p className="text-3xl font-semibold text-white mb-3" style={{ fontFamily: FB }}>
               <AnimatedCounter target={k.value} suffix={k.suffix} />
             </p>
-            <p className="text-xs" style={{ color: "#999999", fontFamily: FB }}>{k.sub}</p>
+            <p className="text-sm mt-2" style={{ color: "#d1d5db", fontFamily: FB }}>{k.sub}</p>
           </motion.div>
         ))}
       </div>
@@ -2682,10 +2683,10 @@ function OverviewPage({
       <div>
         <div className="flex items-end justify-between mb-5">
           <div>
-            <p className="text-[10px] tracking-[0.5em] uppercase mb-1" style={{ color: "#bbbbbb", fontFamily: FM }}>Upcoming</p>
+            <p className="text-[11px] tracking-[0.5em] uppercase mb-1" style={{ color: "#f3f4f6", fontFamily: FM }}>Upcoming</p>
             <h2 className="text-xl font-semibold text-white" style={{ fontFamily: FC }}>Events</h2>
           </div>
-          <button className="flex items-center gap-1 text-xs transition-colors duration-300" style={{ color: "#999999", fontFamily: FB }}
+          <button className="flex items-center gap-1 text-xs transition-colors duration-300" style={{ color: "#d1d5db", fontFamily: FB }}
             onClick={() => onNavigate("events")}
             onMouseEnter={e => (e.currentTarget.style.color = "#dddddd")}
             onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
@@ -2693,7 +2694,7 @@ function OverviewPage({
         </div>
 
         {clubEvents.filter(e => e.status === 'upcoming').length === 0 ? (
-          <div className="p-8 rounded-2xl text-center text-sm text-[#555]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
+          <div className="p-8 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
             No upcoming events yet. <button onClick={() => onNavigate("create")} className="text-[#F03D4E] hover:underline">Create one →</button>
           </div>
         ) : (
@@ -2721,16 +2722,16 @@ function OverviewPage({
                 }}
               >
                 <div className="flex items-start justify-between mb-5">
-                  <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#cccccc", fontFamily: FM }}>{ev.club}</span>
-                  <span className="text-[9px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
+                  <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
+                  <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
                 </div>
                 <h3 className="text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>
-                <div className="flex items-center gap-3 mb-4" style={{ color: "#999999" }}>
-                  <span className="flex items-center gap-1 text-[9px]"><Calendar size={9} />{ev.date ?? 'TBD'}</span>
-                  <span className="flex items-center gap-1 text-[9px]"><MapPin size={9} />{ev.venue}</span>
+                <div className="flex items-center gap-3 mb-4" style={{ color: "#d1d5db" }}>
+                  <span className="flex items-center gap-1 text-[11px]"><Calendar size={9} />{ev.date ?? 'TBD'}</span>
+                  <span className="flex items-center gap-1 text-[11px]"><MapPin size={9} />{ev.venue}</span>
                 </div>
                 <div>
-                  <div className="flex justify-between text-[9px] mb-1.5" style={{ color: "#bbbbbb", fontFamily: FM }}>
+                  <div className="flex justify-between text-[11px] mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>
                     <span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     <span>{ev.type}</span>
                   </div>
@@ -2745,7 +2746,7 @@ function OverviewPage({
       {/* Quick Actions + Live Activity Feed */}
       <div className="grid md:grid-cols-3 gap-6 pb-10">
         <div className="md:col-span-2">
-          <p className="text-[10px] tracking-[0.5em] uppercase mb-5" style={{ color: "#bbbbbb", fontFamily: FM }}>Quick Actions</p>
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM }}>Quick Actions</p>
           <div className="grid grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((qa, i) => (
               <motion.button key={qa.label} onClick={() => onNavigate(qa.id)}
@@ -2772,7 +2773,7 @@ function OverviewPage({
                   <qa.icon size={14} className="text-muted-foreground group-hover:text-white/65 transition-colors duration-300" />
                 </div>
                 <p className="text-white text-sm font-medium mb-0.5" style={{ fontFamily: FB }}>{qa.label}</p>
-                <p className="text-xs" style={{ color: "#999999", fontFamily: FB }}>{qa.desc}</p>
+                <p className="text-xs" style={{ color: "#d1d5db", fontFamily: FB }}>{qa.desc}</p>
               </motion.button>
             ))}
           </div>
@@ -2780,10 +2781,10 @@ function OverviewPage({
 
         {/* Live Activity Feed */}
         <div>
-          <p className="text-[10px] tracking-[0.5em] uppercase mb-5" style={{ color: "#bbbbbb", fontFamily: FM }}>Recent Activity</p>
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM }}>Recent Activity</p>
           <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
             {recentActivity.length === 0 ? (
-              <p className="text-xs text-center py-6" style={{ color: "#555", fontFamily: FB }}>No activity yet.</p>
+              <p className="text-xs text-center py-6" style={{ color: "#94a3b8", fontFamily: FB }}>No activity yet.</p>
             ) : (
               recentActivity.map((a, i) => (
                 <motion.div key={a.id}
@@ -2800,12 +2801,12 @@ function OverviewPage({
                       : "rgba(255,255,255,0.18)",
                   }} />
                   <div>
-                    <p className="text-xs leading-snug" style={{ color: "#cccccc", fontFamily: FB }}>
+                    <p className="text-xs leading-snug" style={{ color: "#f9fafb", fontFamily: FB }}>
                       <span className="text-white/80">{a.user?.name ?? a.team?.name ?? 'Someone'}</span>
                       {" signed up for "}
                       <span className="text-white/80">{a.eventTitle}</span>
                     </p>
-                    <p className="text-[9px] mt-0.5" style={{ color: "#777777", fontFamily: FM }}>{timeAgo(a.created_at)}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "#94a3b8", fontFamily: FM }}>{timeAgo(a.created_at)}</p>
                   </div>
                 </motion.div>
               ))
@@ -2946,7 +2947,7 @@ export default function App() {
       <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
-          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#555", fontFamily: FM }}>Loading</p>
+          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#94a3b8", fontFamily: FM }}>Loading</p>
         </div>
       </div>
     );
