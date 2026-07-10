@@ -2768,11 +2768,11 @@ function OverviewPage({
       >
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(255,255,255,0.03) 0%, transparent 60%)" }} />
         <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.06), transparent 55%)" }} />
-        <p className="text-[11px] tracking-[0.5em] uppercase mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard · Synced</p>
+        <p className="text-[11px] tracking-[0.5em] uppercase mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>
           Welcome Back, {name}.
         </h1>
-        <p className="mt-1.5 text-sm" style={{ color: "#f9fafb", fontFamily: FB }}>Your dashboard is synced. Everything looks on track.</p>
+        <p className="mt-1.5 text-sm" style={{ color: "#94a3b8", fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
       </motion.div>
 
       {/* KPI Cards — live data */}
