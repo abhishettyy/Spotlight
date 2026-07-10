@@ -491,7 +491,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       <footer className="py-10 px-8" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
-          <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 SPOTLIGHT · Event Management Through Motion</p>
+          <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
           <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
             {["Privacy", "Terms", "Contact"].map(l => (
               <a key={l} href="#" className="hover:text-white/65 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
