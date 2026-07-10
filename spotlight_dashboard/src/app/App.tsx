@@ -1083,7 +1083,7 @@ function EventsPage({
                       if (activeEvent.price === 0) {
                         txId = "Free";
                       } else if (r.team) {
-                        txId = r.team.leaderId === r.user?.id ? (r.transaction_id ?? "Pending Upload") : "Member (Leader uploads)";
+                        txId = r.team.leaderId === r.user?.id ? (r.transaction_id ?? "Pending Upload") : "Member";
                       } else {
                         txId = r.transaction_id ?? "Pending Upload";
                       }
@@ -1209,7 +1209,7 @@ function EventsPage({
                                 <span className="text-[#e59866] text-[11px] uppercase tracking-wider">Pending Upload</span>
                               )
                             ) : (
-                              <span className="text-[#94a3b8] italic font-normal text-[11px]">Member (Leader uploads)</span>
+                              <span className="text-[#94a3b8] italic font-normal text-[11px]">Member</span>
                             )
                           ) : (
                             r.transaction_id ? (
@@ -2973,26 +2973,32 @@ export default function App() {
     if (newAuthTab) setAuthTab(newAuthTab);
 
     const url = new URL(window.location.href);
-    url.searchParams.set("view", newView);
-    if (newView === "auth" && (newAuthTab || authTab)) {
-      url.searchParams.set("authTab", newAuthTab || authTab);
+    if (newView === "landing") {
+      url.search = "";
     } else {
-      url.searchParams.delete("authTab");
-    }
+      url.searchParams.set("view", newView);
+      if (newView === "auth" && (newAuthTab || authTab)) {
+        url.searchParams.set("authTab", newAuthTab || authTab);
+      } else {
+        url.searchParams.delete("authTab");
+      }
 
-    // Keep active tab synced if moving to dashboard
-    if (newView === "dashboard") {
-      const tab = url.searchParams.get("tab") || "overview";
-      url.searchParams.set("tab", tab);
-    } else {
-      url.searchParams.delete("tab");
-      url.searchParams.delete("eventId");
-      url.searchParams.delete("showTeams");
+      // Keep active tab synced if moving to dashboard
+      if (newView === "dashboard") {
+        const tab = url.searchParams.get("tab") || "overview";
+        url.searchParams.set("tab", tab);
+      } else {
+        url.searchParams.delete("tab");
+        url.searchParams.delete("eventId");
+        url.searchParams.delete("showTeams");
+      }
     }
 
     const currentParams = new URLSearchParams(window.location.search);
-    const hasChanged = currentParams.get("view") !== newView || 
-                       (newView === "auth" && currentParams.get("authTab") !== (newAuthTab || authTab));
+    const hasChanged = newView === "landing"
+      ? currentParams.toString() !== ""
+      : currentParams.get("view") !== newView || 
+        (newView === "auth" && currentParams.get("authTab") !== (newAuthTab || authTab));
 
     if (hasChanged) {
       window.history.pushState({ view: newView, authTab: newAuthTab || authTab }, "", url.toString());
@@ -3097,7 +3103,7 @@ export default function App() {
         <AuthPage 
           tab={authTab} 
           onTabChange={setAuthTab} 
-          onBack={() => setView("landing")} 
+          onBack={() => updateNavigation("landing")} 
           onLocalSignIn={(token, profile) => {
             localStorage.setItem("spotlight_token", token);
             localStorage.setItem("spotlight_profile", JSON.stringify(profile));
