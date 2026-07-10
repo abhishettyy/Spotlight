@@ -435,7 +435,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       </section>
 
       {/* STATS + FEATURES */}
-      <section className="py-32 px-6">
+      <section className="pt-10 pb-32 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
