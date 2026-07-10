@@ -334,7 +334,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
           <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: "#f9fafb" }}>
             {["Platform", "Events", "About"].map(l => (
-              <a key={l} href="#" className="hover:text-white transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
+              <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
           <button onClick={onEnter}
@@ -484,7 +484,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
           <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
             {["Privacy", "Terms", "Contact"].map(l => (
-              <a key={l} href="#" className="hover:text-white/65 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
+              <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white/65 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
         </div>
