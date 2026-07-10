@@ -135,6 +135,7 @@ class EventModel {
   final String? eventType;
   final int? teamSizeLimit;
   final String? upiId;
+  final String? clubName;
   final int registrationCount;
 
   EventModel({
@@ -150,6 +151,7 @@ class EventModel {
     this.eventType,
     this.teamSizeLimit,
     this.upiId,
+    this.clubName,
     required this.registrationCount,
   });
 
@@ -168,6 +170,7 @@ class EventModel {
       eventType: json['eventType'],
       teamSizeLimit: json['teamSizeLimit'],
       upiId: club?['upiId'] ?? club?['upi_id'],
+      clubName: club?['name'],
       registrationCount: json['registrationCount'] ?? 0,
     );
   }

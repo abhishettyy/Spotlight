@@ -11,6 +11,7 @@ import 'auth_screen.dart';
 import 'ticket_screen.dart';
 import 'registered_clubs_screen.dart';
 import '../core/smooth_route.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,6 +24,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _eventsCount = 0;
   int _clubsCount = 0;
   bool _statsLoading = true;
+
+  Future<void> _launchPlayStore() async {
+    final appId = 'com.example.spotlight_flutter'; // Change this to your production package name once deployed
+    final url = Uri.parse('market://details?id=$appId');
+    final webUrl = Uri.parse('https://play.google.com/store/apps/details?id=$appId');
+    
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUrl)) {
+        await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch store link';
+      }
+    } catch (e) {
+      print('Error launching Play Store: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Play Store. App is not published yet.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _contactSupport() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.currentUser;
+    final userName = user?.name ?? 'User';
+    final userEmail = user?.email ?? 'Unknown Email';
+    final userUsn = user?.usn ?? 'N/A';
+    
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'spotlightapp.help@gmail.com',
+      query: _encodeQueryParameters(<String, String>{
+        'subject': '[Spotlight Support] Help Request',
+        'body': 'Hi Spotlight Support,\n\n'
+            'I am having an issue with the app. Here are my details:\n'
+            '- Name: $userName\n'
+            '- Email: $userEmail\n'
+            '- USN: $userUsn\n\n'
+            'Please describe your issue below:\n'
+            '---------------------------------\n'
+      }),
+    );
+
+    try {
+      if (await canLaunchUrl(emailLaunchUri)) {
+        await launchUrl(emailLaunchUri);
+      } else {
+        throw 'Could not launch mail app';
+      }
+    } catch (e) {
+      print('Error launching support email: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open email app. Please email support at spotlightapp.help@gmail.com'),
+          ),
+        );
+      }
+    }
+  }
+
+  String? _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+  }
 
   @override
   void initState() {
@@ -721,8 +792,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   tileColor: tileColor,
                   onTap: () =>
                       context.read<ThemeProvider>().toggleDarkMode()),
-              _buildListTile(context, Icons.shield_outlined, 'Privacy',
-                  tileColor: tileColor),
+              _buildListTile(
+                context,
+                Icons.star_outline_rounded,
+                'Rate Us',
+                tileColor: tileColor,
+                onTap: _launchPlayStore,
+              ),
               const SizedBox(height: 32),
 
               // ── Support ───────────────────────────────────────
@@ -733,8 +809,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       letterSpacing: 1.2,
                       color: subText)),
               const SizedBox(height: 16),
-              _buildListTile(context, Icons.help_outline, 'Help Center',
-                  tileColor: tileColor),
+              _buildListTile(
+                context,
+                Icons.help_outline,
+                'Help Center',
+                tileColor: tileColor,
+                onTap: _contactSupport,
+              ),
               const SizedBox(height: 32),
 
               // ── Sign Out ───────────────────────────────────────

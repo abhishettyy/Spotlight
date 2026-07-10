@@ -9,6 +9,7 @@ import '../core/events_provider.dart';
 import '../core/saved_events_provider.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
+import 'package:share_plus/share_plus.dart';
 
 class EventDetailsScreen extends StatelessWidget {
   final String eventId;
@@ -173,7 +174,18 @@ class EventDetailsScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
+                             if (event.clubName != null && event.clubName!.isNotEmpty) ...[
+                               const SizedBox(height: 6),
+                               Text(
+                                 'Hosted by: ${event.clubName}',
+                                 style: GoogleFonts.inter(
+                                   fontSize: 14,
+                                   color: cs.primary,
+                                   fontWeight: FontWeight.w600,
+                                 ),
+                               ),
+                             ],
+                           ],
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -329,7 +341,16 @@ class EventDetailsScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _circleBtn(Icons.arrow_back_ios_new, () => Navigator.pop(context)),
-                _circleBtn(Icons.share_outlined, () {}),
+                _circleBtn(Icons.share_outlined, () {
+                  final shareText = 'Hey! Check out this event "${event.title}"'
+                      '${event.clubName != null && event.clubName!.isNotEmpty ? ' hosted by ${event.clubName}' : ''} '
+                      'on Spotlight!\n\n'
+                      'Venue: ${event.venue}\n'
+                      'Date: ${event.date ?? 'TBA'}\n'
+                      'Price: ${event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free'}\n\n'
+                      'Download the Spotlight app to register now!';
+                  Share.share(shareText);
+                }),
               ],
             ),
           ),

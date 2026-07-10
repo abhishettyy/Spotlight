@@ -400,7 +400,7 @@ class _TicketScreenState extends State<TicketScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      event.category.toUpperCase(),
+                      '${event.category.toUpperCase()}${event.clubName != null && event.clubName!.isNotEmpty ? ' • ${event.clubName!.toUpperCase()}' : ''}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
