@@ -297,13 +297,14 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister: () => void }) {
   const [scrollY, setScrollY] = useState(0);
-  const [stats, setStats] = useState({ liveEvents: 0, registrations: 0 });
+  const [stats, setStats] = useState({ liveEvents: 0, registrations: 0, clubs: 0 });
 
   useEffect(() => {
     fetchPublicStats().then(data => {
       setStats({
         liveEvents: data.liveEvents || 0,
-        registrations: data.registrations || 0
+        registrations: data.registrations || 0,
+        clubs: data.clubs || 0
       });
     }).catch(e => console.error("Failed to fetch public stats", e));
   }, []);
@@ -441,7 +442,11 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             viewport={{ once: true }} transition={{ duration: 0.8 }}
             className="flex flex-wrap justify-center gap-16 mb-28"
           >
-            {[{ v: "48", l: "Active Events" }, { v: "2,400+", l: "Registrations" }, { v: "12", l: "Clubs" }, { v: "15k+", l: "Tickets Sold" }].map(s => (
+            {[
+              { v: stats.liveEvents.toString(), l: "Active Events" },
+              { v: stats.registrations.toLocaleString(), l: "Registrations" },
+              { v: stats.clubs.toString(), l: "Clubs" }
+            ].map(s => (
               <div key={s.l} className="text-center">
                 <p className="text-3xl font-semibold text-white mb-1.5">{s.v}</p>
                 <p className="text-[11px] tracking-[0.45em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>{s.l}</p>

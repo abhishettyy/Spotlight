@@ -324,9 +324,13 @@ router.get('/public/stats', async (req: Request, res: Response): Promise<any> =>
     // Count total registrations across all events till now
     const registrations = await prisma.registration.count();
 
+    // Count total clubs
+    const clubs = await prisma.club.count();
+
     return res.status(200).json({
       liveEvents,
       registrations,
+      clubs,
     });
   } catch (error: any) {
     console.error('Failed to fetch public stats:', error);
