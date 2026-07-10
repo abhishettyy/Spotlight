@@ -420,21 +420,6 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
               Enter Dashboard
               <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-300" />
             </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-              onClick={onRegister}
-              className="cursor-pointer px-9 py-4 text-sm rounded-full text-white/80 hover:text-white transition-all duration-500"
-              style={{ border: "1px solid rgba(255,255,255,0.1)" }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.28)")}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
-            >Join the Network</motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              className="px-6 py-4 text-sm text-white/85 hover:text-white/90 transition-colors duration-400"
-              onClick={() => document.getElementById("ls")?.scrollBy({ top: window.innerHeight, behavior: "smooth" })}
-            >View Events ↓</motion.button>
           </motion.div>
         </motion.div>
 
