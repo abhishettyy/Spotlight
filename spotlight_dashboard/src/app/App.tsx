@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
-  ChevronRight, Eye, EyeOff, LayoutDashboard, Archive,
+  ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
   X, Key, Copy, Settings, LogOut
 } from "lucide-react";
@@ -2445,8 +2445,6 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
 const DASH_NAV = [
   { icon: LayoutDashboard, label: "Overview",  id: "overview" },
   { icon: Calendar,        label: "Events",    id: "events"   },
-  
-  { icon: Archive,         label: "Archive",   id: "archive"  },
   { icon: Settings,        label: "Settings",  id: "settings" },
 ];
 

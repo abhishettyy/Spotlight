@@ -71,9 +71,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     try {
-      if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
-      } else {
+      final launched = await launchUrl(emailLaunchUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
         throw 'Could not launch mail app';
       }
     } catch (e) {
