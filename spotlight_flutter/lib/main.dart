@@ -80,8 +80,8 @@ class _AppInitializerState extends State<AppInitializer> {
     setState(() { _hasError = false; });
 
     try {
-      // Keep splash visible for at least 2s while we initialize
-      final minSplash = Future.delayed(const Duration(seconds: 2));
+      // Keep splash visible for at least 3.5s to let the intro animation settle and feel complete
+      final minSplash = Future.delayed(const Duration(milliseconds: 3500));
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.tryAutoLogin();
@@ -101,7 +101,7 @@ class _AppInitializerState extends State<AppInitializer> {
         }
       }
 
-      await minSplash; // ensure splash shows for at least 2s
+      await minSplash; // ensure splash shows for at least 3.5s
 
       if (mounted) setState(() => _initialized = true);
     } catch (e) {
@@ -109,7 +109,7 @@ class _AppInitializerState extends State<AppInitializer> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isAuthenticated) {
         // Already logged in — go through anyway
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(milliseconds: 3500));
         if (mounted) setState(() => _initialized = true);
       } else {
         // Not logged in and network failed — show error
@@ -120,36 +120,46 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    // Error state — no internet or server unreachable
+    Widget currentScreen;
+
     if (_hasError) {
-      return _NoInternetScreen(onRetry: _initializeApp);
-    }
-
-    // Still loading — show splash
-    if (!_initialized) {
-      return const SplashScreen();
-    }
-
-    // Ready — route to correct screen
-    return Consumer2<AuthProvider, UserProvider>(
-      builder: (context, auth, userProvider, child) {
-        if (auth.isAuthenticated) {
-          if (userProvider.currentUser != null &&
-              userProvider.currentUser!.isProfileIncomplete) {
-            return const OnboardingScreen();
+      currentScreen = _NoInternetScreen(
+        key: const ValueKey('no_internet_screen'),
+        onRetry: _initializeApp,
+      );
+    } else if (!_initialized) {
+      currentScreen = const SplashScreen(
+        key: ValueKey('splash_screen'),
+      );
+    } else {
+      currentScreen = Consumer2<AuthProvider, UserProvider>(
+        key: const ValueKey('app_content'),
+        builder: (context, auth, userProvider, child) {
+          if (auth.isAuthenticated) {
+            if (userProvider.currentUser != null &&
+                userProvider.currentUser!.isProfileIncomplete) {
+              return const OnboardingScreen();
+            }
+            return const MainLayout();
+          } else {
+            return const AuthScreen();
           }
-          return const MainLayout();
-        } else {
-          return const AuthScreen();
-        }
-      },
+        },
+      );
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 550),
+      switchInCurve: Curves.easeInOut,
+      switchOutCurve: Curves.easeInOut,
+      child: currentScreen,
     );
   }
 }
 
 class _NoInternetScreen extends StatelessWidget {
   final VoidCallback onRetry;
-  const _NoInternetScreen({required this.onRetry});
+  const _NoInternetScreen({Key? key, required this.onRetry}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

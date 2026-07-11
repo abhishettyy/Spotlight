@@ -46,14 +46,18 @@ class SpotlightTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
-      primaryColor: deepBlack,
-      scaffoldBackgroundColor: const Color(0xFFF9F9F9),
+      primaryColor: crimsonRed,
+      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
       pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.light(
-        primary: deepBlack,
-        secondary: darkGray,
+        primary: crimsonRed,
+        secondary: deepBlack,
         surface: pureWhite,
-        background: Color(0xFFF9F9F9),
+        background: Color(0xFFF8F9FA),
+        onPrimary: pureWhite,
+        onSecondary: pureWhite,
+        onSurface: deepBlack,
+        onBackground: deepBlack,
       ),
       textTheme: GoogleFonts.interTextTheme().apply(
         bodyColor: deepBlack,
@@ -79,7 +83,7 @@ class SpotlightTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: deepBlack,
+          backgroundColor: crimsonRed,
           foregroundColor: pureWhite,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -96,6 +100,10 @@ class SpotlightTheme {
         filled: true,
         fillColor: subtleGray,
         border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),

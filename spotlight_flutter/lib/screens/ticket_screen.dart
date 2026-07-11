@@ -316,13 +316,26 @@ class _TicketScreenState extends State<TicketScreen> {
             image: NetworkImage(imageUrl),
             fit: BoxFit.cover,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          boxShadow: isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
@@ -504,10 +517,55 @@ class _TicketScreenState extends State<TicketScreen> {
   Widget _buildTicketCard(TicketModel ticket) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
     final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
     final processingBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+    final mainText = isDark ? Colors.white : const Color(0xFF111111);
+
+    final cardDecoration = isDark
+        ? BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E1E1E),
+                Color(0xFF0F0F0F),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.06),
+              width: 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.black.withOpacity(0.04),
+              width: 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          );
 
     final event = ticket.event;
     final title = event?.title ?? 'Unknown Event';
@@ -559,17 +617,7 @@ class _TicketScreenState extends State<TicketScreen> {
               )
           : null,
       child: Container(
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: cardDecoration,
         child: Column(
           children: [
             // ── Banner image + status badge ──────────────────────
@@ -633,7 +681,7 @@ class _TicketScreenState extends State<TicketScreen> {
                   const SizedBox(height: 4),
                   Text(title,
                       style: GoogleFonts.inter(
-                          color: cs.onBackground,
+                          color: mainText,
                           fontSize: 18,
                           fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
@@ -690,7 +738,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                     color: subText, fontSize: 10)),
                             Text(shortId,
                                 style: GoogleFonts.inter(
-                                    color: cs.onBackground,
+                                    color: mainText,
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold)),
                           ],

@@ -2869,7 +2869,7 @@ function OverviewPage({
       {/* Quick Actions + Live Activity Feed */}
       <div className="grid md:grid-cols-3 gap-6 pb-10">
         <div className="md:col-span-2">
-          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM }}>Quick Actions</p>
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM, marginBottom: "18px" }}>Quick Actions</p>
           <div className="grid grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((qa, i) => (
               <motion.button key={qa.label} onClick={() => onNavigate(qa.id)}
@@ -2904,7 +2904,7 @@ function OverviewPage({
 
         {/* Live Activity Feed */}
         <div>
-          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM }}>Recent Activity</p>
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM, marginBottom: "18px" }}>Recent Activity</p>
           <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
             {recentActivity.length === 0 ? (
               <p className="text-xs text-center py-6" style={{ color: "#94a3b8", fontFamily: FB }}>No activity yet.</p>
