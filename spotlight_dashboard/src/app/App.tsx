@@ -12,7 +12,7 @@ import {
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline } from "./api";
 import confetti from "canvas-confetti";
 
 
@@ -39,6 +39,7 @@ interface ClubEvent {
   price: number;
   bannerUrl?: string | null;
   qrUrl?: string | null;
+  registrationDeadline?: string | null;
 }
 
 interface Registration {
@@ -887,7 +888,8 @@ function EventsPage({
   selectedEventId,
   setSelectedEventId,
   showTeams,
-  setShowTeams
+  setShowTeams,
+  refreshEvents
 }: {
   EVENTS: ClubEvent[];
   allRegistrations: Registration[];
@@ -897,16 +899,21 @@ function EventsPage({
   setSelectedEventId: (eventId: string | null, pushHistory?: boolean) => void;
   showTeams: boolean;
   setShowTeams: (val: boolean, pushHistory?: boolean) => void;
+  refreshEvents: () => Promise<void>;
 }) {
 
   const [regsLoading, setRegsLoading] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+  const [newDeadline, setNewDeadline] = useState("");
+  const [updatingDeadline, setUpdatingDeadline] = useState(false);
 
   // Reset sub-views when active event changes
   useEffect(() => {
     setShowParticipants(false);
     setSearchQuery("");
+    setShowDeadlineModal(false);
   }, [selectedEventId]);
 
   // Derive per-event registrations from the shared allRegistrations store
@@ -1285,6 +1292,28 @@ function EventsPage({
               ))}
             </div>
 
+            <div className="flex items-center justify-between mt-8 mb-2">
+               <div>
+                 {activeEvent.registrationDeadline && (
+                   <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>
+                     Registration Deadline: <span className="text-white/80 font-medium">{new Date(activeEvent.registrationDeadline).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}</span>
+                   </p>
+                 )}
+               </div>
+               <motion.button
+                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                 onClick={() => {
+                   setNewDeadline(activeEvent.registrationDeadline || "");
+                   setShowDeadlineModal(true);
+                 }}
+                 className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300"
+                 onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.3)")}
+                 onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+                 style={{ fontFamily: FB }}
+               >
+                 <Calendar size={14} /> Change Deadline
+               </motion.button>
+            </div>
             <div className="grid lg:grid-cols-2 gap-8">
                {/* Pending */}
                <div>
@@ -1390,7 +1419,48 @@ function EventsPage({
                   </div>
                 </div>
               )}
+
             </div>
+
+            <AnimatePresence>
+              {showDeadlineModal && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start pt-24 justify-center p-6 overflow-y-auto" style={{ background: "rgba(5,5,5,0.9)", backdropFilter: "blur(10px)" }}>
+                  <div className="w-full max-w-md p-8 rounded-3xl relative mb-24" style={{ background: "rgba(30,30,30,0.95)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <button onClick={() => setShowDeadlineModal(false)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"><X size={20} /></button>
+                    <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Change Deadline</h2>
+                    <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Update the registration deadline for this event.</p>
+                    
+                    <div className="mb-6">
+                      <label className="text-[11px] tracking-widest uppercase text-[#f3f4f6] block mb-2" style={{ fontFamily: FM }}>Registration Deadline</label>
+                      <GlassDatePicker value={newDeadline} onChange={setNewDeadline} />
+                    </div>
+                    
+                    <button 
+                      onClick={async () => {
+                        setUpdatingDeadline(true);
+                        try {
+                          const token = await getToken();
+                          if (token) {
+                            await updateEventDeadline(activeEvent.id, newDeadline, token);
+                            await refreshEvents();
+                            setShowDeadlineModal(false);
+                          }
+                        } catch (err) {
+                          console.error("Failed to update deadline", err);
+                        } finally {
+                          setUpdatingDeadline(false);
+                        }
+                      }}
+                      disabled={updatingDeadline}
+                      className="w-full py-3 rounded-xl bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold transition-all disabled:opacity-50"
+                      style={{ fontFamily: FB }}
+                    >
+                      {updatingDeadline ? "Updating..." : "Save Deadline"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </div>
@@ -1444,8 +1514,14 @@ function EventsPage({
                     }}>Upcoming</span>
                   </div>
                   <h3 className="text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
-                  <div className="flex items-center gap-3 mb-6" style={{ color: "#f3f4f6" }}>
+                  <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#f3f4f6" }}>
                     <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
+                    {ev.registrationDeadline && (
+                      <span className="flex items-center gap-1.5 text-xs text-[#f59e0b]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Deadline: {(() => { const d = new Date(ev.registrationDeadline); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <div className="flex justify-between text-[11px] mb-2" style={{ color: "#f9fafb", fontFamily: FM }}>
@@ -1491,8 +1567,14 @@ function EventsPage({
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#94a3b8", fontFamily: FM }}>Ended</span>
                   </div>
                   <h3 className="text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
-                  <div className="flex items-center gap-3 mb-6" style={{ color: "#94a3b8" }}>
+                  <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#94a3b8" }}>
                     <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
+                    {ev.registrationDeadline && (
+                      <span className="flex items-center gap-1.5 text-xs text-[#94a3b8]/70">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Deadline: {(() => { const d = new Date(ev.registrationDeadline); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <div className="flex justify-between text-[11px] mb-2" style={{ color: "#94a3b8", fontFamily: FM }}>
@@ -1553,7 +1635,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
   return (
     <div className="relative">
       <div onClick={() => setOpen(!open)} className="w-full rounded-xl px-4 py-3 text-sm text-white cursor-pointer flex items-center justify-between transition-all" style={{ background: "rgba(255,255,255,0.02)", border: open ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
-        <span className={value ? "text-white" : "text-[#888]"}>{value ? value.replace("T", " ") : "Select Date & Time"}</span>
+        <span className={value ? "text-white" : "text-[#888]"}>{value ? (() => { const d = new Date(value); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${h}:${m}`; })() : "Select Date & Time"}</span>
         <Calendar size={14} className="text-[#d1d5db]" />
       </div>
       
@@ -1614,7 +1696,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
 // ─── Create Event Page ────────────────────────────────────────────────────────
 function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null> }) {
   const [formData, setFormData] = useState({
-    title: "", desc: "", date: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
+    title: "", desc: "", date: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
     eventType: "Solo", teamSizeLimit: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
@@ -1694,6 +1776,7 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
         clubId: clubId,
         bannerUrl,
         qrUrl,
+        registrationDeadline: formData.deadline || undefined,
       }, token ?? undefined);
       onCreated();
     } catch (e: any) {
@@ -1744,6 +1827,13 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Date & Time</label>
             <GlassDatePicker value={formData.date} onChange={v => setFormData(p => ({...p, date: v}))} />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-1.5">
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Registration Deadline</label>
+            <GlassDatePicker value={formData.deadline} onChange={v => setFormData(p => ({...p, deadline: v}))} />
           </div>
         </div>
 
@@ -2693,6 +2783,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                  setSelectedEventId={handleSetSelectedEventId}
                  showTeams={showTeams}
                  setShowTeams={handleSetShowTeams}
+                 refreshEvents={refreshEvents}
                />
             </motion.div>
           )}
@@ -2849,10 +2940,16 @@ function OverviewPage({
                   <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
                 </div>
                 <h3 className="text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>
-                <div className="flex items-center gap-3 mb-4" style={{ color: "#d1d5db" }}>
+                <div className="flex items-center gap-3 mb-3" style={{ color: "#d1d5db" }}>
                   <span className="flex items-center gap-1 text-[11px]"><Calendar size={9} />{ev.date ?? 'TBD'}</span>
                   <span className="flex items-center gap-1 text-[11px]"><MapPin size={9} />{ev.venue}</span>
                 </div>
+                {ev.registrationDeadline && (
+                  <div className="flex items-center gap-1 mb-4" style={{ color: "#f59e0b" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span className="text-[11px]" style={{ fontFamily: 'inherit' }}>Deadline: {(() => { const d = new Date(ev.registrationDeadline!); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</span>
+                  </div>
+                )}
                 <div>
                   <div className="flex justify-between text-[11px] mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>
                     <span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>

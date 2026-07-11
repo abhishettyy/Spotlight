@@ -371,6 +371,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       price: e.fee,
       qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
       bannerUrl: e.bannerUrl ?? null,
+      registrationDeadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
     }));
 
     return res.status(200).json({

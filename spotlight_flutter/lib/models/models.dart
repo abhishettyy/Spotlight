@@ -137,6 +137,7 @@ class EventModel {
   final String? upiId;
   final String? clubName;
   final int registrationCount;
+  final DateTime? registrationDeadline;
 
   EventModel({
     required this.id,
@@ -153,6 +154,7 @@ class EventModel {
     this.upiId,
     this.clubName,
     required this.registrationCount,
+    this.registrationDeadline,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -161,17 +163,22 @@ class EventModel {
       id: json['id'],
       title: json['title'] ?? 'No Title',
       venue: json['venue'] ?? 'No Venue',
-      imageUrl: json['image_url'],
+      imageUrl: json['image_url'] ?? json['imageUrl'],
       category: json['category'] ?? 'Other',
       price: (json['price'] ?? 0).toDouble(),
       description: json['description'],
       date: json['date'],
       qrUrl: json['qrUrl'] ?? json['qr_url'],
-      eventType: json['eventType'],
-      teamSizeLimit: json['teamSizeLimit'],
+      eventType: json['eventType'] ?? json['event_type'],
+      teamSizeLimit: json['teamSizeLimit'] ?? json['team_size_limit'],
       upiId: club?['upiId'] ?? club?['upi_id'],
       clubName: club?['name'],
-      registrationCount: json['registrationCount'] ?? 0,
+      registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
+      registrationDeadline: json['registration_deadline'] != null
+          ? DateTime.tryParse(json['registration_deadline'].toString())
+          : json['registrationDeadline'] != null
+              ? DateTime.tryParse(json['registrationDeadline'].toString())
+              : null,
     );
   }
 }

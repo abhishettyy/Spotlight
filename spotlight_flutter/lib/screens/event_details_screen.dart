@@ -16,6 +16,13 @@ class EventDetailsScreen extends StatelessWidget {
 
   const EventDetailsScreen({super.key, required this.eventId});
 
+  String _formatDeadline(DateTime deadline) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hour = deadline.hour.toString().padLeft(2, '0');
+    final minute = deadline.minute.toString().padLeft(2, '0');
+    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year}  $hour:$minute';
+  }
+
   Map<String, String> _parseDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) {
       return {'day': '01', 'month': 'JAN', 'weekday': 'Monday', 'year': '2026'};
@@ -94,6 +101,8 @@ class EventDetailsScreen extends StatelessWidget {
     final venue = event.venue;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
     final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1000&auto=format&fit=crop';
+    
+    final bool isClosed = event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!);
 
     final dateData = _parseDate(date);
 
@@ -138,12 +147,10 @@ class EventDetailsScreen extends StatelessWidget {
                   // Spacer to push content below the top header image area
                   SizedBox(height: MediaQuery.of(context).size.height * 0.28),
 
-                  // Category Pills
+                  // Category Pill
                   Row(
                     children: [
                       _glassPill(event.category),
-                      const SizedBox(width: 12),
-                      _glassPill('Event'),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -167,25 +174,46 @@ class EventDetailsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Concert: $venue',
+                              'Venue: $venue',
                               style: GoogleFonts.inter(
                                 fontSize: 15,
                                 color: textSecondary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                             if (event.clubName != null && event.clubName!.isNotEmpty) ...[
-                               const SizedBox(height: 6),
-                               Text(
-                                 'Hosted by: ${event.clubName}',
-                                 style: GoogleFonts.inter(
-                                   fontSize: 14,
-                                   color: cs.primary,
-                                   fontWeight: FontWeight.w600,
-                                 ),
-                               ),
-                             ],
-                           ],
+                              if (event.clubName != null && event.clubName!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Hosted by: ${event.clubName}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: cs.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                              if (event.registrationDeadline != null) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: 13,
+                                      color: Colors.yellow[600],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: Colors.yellow[600],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -265,7 +293,7 @@ class EventDetailsScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '9:00 AM - End',
+                                '9:00 AM',
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   color: textSecondary,
@@ -310,24 +338,6 @@ class EventDetailsScreen extends StatelessWidget {
                       height: 1.6,
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Description List (Feature Points)
-                  Text(
-                    'Description',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _bulletItem(context, 'Category: ${event.category} Event', Icons.check_circle_rounded),
-                  _bulletItem(context, 'Registration: ${event.registrationCount} going', Icons.check_circle_rounded),
-                  if (event.teamSizeLimit != null)
-                    _bulletItem(context, 'Team Limit: Up to ${event.teamSizeLimit} members', Icons.check_circle_rounded)
-                  else
-                    _bulletItem(context, 'Solo participation or individual entry', Icons.check_circle_rounded),
                 ],
               ),
             ),
@@ -396,7 +406,7 @@ class EventDetailsScreen extends StatelessWidget {
               // Register Now Button
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: isClosed ? null : () {
                     Navigator.push(
                       context,
                       SmoothRoute(
@@ -413,7 +423,9 @@ class EventDetailsScreen extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: isClosed 
+                      ? (isDark ? Colors.grey[800] : Colors.grey[300])
+                      : Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -421,11 +433,13 @@ class EventDetailsScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Register Now',
+                    isClosed ? 'Registration Closed' : 'Register Now',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: isClosed 
+                        ? (isDark ? Colors.grey[500] : Colors.grey[600])
+                        : Colors.white,
                     ),
                   ),
                 ),

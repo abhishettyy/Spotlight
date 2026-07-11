@@ -80,6 +80,13 @@ export async function createEvent(data: {
   }, token);
 }
 
+export async function updateEventDeadline(eventId: string, deadline: string, token?: string) {
+  return request(`/events/${eventId}/deadline`, {
+    method: 'PUT',
+    body: JSON.stringify({ registrationDeadline: deadline }),
+  }, token);
+}
+
 // ── Clubs ─────────────────────────────────────────────────────────────────────
 
 export async function fetchClubs() {

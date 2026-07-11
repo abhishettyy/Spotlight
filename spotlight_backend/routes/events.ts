@@ -30,7 +30,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
       date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
       eventType: e.eventType ?? 'Solo',
       teamSizeLimit: e.teamSizeLimit,
-      registration_deadline: e.registrationDeadline,
+      registration_deadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
       registration_limit: e.registrationLimit,
       club: e.club ? { id: e.club.id, name: e.club.name, upiId: e.club.upiId } : null,
       qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
@@ -161,6 +161,31 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
 
     return res.status(200).json({ registrations: mapped });
   } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/events/:id/deadline — Update event registration deadline (Protected)
+router.put('/:id/deadline', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const { registrationDeadline } = req.body;
+
+    if (!registrationDeadline) {
+      return res.status(400).json({ error: 'Registration deadline is required.' });
+    }
+
+    const updatedEvent = await prisma.event.update({
+      where: { id },
+      data: {
+        registrationDeadline: new Date(registrationDeadline)
+      },
+      include: { club: true }
+    });
+
+    return res.status(200).json({ event: updatedEvent });
+  } catch (error: any) {
+    console.error('Update event deadline error:', error);
     return res.status(500).json({ error: error.message });
   }
 });
