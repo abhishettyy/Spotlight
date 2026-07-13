@@ -19,7 +19,7 @@ class EventCard extends StatelessWidget {
       width: 280,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: SpotlightTheme.deepBlack, // Placeholder for image background
+        color: SpotlightTheme.deepBlack, 
         borderRadius: BorderRadius.circular(24),
         image: const DecorationImage(
           image: NetworkImage('https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=600'),
@@ -29,7 +29,7 @@ class EventCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Top Badges
+
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -61,8 +61,7 @@ class EventCard extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Bottom Content
+
           Positioned(
             bottom: 0,
             left: 0,

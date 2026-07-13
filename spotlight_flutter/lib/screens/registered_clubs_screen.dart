@@ -31,7 +31,6 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
           Provider.of<UserProvider>(context, listen: false).currentUser?.id;
       if (userId == null) throw AppException('Not logged in');
 
-      // Fetch user tickets and extract unique clubs
       final tickets = await ApiService().fetchUserTickets();
       final seen = <String>{};
       final clubs = <ClubModel>[];
@@ -64,7 +63,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 24, 0),
               child: Row(
@@ -91,7 +90,6 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Content
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -194,7 +192,10 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
               border: Border.all(
                   color: isDark ? Colors.white12 : Colors.grey[200]!),
             ),
-            child: club.logoUrl != null
+            child: (club.logoUrl != null &&
+                    club.logoUrl!.isNotEmpty &&
+                    club.logoUrl !=
+                        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3')
                 ? ClipOval(
                     child: CustomImage(url: club.logoUrl!,
                         fit: BoxFit.cover,

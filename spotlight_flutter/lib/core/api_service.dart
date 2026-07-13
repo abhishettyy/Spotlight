@@ -20,7 +20,7 @@ class ApiService {
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {
     final errStr = error.toString().toLowerCase();
-    
+
     if (errStr.contains('socketexception') || 
         errStr.contains('connection timed out') || 
         errStr.contains('clientexception') ||
@@ -30,11 +30,11 @@ class ApiService {
         errStr.contains('host lookup failed')) {
       return 'Connection error. Please check your internet connection and try again.';
     }
-    
+
     if (errStr.contains('500') || errStr.contains('internal server error')) {
       return 'Internal server error. Please try again later.';
     }
-    
+
     String cleanMsg = error.toString();
     if (cleanMsg.startsWith('Exception: ')) {
       cleanMsg = cleanMsg.substring('Exception: '.length);
@@ -45,7 +45,7 @@ class ApiService {
         cleanMsg = parts.sublist(1).join(': ');
       }
     }
-    
+
     return cleanMsg.isNotEmpty ? cleanMsg : defaultMsg;
   }
 
@@ -63,8 +63,6 @@ class ApiService {
 
     return headers;
   }
-
-  // ── Events ──────────────────────────────────────────────────────────────
 
   Future<List<EventModel>> fetchEvents() async {
     try {
@@ -91,8 +89,6 @@ class ApiService {
     }
   }
 
-  // ── Clubs ────────────────────────────────────────────────────────────────
-
   Future<List<ClubModel>> fetchClubs() async {
     try {
       final headers = await _getHeaders();
@@ -118,9 +114,6 @@ class ApiService {
     }
   }
 
-  // ── Registration ─────────────────────────────────────────────────────────
-
-  /// Solo registration for an event. Returns registration ID.
   Future<String> registerSolo({
     required String eventId,
     required String name,
@@ -153,7 +146,6 @@ class ApiService {
     }
   }
 
-  /// Create a team for an event. Returns the passkey and leader's registrationId.
   Future<Map<String, String>> createTeam({
     required String eventId,
     required String teamName,
@@ -189,7 +181,6 @@ class ApiService {
     }
   }
 
-  /// Join an existing team using a passkey.
   Future<void> joinTeam({
     required String eventId,
     required String passkey,
@@ -218,7 +209,6 @@ class ApiService {
     }
   }
 
-  /// Uploads the payment proof screenshot and transaction ID for a registration.
   Future<void> uploadPaymentProof({
     required String registrationId,
     required String base64Image,
@@ -243,8 +233,6 @@ class ApiService {
       throw AppException(formatExceptionMessage(e, 'Failed to upload payment proof. Please check your connection.'));
     }
   }
-
-  // ── Tickets ──────────────────────────────────────────────────────────────
 
   Future<List<TicketModel>> fetchUserTickets() async {
     try {
@@ -275,8 +263,6 @@ class ApiService {
       throw AppException(formatExceptionMessage(e, 'Failed to fetch tickets.'));
     }
   }
-
-  // ── Notifications ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> fetchNotifications() async {
     try {
@@ -354,9 +340,6 @@ class ApiService {
     }
   }
 
-  // ── Auth ─────────────────────────────────────────────────────────────────
-
-  /// Manual Signup — creates a new account and persists the session.
   Future<UserModel?> signup({
     required String email,
     required String password,
@@ -397,7 +380,6 @@ class ApiService {
     }
   }
 
-  /// Manual Login — verifies credentials and persists the session.
   Future<UserModel?> login({
     required String email,
     required String password,
@@ -426,7 +408,6 @@ class ApiService {
     }
   }
 
-  /// Fetch profile stats — events registered count and clubs count.
   Future<Map<String, int>> fetchProfileStats(String userId) async {
     try {
       final response = await http.get(
@@ -446,7 +427,6 @@ class ApiService {
     }
   }
 
-  /// Get Profile by userId (READ-ONLY).
   Future<UserModel?> getProfile(String userId) async {
     try {
       final response = await http.get(
@@ -460,13 +440,12 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      // ignore: avoid_print
+
       print('Error fetching profile: $e');
       return null;
     }
   }
 
-  /// Sync profile for social (Clerk/Google) logins.
   Future<UserModel?> checkAndSyncProfile(
     String clerkUserId,
     String email,
@@ -498,13 +477,12 @@ class ApiService {
         throw AppException(data['error'] ?? 'Failed to sync profile');
       }
     } catch (e) {
-      // ignore: avoid_print
+
       print('Profile sync error: $e');
       throw AppException(formatExceptionMessage(e, 'Failed to sync profile.'));
     }
   }
 
-  /// Update profile details (used during onboarding).
   Future<UserModel?> updateProfile({
     required String clerkUserId,
     required String usn,
@@ -536,8 +514,6 @@ class ApiService {
     }
   }
 
-  /// Verify the user's current password before allowing profile edits.
-  /// Returns true if correct, throws an exception with the error message if not.
   Future<bool> verifyPassword({
     required String userId,
     required String password,
@@ -562,7 +538,6 @@ class ApiService {
     }
   }
 
-  /// Full profile edit — name, USN, branch, phone, year, sem.
   Future<UserModel?> editProfile({
     required String userId,
     String? name,

@@ -13,16 +13,15 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const eventId = "1f028586-15fb-447c-b27c-982075b144d9"; // asdv event ID
-  
-  // Update the event with a stunning high-definition abstract tech banner!
+  const eventId = "1f028586-15fb-447c-b27c-982075b144d9"; 
+
   const updatedEvent = await prisma.event.update({
     where: { id: eventId },
     data: {
       bannerUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop",
     },
   });
-  
+
   console.log("Successfully updated event banner in database:", JSON.stringify(updatedEvent, null, 2));
 
   await prisma.$disconnect();

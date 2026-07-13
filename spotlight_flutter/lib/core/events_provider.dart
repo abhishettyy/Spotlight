@@ -32,6 +32,5 @@ class EventsProvider with ChangeNotifier {
     }
   }
 
-  /// Alias for loadEvents — used after login to refresh event data.
   Future<void> refreshEvents() => loadEvents();
 }

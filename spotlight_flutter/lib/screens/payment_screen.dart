@@ -43,7 +43,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    // Compress image to 50% quality and limit dimensions to 1000px on pick
+
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 50,
@@ -109,8 +109,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    
-    // Format reference code nicely
+
     final displayCode = widget.referenceCode.length > 6
         ? 'REG-${widget.referenceCode.substring(0, 6).toUpperCase()}'
         : widget.referenceCode.toUpperCase();
@@ -128,7 +127,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Summary Card
+
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -147,7 +146,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Payment Details Card
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -215,8 +213,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // QR Code Placeholder
+
                 Center(
                   child: Column(
                     children: [
@@ -241,8 +238,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Transaction ID Input
+
                 Text('Transaction ID / UTR Number', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -256,7 +252,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Upload Section
                 Text('Upload Payment Proof', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 GestureDetector(
@@ -284,8 +279,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                
-                // Submit Button
+
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitPayment,
                   style: ElevatedButton.styleFrom(
@@ -298,7 +292,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ),
           ),
-          
+
           if (_isSubmitting)
             Container(
               color: Colors.black.withOpacity(0.5),

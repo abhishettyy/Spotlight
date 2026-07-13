@@ -78,7 +78,7 @@ class _TicketScreenState extends State<TicketScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────
+
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               child: Row(
@@ -116,7 +116,6 @@ class _TicketScreenState extends State<TicketScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── Tab Filters ──────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Container(
@@ -136,7 +135,6 @@ class _TicketScreenState extends State<TicketScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ── Content ──────────────────────────────────────────
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -185,7 +183,7 @@ class _TicketScreenState extends State<TicketScreen> {
   }
 
   Widget _buildTicketList() {
-    // Tab 1 = Saved — show saved events from EventsProvider
+
     if (_selectedTab == 1) {
       return _buildSavedTab();
     }
@@ -249,7 +247,6 @@ class _TicketScreenState extends State<TicketScreen> {
       );
     }
 
-    // Match saved IDs to full EventModel objects
     final savedEvents = savedIds
         .map((id) {
           try {
@@ -262,7 +259,7 @@ class _TicketScreenState extends State<TicketScreen> {
         .toList();
 
     if (savedEvents.isEmpty) {
-      // IDs exist but events haven't loaded yet
+
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -341,7 +338,7 @@ class _TicketScreenState extends State<TicketScreen> {
           borderRadius: BorderRadius.circular(28),
           child: Stack(
             children: [
-              // Dark gradient overlay
+
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -359,7 +356,6 @@ class _TicketScreenState extends State<TicketScreen> {
                 ),
               ),
 
-              // Date Box at top right (Glassmorphic)
               Positioned(
                 top: 16,
                 right: 16,
@@ -404,7 +400,6 @@ class _TicketScreenState extends State<TicketScreen> {
                 ),
               ),
 
-              // Text details at bottom
               Positioned(
                 bottom: 18,
                 left: 20,
@@ -485,7 +480,6 @@ class _TicketScreenState extends State<TicketScreen> {
       ),
     );
   }
-
 
   Widget _buildTab(int index, String label) {
     final cs = Theme.of(context).colorScheme;
@@ -573,7 +567,6 @@ class _TicketScreenState extends State<TicketScreen> {
     final venue = event?.venue ?? 'TBD';
     final isPending = ticket.isPending;
 
-    // Format date and time
     String dateStr = 'TBD';
     String timeStr = '';
     if (event?.date != null) {
@@ -586,7 +579,6 @@ class _TicketScreenState extends State<TicketScreen> {
       }
     }
 
-    // Short ticket ID for display
     final shortId = 'SPT-${ticket.id.substring(0, 8).toUpperCase()}';
 
     return GestureDetector(
@@ -620,7 +612,7 @@ class _TicketScreenState extends State<TicketScreen> {
         decoration: cardDecoration,
         child: Column(
           children: [
-            // ── Banner image + status badge ──────────────────────
+
             SizedBox(
               height: 140,
               child: Stack(
@@ -665,7 +657,6 @@ class _TicketScreenState extends State<TicketScreen> {
               ),
             ),
 
-            // ── Details ──────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -725,7 +716,6 @@ class _TicketScreenState extends State<TicketScreen> {
                   Divider(color: dividerColor),
                   const SizedBox(height: 14),
 
-                  // ── Footer ──────────────────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

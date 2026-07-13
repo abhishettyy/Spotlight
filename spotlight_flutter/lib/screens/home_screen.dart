@@ -42,8 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good night 🌙';
   }
 
-  /// Build filter list dynamically from loaded events.
-  /// Always starts with 'All', then unique categories sorted alphabetically.
   List<String> _buildFilters(List<EventModel> events) {
     final categories = events
         .map((e) => e.category.trim())
@@ -88,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ──────────────────────────────────────────
+
               Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Row(
@@ -217,7 +215,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // ── Search Bar ──────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: TextField(
@@ -253,11 +250,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ── Filter Pills ────────────────────────────────────
               Consumer<EventsProvider>(
                 builder: (context, provider, _) {
                   final filters = _buildFilters(provider.events);
-                  // Clamp active filter index in case events reload with fewer categories
+
                   if (_activeFilter >= filters.length) {
                     WidgetsBinding.instance.addPostFrameCallback(
                         (_) => setState(() => _activeFilter = 0));
@@ -309,7 +305,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Featured Events Header ─────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Row(
@@ -337,7 +332,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ── Featured Events Carousel ───────────────────────
               Consumer<EventsProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading) {
@@ -484,7 +478,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ── Clubs Row ─────────────────────────────────────
               Consumer<ClubsProvider>(
                 builder: (context, clubsProvider, _) {
                   if (clubsProvider.isLoading) {
@@ -569,7 +562,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ? Colors.white12
                                           : Colors.grey[200]!),
                                 ),
-                                child: club.logoUrl != null
+                                child: (club.logoUrl != null &&
+                                        club.logoUrl!.isNotEmpty &&
+                                        club.logoUrl !=
+                                            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3')
                                     ? ClipOval(
                                         child: CustomImage(
                                           url: club.logoUrl!,
@@ -663,7 +659,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(28),
         child: Stack(
           children: [
-            // Dark gradient overlay
+
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -681,7 +677,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Date Box at top right (Glassmorphic)
             Positioned(
               top: 16,
               right: 16,
@@ -726,7 +721,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Club name pill at top left (Glassmorphic)
             if (event.clubName != null && event.clubName!.isNotEmpty)
               Positioned(
                 top: 16,
@@ -759,7 +753,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-            // Text details at bottom
             Positioned(
               bottom: 20,
               left: 20,
@@ -864,4 +857,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

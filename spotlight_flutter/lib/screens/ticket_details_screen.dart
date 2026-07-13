@@ -46,7 +46,7 @@ class TicketDetailsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // ── Ticket card ──────────────────────────────────────
+
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
@@ -62,7 +62,7 @@ class TicketDetailsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Top section
+
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
                     child: Column(
@@ -149,10 +149,8 @@ class TicketDetailsScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // Perforation divider
                   _PerforationDivider(isDark: isDark),
 
-                  // QR section
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
                     child: Column(
@@ -223,7 +221,6 @@ class TicketDetailsScreen extends StatelessWidget {
   }
 }
 
-/// Dashed perforation line between ticket sections.
 class _PerforationDivider extends StatelessWidget {
   final bool isDark;
   const _PerforationDivider({required this.isDark});

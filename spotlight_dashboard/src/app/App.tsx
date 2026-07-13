@@ -15,8 +15,6 @@ import {
 import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline } from "./api";
 import confetti from "canvas-confetti";
 
-
-// ─── Constants ───────────────────────────────────────────────────────────────
 const FC = "'Playfair Display', serif";
 const F_LOGO = "'Cinzel', serif";
 const FM = "'JetBrains Mono', monospace";
@@ -25,7 +23,6 @@ const FB = "'Manrope', sans-serif";
 type View = "landing" | "auth" | "dashboard";
 type AuthTab = "login" | "register";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface ClubEvent {
   id: string;
   title: string;
@@ -53,12 +50,10 @@ interface Registration {
   transaction_id?: string | null;
 }
 
-// ─── Real Data Hook ───────────────────────────────────────────────────────────
 function useSpotlightData() {
   const { getToken: getClerkToken, userId: clerkUserId, isSignedIn: isClerkSignedIn } = useAuth();
   const { user } = useUser();
 
-  // Local storage direct club login session
   const localToken = localStorage.getItem("spotlight_token");
   const localProfileRaw = localStorage.getItem("spotlight_profile");
   const localProfile = localProfileRaw ? JSON.parse(localProfileRaw) : null;
@@ -79,7 +74,6 @@ function useSpotlightData() {
   const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading]               = useState(true);
 
-  // Live PostgreSQL-bound states
   const [totalEvents, setTotalEvents]             = useState(0);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [pendingCount, setPendingCount]           = useState(0);
@@ -97,7 +91,6 @@ function useSpotlightData() {
       setRecentActivity(stats.recentActivity);
       setClubEvents(stats.clubEvents);
 
-      // Populate allRegistrations in the background so the dashboard overview loads instantly
       fetchAllRegistrationsForEvents(
         stats.clubEvents.map((e: any) => ({ id: e.id, title: e.title })),
         token
@@ -119,7 +112,7 @@ function useSpotlightData() {
 
       let freshProfile = profile;
       if (!isLocalSignedIn) {
-        // Re-sync profile to pick up newly assigned clubId
+
         const email = user?.primaryEmailAddress?.emailAddress ?? '';
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
         console.log("[SpotlightData] refreshEvents syncing profile for email:", email);
@@ -160,7 +153,7 @@ function useSpotlightData() {
         }
 
         if (isLocalSignedIn) {
-          // Direct direct-db club login: skip Clerk sync
+
           setProfile(localProfile);
           const clubsData = await fetchClubs();
           setClubs(clubsData.clubs ?? []);
@@ -171,23 +164,21 @@ function useSpotlightData() {
           return;
         }
 
-        // 1. Fire syncProfile and fetchClubs concurrently for social users
         const email = user?.primaryEmailAddress?.emailAddress ?? '';
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
         console.log("[SpotlightData] load() starting concurrent requests");
-        
+
         const [syncResult, clubsData] = await Promise.all([
           syncProfile(userId!, email, name, token),
           fetchClubs()
         ]);
-        
+
         console.log("[SpotlightData] load() concurrent requests finished");
         let freshProfile = syncResult.profile;
 
         setProfile(freshProfile);
         setClubs(clubsData.clubs ?? []);
 
-        // 3. If they have a club, load the stats
         if (freshProfile?.clubId) {
           console.log("[SpotlightData] load() clubId found, loading dashboard stats for clubId:", freshProfile.clubId);
           await loadDashboardStats(freshProfile.clubId, token);
@@ -221,7 +212,6 @@ function useSpotlightData() {
   };
 }
 
-// ─── Legacy in-memory store (no longer used for real data) ───────────────────
 let globalEvents: any[] = [];
 let eventsListeners: (() => void)[] = [];
 function useEvents() {
@@ -246,11 +236,6 @@ const FEATURES = [
   { icon: Zap,      title: "Smart Publishing",      desc: "Free events go live instantly. Paid events enter the intelligent moderation stream automatically." },
 ];
 
-
-
-
-
-// ─── Shared Helpers ──────────────────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -295,7 +280,6 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
   );
 }
 
-// ─── Landing Page ─────────────────────────────────────────────────────────────
 function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister: () => void }) {
   const [scrollY, setScrollY] = useState(0);
   const [stats, setStats] = useState({ liveEvents: 0, registrations: 0, clubs: 0 });
@@ -323,7 +307,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   return (
     <div id="ls" className="h-screen overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: "none" }}>
 
-      {/* NAV */}
+      {}
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-700"
         style={{
           background:   scrolled ? "rgba(5,5,5,0.92)" : "transparent",
@@ -347,9 +331,9 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </div>
       </nav>
 
-      {/* HERO */}
+      {}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
-        {/* Spotlight beam */}
+        {}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div style={{
             position: "absolute", top: "-10%", left: "50%",
@@ -361,7 +345,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           }} />
         </div>
 
-        {/* Floating chips */}
+        {}
         {[
           { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-12 top-36", y: [0, -14, 0], d: 5.5 },
           { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-16 top-44", y: [0, 12, 0], d: 7 },
@@ -425,7 +409,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           </motion.div>
         </motion.div>
 
-        {/* Scroll cue */}
+        {}
         <motion.div
           className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           animate={{ y: [0, 10, 0] }} transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
@@ -435,7 +419,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </motion.div>
       </section>
 
-      {/* STATS + FEATURES */}
+      {}
       <section className="pt-10 pb-32 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -476,9 +460,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </div>
       </section>
 
-
-
-      {/* FOOTER */}
+      {}
       <footer className="py-10 px-8" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
@@ -494,13 +476,10 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   );
 }
 
-// ─── Clerk Auth Page ──────────────────────────────────────────────────────────
-// ─── Custom Auth Page ──────────────────────────────────────────────────────────
-// Helper to format authentication errors cleanly
 function formatAuthError(err: any, defaultMsg: string): string {
   if (!err) return defaultMsg;
   const msg = err.message || "";
-  
+
   if (
     msg.toLowerCase().includes("network error") || 
     msg.toLowerCase().includes("failed to fetch") || 
@@ -514,11 +493,10 @@ function formatAuthError(err: any, defaultMsg: string): string {
   if (err.errors && err.errors.length > 0) {
     return err.errors[0].longMessage || err.errors[0].message || defaultMsg;
   }
-  
+
   return msg || defaultMsg;
 }
 
-// ─── Custom Auth Page ──────────────────────────────────────────────────────────
 function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
   onLocalSignIn: (token: string, profile: any) => void;
@@ -533,12 +511,10 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Email verification state
   const [verifying, setVerifying] = useState(false);
   const [verifyingSignIn, setVerifyingSignIn] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
 
-  // Toggle password visibility
   const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogleAuth = async () => {
@@ -658,19 +634,18 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
 
       if (result.status === "complete") {
         console.log("[CustomSignUp] Clerk signup verified successfully. Auto-provisioning club...");
-        
-        // Auto-provision the Club in the database, passing the raw password!
+
         const res = await createClub({
           name: clubName,
           email: email,
-          password: password, // PASS PASSWORD SO IT SAVES IN DB!
+          password: password, 
           clerkUserId: result.createdUserId!,
-          logoUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
+          logoUrl: "",
         });
+        localStorage.setItem("show_first_time_notice", "true");
 
         console.log("[CustomSignUp] Database club creation complete:", res);
 
-        // Make the session active
         await setSignUpActive({ session: result.createdSessionId });
       } else {
         setError("Verification not complete.");
@@ -756,7 +731,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
       ><ChevronLeft size={14} /> Back</button>
 
       <div className="flex flex-col items-center gap-6 w-full max-w-md">
-        {/* Tab toggle */}
+        {}
         <div className="flex gap-1 p-1 rounded-xl w-full" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
           {(["login", "register"] as AuthTab[]).map(t => (
             <button key={t} onClick={() => onTabChange(t)}
@@ -766,7 +741,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
           ))}
         </div>
 
-        {/* Custom Form Card */}
+        {}
         <div className="w-full p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
@@ -849,14 +824,14 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
 
           {tab === "login" && (
             <>
-              {/* Social login divider */}
+              {}
               <div className="flex items-center gap-4 my-6">
                 <div className="h-[1px] bg-white/10 flex-1" />
                 <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
                 <div className="h-[1px] bg-white/10 flex-1" />
               </div>
 
-              {/* Social login button */}
+              {}
               <motion.button
                 onClick={handleGoogleAuth}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -879,7 +854,6 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   );
 }
 
-// ─── Events Page ──────────────────────────────────────────────────────────────
 function EventsPage({ 
   EVENTS, 
   allRegistrations, 
@@ -909,14 +883,12 @@ function EventsPage({
   const [newDeadline, setNewDeadline] = useState("");
   const [updatingDeadline, setUpdatingDeadline] = useState(false);
 
-  // Reset sub-views when active event changes
   useEffect(() => {
     setShowParticipants(false);
     setSearchQuery("");
     setShowDeadlineModal(false);
   }, [selectedEventId]);
 
-  // Derive per-event registrations from the shared allRegistrations store
   const registrations = selectedEventId
     ? allRegistrations.filter(r => r.eventId === selectedEventId)
     : [];
@@ -925,13 +897,11 @@ function EventsPage({
   const pending  = registrations.filter(r => r.status?.toLowerCase() === "pending");
   const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
 
-  // Recurring background poll for registrations to ensure real-time dynamic updates
   useEffect(() => {
     if (!selectedEventId) return;
 
     let isMounted = true;
-    
-    // Only show loading spinner on the very first load
+
     const already = allRegistrations.some(r => r.eventId === selectedEventId);
     if (!already) {
       setRegsLoading(true);
@@ -963,10 +933,8 @@ function EventsPage({
       }
     };
 
-    // Run immediately
     poll();
 
-    // Set interval to poll every 4 seconds for real-time dynamic sync
     const intervalId = setInterval(poll, 4000);
 
     return () => {
@@ -977,7 +945,7 @@ function EventsPage({
 
   const handleApprove = async (id: string, e: React.MouseEvent) => {
     try {
-      // Small localized green drops/burst effect around the clicked button
+
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
       confetti({
@@ -993,11 +961,9 @@ function EventsPage({
       const token = await getToken();
       await approveRegistration(id, token ?? undefined);
 
-      // Find the team id of the registration being approved to optimistically update the whole team
       const reg = allRegistrations.find(r => r.id === id);
       const teamId = reg?.team?.id;
 
-      // Instant optimistic update — move from pending → confirmed for the user (and their team)
       onRegistrationsChange(prev =>
         prev.map(r => {
           if (r.id === id || (teamId && r.team?.id === teamId)) {
@@ -1042,7 +1008,7 @@ function EventsPage({
               <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
               <button onClick={() => setShowTeams(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
             </div>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {teamsList.map(team => (
                 <div key={team.id} className="p-6 rounded-2xl flex flex-col" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -1130,7 +1096,7 @@ function EventsPage({
               </div>
             </div>
 
-            {/* Search filter bar */}
+            {}
             <div className="relative max-w-md">
               <input
                 type="text"
@@ -1142,7 +1108,7 @@ function EventsPage({
               />
             </div>
 
-            {/* Table roster */}
+            {}
             <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -1301,21 +1267,28 @@ function EventsPage({
                  )}
                </div>
                <motion.button
-                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                 whileHover={activeEvent.status === "previous" ? undefined : { scale: 1.02 }}
+                 whileTap={activeEvent.status === "previous" ? undefined : { scale: 0.97 }}
+                 disabled={activeEvent.status === "previous"}
                  onClick={() => {
                    setNewDeadline(activeEvent.registrationDeadline || "");
                    setShowDeadlineModal(true);
                  }}
-                 className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300"
-                 onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.3)")}
-                 onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+                 className={`flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300 ${activeEvent.status === "previous" ? "opacity-40 cursor-not-allowed" : ""}`}
+                 onMouseEnter={e => {
+                   if (activeEvent.status === "previous") return;
+                   e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.3)";
+                 }}
+                 onMouseLeave={e => {
+                   e.currentTarget.style.boxShadow = "none";
+                 }}
                  style={{ fontFamily: FB }}
                >
                  <Calendar size={14} /> Change Deadline
                </motion.button>
             </div>
             <div className="grid lg:grid-cols-2 gap-8">
-               {/* Pending */}
+               {}
                <div>
                  <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Pending Registrations ({pending.length})</p>
                  <div className="space-y-3">
@@ -1339,8 +1312,8 @@ function EventsPage({
                    </AnimatePresence>
                  </div>
                </div>
-               
-               {/* Approved */}
+
+               {}
                <div>
                  <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Approved Attendees ({approved.length})</p>
                  <div className="space-y-3">
@@ -1366,9 +1339,9 @@ function EventsPage({
                </div>
             </div>
 
-            {/* Manage Section */}
+            {}
             <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              {/* Manage Attendees (Always Available) */}
+              {}
               <div 
                 onClick={() => setShowParticipants(true)}
                 className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
@@ -1393,7 +1366,7 @@ function EventsPage({
                 </div>
               </div>
 
-              {/* Manage Teams Card (Team events only) */}
+              {}
               {teamsList.length > 0 && (
                 <div 
                   onClick={() => setShowTeams(true)}
@@ -1429,12 +1402,12 @@ function EventsPage({
                     <button onClick={() => setShowDeadlineModal(false)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"><X size={20} /></button>
                     <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Change Deadline</h2>
                     <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Update the registration deadline for this event.</p>
-                    
+
                     <div className="mb-6">
                       <label className="text-[11px] tracking-widest uppercase text-[#f3f4f6] block mb-2" style={{ fontFamily: FM }}>Registration Deadline</label>
                       <GlassDatePicker value={newDeadline} onChange={setNewDeadline} />
                     </div>
-                    
+
                     <button 
                       onClick={async () => {
                         setUpdatingDeadline(true);
@@ -1477,7 +1450,7 @@ function EventsPage({
       </div>
 
       <div className="space-y-12 mt-4">
-        {/* Upcoming Events */}
+        {}
         <div>
           <h2 className="text-lg font-medium text-white mb-5" style={{ fontFamily: FB }}>Upcoming Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1547,7 +1520,7 @@ function EventsPage({
           </div>
         </div>
 
-        {/* Previous Events */}
+        {}
         <div>
           <h2 className="text-lg font-medium text-[#f3f4f6] mb-5" style={{ fontFamily: FB }}>Previous Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1602,11 +1575,10 @@ function EventsPage({
   );
 }
 
-// ─── Custom Date Picker ────────────────────────────────────────────────────────
 function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const dateObj = value ? new Date(value) : new Date();
-  
+
   const [currentMonth, setCurrentMonth] = useState(dateObj.getMonth());
   const [currentYear, setCurrentYear] = useState(dateObj.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(value ? dateObj : null);
@@ -1638,12 +1610,12 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
         <span className={value ? "text-white" : "text-[#888]"}>{value ? (() => { const d = new Date(value); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${h}:${m}`; })() : "Select Date & Time"}</span>
         <Calendar size={14} className="text-[#d1d5db]" />
       </div>
-      
+
       <AnimatePresence>
         {open && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute z-50 top-full mt-2 w-72 p-5 rounded-2xl shadow-2xl left-0" style={{ background: "rgba(15,15,15,0.98)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(24px)" }}>
-            
-            {/* Header */}
+
+            {}
             <div className="flex justify-between items-center mb-4">
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
@@ -1658,7 +1630,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
               }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white"><ChevronRight size={16} /></button>
             </div>
 
-            {/* Days Grid */}
+            {}
             <div className="grid grid-cols-7 gap-1 mb-2 text-center">
               {days.map(d => <div key={d} className="text-[11px] text-[#94a3b8]" style={{ fontFamily: FM }}>{d}</div>)}
             </div>
@@ -1675,13 +1647,13 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
               })}
             </div>
 
-            {/* Time Selector */}
+            {}
             <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
               <span className="text-xs text-[#888]" style={{ fontFamily: FM }}>Time</span>
               <input type="time" className="bg-transparent border border-white/10 rounded-md px-2 py-1 text-xs text-white outline-none focus:border-white/30 transition-all" style={{ colorScheme: "dark", fontFamily: FB }} value={timeStr} onChange={handleTimeChange} />
             </div>
 
-            {/* Close Button */}
+            {}
             <div className="mt-4 pt-4 border-t border-white/5 text-right">
               <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-colors" style={{ fontFamily: FB }}>Done</button>
             </div>
@@ -1693,8 +1665,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-// ─── Create Event Page ────────────────────────────────────────────────────────
-function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null> }) {
+function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
     eventType: "Solo", teamSizeLimit: "",
@@ -1749,6 +1720,10 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
 
   const handleSubmit = async () => {
     if (!formData.title) return;
+    if (formData.type === "paid" && formData.useDefaultQr && !clubQrUrl) {
+      setError("Default QR code is not uploaded in settings. Please upload one or choose Custom QR.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -1794,8 +1769,8 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
       </div>
 
       <div className="space-y-6 p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-        
-        {/* Banner Upload */}
+
+        {}
         <div className="space-y-1.5">
           <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Banner</label>
           <input type="file" accept="image/*" className="hidden" id="banner-upload" onChange={e => {
@@ -1922,14 +1897,18 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
                     </>
                   )}
                   {formData.useDefaultQr && (
-                    <div className="text-xs text-[#d1d5db] px-2" style={{ fontFamily: FB }}>Using the default QR code from your Payment Settings.</div>
+                    clubQrUrl ? (
+                      <div className="text-xs text-[#d1d5db] px-2" style={{ fontFamily: FB }}>Using the default QR code from your Payment Settings.</div>
+                    ) : (
+                      <div className="text-xs text-[#F03D4E] px-2 font-medium" style={{ fontFamily: FB }}>Default QR code is not uploaded. Please upload a Custom QR or configure it in Settings.</div>
+                    )
                   )}
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {error && (
           <p className="text-xs text-[#F03D4E] px-1" style={{ fontFamily: FM }}>{error}</p>
         )}
@@ -1943,11 +1922,9 @@ function CreateEventPage({ clubId, onCreated, getToken }: { clubId: string; onCr
   );
 }
 
-
-// ─── Settings Page ────────────────────────────────────────────────────────────
 function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: any; profile: any; getToken: () => Promise<string | null>; onUpdate: () => void; onLogout: () => void }) {
   const { user } = useUser();
-  const isSocialLogin = false; // Club admins can always change the club's login credentials by verifying the old password.
+  const isSocialLogin = false; 
 
   const [formData, setFormData] = useState({
     name: club?.name || "",
@@ -1956,6 +1933,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
     upiId: club?.upiId || "",
     qrUrl: club?.qrUrl || ""
   });
+  const isLogoUploaded = formData.logoUrl && formData.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3";
   const [qrFile, setQrFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -1978,7 +1956,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Change Password Modal States
   const [showPasswordUpdateModal, setShowPasswordUpdateModal] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -2004,10 +1981,9 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
     try {
       const token = await getToken();
       await changePassword({ oldPassword, newPassword }, token || undefined);
-      
+
       setPasswordSuccess("Password updated successfully!");
-      
-      // Delay closing modal for 1 second so they can see the success transition
+
       setTimeout(() => {
         setPasswordSuccess(null);
         setOldPassword("");
@@ -2096,7 +2072,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
       if (qrFile) {
         finalQrUrl = await fileToBase64(qrFile);
       }
-      
+
       let finalLogoUrl = formData.logoUrl;
       if (logoFile) {
         finalLogoUrl = await fileToBase64(logoFile);
@@ -2109,7 +2085,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         logoUrl: finalLogoUrl,
         password: bypassPassword ? undefined : password
       }, token || undefined);
-      
+
       setShowPasswordPrompt(false);
       setPassword("");
       setSuccessMsg("Settings saved successfully!");
@@ -2139,7 +2115,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
       </AnimatePresence>
 
       <div className="space-y-6">
-        {/* Profile Section */}
+        {}
         <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Profile Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -2158,20 +2134,26 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                 if (file) setLogoFile(file);
               }} />
               <label htmlFor="logo-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
-                <span>{logoFile ? logoFile.name : (formData.logoUrl ? "Logo Uploaded (Click to change)" : "Upload Logo Image...")}</span>
-                <Upload size={14} className={logoFile || formData.logoUrl ? "text-green-400" : ""} />
+                <span>{logoFile ? logoFile.name : (isLogoUploaded ? "Logo Uploaded (Click to change)" : "Upload Logo Image...")}</span>
+                <Upload size={14} className={logoFile || isLogoUploaded ? "text-green-400" : ""} />
               </label>
+              {!isLogoUploaded && !logoFile && (
+                <p className="text-[11px] text-[#F03D4E] mt-1.5 font-medium" style={{ fontFamily: FM }}>Logo not uploaded yet</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Payment Settings Section */}
+        {}
         <div id="payment-settings" className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
               <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Default UPI ID</label>
               <input type="text" placeholder="club@upi" value={formData.upiId} onChange={e => setFormData(p => ({ ...p, upiId: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              {!formData.upiId && (
+                <p className="text-[11px] text-[#F03D4E] mt-1.5 font-medium" style={{ fontFamily: FM }}>UPI ID not added yet</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Default QR Code</label>
@@ -2183,11 +2165,14 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                 <span>{qrFile ? qrFile.name : (formData.qrUrl ? "QR Uploaded (Click to change)" : "Upload QR Image...")}</span>
                 <Upload size={14} className={qrFile || formData.qrUrl ? "text-green-400" : ""} />
               </label>
+              {!formData.qrUrl && !qrFile && (
+                <p className="text-[11px] text-[#F03D4E] mt-1.5 font-medium" style={{ fontFamily: FM }}>QR Code not uploaded yet</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Save Button for Profile & Payment */}
+        {}
         <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between">
             <div>
@@ -2197,14 +2182,14 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             <button onClick={handleSaveInit} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)]" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
         </div>
-        
+
         <AnimatePresence>
           {showPasswordPrompt && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
               <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h3>
                 <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
-                
+
                 {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl" style={{ fontFamily: FB }}>{error}</div>}
 
                 <div className="space-y-1.5 mb-6">
@@ -2229,7 +2214,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
               <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Change Password</h3>
                 <p className="text-xs text-[#999] mb-6" style={{ fontFamily: FB }}>Update your login credentials securely by entering your current and new password.</p>
-                
+
                 {passwordError && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl" style={{ fontFamily: FB }}>{passwordError}</div>}
 
                 <div className="space-y-4 mb-6">
@@ -2326,7 +2311,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           )}
         </AnimatePresence>
 
-        {/* Privacy & Security */}
+        {}
          <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Privacy & Security</h2>
             <div className="space-y-4">
@@ -2350,7 +2335,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             </div>
           </div>
 
-         {/* Logout */}
+         {}
         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(240,61,78,0.05)", border: "1px solid rgba(240,61,78,0.1)" }}>
           <div>
             <p className="text-sm font-medium text-[#F03D4E]" style={{ fontFamily: FB }}>Sign Out</p>
@@ -2363,7 +2348,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
   );
 }
 
-// ─── Teams Page (stub — full implementation coming) ──────────────────────────
 function TeamsPage() {
   return (
     <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
@@ -2378,7 +2362,6 @@ function TeamsPage() {
   );
 }
 
-// ─── Club Onboarding Page ─────────────────────────────────────────────────────
 interface ClubOnboardingPageProps {
   onSuccess: (clubId: string) => void;
 }
@@ -2415,12 +2398,13 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
       const res = await createClub({
         name: formData.name,
         email: formData.email,
-        logoUrl: formData.logoUrl || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
+        logoUrl: formData.logoUrl || "",
         clerkUserId: userId!,
         password: formData.password,
       }, token ?? undefined);
 
       if (res.club && res.club.id) {
+        localStorage.setItem("show_first_time_notice", "true");
         onSuccess(res.club.id);
       } else {
         throw new Error("Failed to create club.");
@@ -2435,7 +2419,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-12 relative overflow-hidden" style={{ background: "rgba(5,5,5,0.98)" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(240,61,78,0.08) 0%, transparent 60%)" }} />
-      
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
@@ -2520,8 +2504,6 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
   );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-
 const DASH_NAV = [
   { icon: LayoutDashboard, label: "Overview",  id: "overview" },
   { icon: Calendar,        label: "Events",    id: "events"   },
@@ -2546,13 +2528,15 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
   const currentClub = clubs.find((c: any) => c.id === profile?.clubId);
   const name = currentClub?.name ?? profile?.fullName ?? profile?.full_name ?? userEmail.split("@")[0] ?? 'Admin';
 
-  // Parse initial tab from search params
   const getInitialTab = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("tab") || "overview";
   };
 
   const [activeTab, setActiveTabState] = useState(getInitialTab());
+  const [showOnboardingNotice, setShowOnboardingNotice] = useState(() => {
+    return localStorage.getItem("show_first_time_notice") === "true";
+  });
 
   const getInitialEventId = () => {
     const params = new URLSearchParams(window.location.search);
@@ -2567,7 +2551,6 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
   const [selectedEventId, setSelectedEventId] = useState<string | null>(getInitialEventId());
   const [showTeams, setShowTeams] = useState(getInitialShowTeams());
 
-  // Custom setter that updates URL history
   const setActiveTab = (tab: string, pushHistory = true, eventId?: string, sTeams = false) => {
     setActiveTabState(tab);
     setSelectedEventId(eventId || null);
@@ -2637,8 +2620,6 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     }
   };
 
-
-  // Sync state on popstate (browser back/forward button)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state;
@@ -2696,7 +2677,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
-      {/* Sidebar */}
+      {}
       <aside className="w-56 flex-shrink-0 flex flex-col h-screen"
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
@@ -2733,9 +2714,29 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         </nav>
         <div className="p-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           <div className="flex items-center gap-2.5 mb-3 px-1">
-            <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
-              {name.charAt(0).toUpperCase()}
-            </div>
+            {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
+              <img
+                src={currentClub.logoUrl}
+                alt={name}
+                className="w-7 h-7 rounded-full flex-shrink-0 object-cover"
+                onError={(e) => {
+
+                  e.currentTarget.style.display = 'none';
+                  const sibling = e.currentTarget.nextSibling as HTMLElement;
+                  if (sibling) sibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+              <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
+                {name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
+              <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
+                {name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="overflow-hidden">
               <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.75)", fontFamily: FB }}>{name}</p>
               <p className="text-[11px]" style={{ color: "#f3f4f6", fontFamily: FM }}>Admin</p>
@@ -2750,12 +2751,12 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         </div>
       </aside>
 
-      {/* Main */}
+      {}
       <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
         <AnimatePresence mode="wait">
           {activeTab === "create" && (
             <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} />
+                <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} />
             </motion.div>
           )}
           {activeTab === "overview" && (
@@ -2804,11 +2805,73 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           )}
         </AnimatePresence>
       </main>
+
+      {showOnboardingNotice && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="w-full max-w-md p-8 rounded-3xl relative border border-white/10"
+            style={{ background: "rgba(15,15,15,0.98)" }}
+          >
+            <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Welcome to Spotlight! 🚀</h2>
+            <p className="text-xs text-[#d1d5db] mb-6 leading-relaxed" style={{ fontFamily: FB }}>
+              Your club has been successfully created, but a few settings are yet to be completed. Please configure the pending fields below:
+            </p>
+            <div className="space-y-3 mb-8">
+              {}
+              {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+                <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
+                  <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Club Logo is not uploaded</span>
+                </div>
+              )}
+              {}
+              {!currentClub?.upiId && (
+                <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
+                  <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Default UPI ID is not configured</span>
+                </div>
+              )}
+              {}
+              {!currentClub?.qrUrl && (
+                <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
+                  <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Default QR Code is not uploaded</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  localStorage.removeItem("show_first_time_notice");
+                  setShowOnboardingNotice(false);
+                  setActiveTab("settings");
+                }}
+                className="flex-1 py-3 text-xs font-semibold text-white bg-[#F03D4E] hover:bg-[#d93041] rounded-xl transition-all cursor-pointer text-center"
+                style={{ fontFamily: FB }}
+              >
+                Configure Settings
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("show_first_time_notice");
+                  setShowOnboardingNotice(false);
+                }}
+                className="px-5 py-3 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+                style={{ fontFamily: FB }}
+              >
+                Later
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Overview Page ────────────────────────────────────────────────────────────
 function OverviewPage({
   name,
   onNavigate,
@@ -2827,7 +2890,7 @@ function OverviewPage({
   recentActivity: Registration[];
   clubEvents: ClubEvent[];
 }) {
-  // Relative time helper
+
   function timeAgo(dateStr: string) {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
@@ -2840,7 +2903,7 @@ function OverviewPage({
 
   return (
     <div className="p-8 lg:p-10 space-y-10 max-w-7xl">
-      {/* Greeting */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}

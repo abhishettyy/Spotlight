@@ -5,11 +5,9 @@ import { requireAuth } from '../middlewares/auth';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 
-
 const router = Router();
 const SALT_ROUNDS = 10;
 
-// GET /api/clubs — Fetch all clubs (Public)
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
     const clubs = await prisma.club.findMany({
@@ -34,7 +32,6 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// POST /api/clubs — Create a new club (called during first-time onboarding)
 router.post('/', async (req: Request, res: Response): Promise<any> => {
   try {
     const { name, email, logoUrl, password } = req.body;
@@ -42,7 +39,6 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'Club name and email are required.' });
     }
 
-    // Accept userId from Clerk auth header OR verify body fallback via Clerk API
     let userId = (req as any).auth?.userId;
     if (!userId && req.body.clerkUserId) {
       const targetClerkId = req.body.clerkUserId;
@@ -66,21 +62,18 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized. No user ID provided.' });
 
-    // Verify the profile exists before creating the club (or auto-create it if this is the first-time custom registration)
-    // To prevent unique constraint violations, if a profile with the same email already exists under a different ID, delete it first.
     let profile = await prisma.profile.findUnique({ where: { id: userId } });
     if (!profile) {
       const existingProfile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
       if (existingProfile) {
         if (existingProfile.clubId === null && existingProfile.password !== null) {
-          // Only block if the profile was created with a custom password (genuine student signup)
+
           return res.status(400).json({ error: 'This email is already registered to a student account.' });
         }
-        // Otherwise it's a stale Clerk-synced profile from a previous failed signup — delete and replace it
+
         console.log(`[Clubs] Stale Clerk-synced profile with email ${email} exists under ID: ${existingProfile.id}. Replacing with new Clerk ID: ${userId}.`);
         await prisma.profile.delete({ where: { id: existingProfile.id } });
       }
-
 
       profile = await prisma.profile.create({
         data: {
@@ -92,7 +85,6 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
       console.log(`Auto-created profile ${profile.email} during club creation fallback`);
     }
 
-    // If this user already has a club, return it instead of creating a duplicate
     if (profile.clubId) {
       const existingClub = await prisma.club.findUnique({ where: { id: profile.clubId } });
       if (existingClub) {
@@ -100,13 +92,11 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
       }
     }
 
-    // Check if a club with this email already exists
-    // If it does, we link the user's profile to it and update the password rather than throwing a duplicate error!
     const existingClub = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
     if (existingClub) {
       console.log(`[Clubs] Club with email ${email} already exists. Linking and updating password...`);
       const hashedPassword = password ? await bcrypt.hash(password, SALT_ROUNDS) : existingClub.password;
-      
+
       const club = await prisma.$transaction(async (tx) => {
         const updatedClub = await tx.club.update({
           where: { id: existingClub.id },
@@ -126,13 +116,10 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
       return res.status(200).json({ club, alreadyLinked: true });
     }
 
-    // Hash the password if provided for legacy custom logins
     const hashedPassword = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
 
-    // Upload logo to Supabase Storage if it is base64 encoded
     const finalLogoUrl = logoUrl ? await uploadBase64Image(logoUrl, 'clubs/logos') : null;
 
-    // Atomic write: create club row + assign clubId to profile in one transaction
     const club = await prisma.$transaction(async (tx) => {
       const newClub = await tx.club.create({
         data: {
@@ -142,7 +129,6 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
           password: hashedPassword,
         },
       });
-
 
       await tx.profile.update({
         where: { id: userId },
@@ -160,7 +146,6 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// PUT /api/clubs/:id — Update a club (Legacy Verification Required)
 router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -177,7 +162,6 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
       return res.status(404).json({ error: 'Club not found.' });
     }
 
-    // Only verify password if the admin user has a password set (email/password login flow)
     if (profile.password) {
       if (!password) {
         return res.status(400).json({ error: 'Password is required to save changes.' });
@@ -244,23 +228,19 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
   }
 });
 
-// GET /api/clubs/:id/dashboard-stats — Fetch dashboard overview metrics and statistics (Protected)
 router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const clubId = req.params.id as string;
 
-    // Permissions check: Enforce that the user belongs to the requested club
     const profile = await prisma.profile.findUnique({ where: { id: req.auth!.userId } });
     if (!profile || profile.clubId !== clubId) {
       return res.status(403).json({ error: "Forbidden: You do not have access to this club's statistics." });
     }
 
-    // Fetch total events for the club
     const totalEvents = await prisma.event.count({
       where: { clubId },
     });
 
-    // Fetch club events to count upcoming
     const clubEvents = await prisma.event.findMany({
       where: { clubId },
       include: { club: true },
@@ -271,7 +251,6 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       e => e.eventDate && new Date(e.eventDate) >= new Date()
     ).length;
 
-    // Fetch all registrations across all events of this club
     const registrations = await prisma.registration.findMany({
       where: {
         event: { clubId },
@@ -284,34 +263,27 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       orderBy: { createdAt: 'desc' },
     });
 
-    // Helper: Identify which teams have a leader who uploaded a payment proof
     const teamIdsWithPayment = new Set(
       registrations
         .filter(r => r.teamId && r.paymentProofUrl !== null)
         .map(r => r.teamId)
     );
 
-    // Helper: Identify teams that have at least one CONFIRMED member
     const confirmedTeamIds = new Set(
       registrations
         .filter(r => r.teamId && r.status === 'CONFIRMED')
         .map(r => r.teamId)
     );
 
-    // Filter registrations to show to the club:
-    // - Free events: always show
-    // - Paid events: show if proof uploaded (pending verification), OR already confirmed (proof was cleared after approval), OR in a team with proof/confirmed member
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
-      if (r.status === 'CONFIRMED') return true;           // already approved — always show
-      if (r.paymentProofUrl !== null) return true;         // proof uploaded, pending review
-      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;   // team member, leader has proof
-      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;     // team member, team confirmed
+      if (r.status === 'CONFIRMED') return true;           
+      if (r.paymentProofUrl !== null) return true;         
+      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;   
+      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;     
       return false;
     });
 
-
-    // Count unique registered teams + individuals
     const uniqueTeamIds = new Set(
       filteredRegistrations
         .map(r => r.teamId)
@@ -320,7 +292,6 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
     const soloCount = filteredRegistrations.filter(r => r.teamId === null).length;
     const totalRegistrations = soloCount + uniqueTeamIds.size;
 
-    // Count unique pending teams + pending individuals
     const pendingTeamIds = new Set(
       filteredRegistrations
         .filter(r => r.status === 'PENDING' && r.teamId !== null)
@@ -331,7 +302,6 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
     ).length;
     const pendingCount = pendingSoloCount + pendingTeamIds.size;
 
-    // Get 5 most recent registrations
     const recentActivity = filteredRegistrations.slice(0, 5).map(r => ({
       id: r.id,
       status: r.status,

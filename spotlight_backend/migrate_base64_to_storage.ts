@@ -13,7 +13,6 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Starting migration of base64 images in database to Supabase Storage...");
 
-  // 1. Migrate Clubs
   const clubs = await prisma.club.findMany();
   for (const club of clubs) {
     let updated = false;
@@ -40,7 +39,6 @@ async function main() {
     }
   }
 
-  // 2. Migrate Events
   const events = await prisma.event.findMany();
   for (const event of events) {
     let updated = false;
@@ -67,7 +65,6 @@ async function main() {
     }
   }
 
-  // 3. Migrate Registrations
   const registrations = await prisma.registration.findMany({
     where: {
       paymentProofUrl: {

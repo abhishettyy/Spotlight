@@ -4,7 +4,6 @@ import { requireAuth } from '../middlewares/auth';
 
 const router = Router();
 
-// GET /api/profiles/:id — get profile by ID (Public)
 router.get('/:id', async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -22,7 +21,6 @@ router.get('/:id', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// PUT /api/profiles/update — Onboarding update (USN / branch / phone) (Protected)
 router.put('/update', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -41,7 +39,6 @@ router.put('/update', requireAuth, async (req: Request, res: Response): Promise<
   }
 });
 
-// PUT /api/profiles/edit — Full profile edit (name, USN, branch, phone, year, sem) (Protected)
 router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -75,17 +72,14 @@ router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<an
   }
 });
 
-// GET /api/profiles/:id/stats — Profile Stats (Public)
 router.get('/:id/stats', async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.params.id as string;
 
-    // Count total registrations (events attended/registered)
     const eventsCount = await prisma.registration.count({
       where: { userId: userId },
     });
 
-    // Count distinct clubs from the user's registered events
     const registrations = await prisma.registration.findMany({
       where: { userId: userId },
       include: { event: { select: { clubId: true } } },

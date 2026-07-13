@@ -38,7 +38,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────
+
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 24, 0),
               child: Row(
@@ -59,7 +59,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
             ),
             const SizedBox(height: 12),
 
-            // ── Search ──────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: TextField(
@@ -87,7 +86,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── List ────────────────────────────────────────────
             Expanded(
               child: Consumer<EventsProvider>(
                 builder: (context, provider, _) {
@@ -114,7 +112,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                     );
                   }
 
-                  // Filter upcoming + search
                   final now = DateTime.now();
                   var events = provider.events.where((e) {
                     final date =
@@ -213,7 +210,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
           borderRadius: BorderRadius.circular(28),
           child: Stack(
             children: [
-              // Dark gradient overlay
+
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -231,7 +228,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                 ),
               ),
 
-              // Date Box at top right (Glassmorphic)
               Positioned(
                 top: 16,
                 right: 16,
@@ -276,7 +272,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                 ),
               ),
 
-              // Text details at bottom
               Positioned(
                 bottom: 18,
                 left: 20,

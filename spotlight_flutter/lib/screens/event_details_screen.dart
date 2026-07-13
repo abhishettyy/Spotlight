@@ -46,7 +46,6 @@ class EventDetailsScreen extends StatelessWidget {
       }
     } catch (_) {}
 
-    // Fallback if parsing fails but string has hyphen/slash format (e.g. "2026-08-05")
     final parts = dateStr.split('-');
     if (parts.length == 3) {
       final day = parts[2];
@@ -72,8 +71,7 @@ class EventDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Rich dark/charcoal background for dark mode, subtle grey for light mode
+
     final pageBg = isDark ? const Color(0xFF0F0E0E) : const Color(0xFFF9F9F9);
     final cardBg = isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!;
     final textPrimary = isDark ? Colors.white : Colors.black;
@@ -101,7 +99,7 @@ class EventDetailsScreen extends StatelessWidget {
     final venue = event.venue;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
     final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1000&auto=format&fit=crop';
-    
+
     final bool isClosed = event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!);
 
     final dateData = _parseDate(date);
@@ -110,7 +108,7 @@ class EventDetailsScreen extends StatelessWidget {
       backgroundColor: pageBg,
       body: Stack(
         children: [
-          // Layer 1 — Hero Image with Smooth Fade Blend
+
           Positioned(
             top: 0, left: 0, right: 0,
             height: MediaQuery.of(context).size.height * 0.48,
@@ -120,7 +118,7 @@ class EventDetailsScreen extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [Colors.black, Colors.transparent],
-                  stops: [0.65, 1.0], // smooth transition to pageBg
+                  stops: [0.65, 1.0], 
                 ).createShader(rect);
               },
               blendMode: BlendMode.dstIn,
@@ -132,7 +130,6 @@ class EventDetailsScreen extends StatelessWidget {
             ),
           ),
 
-          // Layer 2 — Scrollable Content
           Positioned.fill(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
@@ -144,10 +141,9 @@ class EventDetailsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Spacer to push content below the top header image area
+
                   SizedBox(height: MediaQuery.of(context).size.height * 0.28),
 
-                  // Category Pill
                   Row(
                     children: [
                       _glassPill(event.category),
@@ -155,7 +151,6 @@ class EventDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Title, Subtitle and Price Tag in Row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -236,7 +231,6 @@ class EventDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // Redesigned Date/Time Section
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -248,7 +242,7 @@ class EventDetailsScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        // Calendar Block
+
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
@@ -278,7 +272,7 @@ class EventDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // Time Info
+
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +296,7 @@ class EventDetailsScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // Circular Map/Share Icon
+
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -320,7 +314,6 @@ class EventDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // About this event
                   Text(
                     'About this event',
                     style: GoogleFonts.inter(
@@ -343,7 +336,6 @@ class EventDetailsScreen extends StatelessWidget {
             ),
           ),
 
-          // Pinned Top Back & Share buttons
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 16, right: 16,
@@ -381,7 +373,7 @@ class EventDetailsScreen extends StatelessWidget {
         child: SafeArea(
           child: Row(
             children: [
-              // Heart/Favorite Button
+
               Consumer<SavedEventsProvider>(
                 builder: (context, savedProvider, _) {
                   final isSaved = savedProvider.isSaved(eventId);
@@ -403,7 +395,7 @@ class EventDetailsScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(width: 16),
-              // Register Now Button
+
               Expanded(
                 child: ElevatedButton(
                   onPressed: isClosed ? null : () {
@@ -513,4 +505,3 @@ class EventDetailsScreen extends StatelessWidget {
         ),
       );
 }
-

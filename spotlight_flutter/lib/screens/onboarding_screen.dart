@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final apiService = ApiService();
-      
+
       final updatedUser = await apiService.updateProfile(
         clerkUserId: userProvider.currentUser!.id,
         usn: _usnController.text.trim().toUpperCase(),
@@ -57,7 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       body: Container(
         height: double.infinity,
@@ -88,8 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 48),
-                  
-                  // USN Field
+
                   _buildLabel('USN'),
                   TextFormField(
                     controller: _usnController,
@@ -104,7 +103,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Branch Field
                   _buildLabel('Branch'),
                   DropdownButtonFormField<String>(
                     value: _selectedBranch,
@@ -120,7 +118,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Phone Field
                   _buildLabel('Phone Number'),
                   TextFormField(
                     controller: _phoneController,
@@ -134,10 +131,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 60),
 
-                  // Submit Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,

@@ -17,7 +17,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    // Load on open
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationsProvider>(context, listen: false).load();
     });
@@ -33,7 +33,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: SafeArea(
         child: Consumer2<NotificationsProvider, NotificationPrefsProvider>(
           builder: (context, provider, prefs, _) {
-            // ── Notifications disabled ────────────────────────
+
             if (!prefs.enabled) {
               return Column(
                 children: [
@@ -112,10 +112,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               );
             }
 
-            // ── Notifications enabled ─────────────────────────
             return Column(
               children: [
-                // ── Header ──────────────────────────────────────
+
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Row(
@@ -182,7 +181,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
 
-                // ── Content ─────────────────────────────────────
                 Expanded(
                   child: provider.isLoading
                       ? const Center(child: CircularProgressIndicator())

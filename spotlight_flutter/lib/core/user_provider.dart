@@ -53,7 +53,7 @@ class UserModel {
 
   bool get isProfileIncomplete {
     if (clubId != null && clubId!.isNotEmpty) {
-      return false; // Club admins do not require student onboarding
+      return false; 
     }
     return usn == null || usn!.isEmpty ||
         branch == null || branch!.isEmpty ||

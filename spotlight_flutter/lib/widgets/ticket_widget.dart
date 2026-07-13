@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/theme.dart';
 
 class TicketWidget extends StatelessWidget {
-  final String status; // 'pending' or 'confirmed'
+  final String status; 
   final String eventName;
   final String dateStr;
   final String location;
@@ -22,7 +22,7 @@ class TicketWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isConfirmed = status == 'confirmed';
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -42,7 +42,7 @@ class TicketWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Top Part
+
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -102,8 +102,7 @@ class TicketWidget extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Perforation Line
+
           Row(
             children: [
               SizedBox(
@@ -111,7 +110,7 @@ class TicketWidget extends StatelessWidget {
                 width: 10,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: SpotlightTheme.subtleGray, // Match scaffold background
+                    color: SpotlightTheme.subtleGray, 
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(10),
                       bottomRight: Radius.circular(10),
@@ -157,8 +156,7 @@ class TicketWidget extends StatelessWidget {
               ),
             ],
           ),
-          
-          // Bottom Part
+
           Padding(
             padding: const EdgeInsets.all(24),
             child: isConfirmed

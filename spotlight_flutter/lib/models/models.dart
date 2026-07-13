@@ -203,8 +203,6 @@ class ClubModel {
   }
 }
 
-// ── Ticket (registration + event + team) ─────────────────────────────────────
-
 class TicketEventInfo {
   final String id;
   final String title;
@@ -327,7 +325,6 @@ class TicketModel {
     );
   }
 
-  /// True if the event date is in the future (or unknown).
   bool get isUpcoming {
     if (event?.date == null) return true;
     final date = DateTime.tryParse(event!.date!);
@@ -341,8 +338,6 @@ class TicketModel {
   bool get isPending =>
       status.toUpperCase() == 'PENDING';
 }
-
-// ── Notification ──────────────────────────────────────────────────────────────
 
 class NotificationModel {
   final String id;

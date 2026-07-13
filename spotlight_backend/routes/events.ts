@@ -3,10 +3,8 @@ import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image } from '../utils/storage';
 
-
 const router = Router();
 
-// GET /api/events — Fetch all events (Public)
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
     const events = await prisma.event.findMany({
@@ -45,30 +43,19 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// POST /api/events/create — Create a new event (Protected)
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
     const { name, description, venue, eventDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, clubId, bannerUrl, qrUrl } = req.body;
 
-
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
 
     const parsedFee = fee ? parseFloat(fee) : 0;
-    
-    // Upload banner to Supabase if it is base64 encoded
+
     const finalBannerUrl = bannerUrl ? await uploadBase64Image(bannerUrl, 'events/banners') : null;
 
     let finalQrUrl = qrUrl || null;
-    if (!finalQrUrl && parsedFee > 0 && clubId) {
-      // Auto-fetch default club QR if not provided
-      const club = await prisma.club.findUnique({ where: { id: clubId } });
-      if (club?.qrUrl) {
-        finalQrUrl = club.qrUrl;
-      }
-    }
 
-    // Upload QR to Supabase if it is base64 encoded
     if (finalQrUrl) {
       finalQrUrl = await uploadBase64Image(finalQrUrl, 'events/qrs');
     }
@@ -99,7 +86,6 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
   }
 });
 
-// GET /api/events/:id/registrations — Fetch event registrations (Protected)
 router.get('/:id/registrations', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -109,22 +95,18 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
       orderBy: { createdAt: 'desc' },
     });
 
-    // Helper: Identify which teams have a leader who uploaded a payment proof
     const teamIdsWithPayment = new Set(
       registrations
         .filter(r => r.teamId && r.paymentProofUrl !== null)
         .map(r => r.teamId)
     );
 
-    // Helper: Identify teams that have at least one CONFIRMED member
     const confirmedTeamIds = new Set(
       registrations
         .filter(r => r.teamId && r.status === 'CONFIRMED')
         .map(r => r.teamId)
     );
 
-    // Filter registrations to show to the club:
-    // CONFIRMED regs always show (proof was cleared after approval — that's expected)
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
       if (r.status === 'CONFIRMED') return true;
@@ -133,7 +115,6 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
       if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
       return false;
     });
-
 
     const mapped = filteredRegistrations.map(r => ({
       id: r.id,
@@ -165,7 +146,6 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
   }
 });
 
-// PUT /api/events/:id/deadline — Update event registration deadline (Protected)
 router.put('/:id/deadline', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;

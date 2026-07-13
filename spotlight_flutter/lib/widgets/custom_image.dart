@@ -33,7 +33,7 @@ class CustomImage extends StatelessWidget {
         return errorBuilder?.call(context, e, null) ?? Container(color: Colors.grey[800]);
       }
     }
-    
+
     return Image.network(
       url,
       fit: fit,

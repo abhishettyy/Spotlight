@@ -26,7 +26,6 @@ class RegisterScreen extends StatefulWidget {
     this.upiId,
   });
 
-
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -35,7 +34,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   RegistrationType _selectedType = RegistrationType.solo;
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   final _nameController = TextEditingController();
   final _usnController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -83,7 +81,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         registrationId = regId;
         referenceCode = passkey;
 
-        // Show the server-generated passkey to the user
         if (mounted) {
           await showDialog(
             context: context,
@@ -161,7 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final warningBg = isDark ? const Color(0xFF161414) : Colors.red[50]!;
     final warningText = isDark ? const Color(0xFFA09B9B) : Colors.grey[700]!;
     final warningBorder = isDark ? Colors.white.withOpacity(0.05) : Colors.red[100]!;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Register', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -177,7 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Segmented Control
+
                   if (widget.eventType == 'Team') ...[
                     Row(
                       children: [
@@ -261,8 +258,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 32),
                   ],
-                  
-                  // Dynamic Form Fields
+
                   if (_selectedType == RegistrationType.solo) ...[
                     _buildTextField(
                       controller: _nameController,
@@ -332,10 +328,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: (v) => v!.length != 5 ? 'Passkey must be 5 characters' : null,
                     ),
                   ],
-                  
+
                   const SizedBox(height: 40),
-                  
-                  // Submit Button
+
                   ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
@@ -349,7 +344,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-          
+
           if (_isSubmitting)
             Container(
               color: Colors.black.withOpacity(0.5),

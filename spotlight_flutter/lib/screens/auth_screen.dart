@@ -22,7 +22,6 @@ class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
   bool obscurePassword = true;
 
-  // Controllers for signup fields
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -41,14 +40,12 @@ class _AuthScreenState extends State<AuthScreen> {
       final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
       final apiService = ApiService();
 
-      // 1. Update Auth Token if provided (Social Login)
       if (token != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
         await authProvider.tryAutoLogin();
       }
 
-      // 2. Perform Profile Sync
       final user = await apiService.checkAndSyncProfile(
         userId ?? authProvider.userId ?? 'temp_user',
         email ?? _emailController.text.trim().toLowerCase(),
@@ -60,10 +57,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (user != null) {
         userProvider.setCurrentUser(user);
-        
-        // 3. Refresh Events Data now that we have a session
+
         await eventsProvider.loadEvents();
-        // Load notifications in background
+
         Provider.of<NotificationsProvider>(context, listen: false).load();
 
         if (mounted) {
@@ -103,7 +99,7 @@ class _AuthScreenState extends State<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // ── Header ──────────────────────────────────────────
+
               Text(
                 isLogin ? 'Welcome!' : 'Create Account',
                 style: GoogleFonts.inter(
@@ -122,7 +118,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Segmented Toggle ────────────────────────────────
               Container(
                 height: 54,
                 padding: const EdgeInsets.all(4),
@@ -177,7 +172,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Dynamic Form Fields ─────────────────────────────
               if (isLogin) ...[
                 _buildTextField(
                   controller: _emailController,
@@ -278,7 +272,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
               const SizedBox(height: 40),
 
-              // ── Primary Action Button ───────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -311,11 +304,11 @@ class _AuthScreenState extends State<AuthScreen> {
                       }
 
                       if (user != null) {
-                        // Persist session into AuthProvider using stored prefs
+
                         await authProvider.tryAutoLogin();
                         userProvider.setCurrentUser(user);
                         await eventsProvider.refreshEvents();
-                        // Load notifications in background
+
                         Provider.of<NotificationsProvider>(context, listen: false).load();
 
                         if (mounted) {
@@ -357,7 +350,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Divider ─────────────────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -385,7 +377,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ── Social Login ────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -393,12 +384,12 @@ class _AuthScreenState extends State<AuthScreen> {
                   onPressed: _isLoading ? null : () async {
                     setState(() => _isLoading = true);
                     try {
-                      // Use native Google Sign-In — no browser redirect needed
+
                       final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
                       final googleUser = await googleSignIn.signIn();
 
                       if (googleUser == null) {
-                        // User cancelled
+
                         setState(() => _isLoading = false);
                         return;
                       }
@@ -411,12 +402,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
                       final apiService = ApiService();
 
-                      // Sync the Google user with your backend
-                      // Use the Google user ID as the clerkUserId for now
                       final userId = 'google_${googleUser.id}';
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setString('userId', userId);
-                      // Store idToken as auth token if available
+
                       if (idToken != null) {
                         await prefs.setString('auth_token', idToken);
                       }
@@ -476,7 +465,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    // Quick dev bypass with dummy data
+
                     final userProvider = Provider.of<UserProvider>(context, listen: false);
                     userProvider.setCurrentUser(UserModel(
                       id: 'dev_user_123',

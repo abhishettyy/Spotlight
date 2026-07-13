@@ -95,7 +95,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _buildNavItem(int index, IconData icon, String label, {int? badge}) {
     final isSelected = _currentIndex == index;
-    
+
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       child: AnimatedContainer(

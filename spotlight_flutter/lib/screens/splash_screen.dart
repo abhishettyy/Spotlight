@@ -33,7 +33,6 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // 1. Swing controllers for searchlights
     _swingController1 = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2500),
@@ -58,11 +57,9 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeInOut,
     ));
 
-    // Start swing loops
     _swingController1.repeat(reverse: true);
     _swingController2.repeat(reverse: true);
 
-    // 2. Halo controller (pulsing)
     _haloController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1250),
@@ -83,16 +80,13 @@ class _SplashScreenState extends State<SplashScreen>
     ));
     _haloController.repeat(reverse: true);
 
-    // 3. Intro entrance orchestrator
     _introController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2700),
     );
 
-    // cubic-bezier(0.22, 1, 0.36, 1)
     const cubicBezier = Cubic(0.22, 1.0, 0.36, 1.0);
 
-    // 3.a. Icon box scale & opacity (delay 0.15s/150ms, duration 0.7s/700ms)
     _iconScaleAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _introController,
@@ -106,7 +100,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // 3.b. Logo group rise & opacity (delay 0.25s/250ms, duration 0.9s/900ms)
     _logoRiseAnim = Tween<double>(begin: 24.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _introController,
@@ -120,7 +113,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // 3.c. Progress bar width (delay 0.55s/550ms, duration 2.1s/2100ms)
     _progressWidthAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _introController,
@@ -128,7 +120,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // 3.d. Progress bar container opacity fade-in (delay 0.7s/700ms, duration 0.3s/300ms)
     _progressOpacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _introController,
@@ -156,12 +147,12 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFF090909),
       body: Stack(
         children: [
-          // ── Searchlight beams layer ──
+
           Positioned.fill(
             child: IgnorePointer(
               child: Stack(
                 children: [
-                  // 1. Counter-swing ambient glow
+
                   Align(
                     alignment: Alignment.topCenter,
                     child: AnimatedBuilder(
@@ -192,7 +183,6 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  // 2. Wide diffuse beam
                   Align(
                     alignment: Alignment.topCenter,
                     child: AnimatedBuilder(
@@ -224,7 +214,6 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  // 3. Sharp core beam
                   Align(
                     alignment: Alignment.topCenter,
                     child: AnimatedBuilder(
@@ -260,7 +249,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Pulsing halo ──
           Center(
             child: AnimatedBuilder(
               animation: _haloController,
@@ -290,7 +278,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Logo group ──
           Center(
             child: AnimatedBuilder(
               animation: _introController,
@@ -302,7 +289,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Icon Box
+
                         Opacity(
                           opacity: _iconOpacityAnim.value,
                           child: Transform.scale(
@@ -335,7 +322,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Wordmark
+
                         Text(
                           'spotlight',
                           style: GoogleFonts.inter(
@@ -353,7 +340,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        // Tagline
+
                         Text(
                           'discover events'.toUpperCase(),
                           style: GoogleFonts.inter(
@@ -371,7 +358,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Progress bar ──
           Positioned(
             bottom: 64,
             left: 0,
@@ -443,13 +429,11 @@ class SpotlightLogoPainter extends CustomPainter {
     final double scaleX = size.width / 34.0;
     final double scaleY = size.height / 34.0;
 
-    // 1. Circle: cx=17, cy=11, r=5.5, fill=white (opacity 0.92)
     final circlePaint = Paint()
       ..color = Colors.white.withOpacity(0.92)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(17 * scaleX, 11 * scaleY), 5.5 * scaleX, circlePaint);
 
-    // 2. Path: M17 16.5 L4 33 L17 26 L30 33 Z, fill=white (opacity 0.88)
     final pathPaint = Paint()
       ..color = Colors.white.withOpacity(0.88)
       ..style = PaintingStyle.fill;
@@ -461,7 +445,6 @@ class SpotlightLogoPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path, pathPaint);
 
-    // 3. Ellipse: cx=17, cy=11, rx=11, ry=4, fill=white (opacity 0.12)
     final ellipsePaint = Paint()
       ..color = Colors.white.withOpacity(0.12)
       ..style = PaintingStyle.fill;

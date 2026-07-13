@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 150ms fade transition — feels like an instant web page render.
-/// Use this instead of MaterialPageRoute everywhere.
 class SmoothRoute<T> extends MaterialPageRoute<T> {
   SmoothRoute({required super.builder});
 

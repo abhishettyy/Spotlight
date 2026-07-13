@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-// ─── Spotlight Dashboard API Service ─────────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 async function request(path: string, options: RequestInit = {}, token?: string) {
@@ -18,8 +16,6 @@ async function request(path: string, options: RequestInit = {}, token?: string) 
 export async function fetchPublicStats() {
   return request('/public/stats');
 }
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function clubLogin(email: string, password: string) {
   return request('/auth/club-login', {
@@ -54,8 +50,6 @@ export async function changePassword(data: {
   }, token);
 }
 
-// ── Events ────────────────────────────────────────────────────────────────────
-
 export async function fetchEvents() {
   return request('/events');
 }
@@ -86,8 +80,6 @@ export async function updateEventDeadline(eventId: string, deadline: string, tok
     body: JSON.stringify({ registrationDeadline: deadline }),
   }, token);
 }
-
-// ── Clubs ─────────────────────────────────────────────────────────────────────
 
 export async function fetchClubs() {
   return request('/clubs');
@@ -120,8 +112,6 @@ export async function updateClub(clubId: string, data: {
   }, token);
 }
 
-// ── Registrations ─────────────────────────────────────────────────────────────
-
 export async function fetchEventRegistrations(eventId: string, token?: string) {
   return request(`/events/${eventId}/registrations`, {}, token);
 }
@@ -132,10 +122,6 @@ export async function approveRegistration(registrationId: string, token?: string
   }, token);
 }
 
-/**
- * Fetches registrations for every event in the provided list in parallel.
- * Returns a flat array of registration objects, each augmented with eventTitle.
- */
 export async function fetchAllRegistrationsForEvents(
   events: { id: string; title: string }[],
   token?: string
@@ -154,4 +140,3 @@ export async function fetchAllRegistrationsForEvents(
 export async function fetchClubDashboardStats(clubId: string, token?: string) {
   return request(`/clubs/${clubId}/dashboard-stats`, {}, token);
 }
-

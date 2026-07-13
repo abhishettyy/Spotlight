@@ -9,7 +9,6 @@ class AuthProvider with ChangeNotifier {
   String? get userId => _userId;
   bool get isAuthenticated => _token != null && _token!.isNotEmpty;
 
-  /// Called after a successful manual login/signup to persist the session.
   Future<void> setSession(String token, String userId) async {
     _token = token;
     _userId = userId;

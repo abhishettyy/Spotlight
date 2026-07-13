@@ -26,10 +26,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _statsLoading = true;
 
   Future<void> _launchPlayStore() async {
-    final appId = 'com.example.spotlight_flutter'; // Change this to your production package name once deployed
+    final appId = 'com.example.spotlight_flutter'; 
     final url = Uri.parse('market://details?id=$appId');
     final webUrl = Uri.parse('https://play.google.com/store/apps/details?id=$appId');
-    
+
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -54,7 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userName = user?.name ?? 'User';
     final userEmail = user?.email ?? 'Unknown Email';
     final userUsn = user?.usn ?? 'N/A';
-    
+
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       path: 'spotlightapp.help@gmail.com',
@@ -193,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Handle bar
+
                         Center(
                           child: Container(
                             width: 40,
@@ -221,7 +221,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // Name
                         TextFormField(
                           controller: nameController,
                           style: GoogleFonts.inter(color: cs.onBackground),
@@ -230,7 +229,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // USN
                         TextFormField(
                           controller: usnController,
                           style: GoogleFonts.inter(color: cs.onBackground),
@@ -244,7 +242,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Branch
                         TextFormField(
                           controller: branchController,
                           style: GoogleFonts.inter(color: cs.onBackground),
@@ -254,7 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Year & Sem side by side
                         Row(
                           children: [
                             Expanded(
@@ -278,7 +274,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Phone
                         TextFormField(
                           controller: phoneController,
                           style: GoogleFonts.inter(color: cs.onBackground),
@@ -293,7 +288,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // Save button
                         SizedBox(
                           width: double.infinity,
                           height: 54,
@@ -303,7 +297,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 : () async {
                                     if (!formKey.currentState!.validate()) return;
 
-                                    // ── Step 1: ask for password confirmation ──
                                     final confirmed = await _showPasswordConfirmDialog(
                                       context,
                                       user!.id,
@@ -312,7 +305,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     );
                                     if (!confirmed) return;
 
-                                    // ── Step 2: save to DB ──
                                     setSheetState(() => isSaving = true);
 
                                     try {
@@ -383,7 +375,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Shows a password confirmation dialog. Returns true if password is verified.
   Future<bool> _showPasswordConfirmDialog(
     BuildContext context,
     String userId,
@@ -496,8 +487,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                 ],
-                ), // Column
-              ), // SingleChildScrollView
+                ), 
+              ), 
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
@@ -553,7 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
     final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
-    // cardTheme.color: white in light (pops off #F9F9F9 scaffold), #1E1E1E in dark
+
     final tileColor = Theme.of(context).cardTheme.color ?? surfaceColor;
 
     return Scaffold(
@@ -563,7 +554,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ──────────────────────────────────────────
+
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -658,7 +649,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ── USN Card ─────────────────────────────────────
               Consumer<UserProvider>(
                 builder: (context, userProvider, child) {
                   final usn = userProvider.currentUser?.usn;
@@ -722,7 +712,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ── Stats Row ─────────────────────────────────────
               Consumer<SavedEventsProvider>(
                 builder: (context, savedProvider, _) {
                   final savedCount = savedProvider.savedEventIds.length;
@@ -772,7 +761,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Preferences ───────────────────────────────────
               Text('PREFERENCES',
                   style: GoogleFonts.inter(
                       fontSize: 12,
@@ -800,7 +788,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Support ───────────────────────────────────────
               Text('SUPPORT',
                   style: GoogleFonts.inter(
                       fontSize: 12,
@@ -817,7 +804,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Sign Out ───────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(

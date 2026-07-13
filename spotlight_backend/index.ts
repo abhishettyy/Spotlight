@@ -2,13 +2,10 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Load environment variables immediately before importing anything that depends on them
 dotenv.config();
-
 
 import { ClerkExpressWithAuth, StrictAuthProp } from '@clerk/clerk-sdk-node';
 
-// Import routers
 import authRouter from './routes/auth';
 import profilesRouter from './routes/profiles';
 import eventsRouter from './routes/events';
@@ -49,20 +46,17 @@ app.use((req, res, next) => {
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
-// ── Health Check ─────────────────────────────────────────────────────────────
 app.get('/', (req: Request, res: Response): any => {
   return res.status(200).json({ status: 'success', message: 'Spotlight API Server is live!' });
 });
 
-// ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
 app.use('/api/profiles', profilesRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/clubs', clubsRouter);
-app.use('/api', registrationsRouter); // Keep base path compatibility for /api/register and /api/teams/*
+app.use('/api', registrationsRouter); 
 app.use('/api/notifications', notificationsRouter);
 
-// ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server cleanly listening on port ${PORT}`);
 });

@@ -1,12 +1,8 @@
 import crypto from 'crypto';
 
-/**
- * Uploads a base64 image data URI to Supabase Storage and returns the public URL.
- * If the input is not a base64 data URI (e.g. it is already a URL or empty), it returns it as-is.
- */
 export async function uploadBase64Image(base64Str: string, folder: string): Promise<string> {
   if (!base64Str || !base64Str.startsWith('data:')) {
-    return base64Str; // Return as-is if it's already a URL or empty
+    return base64Str; 
   }
 
   const supabaseUrl = process.env.SUPABASE_URL || 'https://flmxldwdbqbyrokmglus.supabase.co';
@@ -18,7 +14,7 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
   }
 
   try {
-    // 1. Parse the data URI (Format: data:image/png;base64,iVBORw0KGgoAAA...)
+
     const matches = base64Str.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
       throw new Error('Invalid base64 data URI format');
@@ -28,18 +24,15 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
 
-    // Determine extension
     let extension = 'jpg';
     if (mimeType.includes('png')) extension = 'png';
     else if (mimeType.includes('gif')) extension = 'gif';
     else if (mimeType.includes('webp')) extension = 'webp';
     else if (mimeType.includes('svg')) extension = 'svg';
 
-    // Generate a unique filename
     const filename = `${folder}/${crypto.randomUUID()}.${extension}`;
     const bucket = 'spotlight-images';
 
-    // 2. Upload to Supabase Storage REST API
     const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filename}`;
 
     console.log(`[Storage] Uploading image to Supabase: ${filename} (${buffer.length} bytes)`);
@@ -59,23 +52,19 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
       throw new Error(`Supabase Storage upload failed (${response.status}): ${errText}`);
     }
 
-    // 3. Return the public URL
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${filename}`;
     console.log(`[Storage] Successfully uploaded. Public URL: ${publicUrl}`);
     return publicUrl;
   } catch (error) {
     console.error('[Storage] Error uploading image to Supabase:', error);
-    // Fallback: return the original base64 string so the app still works
+
     return base64Str;
   }
 }
 
-/**
- * Deletes an image from Supabase Storage using its public URL.
- */
 export async function deleteImage(publicUrl: string): Promise<boolean> {
   if (!publicUrl) return false;
-  
+
   const supabaseUrl = process.env.SUPABASE_URL || 'https://flmxldwdbqbyrokmglus.supabase.co';
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -117,4 +106,3 @@ export async function deleteImage(publicUrl: string): Promise<boolean> {
     return false;
   }
 }
-

@@ -4,8 +4,6 @@ import { requireAuth } from '../middlewares/auth';
 
 const router = Router();
 
-// GET /api/notifications — fetch notifications for the logged-in user (Protected)
-// Automatically filters out notifications associated with past events.
 router.get('/', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -35,7 +33,6 @@ router.get('/', requireAuth, async (req: Request, res: Response): Promise<any> =
   }
 });
 
-// PUT /api/notifications/read — mark all notifications as read (Protected)
 router.put('/read', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -51,7 +48,6 @@ router.put('/read', requireAuth, async (req: Request, res: Response): Promise<an
   }
 });
 
-// PUT /api/notifications/:id/read — mark a single notification as read (Protected)
 router.put('/:id/read', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -83,7 +79,6 @@ router.put('/:id/read', requireAuth, async (req: Request, res: Response): Promis
   }
 });
 
-// DELETE /api/notifications/:id — delete a single notification (Protected)
 router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -114,14 +109,12 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<
   }
 });
 
-// POST /api/notifications/event-reminders — called by a daily cron job (Public with secure validation)
 router.post('/event-reminders', async (req: Request, res: Response): Promise<any> => {
   try {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
     const endOfDay   = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
-    // Find all events happening today
     const todayEvents = await prisma.event.findMany({
       where: {
         eventDate: { gte: startOfDay, lte: endOfDay },
@@ -136,7 +129,7 @@ router.post('/event-reminders', async (req: Request, res: Response): Promise<any
     let totalSent = 0;
 
     for (const event of todayEvents) {
-      // Find all confirmed registrations for this event
+
       const registrations = await prisma.registration.findMany({
         where: { eventId: event.id, status: 'CONFIRMED' },
       });

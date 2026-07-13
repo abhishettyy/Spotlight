@@ -50,7 +50,7 @@ class SpotlightApp extends StatelessWidget {
               '/main': (context) => const MainLayout(),
               '/onboarding': (context) => const OnboardingScreen(),
             },
-            // Override default route transition duration to feel instant
+
             builder: (context, child) => child!,
           );
         },
@@ -80,7 +80,7 @@ class _AppInitializerState extends State<AppInitializer> {
     setState(() { _hasError = false; });
 
     try {
-      // Keep splash visible for at least 3.5s to let the intro animation settle and feel complete
+
       final minSplash = Future.delayed(const Duration(milliseconds: 3500));
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -91,28 +91,27 @@ class _AppInitializerState extends State<AppInitializer> {
         final apiService = ApiService();
 
         try {
-          // Try to fetch fresh profile — but don't block login if it fails
+
           final user = await apiService.getProfile(authProvider.userId!)
               .timeout(const Duration(seconds: 8));
           if (user != null) userProvider.setCurrentUser(user);
         } catch (_) {
-          // Network issue but user is already logged in — let them through
-          // They'll see stale/empty profile data until connection is restored
+
         }
       }
 
-      await minSplash; // ensure splash shows for at least 3.5s
+      await minSplash; 
 
       if (mounted) setState(() => _initialized = true);
     } catch (e) {
-      // Only show error if user is NOT logged in and we can't proceed
+
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isAuthenticated) {
-        // Already logged in — go through anyway
+
         await Future.delayed(const Duration(milliseconds: 3500));
         if (mounted) setState(() => _initialized = true);
       } else {
-        // Not logged in and network failed — show error
+
         if (mounted) setState(() => _hasError = true);
       }
     }

@@ -4,7 +4,6 @@ import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 
-
 const router = Router();
 
 const generateUniquePasskey = async (): Promise<string> => {
@@ -23,7 +22,6 @@ const generateUniquePasskey = async (): Promise<string> => {
   return passkey;
 };
 
-// GET /api/user/tickets — fetch tickets for the logged-in user (Protected)
 router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
@@ -75,7 +73,6 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
   }
 });
 
-// POST /api/register — Solo registration (Protected)
 router.post('/register', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const clerkUserId = req.auth!.userId;
@@ -106,7 +103,6 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
   }
 });
 
-// POST /api/teams/create — Create a team (Protected)
 router.post('/teams/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const clerkUserId = req.auth!.userId;
@@ -140,7 +136,6 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
   }
 });
 
-// POST /api/teams/join — Join a team (Protected)
 router.post('/teams/join', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const clerkUserId = req.auth!.userId;
@@ -158,12 +153,11 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
     });
     if (alreadyRegistered) return res.status(400).json({ error: 'You are already registered for this event.' });
 
-    // Check if the team leader's registration is already CONFIRMED
     const leaderReg = await prisma.registration.findFirst({
       where: { eventId: eventId, userId: team.leaderId }
     });
     const status = (team.event?.fee === 0 || leaderReg?.status === 'CONFIRMED') ? 'CONFIRMED' : 'PENDING';
-    
+
     const registration = await prisma.registration.create({
       data: { eventId: eventId, userId: clerkUserId, teamId: team.id, status }
     });
@@ -174,7 +168,6 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
   }
 });
 
-// PUT /api/registrations/:id/payment — Submit payment proof screenshot and transaction ID (Protected)
 router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -197,7 +190,6 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
       return res.status(403).json({ error: 'Forbidden: You cannot upload payment proof for another user.' });
     }
 
-    // Upload payment proof image to Supabase Storage
     const publicUrl = await uploadBase64Image(paymentProof, 'payments/proofs');
 
     const updated = await prisma.registration.update({
@@ -215,7 +207,6 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
   }
 });
 
-// PUT /api/registrations/:id/approve — Approve a pending registration (Protected)
 router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -236,16 +227,13 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
     const eventName = registration.event?.name ?? 'an event';
     const clubName = registration.event?.club?.name ?? 'the club';
 
-    // If it's a team registration, approve all team members' registrations
     if (registration.teamId && registration.team) {
       const teamRegistrations = registration.team.registrations;
 
-      // Extract all payment proof URLs in the team to delete them from storage
       const proofUrls = teamRegistrations
         .map(r => r.paymentProofUrl)
         .filter((url): url is string => url !== null && url !== undefined);
 
-      // Confirm all registrations in the team and clear proof URL
       await prisma.registration.updateMany({
         where: { teamId: registration.teamId },
         data: { 
@@ -254,12 +242,10 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
         },
       });
 
-      // Async delete from Supabase Storage
       for (const url of proofUrls) {
         deleteImage(url).catch(err => console.error('[Storage] Async delete failed:', err));
       }
 
-      // Notify only the team members whose registration was PENDING
       const newlyApproved = teamRegistrations.filter(r => r.status === 'PENDING');
       const notifData = newlyApproved.map(r => ({
         userId: r.userId!,
@@ -273,7 +259,7 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
         await prisma.notification.createMany({ data: notifData });
       }
     } else {
-      // Solo registration
+
       const proofUrl = registration.paymentProofUrl;
 
       await prisma.registration.update({
@@ -306,13 +292,11 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
   }
 });
 
-// GET /api/public/stats — Public statistics for landing page
 router.get('/public/stats', async (req: Request, res: Response): Promise<any> => {
   try {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    // Count events scheduled from today onwards
     const liveEvents = await prisma.event.count({
       where: {
         eventDate: {
@@ -321,10 +305,8 @@ router.get('/public/stats', async (req: Request, res: Response): Promise<any> =>
       },
     });
 
-    // Count total registrations across all events till now
     const registrations = await prisma.registration.count();
 
-    // Count total clubs
     const clubs = await prisma.club.count();
 
     return res.status(200).json({

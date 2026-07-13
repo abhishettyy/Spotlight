@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Instant fade — feels like a web page render, no slide delay
 class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
   const _SmoothPageTransitionsBuilder();
 
@@ -13,7 +12,7 @@ class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    // If the route has a very short duration, just show child immediately
+
     if (route.transitionDuration <= const Duration(milliseconds: 50)) {
       return child;
     }
@@ -41,7 +40,7 @@ class SpotlightTheme {
   static const Color darkGray     = Color(0xFF1E1E1E);
   static const Color darkBg       = Color(0xFF121212);
   static const Color lightGray    = Color(0xFFA0A0A0);
-  static const Color crimsonRed   = Color(0xFFE63946); // Vibrant Crimson — primary dark accent
+  static const Color crimsonRed   = Color(0xFFE63946); 
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -76,7 +75,7 @@ class SpotlightTheme {
       cardTheme: const CardThemeData(
         color: pureWhite,
         elevation: 2,
-        shadowColor: Color(0x0C000000), // Colors.black.withOpacity(0.05)
+        shadowColor: Color(0x0C000000), 
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),

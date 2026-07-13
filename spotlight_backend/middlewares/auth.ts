@@ -12,17 +12,15 @@ export function signToken(userId: string): string {
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    // 1. Clerk authenticated (populated by ClerkExpressWithAuth)
+
     if (req.auth?.userId) {
       return next();
     }
 
-    // 2. Fallback to Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
 
-      // A. Try validating as our custom JWT
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
         if (decoded && decoded.userId) {
@@ -30,10 +28,9 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
           return next();
         }
       } catch (err) {
-        // Not a custom JWT, continue
+
       }
 
-      // B. Try validating as Google ID Token
       try {
         const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
         if (googleRes.ok) {
