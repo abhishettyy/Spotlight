@@ -635,8 +635,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         color: isDark
                             ? const Color(0xFF2A2A2A)
-                            : Colors.grey[100],
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: isDark
+                            ? null
+                            : Border.all(
+                                color: Colors.grey.shade200,
+                                width: 1.0,
+                              ),
+                        boxShadow: isDark
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.07),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                       ),
                       child: Text('Edit',
                           style: GoogleFonts.inter(
@@ -656,8 +671,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
+                      border: isDark
+                          ? null
+                          : Border.all(
+                              color: Colors.grey.shade200,
+                              width: 1.0,
+                            ),
+                      boxShadow: isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -684,14 +714,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: hasUsn ? cs.primary : (isDark ? const Color(0xFF2A2A2A) : Colors.grey[300]),
+                            color: hasUsn 
+                                ? cs.primary 
+                                : (isDark ? const Color(0xFF2A2A2A) : Colors.grey[200]),
                             borderRadius: BorderRadius.circular(20),
+                            border: hasUsn
+                                ? null
+                                : (isDark
+                                    ? null
+                                    : Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 1.0,
+                                      )),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 hasUsn ? Icons.check : Icons.pending_outlined,
-                                color: Colors.white,
+                                color: hasUsn 
+                                    ? Colors.white 
+                                    : (isDark ? Colors.white70 : Colors.grey[700]),
                                 size: 16,
                               ),
                               const SizedBox(width: 4),
@@ -700,7 +742,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white),
+                                    color: hasUsn 
+                                        ? Colors.white 
+                                        : (isDark ? Colors.white70 : Colors.grey[700])),
                               ),
                             ],
                           ),
@@ -826,11 +870,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: const Color(0xFFD90429))),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).cardTheme.color,
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
+                    elevation: isDark ? 0 : 3,
+                    shadowColor: isDark ? Colors.transparent : Colors.black.withOpacity(0.1),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                        side: isDark
+                            ? BorderSide.none
+                            : BorderSide(
+                                color: Colors.grey.shade200,
+                                width: 1.0,
+                              )),
                   ),
                 ),
               ),
@@ -857,6 +907,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
                 color: isDark ? Colors.white12 : Colors.grey.shade200),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -908,6 +967,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: tileColor,
           borderRadius: BorderRadius.circular(16),
+          border: isDark
+              ? null
+              : Border.all(
+                  color: Colors.grey.shade200,
+                  width: 1.0,
+                ),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.07),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
         ),
         child: Row(
           children: [

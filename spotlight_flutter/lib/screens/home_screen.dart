@@ -145,6 +145,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                           color: isDark
                                               ? Colors.white12
                                               : Colors.grey[200]!),
+                                      boxShadow: isDark
+                                          ? null
+                                          : [
+                                               BoxShadow(
+                                                 color: Colors.black.withOpacity(0.07),
+                                                 blurRadius: 10,
+                                                 offset: const Offset(0, 3),
+                                               ),
+                                            ],
                                     ),
                                     child: Icon(Icons.notifications_outlined,
                                         color: textColor, size: 20),
@@ -285,6 +294,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                         color: isDark
                                             ? Colors.white12
                                             : Colors.grey[300]!),
+                                boxShadow: isActive || isDark
+                                    ? null
+                                    : [
+                                         BoxShadow(
+                                           color: Colors.black.withOpacity(0.07),
+                                           blurRadius: 10,
+                                           offset: const Offset(0, 3),
+                                         ),
+                                      ],
                               ),
                               child: Text(filters[i],
                                   style: GoogleFonts.inter(
