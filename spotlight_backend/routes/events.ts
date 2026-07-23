@@ -28,6 +28,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
       date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
       eventType: e.eventType ?? 'Solo',
       teamSizeLimit: e.teamSizeLimit,
+      minTeamSize: e.minTeamSize ?? null,
       registration_deadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
       registration_limit: e.registrationLimit,
       club: e.club ? { id: e.club.id, name: e.club.name, upiId: e.club.upiId } : null,
@@ -46,7 +47,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const { name, description, venue, eventDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, clubId, bannerUrl, qrUrl } = req.body;
+    const { name, description, venue, eventDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, clubId, bannerUrl, qrUrl } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
 
@@ -67,6 +68,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         venue: venue || "TBD",
         eventType: eventType || "Solo",
         teamSizeLimit: eventType === "Team" && teamSizeLimit ? parseInt(teamSizeLimit) : null,
+        minTeamSize: eventType === "Team" && minTeamSize ? parseInt(minTeamSize) : null,
         fee: parsedFee,
         registrationLimit: registrationLimit ? parseInt(registrationLimit) : 100,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),
@@ -156,7 +158,7 @@ router.put('/:id/deadline', requireAuth, async (req: Request, res: Response): Pr
     }
 
     const updatedEvent = await prisma.event.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         registrationDeadline: new Date(registrationDeadline)
       },

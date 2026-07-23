@@ -1,4 +1,84 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export function sanitizeErrorMessage(err: any, fallback: string = "Something went wrong. Please try again."): string {
+  if (!err) return fallback;
+  
+  let msg = typeof err === 'string' ? err : (err.message || err.error || "");
+  if (err.errors && err.errors.length > 0) {
+    msg = err.errors[0].longMessage || err.errors[0].message || msg;
+  }
+  
+  if (!msg || typeof msg !== 'string') return fallback;
+  
+  const lower = msg.toLowerCase();
+  
+  if (
+    lower.includes("network error") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("load failed") ||
+    lower.includes("econnrefused") ||
+    lower.includes("socket") ||
+    lower.includes("offline") ||
+    lower.includes("networkerror")
+  ) {
+    return "Connection error. Please check your internet connection and try again.";
+  }
+  
+  if (
+    lower.includes("no account exists") ||
+    lower.includes("no club exists") ||
+    lower.includes("incorrect password") ||
+    lower.includes("social sign-in")
+  ) {
+    return msg;
+  }
+
+  if (lower.includes("form_identifier_not_found") || lower.includes("user_not_found") || lower.includes("invalid_credentials") || lower.includes("invalid password") || lower.includes("wrong password") || lower.includes("invalid email or password")) {
+    return "Invalid email address or password. Please try again.";
+  }
+  if (
+    lower.includes("form_identifier_exists") || 
+    lower.includes("already_exists") || 
+    lower.includes("email already in use") || 
+    lower.includes("user already exists") || 
+    lower.includes("club already exists") ||
+    lower.includes("is taken") ||
+    lower.includes("already taken") ||
+    lower.includes("address is taken")
+  ) {
+    return "An account or club with this email address already exists.";
+  }
+  if (lower.includes("password_too_short") || lower.includes("password is too short")) {
+    return "Password is too short. Please choose a stronger password.";
+  }
+  if (lower.includes("session_expired") || lower.includes("token_expired") || lower.includes("unauthorized") || lower.includes("401") || lower.includes("403")) {
+    return "Your session has expired. Please sign in again.";
+  }
+
+  if (
+    lower.includes("prisma") ||
+    lower.includes("p2002") ||
+    lower.includes("p2003") ||
+    lower.includes("p2025") ||
+    lower.includes("constraint") ||
+    lower.includes("syntaxerror") ||
+    lower.includes("typeerror") ||
+    lower.includes("referenceerror") ||
+    lower.includes("postgres") ||
+    lower.includes("sqlite") ||
+    lower.includes("database") ||
+    lower.includes("internal server error") ||
+    lower.includes("500") ||
+    lower.includes("   at ") ||
+    lower.includes("eval") ||
+    lower.includes("[object object]")
+  ) {
+    return "An unexpected server error occurred. Please try again later.";
+  }
+  
+  const cleanMsg = msg.replace(/^Error:\s*/i, '').replace(/^Exception:\s*/i, '').trim();
+  return cleanMsg || fallback;
+}
+
+const BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const headers: Record<string, string> = {
@@ -7,10 +87,22 @@ async function request(path: string, options: RequestInit = {}, token?: string) 
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE_URL}${path}`, { cache: 'no-store', ...options, headers });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
-  return data;
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, { cache: 'no-store', ...options, headers });
+    let data: any = {};
+    try {
+      data = await res.json();
+    } catch (_) {
+      data = {};
+    }
+    if (!res.ok) {
+      const rawError = data.error || data.message || `Request failed (${res.status})`;
+      throw new Error(sanitizeErrorMessage(rawError));
+    }
+    return data;
+  } catch (err: any) {
+    throw new Error(sanitizeErrorMessage(err));
+  }
 }
 
 export async function fetchPublicStats() {
@@ -34,6 +126,7 @@ export async function syncProfile(
     method: 'POST',
     body: JSON.stringify({ clerkUserId, email, name }),
   }, token);
+  
 }
 
 export async function getProfile(userId: string) {
@@ -64,6 +157,7 @@ export async function createEvent(data: {
   registrationLimit?: number;
   eventType?: string;
   teamSizeLimit?: number;
+  minTeamSize?: number;
   clubId?: string;
   bannerUrl?: string;
   qrUrl?: string;

@@ -147,9 +147,15 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
   }
 
   try {
-    const club = await prisma.club.findUnique({ where: { email: email.toLowerCase() } });
+    const cleanEmail = email.toLowerCase().trim();
+    const club = await prisma.club.findUnique({ where: { email: cleanEmail } });
     if (!club) {
-      return res.status(404).json({ error: 'Club account with this email does not exist.' });
+      const existingProfile = await prisma.profile.findFirst({ where: { email: cleanEmail } });
+      if (!existingProfile) {
+        return res.status(404).json({ error: 'No account exists with this email address.' });
+      } else {
+        return res.status(404).json({ error: 'No club exists with this email address. Please register your club first.' });
+      }
     }
 
     if (!club.password) {
@@ -158,7 +164,7 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
 
     const isMatch = await bcrypt.compare(password, club.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
+      return res.status(401).json({ error: 'Incorrect password. Please check your password and try again.' });
     }
 
     let profile = await prisma.profile.findFirst({ where: { clubId: club.id } });

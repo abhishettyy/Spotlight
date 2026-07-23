@@ -15,10 +15,11 @@ class AppException implements Exception {
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.40.233.122:5000/api',
+    defaultValue: 'http://192.168.1.47:5000/api',
   );
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {
+    if (error == null) return defaultMsg;
     final errStr = error.toString().toLowerCase();
 
     if (errStr.contains('socketexception') || 
@@ -27,12 +28,38 @@ class ApiService {
         errStr.contains('connection refused') ||
         errStr.contains('handshake failed') ||
         errStr.contains('failed host lookup') ||
-        errStr.contains('host lookup failed')) {
+        errStr.contains('host lookup failed') ||
+        errStr.contains('network error') ||
+        errStr.contains('failed to fetch')) {
       return 'Connection error. Please check your internet connection and try again.';
     }
 
-    if (errStr.contains('500') || errStr.contains('internal server error')) {
-      return 'Internal server error. Please try again later.';
+    if (errStr.contains('user_not_found') || 
+        errStr.contains('invalid_credentials') || 
+        errStr.contains('invalid password') || 
+        errStr.contains('wrong password') || 
+        errStr.contains('invalid email or password')) {
+      return 'Invalid email address or password. Please try again.';
+    }
+
+    if (errStr.contains('already_exists') || 
+        errStr.contains('email already in use') || 
+        errStr.contains('user already exists')) {
+      return 'An account with this email address already exists.';
+    }
+
+    if (errStr.contains('500') || 
+        errStr.contains('internal server error') ||
+        errStr.contains('prisma') ||
+        errStr.contains('p2002') ||
+        errStr.contains('p2003') ||
+        errStr.contains('constraint') ||
+        errStr.contains('syntaxerror') ||
+        errStr.contains('typeerror') ||
+        errStr.contains('postgres') ||
+        errStr.contains('sqlite') ||
+        errStr.contains('database')) {
+      return 'An unexpected server error occurred. Please try again later.';
     }
 
     String cleanMsg = error.toString();

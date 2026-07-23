@@ -12,7 +12,7 @@ import {
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, sanitizeErrorMessage } from "./api";
 import confetti from "canvas-confetti";
 
 const FC = "'Playfair Display', serif";
@@ -228,7 +228,6 @@ const QUICK_ACTIONS = [
   { id: "create",   icon: Plus,        label: "Create Event",     desc: "Launch a new event in minutes"   },
   { id: "events",   icon: CheckCircle, label: "Review Payments",  desc: "Approve pending verifications"   },
   { id: "events",    icon: Users,       label: "Manage Teams",     desc: "Oversee team registrations per event"      },
-  { id: "settings", icon: CreditCard,  label: "Payment Settings", desc: "Configure QR and UPI details"   },
 ];
 const FEATURES = [
   { icon: Calendar, title: "Liquid Event Creation", desc: "Craft events with a fluid step-by-step builder. From concept to live in under two minutes."      },
@@ -397,21 +396,21 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             className="mt-14 flex flex-col sm:flex-row gap-4 items-center"
           >
             <motion.button
-              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
+              whileTap={{ scale: 0.98 }}
               onClick={onEnter}
-              className="cursor-pointer group flex items-center gap-3 px-9 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 40px rgba(240,61,78,0.4)")}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+              className="cursor-pointer group relative flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
+              style={{ cursor: "pointer" }}
             >
-              Enter Dashboard
-              <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-300" />
+              <span className="pointer-events-none">Enter Dashboard</span>
+              <ArrowRight size={15} className="absolute right-5 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
             </motion.button>
           </motion.div>
         </motion.div>
 
         {}
         <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
           animate={{ y: [0, 10, 0] }} transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
         >
           <div className="w-px h-14 bg-gradient-to-b from-transparent via-white/15 to-white/45" />
@@ -425,7 +424,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.8 }}
-            className="flex flex-wrap justify-center gap-16 mb-28"
+            className="flex flex-wrap justify-center gap-16"
           >
             {[
               { v: stats.liveEvents.toString(), l: "Active Events" },
@@ -438,34 +437,15 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
               </div>
             ))}
           </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {FEATURES.map((f, i) => (
-              <motion.div key={f.title}
-                initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ duration: 0.65, delay: i * 0.1 }}
-                className="group p-7 rounded-2xl cursor-default"
-                style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.05)", transition: "all 0.45s ease" }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = "rgba(255,255,255,0.036)"; el.style.borderColor = "rgba(255,255,255,0.12)"; el.style.transform = "translateY(-4px)"; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.background = "rgba(255,255,255,0.018)"; el.style.borderColor = "rgba(255,255,255,0.05)"; el.style.transform = "none"; }}
-              >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <f.icon size={15} className="text-muted-foreground group-hover:text-white/70 transition-colors duration-300" />
-                </div>
-                <h3 className="text-white font-semibold mb-2 text-sm">{f.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "#f9fafb" }}>{f.desc}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
       {}
       <footer className="py-10 px-8" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
-          <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
-          <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
+          <span className="text-base tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
+          <p className="text-sm" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
+          <div className="flex gap-6 text-sm" style={{ color: "#94a3b8" }}>
             {["Privacy", "Terms", "Contact"].map(l => (
               <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white/65 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
             ))}
@@ -477,24 +457,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
 }
 
 function formatAuthError(err: any, defaultMsg: string): string {
-  if (!err) return defaultMsg;
-  const msg = err.message || "";
-
-  if (
-    msg.toLowerCase().includes("network error") || 
-    msg.toLowerCase().includes("failed to fetch") || 
-    msg.toLowerCase().includes("load failed") || 
-    msg.toLowerCase().includes("networkerror") || 
-    (err.name === "TypeError" && msg.toLowerCase().includes("fetch"))
-  ) {
-    return "Connection error. Please check your internet connection and try again.";
-  }
-
-  if (err.errors && err.errors.length > 0) {
-    return err.errors[0].longMessage || err.errors[0].message || defaultMsg;
-  }
-
-  return msg || defaultMsg;
+  return sanitizeErrorMessage(err, defaultMsg);
 }
 
 function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
@@ -542,8 +505,12 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Email and Password are required.");
+    if (!email.trim() || !password.trim()) {
+      setError("Please fill in both Email ID and Password.");
+      return;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+      setError("Please enter a valid email address.");
       return;
     }
 
@@ -594,8 +561,12 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSignUpLoaded || !signUp) return;
-    if (!clubName || !email || !password) {
-      setError("Club Name, Email, and Password are required.");
+    if (!clubName.trim() || !email.trim() || !password.trim()) {
+      setError("Please fill in Club Name, Email ID, and Password.");
+      return;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+      setError("Please enter a valid email address.");
       return;
     }
 
@@ -679,7 +650,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
             <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>We sent a 6-digit verification code to <span className="text-white font-medium">{email}</span>. Please enter it below.</p>
           </div>
 
-          <form onSubmit={verifyingSignIn ? handleVerifySignIn : handleVerify} className="space-y-6">
+          <form noValidate onSubmit={verifyingSignIn ? handleVerifySignIn : handleVerify} className="space-y-6">
             <div className="space-y-1.5">
               <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Verification Code</label>
               <input 
@@ -732,122 +703,140 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
 
       <div className="flex flex-col items-center gap-6 w-full max-w-md">
         {}
-        <div className="flex gap-1 p-1 rounded-xl w-full" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
           {(["login", "register"] as AuthTab[]).map(t => (
             <button key={t} onClick={() => onTabChange(t)}
-              className="flex-1 py-2.5 text-sm rounded-lg font-medium transition-all duration-300"
-              style={{ background: tab === t ? "#fff" : "transparent", color: tab === t ? "#000" : "#aaaaaa", fontFamily: FB }}
-            >{t === "login" ? "Sign In" : "Register Club"}</button>
+              className="relative flex-1 py-2.5 text-sm font-medium transition-colors duration-300 cursor-pointer"
+              style={{ fontFamily: FB }}
+            >
+              {tab === t && (
+                <motion.div
+                  layoutId="activeAuthTabPill"
+                  className="absolute inset-0 bg-white rounded-lg"
+                  transition={{ type: "spring", stiffness: 220, damping: 24 }}
+                />
+              )}
+              <span className={`relative z-10 transition-colors duration-300 ${tab === t ? "text-black font-semibold" : "text-[#aaaaaa]"}`}>
+                {t === "login" ? "Sign In" : "Sign Up"}
+              </span>
+            </button>
           ))}
         </div>
 
-        {}
-        <div className="w-full p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
-              {tab === "login" ? "Club Sign In" : "Register Your Club"}
-            </h2>
-            <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>
-              {tab === "login" ? "Access your club dashboard" : "Welcome! Please fill in the details to get started."}
-            </p>
-          </div>
-
-          <form onSubmit={tab === "login" ? handleSignIn : handleSignUp} className="space-y-6">
-            {tab === "register" && (
-              <div className="space-y-1.5">
-                <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter club name" 
-                  required
-                  className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
-                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
-                  value={clubName} 
-                  onChange={e => setClubName(e.target.value)}
-                />
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Email ID</label>
-              <input 
-                type="email" 
-                placeholder="Enter email address" 
-                required
-                className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
-                value={email} 
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5 relative">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
-              <div className="relative">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Enter password" 
-                  required
-                  className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
-                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)}
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/65 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-xs text-[#F03D4E] text-center font-medium" style={{ fontFamily: FB }}>{error}</p>
-            )}
-
-            <motion.button 
-              type="submit"
-              disabled={loading}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
-              style={{ fontFamily: FB }}
+        <div className="w-full p-8 md:p-10 rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
             >
-              {loading ? (
-                <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : (
-                <>Continue <ArrowRight size={14} /></>
-              )}
-            </motion.button>
-          </form>
-
-          {tab === "login" && (
-            <>
-              {}
-              <div className="flex items-center gap-4 my-6">
-                <div className="h-[1px] bg-white/10 flex-1" />
-                <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
-                <div className="h-[1px] bg-white/10 flex-1" />
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
+                  {tab === "login" ? "Sign In to Club" : "Register Your Club"}
+                </h2>
+                <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>
+                  {tab === "login" ? "Access your club dashboard" : "Welcome! Please fill in the details to get started."}
+                </p>
               </div>
 
-              {}
-              <motion.button
-                onClick={handleGoogleAuth}
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
-                style={{ fontFamily: FB }}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
-                  <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
-                  <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
-                  <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
-                </svg>
-                Continue with Google
-              </motion.button>
-            </>
-          )}
+              <form noValidate onSubmit={tab === "login" ? handleSignIn : handleSignUp} className="space-y-6">
+                {tab === "register" && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter club name" 
+                      required
+                      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+                      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+                      value={clubName} 
+                      onChange={e => setClubName(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Email ID</label>
+                  <input 
+                    type="email" 
+                    placeholder="Enter email address" 
+                    required
+                    className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+                    style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5 relative">
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="Enter password" 
+                      required
+                      className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
+                      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+                      value={password} 
+                      onChange={e => setPassword(e.target.value)}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/65 hover:text-white transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <p className="text-xs text-[#F03D4E] text-center font-medium" style={{ fontFamily: FB }}>{error}</p>
+                )}
+
+                <motion.button 
+                  type="submit"
+                  disabled={loading}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                  style={{ fontFamily: FB }}
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  ) : (
+                    <>Continue <ArrowRight size={14} /></>
+                  )}
+                </motion.button>
+              </form>
+
+              {tab === "login" && (
+                <>
+                  <div className="flex items-center gap-4 my-6">
+                    <div className="h-[1px] bg-white/10 flex-1" />
+                    <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
+                    <div className="h-[1px] bg-white/10 flex-1" />
+                  </div>
+
+                  <motion.button
+                    onClick={handleGoogleAuth}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
+                    style={{ fontFamily: FB }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
+                      <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
+                      <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
+                      <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
+                    </svg>
+                    Continue with Google
+                  </motion.button>
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </motion.div>
@@ -1050,7 +1039,7 @@ function EventsPage({
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => {
-                    const headers = ["Name", "Email", "USN", "Branch", "Year", "Sem", "Phone", "Registration Type", "Team Name", "Transaction ID / UTR", "Status", "Registration Date"];
+                    const headers = ["Name", "Email", "USN", "Branch", "Year", "Semester", "Contact", "Type", "Team Name", "Transaction / UTR", "Status"];
                     const rows = registrations.map(r => {
                       let txId = "";
                       if (activeEvent.price === 0) {
@@ -1060,19 +1049,20 @@ function EventsPage({
                       } else {
                         txId = r.transaction_id ?? "Pending Upload";
                       }
+                      const rawPhone = r.user?.phone ? String(r.user.phone).trim() : '';
+                      const phoneFormatted = rawPhone ? `\t${rawPhone}` : '';
                       return [
                         r.user?.name ?? 'Unknown',
                         r.user?.email ?? '',
                         r.user?.usn ?? '',
                         r.user?.branch ?? '',
-                        r.user?.year ?? '',
-                        r.user?.sem ?? '',
-                        r.user?.phone ?? '',
-                        r.team ? 'Team' : 'Solo',
+                        r.user?.year ? `Y${r.user.year}` : '',
+                        r.user?.sem ? `Sem ${r.user.sem}` : '',
+                        phoneFormatted,
+                        r.team ? 'TEAM' : 'SOLO',
                         r.team?.name ?? '',
                         txId,
-                        r.status ?? '',
-                        r.created_at ? new Date(r.created_at).toLocaleDateString() : ''
+                        (r.status ?? '').toUpperCase()
                       ];
                     });
                     const csvContent = [headers, ...rows]
@@ -1405,7 +1395,7 @@ function EventsPage({
 
                     <div className="mb-6">
                       <label className="text-[11px] tracking-widest uppercase text-[#f3f4f6] block mb-2" style={{ fontFamily: FM }}>Registration Deadline</label>
-                      <GlassDatePicker value={newDeadline} onChange={setNewDeadline} />
+                      <GlassDatePicker value={newDeadline} onChange={setNewDeadline} defaultTime="23:59" />
                     </div>
 
                     <button 
@@ -1522,7 +1512,9 @@ function EventsPage({
 
         {}
         <div>
-          <h2 className="text-lg font-medium text-[#f3f4f6] mb-5" style={{ fontFamily: FB }}>Previous Events</h2>
+          <div className="flex items-center gap-3 mb-5">
+            <h2 className="text-base font-medium text-white/50" style={{ fontFamily: FB }}>Past Events</h2>
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {EVENTS.filter(e => e.status === "previous").map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
@@ -1575,14 +1567,14 @@ function EventsPage({
   );
 }
 
-function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: string; onChange: (v: string) => void; defaultTime?: string }) {
   const [open, setOpen] = useState(false);
   const dateObj = value ? new Date(value) : new Date();
 
   const [currentMonth, setCurrentMonth] = useState(dateObj.getMonth());
   const [currentYear, setCurrentYear] = useState(dateObj.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(value ? dateObj : null);
-  const [timeStr, setTimeStr] = useState(value ? (value.includes("T") ? value.split("T")[1] : "12:00") : "12:00");
+  const [timeStr, setTimeStr] = useState(value ? (value.includes("T") ? value.split("T")[1] : defaultTime) : defaultTime);
 
   const days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -1598,10 +1590,10 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
   const handleTimeChange = (e: any) => {
     const t = e.target.value;
     setTimeStr(t);
-    if (selectedDate) {
-      const dateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-      onChange(`${dateString}T${t}`);
-    }
+    if (!t) return;
+    const targetDate = selectedDate || new Date(currentYear, currentMonth, new Date().getDate());
+    const dateString = `${targetDate.getFullYear()}-${String(targetDate.getMonth()+1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    onChange(`${dateString}T${t}`);
   };
 
   return (
@@ -1620,14 +1612,14 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
                 else { setCurrentMonth(m => m - 1); }
-              }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white"><ChevronLeft size={16} /></button>
+              }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white cursor-pointer"><ChevronLeft size={16} /></button>
               <div className="text-sm text-white" style={{ fontFamily: FB }}>
                 {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {currentYear}
               </div>
               <button onClick={() => {
                 if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
                 else { setCurrentMonth(m => m + 1); }
-              }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white"><ChevronRight size={16} /></button>
+              }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white cursor-pointer"><ChevronRight size={16} /></button>
             </div>
 
             {}
@@ -1640,7 +1632,7 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
                 const d = i + 1;
                 const isSelected = selectedDate?.getDate() === d && selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear;
                 return (
-                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all ${isSelected ? 'bg-[#F03D4E] text-white' : 'text-[#f3f4f6] hover:bg-white/10 hover:text-white'}`} style={{ fontFamily: FB }}>
+                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-[#F03D4E] text-white' : 'text-[#f3f4f6] hover:bg-white/10 hover:text-white'}`} style={{ fontFamily: FB }}>
                     {d}
                   </button>
                 );
@@ -1650,12 +1642,12 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
             {}
             <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
               <span className="text-xs text-[#888]" style={{ fontFamily: FM }}>Time</span>
-              <input type="time" className="bg-transparent border border-white/10 rounded-md px-2 py-1 text-xs text-white outline-none focus:border-white/30 transition-all" style={{ colorScheme: "dark", fontFamily: FB }} value={timeStr} onChange={handleTimeChange} />
+              <input type="time" className="bg-transparent border border-white/10 rounded-md px-2.5 py-1 text-xs text-white outline-none focus:border-white/40 hover:border-white/30 transition-all cursor-pointer" style={{ colorScheme: "dark", fontFamily: FB, cursor: "pointer" }} value={timeStr} onChange={handleTimeChange} />
             </div>
 
             {}
             <div className="mt-4 pt-4 border-t border-white/5 text-right">
-              <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-colors" style={{ fontFamily: FB }}>Done</button>
+              <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-colors cursor-pointer" style={{ fontFamily: FB }}>Done</button>
             </div>
 
           </motion.div>
@@ -1668,11 +1660,12 @@ function GlassDatePicker({ value, onChange }: { value: string; onChange: (v: str
 function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
-    eventType: "Solo", teamSizeLimit: "",
+    eventType: "Solo", teamSizeLimit: "", minTeamSize: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -1718,12 +1711,43 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
     });
   };
 
+
   const handleSubmit = async () => {
-    if (!formData.title) return;
+    const errors: Record<string, string> = {};
+    const now = new Date();
+    if (!formData.title.trim()) errors.title = "Event name is required.";
+    if (!formData.date) errors.date = "Event date & time is required.";
+    else if (new Date(formData.date) <= now) errors.date = "Event date must be in the future.";
+    if (!formData.deadline) errors.deadline = "Registration deadline is required.";
+    else if (new Date(formData.deadline) <= now) errors.deadline = "Registration deadline must be in the future.";
+    else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event date.";
+    if (!formData.desc.trim()) errors.desc = "Description is required.";
+    if (!formData.venue.trim()) errors.venue = "Venue is required.";
+    if (!formData.capacity) errors.capacity = "Capacity is required.";
+    else if (parseInt(formData.capacity) < 1) errors.capacity = "Capacity must be at least 1.";
+    if (formData.type === "paid") {
+      if (!formData.amount) errors.amount = "Amount is required for paid events.";
+      else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
+    }
+    if (formData.eventType === "Team") {
+      if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
+      if (!formData.teamSizeLimit) errors.teamSizeLimit = "Max team size is required.";
+      if (formData.minTeamSize && formData.teamSizeLimit) {
+        const min = parseInt(formData.minTeamSize);
+        const max = parseInt(formData.teamSizeLimit);
+        if (min < 1) errors.minTeamSize = "Min team size must be at least 1.";
+        if (max < 1) errors.teamSizeLimit = "Max team size must be at least 1.";
+        if (!errors.minTeamSize && !errors.teamSizeLimit && min > max) errors.minTeamSize = "Min size cannot exceed max size.";
+      }
+    }
     if (formData.type === "paid" && formData.useDefaultQr && !clubQrUrl) {
       setError("Default QR code is not uploaded in settings. Please upload one or choose Custom QR.");
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
+    setFieldErrors({});
     setSubmitting(true);
     setError(null);
     try {
@@ -1748,6 +1772,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
+        minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : undefined,
         clubId: clubId,
         bannerUrl,
         qrUrl,
@@ -1797,34 +1822,40 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Name</label>
-            <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.title} onChange={e => setFormData(p => ({...p, title: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+            <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.title ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.title} onChange={e => { setFormData(p => ({...p, title: e.target.value})); setFieldErrors(fe => ({...fe, title: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.title ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.title ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+            {fieldErrors.title && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.title}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Date & Time</label>
-            <GlassDatePicker value={formData.date} onChange={v => setFormData(p => ({...p, date: v}))} />
+            <GlassDatePicker value={formData.date} onChange={v => { setFormData(p => ({...p, date: v})); setFieldErrors(fe => ({...fe, date: ""})); }} />
+            {fieldErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.date}</p>}
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Registration Deadline</label>
-            <GlassDatePicker value={formData.deadline} onChange={v => setFormData(p => ({...p, deadline: v}))} />
+            <GlassDatePicker value={formData.deadline} onChange={v => { setFormData(p => ({...p, deadline: v})); setFieldErrors(fe => ({...fe, deadline: ""})); }} defaultTime="23:59" />
+            {fieldErrors.deadline && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.deadline}</p>}
           </div>
         </div>
 
         <div className="space-y-1.5">
           <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Description</label>
-          <textarea placeholder="Describe your event..." className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[100px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.desc} onChange={e => setFormData(p => ({...p, desc: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+          <textarea placeholder="Describe your event..." className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[100px]" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.desc ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.desc} onChange={e => { setFormData(p => ({...p, desc: e.target.value})); setFieldErrors(fe => ({...fe, desc: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.desc ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.desc ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+          {fieldErrors.desc && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.desc}</p>}
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue</label>
-            <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.venue} onChange={e => setFormData(p => ({...p, venue: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+            <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.venue} onChange={e => { setFormData(p => ({...p, venue: e.target.value})); setFieldErrors(fe => ({...fe, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+            {fieldErrors.venue && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.venue}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
-            <input type="number" placeholder="e.g. 200" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.capacity} onChange={e => setFormData(p => ({...p, capacity: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+            <input type="number" placeholder="e.g. 200" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+            {fieldErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.capacity}</p>}
           </div>
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Pricing</label>
@@ -1843,7 +1874,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Participation Type</label>
-            <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+            <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: "", minTeamSize: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
               <option value="Solo" style={{ background: "#111" }}>Solo</option>
               <option value="Team" style={{ background: "#111" }}>Team</option>
             </select>
@@ -1854,10 +1885,18 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="space-y-1.5"
+                className="grid grid-cols-2 gap-4"
               >
-                <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
-                <input type="number" placeholder="e.g. 4" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.teamSizeLimit} onChange={e => setFormData(p => ({...p, teamSizeLimit: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Min Team Size</label>
+                  <input type="number" placeholder="e.g. 2" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.minTeamSize} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setFormData(p => ({...p, minTeamSize: v})); setFieldErrors(fe => ({...fe, minTeamSize: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+                  {fieldErrors.minTeamSize && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.minTeamSize}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                  <input type="number" placeholder="e.g. 4" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.teamSizeLimit} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setFormData(p => ({...p, teamSizeLimit: v})); setFieldErrors(fe => ({...fe, teamSizeLimit: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+                  {fieldErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.teamSizeLimit}</p>}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1913,7 +1952,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
           <p className="text-xs text-[#F03D4E] px-1" style={{ fontFamily: FM }}>{error}</p>
         )}
         <div className="pt-4 mt-8">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={!formData.title || submitting} className="cursor-pointer px-8 py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50" style={{ fontFamily: FB }} onMouseEnter={e => !(!formData.title || submitting) && (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")} onMouseLeave={e => !(!formData.title || submitting) && (e.currentTarget.style.boxShadow = "none")}>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={submitting} className="cursor-pointer px-8 py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50" style={{ fontFamily: FB }} onMouseEnter={e => !submitting && (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")} onMouseLeave={e => !submitting && (e.currentTarget.style.boxShadow = "none")}>
             {submitting ? "Publishing..." : "Publish Event"}
           </motion.button>
         </div>
@@ -1936,6 +1975,8 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
   const isLogoUploaded = formData.logoUrl && formData.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3";
   const [qrFile, setQrFile] = useState<File | null>(null);
 
+  const initialData = { name: club?.name || "", email: club?.email || "", upiId: club?.upiId || "" };
+
   useEffect(() => {
     if (club) {
       setFormData({
@@ -1948,6 +1989,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
     }
   }, [club]);
 
+
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [password, setPassword] = useState("");
@@ -1955,6 +1997,12 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
 
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const isDirty =
+    formData.name !== (club?.name || "") ||
+    formData.upiId !== (club?.upiId || "") ||
+    !!logoFile ||
+    !!qrFile;
 
   const [showPasswordUpdateModal, setShowPasswordUpdateModal] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
@@ -2051,17 +2099,12 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
       return;
     }
     setError(null);
-
-    const hasLocalPassword = profile?.hasPassword !== false;
-    if (!hasLocalPassword) {
-      handleConfirmSave(true);
-    } else {
-      setShowPasswordPrompt(true);
-    }
+    setPassword("");
+    setShowPasswordPrompt(true);
   };
 
-  const handleConfirmSave = async (bypassPassword = false) => {
-    if (!bypassPassword && !password) {
+  const handleConfirmSave = async () => {
+    if (!password) {
       setError("Password is required.");
       return;
     }
@@ -2083,7 +2126,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         ...formData,
         qrUrl: finalQrUrl,
         logoUrl: finalLogoUrl,
-        password: bypassPassword ? undefined : password
+        password: password
       }, token || undefined);
 
       setShowPasswordPrompt(false);
@@ -2092,7 +2135,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
       setTimeout(() => setSuccessMsg(null), 4000);
       onUpdate();
     } catch (e: any) {
-      setError(e.message || "Failed to update club.");
+      setError(sanitizeErrorMessage(e, "Failed to update settings. Please try again."));
     } finally {
       setIsSaving(false);
     }
@@ -2101,18 +2144,10 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
   return (
     <div className="p-8 lg:p-10 space-y-8 max-w-4xl relative">
       <div>
-        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5 text-[#f3f4f6]" style={{ fontFamily: FM }}>Preferences</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
 
-      <AnimatePresence>
-        {successMsg && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium flex items-center gap-2" style={{ fontFamily: FB }}>
-            <Check size={16} />
-            {successMsg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <div className="space-y-6">
         {}
@@ -2125,7 +2160,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Contact Email</label>
-              <input type="email" placeholder="club@example.com" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <input type="email" value={formData.email} disabled readOnly className="w-full rounded-xl px-4 py-3 text-sm text-white/50 bg-white/[0.01] border border-white/5 cursor-not-allowed outline-none select-none" style={{ fontFamily: FB }} />
             </div>
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Logo</label>
@@ -2179,9 +2214,18 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
               <p className="text-sm text-white" style={{ fontFamily: FB }}>Save All Settings</p>
               <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
             </div>
-            <button onClick={handleSaveInit} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)]" style={{ fontFamily: FB }}>Apply Changes</button>
+            <button onClick={handleSaveInit} disabled={!isDirty || isSaving} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
         </div>
+
+        <AnimatePresence>
+          {successMsg && (
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-400 text-sm font-medium flex items-center gap-2 px-1" style={{ fontFamily: FB }}>
+              <Check size={16} />
+              {successMsg}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {showPasswordPrompt && (
@@ -2190,16 +2234,16 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                 <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h3>
                 <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
 
-                {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl" style={{ fontFamily: FB }}>{error}</div>}
-
-                <div className="space-y-1.5 mb-6">
+                <div className="space-y-1.5 mb-4">
                   <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
-                  <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                  <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !isSaving) handleConfirmSave(); }} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
                 </div>
+
+                {error && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{error}</p>}
 
                 <div className="flex items-center justify-end gap-3">
                   <button onClick={() => { setShowPasswordPrompt(false); setError(null); }} className="px-5 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all" style={{ fontFamily: FB }}>Cancel</button>
-                  <button onClick={() => handleConfirmSave(false)} disabled={isSaving} className="px-5 py-2.5 text-xs text-white bg-[#F03D4E] hover:bg-[#F03D4E]/80 rounded-xl transition-all font-semibold flex items-center gap-2 disabled:opacity-50" style={{ fontFamily: FB }}>
+                  <button onClick={handleConfirmSave} disabled={isSaving} className="px-5 py-2.5 text-xs text-white bg-[#F03D4E] hover:bg-[#F03D4E]/80 rounded-xl transition-all font-semibold flex items-center gap-2 disabled:opacity-50" style={{ fontFamily: FB }}>
                     {isSaving ? "Saving..." : "Confirm Save"}
                   </button>
                 </div>
@@ -2215,7 +2259,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                 <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Change Password</h3>
                 <p className="text-xs text-[#999] mb-6" style={{ fontFamily: FB }}>Update your login credentials securely by entering your current and new password.</p>
 
-                {passwordError && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl" style={{ fontFamily: FB }}>{passwordError}</div>}
+                {passwordError && <p className="text-xs text-[#F03D4E] font-medium mb-4 text-center" style={{ fontFamily: FB }}>{passwordError}</p>}
 
                 <div className="space-y-4 mb-6">
                   <div className="space-y-1.5">
@@ -2432,7 +2476,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
           <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details to activate the dashboard.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
             <input 
@@ -2914,7 +2958,7 @@ function OverviewPage({
         <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.06), transparent 55%)" }} />
         <p className="text-[11px] tracking-[0.5em] uppercase mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>
-          Welcome Back, {name}.
+          Welcome Back, {name}
         </h1>
         <p className="mt-1.5 text-sm" style={{ color: "#94a3b8", fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
       </motion.div>
@@ -2963,11 +3007,12 @@ function OverviewPage({
             <p className="text-[11px] tracking-[0.5em] uppercase mb-1" style={{ color: "#f3f4f6", fontFamily: FM }}>Upcoming</p>
             <h2 className="text-xl font-semibold text-white" style={{ fontFamily: FC }}>Events</h2>
           </div>
-          <button className="flex items-center gap-1 text-xs transition-colors duration-300" style={{ color: "#d1d5db", fontFamily: FB }}
+          <button className="group flex items-center gap-1.5 text-sm font-medium transition-all duration-300 text-white/70 hover:text-white cursor-pointer" style={{ fontFamily: FB }}
             onClick={() => onNavigate("events")}
-            onMouseEnter={e => (e.currentTarget.style.color = "#dddddd")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
-          >View all <ChevronRight size={12} /></button>
+          >
+            <span>View all</span>
+            <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+          </button>
         </div>
 
         {clubEvents.filter(e => e.status === 'upcoming').length === 0 ? (

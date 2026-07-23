@@ -42,6 +42,7 @@ model Event {
   venue               String?        // Field to store the event location/venue
   eventType           String         @map("event_type") // Solo or Team
   teamSizeLimit       Int?           @map("team_size_limit")
+  minTeamSize         Int?           @map("min_team_size")
   fee                 Float          @default(0)        // 0 = Free
   registrationLimit   Int            @map("registration_limit")
   registrationDeadline DateTime       @map("registration_deadline")

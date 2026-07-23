@@ -162,13 +162,14 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
       return res.status(404).json({ error: 'Club not found.' });
     }
 
-    if (profile.password) {
-      if (!password) {
-        return res.status(400).json({ error: 'Password is required to save changes.' });
-      }
-      const isMatch = await bcrypt.compare(password, profile.password);
+    const clubPassword = existingClub.password || profile.password;
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to save changes.' });
+    }
+    if (clubPassword) {
+      const isMatch = await bcrypt.compare(password, clubPassword);
       if (!isMatch) {
-        return res.status(401).json({ error: 'Incorrect password. Changes not saved.' });
+        return res.status(401).json({ error: 'Incorrect password. Please try again later.' });
       }
     }
 
