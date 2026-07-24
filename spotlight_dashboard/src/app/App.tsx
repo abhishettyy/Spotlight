@@ -1630,7 +1630,10 @@ function EventsPage({
                   }}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
+                      <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
+                    </div>
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
                       background: "rgba(240,61,78,0.05)",
                       border: "1px solid rgba(255,255,255,0.06)",
@@ -1690,7 +1693,10 @@ function EventsPage({
                   style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.03)", transition: "all 0.3s ease" }}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.04)", color: "#f3f4f6", fontFamily: FM }}>{ev.club}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.04)", color: "#f3f4f6", fontFamily: FM }}>{ev.club}</span>
+                      <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
+                    </div>
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#94a3b8", fontFamily: FM }}>Ended</span>
                   </div>
                   <h3 className="text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
@@ -3244,7 +3250,10 @@ function OverviewPage({
                 }}
               >
                 <div className="flex items-start justify-between mb-5">
-                  <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
+                  </div>
                   <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
                 </div>
                 <h3 className="text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>

@@ -335,7 +335,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
       venue: e.venue ?? 'TBD',
       capacity: e.registrationLimit ?? 0,
-      type: e.fee > 0 ? 'paid' : 'free',
+      type: e.eventType ?? 'Solo',
       club: e.club?.name ?? '',
       club_id: e.clubId,
       status: e.eventDate && new Date(e.eventDate) < new Date() ? 'previous' : 'upcoming',
