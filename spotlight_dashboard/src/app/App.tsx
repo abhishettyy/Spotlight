@@ -1064,7 +1064,7 @@ function EventsPage({
                         r.user?.sem ? `Sem ${r.user.sem}` : '',
                         phoneFormatted,
                         r.team ? 'TEAM' : 'SOLO',
-                        r.team?.name ?? '',
+                        r.team?.name ?? '-',
                         txId,
                         (r.status ?? '').toUpperCase()
                       ];
@@ -1112,6 +1112,7 @@ function EventsPage({
                     <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch / Sem</th>
                     <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Contact</th>
                     <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Type</th>
+                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
                     <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Transaction / UTR</th>
                     <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Status</th>
                   </tr>
@@ -1159,10 +1160,17 @@ function EventsPage({
                           {r.team ? (
                             <div>
                               <span className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
-                              <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">{r.team.name} (Passkey: {r.team.passkey})</p>
+                              <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">Passkey: {r.team.passkey}</p>
                             </div>
                           ) : (
                             <span className="text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs">
+                          {r.team?.name ? (
+                            <span className="font-medium text-white/90" style={{ fontFamily: FB }}>{r.team.name}</span>
+                          ) : (
+                            <span className="text-[#888] font-mono">-</span>
                           )}
                         </td>
                         <td className="p-4 text-xs font-mono text-[#aaa]">
