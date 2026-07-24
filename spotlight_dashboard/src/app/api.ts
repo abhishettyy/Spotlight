@@ -175,6 +175,19 @@ export async function updateEventDeadline(eventId: string, deadline: string, tok
   }, token);
 }
 
+export async function updateEvent(eventId: string, data: {
+  eventDate?: string;
+  registrationDeadline?: string;
+  venue?: string;
+  registrationLimit?: number;
+  password?: string;
+}, token?: string) {
+  return request(`/events/${eventId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }, token);
+}
+
 export async function fetchClubs() {
   return request('/clubs');
 }

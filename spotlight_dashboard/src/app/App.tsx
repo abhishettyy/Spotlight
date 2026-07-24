@@ -4,7 +4,7 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
-  X, Key, Copy, Settings, LogOut
+  X, Key, Copy, Settings, LogOut, Mail
 } from "lucide-react";
 import {
   useAuth,
@@ -12,7 +12,7 @@ import {
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, sanitizeErrorMessage } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage } from "./api";
 import confetti from "canvas-confetti";
 
 const FC = "'Playfair Display', serif";
@@ -705,7 +705,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
         {}
         <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
           {(["login", "register"] as AuthTab[]).map(t => (
-            <button key={t} onClick={() => onTabChange(t)}
+            <button key={t} onClick={() => { setEmail(""); setPassword(""); setClubName(""); setError(null); setShowPassword(false); onTabChange(t); }}
               className="relative flex-1 py-2.5 text-sm font-medium transition-colors duration-300 cursor-pointer"
               style={{ fontFamily: FB }}
             >
@@ -868,14 +868,18 @@ function EventsPage({
   const [regsLoading, setRegsLoading] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
-  const [newDeadline, setNewDeadline] = useState("");
-  const [updatingDeadline, setUpdatingDeadline] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ date: "", deadline: "", venue: "", capacity: "" });
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [showEditPasswordModal, setShowEditPasswordModal] = useState(false);
+  const [editPassword, setEditPassword] = useState("");
+  const [editPasswordError, setEditPasswordError] = useState<string | null>(null);
+  const [updatingEvent, setUpdatingEvent] = useState(false);
 
   useEffect(() => {
     setShowParticipants(false);
     setSearchQuery("");
-    setShowDeadlineModal(false);
+    setShowEditModal(false);
   }, [selectedEventId]);
 
   const registrations = selectedEventId
@@ -1261,8 +1265,29 @@ function EventsPage({
                  whileTap={activeEvent.status === "previous" ? undefined : { scale: 0.97 }}
                  disabled={activeEvent.status === "previous"}
                  onClick={() => {
-                   setNewDeadline(activeEvent.registrationDeadline || "");
-                   setShowDeadlineModal(true);
+                   const formatLocalDateStr = (dStr?: string | null) => {
+                     if (!dStr) return "";
+                     const d = new Date(dStr);
+                     if (isNaN(d.getTime())) return "";
+                     const year = d.getFullYear();
+                     const month = String(d.getMonth() + 1).padStart(2, '0');
+                     const day = String(d.getDate()).padStart(2, '0');
+                     const hours = String(d.getHours()).padStart(2, '0');
+                     const mins = String(d.getMinutes()).padStart(2, '0');
+                     return `${year}-${month}-${day}T${hours}:${mins}`;
+                   };
+
+                   setEditForm({
+                     date: formatLocalDateStr(activeEvent.date),
+                     deadline: formatLocalDateStr(activeEvent.registrationDeadline),
+                     venue: activeEvent.venue || "",
+                     capacity: activeEvent.capacity ? String(activeEvent.capacity) : "",
+                   });
+                   setEditErrors({});
+                   setEditPassword("");
+                   setEditPasswordError(null);
+                   setShowEditPasswordModal(false);
+                   setShowEditModal(true);
                  }}
                  className={`flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300 ${activeEvent.status === "previous" ? "opacity-40 cursor-not-allowed" : ""}`}
                  onMouseEnter={e => {
@@ -1274,7 +1299,7 @@ function EventsPage({
                  }}
                  style={{ fontFamily: FB }}
                >
-                 <Calendar size={14} /> Change Deadline
+                 <Calendar size={14} /> Update Event
                </motion.button>
             </div>
             <div className="grid lg:grid-cols-2 gap-8">
@@ -1386,40 +1411,169 @@ function EventsPage({
             </div>
 
             <AnimatePresence>
-              {showDeadlineModal && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start pt-24 justify-center p-6 overflow-y-auto" style={{ background: "rgba(5,5,5,0.9)", backdropFilter: "blur(10px)" }}>
-                  <div className="w-full max-w-md p-8 rounded-3xl relative mb-24" style={{ background: "rgba(30,30,30,0.95)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <button onClick={() => setShowDeadlineModal(false)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"><X size={20} /></button>
-                    <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Change Deadline</h2>
-                    <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Update the registration deadline for this event.</p>
+              {showEditModal && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start pt-16 justify-center p-6 overflow-y-auto" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
+                  <div className="w-full max-w-lg p-8 rounded-3xl relative mb-24" style={{ background: "#0c0c0c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.7)" }}>
+                    <button onClick={() => setShowEditModal(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
+                    <h2 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: FC }}>Update Event</h2>
+                    <p className="text-xs text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Update event details. Name, type, team size and payment cannot be changed.</p>
 
-                    <div className="mb-6">
-                      <label className="text-[11px] tracking-widest uppercase text-[#f3f4f6] block mb-2" style={{ fontFamily: FM }}>Registration Deadline</label>
-                      <GlassDatePicker value={newDeadline} onChange={setNewDeadline} defaultTime="23:59" />
+                    <div className="space-y-5">
+                      {/* Event Date */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Date &amp; Time</label>
+                        <GlassDatePicker value={editForm.date} onChange={v => { setEditForm(p => ({...p, date: v})); setEditErrors(e => ({...e, date: ""})); }} />
+                        {editErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.date}</p>}
+                      </div>
+
+                      {/* Registration Deadline */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Registration Deadline</label>
+                        <GlassDatePicker value={editForm.deadline} onChange={v => { setEditForm(p => ({...p, deadline: v})); setEditErrors(e => ({...e, deadline: ""})); }} defaultTime="23:59" />
+                        {editErrors.deadline && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.deadline}</p>}
+                      </div>
+
+                      {/* Venue */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue</label>
+                        <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.venue} onChange={e => { setEditForm(p => ({...p, venue: e.target.value})); setEditErrors(er => ({...er, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
+                        {editErrors.venue && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.venue}</p>}
+                      </div>
+
+                      {/* Capacity */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
+                        <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); setEditErrors(er => ({...er, capacity: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
+                        {editErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.capacity}</p>}
+                      </div>
                     </div>
 
-                    <button 
-                      onClick={async () => {
-                        setUpdatingDeadline(true);
-                        try {
-                          const token = await getToken();
-                          if (token) {
-                            await updateEventDeadline(activeEvent.id, newDeadline, token);
-                            await refreshEvents();
-                            setShowDeadlineModal(false);
-                          }
-                        } catch (err) {
-                          console.error("Failed to update deadline", err);
-                        } finally {
-                          setUpdatingDeadline(false);
-                        }
+                    <button
+                      onClick={() => {
+                        const now = new Date();
+                        const errs: Record<string, string> = {};
+                        if (!editForm.date) errs.date = "Event date is required.";
+                        else if (new Date(editForm.date) <= now) errs.date = "Event date must be in the future.";
+                        if (!editForm.deadline) errs.deadline = "Registration deadline is required.";
+                        else if (new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
+                        else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event date.";
+                        if (!editForm.venue.trim()) errs.venue = "Venue is required.";
+                        if (!editForm.capacity) errs.capacity = "Capacity is required.";
+                        else if (parseInt(editForm.capacity) < 1) errs.capacity = "Capacity must be at least 1.";
+                        if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
+
+                        setEditErrors({});
+                        setEditPassword("");
+                        setEditPasswordError(null);
+                        setShowEditPasswordModal(true);
                       }}
-                      disabled={updatingDeadline}
-                      className="w-full py-3 rounded-xl bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold transition-all disabled:opacity-50"
+                      disabled={updatingEvent}
+                      className="w-full mt-6 py-3.5 rounded-xl bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-lg"
                       style={{ fontFamily: FB }}
                     >
-                      {updatingDeadline ? "Updating..." : "Save Deadline"}
+                      Save Changes
                     </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Password Confirmation Modal for Event Update */}
+            <AnimatePresence>
+              {showEditPasswordModal && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
+                  <div className="w-full max-w-md p-8 rounded-3xl relative" style={{ background: "#0c0c0c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)" }}>
+                    <button onClick={() => { setShowEditPasswordModal(false); setEditPassword(""); setEditPasswordError(null); }} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
+                    <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h2>
+                    <p className="text-xs text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
+
+                    <div className="space-y-1.5 mb-6">
+                      <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
+                      <input
+                        autoFocus
+                        type="password"
+                        placeholder="Enter password"
+                        value={editPassword}
+                        onChange={e => setEditPassword(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && !updatingEvent) {
+                            (async () => {
+                              if (!editPassword) {
+                                setEditPasswordError("Password is required to save changes.");
+                                return;
+                              }
+                              setUpdatingEvent(true);
+                              setEditPasswordError(null);
+                              try {
+                                const token = await getToken();
+                                if (token && activeEvent) {
+                                  await updateEvent(activeEvent.id, {
+                                    eventDate: editForm.date || undefined,
+                                    registrationDeadline: editForm.deadline || undefined,
+                                    venue: editForm.venue || undefined,
+                                    registrationLimit: editForm.capacity ? parseInt(editForm.capacity) : undefined,
+                                    password: editPassword,
+                                  }, token);
+                                  await refreshEvents();
+                                  setShowEditPasswordModal(false);
+                                  setShowEditModal(false);
+                                  setEditPassword("");
+                                }
+                              } catch (err: any) {
+                                setEditPasswordError(sanitizeErrorMessage(err, "Incorrect password. Please try again."));
+                              } finally {
+                                setUpdatingEvent(false);
+                              }
+                            })();
+                          }
+                        }}
+                        className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+                        onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                        onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                      />
+                    </div>
+
+                    {editPasswordError && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{editPasswordError}</p>}
+
+                    <div className="flex items-center justify-center gap-3">
+                      <button onClick={() => { setShowEditPasswordModal(false); setEditPassword(""); setEditPasswordError(null); }} className="px-6 py-2.5 text-xs text-white bg-white/[0.06] hover:bg-white/10 rounded-full transition-all font-semibold cursor-pointer" style={{ fontFamily: FB }}>Cancel</button>
+                      <button
+                        onClick={async () => {
+                          if (!editPassword) {
+                            setEditPasswordError("Password is required to save changes.");
+                            return;
+                          }
+                          setUpdatingEvent(true);
+                          setEditPasswordError(null);
+                          try {
+                            const token = await getToken();
+                            if (token && activeEvent) {
+                              await updateEvent(activeEvent.id, {
+                                eventDate: editForm.date || undefined,
+                                registrationDeadline: editForm.deadline || undefined,
+                                venue: editForm.venue || undefined,
+                                registrationLimit: editForm.capacity ? parseInt(editForm.capacity) : undefined,
+                                password: editPassword,
+                              }, token);
+                              await refreshEvents();
+                              setShowEditPasswordModal(false);
+                              setShowEditModal(false);
+                              setEditPassword("");
+                            }
+                          } catch (err: any) {
+                            setEditPasswordError(sanitizeErrorMessage(err, "Incorrect password. Please try again."));
+                          } finally {
+                            setUpdatingEvent(false);
+                          }
+                        }}
+                        disabled={updatingEvent}
+                        className="px-6 py-2.5 text-xs text-white bg-[#F03D4E] hover:bg-[#F03D4E]/80 rounded-full transition-all font-semibold flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-md"
+                        style={{ fontFamily: FB }}
+                      >
+                        {updatingEvent ? "Saving..." : "Confirm Save"}
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -1575,6 +1729,23 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
   const [currentYear, setCurrentYear] = useState(dateObj.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(value ? dateObj : null);
   const [timeStr, setTimeStr] = useState(value ? (value.includes("T") ? value.split("T")[1] : defaultTime) : defaultTime);
+
+  useEffect(() => {
+    if (value) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        setSelectedDate(d);
+        setCurrentMonth(d.getMonth());
+        setCurrentYear(d.getFullYear());
+        if (value.includes("T")) {
+          setTimeStr(value.split("T")[1]);
+        }
+      }
+    } else {
+      setSelectedDate(null);
+      setTimeStr(defaultTime);
+    }
+  }, [value, defaultTime]);
 
   const days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -2218,10 +2389,31 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           </div>
         </div>
 
+        {/* Contact Us */}
+        <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <Mail size={18} className="text-white/60" />
+              </div>
+              <div>
+                <p className="text-sm text-white font-medium" style={{ fontFamily: FB }}>Contact Us</p>
+                <p className="text-[11px] text-[#888] mt-0.5" style={{ fontFamily: FM }}>Reach out for support or queries</p>
+              </div>
+            </div>
+            <a
+              href="mailto:spotlightapp.help@gmail.com"
+              className="px-5 py-2.5 text-xs font-semibold text-white/80 hover:text-white rounded-xl transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+            >
+              spotlightapp.help@gmail.com
+            </a>
+          </div>
+        </div>
+
         <AnimatePresence>
           {successMsg && (
-            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-400 text-sm font-medium flex items-center gap-2 px-1" style={{ fontFamily: FB }}>
-              <Check size={16} />
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-400 text-sm font-medium px-1" style={{ fontFamily: FB }}>
               {successMsg}
             </motion.div>
           )}
@@ -2236,7 +2428,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
 
                 <div className="space-y-1.5 mb-4">
                   <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
-                  <input type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !isSaving) handleConfirmSave(); }} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                  <input autoFocus type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !isSaving) handleConfirmSave(); }} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
                 </div>
 
                 {error && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{error}</p>}

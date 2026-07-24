@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image } from '../utils/storage';
@@ -84,6 +85,49 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
     return res.status(201).json({ event });
   } catch (error: any) {
     console.error('Create event error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const { eventDate, registrationDeadline, venue, registrationLimit, password } = req.body;
+
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    const existingEvent = await prisma.event.findUnique({ where: { id: id as string }, include: { club: true } });
+    if (!existingEvent) {
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+
+    const club = existingEvent.club || (profile?.clubId ? await prisma.club.findUnique({ where: { id: profile.clubId } }) : null);
+    const clubPassword = club?.password || profile?.password;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to save changes.' });
+    }
+    if (clubPassword) {
+      const isMatch = await bcrypt.compare(password, clubPassword);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Incorrect password. Please try again later.' });
+      }
+    }
+
+    const updatedEvent = await prisma.event.update({
+      where: { id: id as string },
+      data: {
+        ...(eventDate ? { eventDate: new Date(eventDate) } : {}),
+        ...(registrationDeadline ? { registrationDeadline: new Date(registrationDeadline) } : {}),
+        ...(venue !== undefined ? { venue } : {}),
+        ...(registrationLimit !== undefined ? { registrationLimit: parseInt(registrationLimit) } : {}),
+      },
+      include: { club: true },
+    });
+
+    return res.status(200).json({ event: updatedEvent });
+  } catch (error: any) {
+    console.error('Update event error:', error);
     return res.status(500).json({ error: error.message });
   }
 });
