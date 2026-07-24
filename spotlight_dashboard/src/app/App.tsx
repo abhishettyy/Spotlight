@@ -316,16 +316,16 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       >
         <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
           <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
-          <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: "#f9fafb" }}>
+          <div className="hidden md:flex items-center gap-8 text-sm">
             {["Platform", "Events", "About"].map(l => (
-              <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
+              <a key={l} href="#" onClick={e => e.preventDefault()} className="text-white/50 hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
           <button onClick={onEnter}
             className="text-sm px-5 py-2 rounded-full text-white/85 hover:text-white transition-all duration-400"
-            style={{ border: "1px solid rgba(255,255,255,0.1)" }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.32)")}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+            style={{ border: "1.5px solid rgba(255,255,255,0.2)" }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.5)")}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)")}
           >Sign In</button>
         </div>
       </nav>
@@ -353,7 +353,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             animate={{ y: chip.y }}
             transition={{ duration: chip.d, repeat: Infinity, ease: "easeInOut", delay: chip.delay }}
             className={`absolute ${chip.x} px-3 py-1.5 rounded-full text-[11px] hidden xl:flex items-center gap-2`}
-            style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.015)", color: "#f9fafb", fontFamily: FM, backdropFilter: "blur(12px)" }}
+            style={{ border: "1.5px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.015)", color: "#f9fafb", fontFamily: FM, backdropFilter: "blur(12px)" }}
           >{chip.label}</motion.div>
         ))}
 
@@ -447,7 +447,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           <p className="text-sm" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
           <div className="flex gap-6 text-sm" style={{ color: "#94a3b8" }}>
             {["Privacy", "Terms", "Contact"].map(l => (
-              <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white/65 transition-colors duration-300" style={{ fontFamily: FB }}>{l}</a>
+              <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
         </div>
