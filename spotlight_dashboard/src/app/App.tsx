@@ -4,7 +4,7 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
-  X, Key, Copy, Settings, LogOut, Mail, Menu
+  X, Key, Copy, Settings, LogOut, Mail
 } from "lucide-react";
 import {
   useAuth,
@@ -987,7 +987,7 @@ function EventsPage({
     const teamsList = Array.from(teamGroups.values());
 
     return (
-      <div className="p-4 sm:p-6 lg:p-10 space-y-8 max-w-6xl">
+      <div className="p-8 lg:p-10 space-y-8 max-w-6xl">
         <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
           className="flex items-center gap-2 text-sm transition-all duration-300"
           style={{ color: "#d1d5db", fontFamily: FB }}
@@ -1239,7 +1239,7 @@ function EventsPage({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               {[
                 { label: "Total Capacity", value: activeEvent.capacity || '∞' },
                 { label: "Registered",     value: registrations.length },
@@ -1302,7 +1302,7 @@ function EventsPage({
                  <Calendar size={14} /> Update Event
                </motion.button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-2 gap-8">
                {}
                <div>
                  <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Pending Registrations ({pending.length})</p>
@@ -1585,7 +1585,7 @@ function EventsPage({
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-8 max-w-7xl">
+    <div className="p-8 lg:p-10 space-y-8 max-w-7xl">
       <div className="flex items-end justify-between">
          <div>
             <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Directory</p>
@@ -1657,7 +1657,7 @@ function EventsPage({
               );
             })}
             {EVENTS.filter(e => e.status === "upcoming").length === 0 && (
-              <div className="col-span-full p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.06)", fontFamily: FB }}>
+              <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
                 No upcoming events yet.
               </div>
             )}
@@ -1958,7 +1958,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-8 max-w-4xl">
+    <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
       <div>
         <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Publish</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Create New Event</h1>
@@ -2313,7 +2313,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-8 max-w-4xl relative">
+    <div className="p-8 lg:p-10 space-y-8 max-w-4xl relative">
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
@@ -2911,42 +2911,19 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     );
   }
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
     <div className="flex h-screen overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
-
-      {/* ── Mobile backdrop overlay ────────────────────────────────── */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 md:hidden"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ── Sidebar ───────────────────────────────────────────────── */}
-      {/* On desktop: always visible fixed column. On mobile: slide-in drawer. */}
-      <aside
-        className={`
-          fixed md:static inset-y-0 left-0 z-50
-          w-56 flex-shrink-0 flex flex-col h-screen
-          transition-transform duration-300 ease-in-out
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-        `}
+      {}
+      <aside className="w-56 flex-shrink-0 flex flex-col h-screen"
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
-        <div className="px-6 pt-6 pb-5 flex-shrink-0 flex items-center justify-between">
+        <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
-          {/* Close button visible only on mobile */}
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-white/40 hover:text-white transition-colors" aria-label="Close menu">
-            <X size={18} />
-          </button>
         </div>
         <div className="px-4 mb-5 flex-shrink-0">
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            onClick={() => { setActiveTab("create"); setSidebarOpen(false); }}
+            onClick={() => setActiveTab("create")}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300"
             onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.3)")}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
@@ -2957,7 +2934,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           {DASH_NAV.map(({ id, icon: Icon, label }) => {
             const active = id === activeTab;
             return (
-              <button key={id} onClick={() => { setActiveTab(id); setSidebarOpen(false); }}
+              <button key={id} onClick={() => setActiveTab(id)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-300"
                 style={{
                   background: active ? "rgba(255,255,255,0.065)" : "transparent",
@@ -2979,6 +2956,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                 alt={name}
                 className="w-7 h-7 rounded-full flex-shrink-0 object-cover"
                 onError={(e) => {
+
                   e.currentTarget.style.display = 'none';
                   const sibling = e.currentTarget.nextSibling as HTMLElement;
                   if (sibling) sibling.style.display = 'flex';
@@ -3009,102 +2987,60 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         </div>
       </aside>
 
-      {/* ── Main content column ───────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {}
+      <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
+        <AnimatePresence mode="wait">
+          {activeTab === "create" && (
+            <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} />
+            </motion.div>
+          )}
+          {activeTab === "overview" && (
+            <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                <OverviewPage
+                  name={name}
+                  onNavigate={(tab, eventId) => setActiveTab(tab, true, eventId)}
 
-        {/* Mobile top header bar */}
-        <header className="md:hidden flex-shrink-0 flex items-center justify-between px-4 py-3" style={{ background: "rgba(5,5,5,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
-          <button onClick={() => setSidebarOpen(true)} className="text-white/60 hover:text-white transition-colors p-1" aria-label="Open menu">
-            <Menu size={22} />
-          </button>
-        </header>
-
-        {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto relative pb-20 md:pb-0" style={{ background: "transparent" }}>
-          <AnimatePresence mode="wait">
-            {activeTab === "create" && (
-              <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} />
-              </motion.div>
-            )}
-            {activeTab === "overview" && (
-              <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                  <OverviewPage
-                    name={name}
-                    onNavigate={(tab, eventId) => setActiveTab(tab, true, eventId)}
-                   totalEvents={totalEvents}
-                   totalRegistrations={totalRegistrations}
-                   pendingCount={pendingCount}
-                   recentActivity={recentActivity}
-                   clubEvents={clubEvents}
-                 />
-              </motion.div>
-            )}
-            {activeTab === "events" && (
-              <motion.div key="events" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                 <EventsPage
-                   EVENTS={clubEvents}
-                   allRegistrations={allRegistrations}
-                   onRegistrationsChange={setAllRegistrations}
-                   getToken={getToken}
-                   selectedEventId={selectedEventId}
-                   setSelectedEventId={handleSetSelectedEventId}
-                   showTeams={showTeams}
-                   setShowTeams={handleSetShowTeams}
-                   refreshEvents={refreshEvents}
-                 />
-              </motion.div>
-            )}
-            {activeTab === "teams" && (
-              <motion.div key="teams" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                 <TeamsPage />
-              </motion.div>
-            )}
-            {activeTab === "settings" && (
-              <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                 <SettingsPage club={clubs.find((c: any) => c.id === profile?.clubId)} profile={profile} getToken={getToken} onUpdate={refreshEvents} onLogout={onSignOut} />
-              </motion.div>
-            )}
-            {activeTab !== "overview" && activeTab !== "teams" && activeTab !== "events" && activeTab !== "settings" && activeTab !== "create" && (
-              <motion.div key="fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-10 text-[#444] text-sm" style={{ fontFamily: FB }}>
-                 {DASH_NAV.find(n => n.id === activeTab)?.label || activeTab} Module - Under Construction
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
-
-        {/* ── Mobile bottom navigation bar ─────────────────────────── */}
-        <nav className="md:hidden flex-shrink-0 flex items-center justify-around px-2 py-2" style={{ background: "rgba(5,5,5,0.97)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          {[
-            { id: "overview", icon: LayoutDashboard, label: "Overview" },
-            { id: "events",   icon: Calendar,        label: "Events"   },
-            { id: "create",   icon: Plus,            label: "Create"   },
-            { id: "settings", icon: Settings,        label: "Settings" },
-          ].map(({ id, icon: Icon, label }) => {
-            const active = id === activeTab;
-            return (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all"
-                style={{ color: active ? "#F03D4E" : "#666" }}
-              >
-                {id === "create" ? (
-                  <div className="w-10 h-10 rounded-full bg-[#F03D4E] flex items-center justify-center shadow-lg" style={{ boxShadow: active ? "0 0 18px rgba(240,61,78,0.5)" : "none" }}>
-                    <Icon size={18} className="text-white" />
-                  </div>
-                ) : (
-                  <Icon size={20} />
-                )}
-                {id !== "create" && <span className="text-[10px] font-medium" style={{ fontFamily: FM }}>{label}</span>}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-
+                 totalEvents={totalEvents}
+                 totalRegistrations={totalRegistrations}
+                 pendingCount={pendingCount}
+                 recentActivity={recentActivity}
+                 clubEvents={clubEvents}
+               />
+            </motion.div>
+          )}
+          {activeTab === "events" && (
+            <motion.div key="events" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+               <EventsPage
+                 EVENTS={clubEvents}
+                 allRegistrations={allRegistrations}
+                 onRegistrationsChange={setAllRegistrations}
+                 getToken={getToken}
+                 selectedEventId={selectedEventId}
+                 setSelectedEventId={handleSetSelectedEventId}
+                 showTeams={showTeams}
+                 setShowTeams={handleSetShowTeams}
+                 refreshEvents={refreshEvents}
+               />
+            </motion.div>
+          )}
+          {activeTab === "teams" && (
+            <motion.div key="teams" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+               <TeamsPage />
+            </motion.div>
+          )}
+          {activeTab === "settings" && (
+            <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+               <SettingsPage club={clubs.find((c: any) => c.id === profile?.clubId)} profile={profile} getToken={getToken} onUpdate={refreshEvents} onLogout={onSignOut} />
+            </motion.div>
+          )}
+          {activeTab !== "overview" && activeTab !== "teams" && activeTab !== "events" && activeTab !== "settings" && activeTab !== "create" && (
+            <motion.div key="fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-10 text-[#444] text-sm" style={{ fontFamily: FB }}>
+               {DASH_NAV.find(n => n.id === activeTab)?.label || activeTab} Module - Under Construction
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
       {showOnboardingNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -3202,7 +3138,7 @@ function OverviewPage({
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-10 max-w-7xl">
+    <div className="p-8 lg:p-10 space-y-10 max-w-7xl">
       {}
       <motion.div
         initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }}
@@ -3328,7 +3264,7 @@ function OverviewPage({
       </div>
 
       {/* Quick Actions + Live Activity Feed */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-10">
+      <div className="grid md:grid-cols-3 gap-6 pb-10">
         <div className="md:col-span-2">
           <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM, marginBottom: "18px" }}>Quick Actions</p>
           <div className="grid grid-cols-2 gap-3">
