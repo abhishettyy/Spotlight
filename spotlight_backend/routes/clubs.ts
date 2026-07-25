@@ -32,11 +32,145 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
+async function ensureActiveRegistrationKey(): Promise<string> {
+  try {
+    const active = await prisma.registrationKey.findFirst({
+      where: { isUsed: false },
+    });
+    if (active) return active.code;
+
+    const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newCode = `SPOTLIGHT-${part1}-${part2}`;
+
+    const created = await prisma.registrationKey.create({
+      data: { code: newCode },
+    });
+    console.log(`[RegistrationKey] Auto-generated fresh active key: ${created.code}`);
+    return created.code;
+  } catch (err) {
+    console.error('[RegistrationKey] Auto-generation failed:', err);
+    return 'SPOTLIGHT-KEY-FAIL';
+  }
+}
+
+// Immediately ensure an active registration key exists on route load
+ensureActiveRegistrationKey();
+
+router.post('/verify-key', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { key } = req.body;
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ error: 'Registration key is required.' });
+    }
+
+    const cleanKey = key.trim().toUpperCase();
+    const record = await prisma.registrationKey.findFirst({
+      where: { code: cleanKey, isUsed: false },
+    });
+
+    if (!record) {
+      return res.status(400).json({ error: 'Invalid or expired registration key. Please contact Spotlight admins for an authorization code.' });
+    }
+
+    return res.status(200).json({ valid: true, message: 'Authorization key verified successfully.' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/verify-admin-secret', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { secret } = req.body;
+    const adminSecret = process.env.ADMIN_SECRET || 'spotlightDev@sam2005';
+    if (!secret || secret.trim() !== adminSecret.trim()) {
+      return res.status(401).json({ error: 'Invalid admin passcode.' });
+    }
+    return res.status(200).json({ valid: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/registration-keys', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const adminSecret = process.env.ADMIN_SECRET || 'spotlightDev@sam2005';
+    if (adminSecret && req.headers['x-admin-secret'] !== adminSecret) {
+      return res.status(403).json({ error: 'Forbidden: Invalid admin secret.' });
+    }
+    await ensureActiveRegistrationKey();
+
+    const keys = await prisma.registrationKey.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Directly look up club for every used key — bypasses Prisma relation issues
+    const enrichedKeys = await Promise.all(keys.map(async (key) => {
+      if (key.usedByClubId) {
+        const club = await prisma.club.findUnique({
+          where: { id: key.usedByClubId },
+          select: { id: true, name: true, email: true },
+        });
+        return { ...key, usedByClub: club };
+      }
+      return { ...key, usedByClub: null };
+    }));
+
+    return res.status(200).json({ keys: enrichedKeys });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/registration-keys/generate', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const adminSecret = process.env.ADMIN_SECRET || 'spotlightDev@sam2005';
+    if (adminSecret && req.headers['x-admin-secret'] !== adminSecret) {
+      return res.status(403).json({ error: 'Forbidden: Invalid admin secret.' });
+    }
+    const { customCode } = req.body;
+    let codeToUse = '';
+
+    if (customCode && typeof customCode === 'string' && customCode.trim()) {
+      codeToUse = customCode.trim().toUpperCase();
+      const existing = await prisma.registrationKey.findUnique({ where: { code: codeToUse } });
+      if (existing) {
+        return res.status(400).json({ error: 'This registration code already exists.' });
+      }
+    } else {
+      const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+      codeToUse = `SPOTLIGHT-${part1}-${part2}`;
+    }
+
+    const key = await prisma.registrationKey.create({
+      data: { code: codeToUse },
+    });
+
+    return res.status(201).json({ key });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/', async (req: Request, res: Response): Promise<any> => {
   try {
-    const { name, email, logoUrl, password } = req.body;
+    const { name, email, logoUrl, password, registrationKey } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Club name and email are required.' });
+    }
+
+    if (!registrationKey || typeof registrationKey !== 'string') {
+      return res.status(400).json({ error: 'Registration key is required to register a club.' });
+    }
+
+    const cleanKey = registrationKey.trim().toUpperCase();
+    const keyRecord = await prisma.registrationKey.findFirst({
+      where: { code: cleanKey, isUsed: false },
+    });
+
+    if (!keyRecord) {
+      return res.status(400).json({ error: 'Invalid or expired registration key. Please enter a valid key provided by Spotlight admins.' });
     }
 
     let userId = (req as any).auth?.userId;
@@ -67,7 +201,6 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
       const existingProfile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
       if (existingProfile) {
         if (existingProfile.clubId === null && existingProfile.password !== null) {
-
           return res.status(400).json({ error: 'This email is already registered to a student account.' });
         }
 
@@ -110,14 +243,23 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
           data: { clubId: updatedClub.id },
         });
 
+        await tx.registrationKey.update({
+          where: { id: keyRecord.id },
+          data: {
+            isUsed: true,
+            usedByClubId: updatedClub.id,
+            usedAt: new Date(),
+          },
+        });
+
         return updatedClub;
       });
 
+      await ensureActiveRegistrationKey();
       return res.status(200).json({ club, alreadyLinked: true });
     }
 
     const hashedPassword = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
-
     const finalLogoUrl = logoUrl ? await uploadBase64Image(logoUrl, 'clubs/logos') : null;
 
     const club = await prisma.$transaction(async (tx) => {
@@ -135,10 +277,23 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
         data: { clubId: newClub.id },
       });
 
+      await tx.registrationKey.update({
+        where: { id: keyRecord.id },
+        data: {
+          isUsed: true,
+          usedByClubId: newClub.id,
+          usedAt: new Date(),
+        },
+      });
+
       return newClub;
     });
 
-    console.log(`Club created: "${club.name}" (${club.id}) by user ${userId}`);
+    console.log(`Club created: "${club.name}" (${club.id}) using key ${keyRecord.code} by user ${userId}`);
+
+    // Auto-generate next key immediately
+    await ensureActiveRegistrationKey();
+
     return res.status(201).json({ club });
   } catch (error: any) {
     console.error('Create club error:', error);

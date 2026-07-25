@@ -22,15 +22,16 @@ model Profile {
 }
 
 model Club {
-  id       String    @id @default(uuid())
-  name     String
-  email    String    @unique
-  password String?   // For direct legacy/custom club login verification
-  logoUrl  String?   @map("logo_url")
-  upiId    String?   @map("upi_id")
-  qrUrl    String?   @map("qr_url")
-  events   Event[]
-  admins   Profile[]
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password         String?           // For direct legacy/custom club login verification
+  logoUrl          String?           @map("logo_url")
+  upiId            String?           @map("upi_id")
+  qrUrl            String?           @map("qr_url")
+  events           Event[]
+  admins           Profile[]
+  registrationKeys RegistrationKey[]
 }
 
 model Event {
@@ -96,3 +97,14 @@ model Notification {
   eventId   String?  @map("event_id")
   event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
+
+model RegistrationKey {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  isUsed       Boolean   @default(false) @map("is_used")
+  usedByClubId String?   @map("used_by_club_id")
+  usedByClub   Club?     @relation(fields: [usedByClubId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  usedAt       DateTime? @map("used_at")
+}
+

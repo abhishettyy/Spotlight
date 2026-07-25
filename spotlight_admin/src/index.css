@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #050505;
+    color: #ffffff;
+    font-family: 'Manrope', sans-serif;
+  }
+}

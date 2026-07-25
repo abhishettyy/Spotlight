@@ -12,7 +12,7 @@ import {
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey } from "./api";
 import confetti from "canvas-confetti";
 
 const FC = "'Playfair Display', serif";
@@ -471,6 +471,10 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   const [password, setPassword] = useState("");
   const [clubName, setClubName] = useState("");
 
+  const [registrationKey, setRegistrationKey] = useState("");
+  const [keyVerified, setKeyVerified] = useState(false);
+  const [verifyingKey, setVerifyingKey] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -479,6 +483,24 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   const [verificationCode, setVerificationCode] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleVerifyKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registrationKey.trim()) {
+      setError("Please enter your authorization key.");
+      return;
+    }
+    setVerifyingKey(true);
+    setError(null);
+    try {
+      await verifyRegistrationKey(registrationKey.trim());
+      setKeyVerified(true);
+    } catch (err: any) {
+      setError(err.message || "Invalid or expired registration key.");
+    } finally {
+      setVerifyingKey(false);
+    }
+  };
 
   const handleGoogleAuth = async () => {
     try {
@@ -612,6 +634,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
           password: password, 
           clerkUserId: result.createdUserId!,
           logoUrl: "",
+          registrationKey: registrationKey.trim(),
         });
         localStorage.setItem("show_first_time_notice", "true");
 
@@ -627,6 +650,73 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
       setLoading(false);
     }
   };
+
+  // Key gate screen (shown before Sign Up form)
+  if (tab === "register" && !keyVerified) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+        className="fixed inset-0 z-20 flex items-center justify-center p-6"
+        style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(10px)" }}
+      >
+        <button onClick={onBack}
+          className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
+          style={{ color: "#999", fontFamily: FB }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#eee")}
+          onMouseLeave={e => (e.currentTarget.style.color = "#999")}
+        ><ChevronLeft size={14} /> Back</button>
+
+        <div className="w-full max-w-md p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: "rgba(240,61,78,0.1)", border: "1px solid rgba(240,61,78,0.2)" }}>
+              <Key size={24} className="text-[#F03D4E]" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2 text-center" style={{ fontFamily: FC }}>Authorization Required</h2>
+            <p className="text-xs text-[#888] text-center" style={{ fontFamily: FB }}>Enter the one-time authorization key provided by Spotlight admins to unlock club registration.</p>
+          </div>
+
+          <form noValidate onSubmit={handleVerifyKey} className="space-y-6">
+            <div className="space-y-1.5">
+              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Authorization Key</label>
+              <input
+                type="text"
+                placeholder="e.g. SPOTLIGHT-A7X9-K2M4"
+                autoFocus
+                className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all uppercase tracking-widest"
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FM }}
+                value={registrationKey}
+                onChange={e => { setRegistrationKey(e.target.value); if (error) setError(null); }}
+                onFocus={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)")}
+                onBlur={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+              />
+            </div>
+
+            {error && (
+              <p className="text-xs text-[#F03D4E] font-medium" style={{ fontFamily: FB }}>{error}</p>
+            )}
+
+            <motion.button
+              type="submit"
+              disabled={verifyingKey}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
+              style={{ fontFamily: FB }}
+            >
+              {verifyingKey ? (
+                <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              ) : (
+                <><Shield size={14} /> Verify & Continue</>
+              )}
+            </motion.button>
+          </form>
+
+          <p className="text-center text-[11px] text-[#555] mt-6" style={{ fontFamily: FM }}>Already have an account?{" "}
+            <button onClick={() => { setError(null); setRegistrationKey(""); onTabChange("login"); }} className="text-white/50 hover:text-white transition-colors underline underline-offset-2">Sign In</button>
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (verifying || verifyingSignIn) {
     return (
@@ -705,7 +795,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
         {}
         <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
           {(["login", "register"] as AuthTab[]).map(t => (
-            <button key={t} onClick={() => { setEmail(""); setPassword(""); setClubName(""); setError(null); setShowPassword(false); onTabChange(t); }}
+            <button key={t} onClick={() => { setEmail(""); setPassword(""); setClubName(""); setError(null); setShowPassword(false); setRegistrationKey(""); setKeyVerified(false); onTabChange(t); }}
               className="relative flex-1 py-2.5 text-sm font-medium transition-colors duration-300 cursor-pointer"
               style={{ fontFamily: FB }}
             >
@@ -2619,7 +2709,7 @@ interface ClubOnboardingPageProps {
 function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
   const { getToken, userId } = useAuth();
   const { user } = useUser();
-  const [formData, setFormData] = useState({ name: "", email: "", logoUrl: "", password: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", logoUrl: "", password: "", registrationKey: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -2637,8 +2727,8 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.password) {
-      setError("Club Name, Contact Email, and Mobile Login Password are required.");
+    if (!formData.name || !formData.email || !formData.password || !formData.registrationKey.trim()) {
+      setError("Club Name, Contact Email, Mobile Login Password, and Authorization Key are required.");
       return;
     }
     setSubmitting(true);
@@ -2651,6 +2741,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
         logoUrl: formData.logoUrl || "",
         clerkUserId: userId!,
         password: formData.password,
+        registrationKey: formData.registrationKey.trim().toUpperCase(),
       }, token ?? undefined);
 
       if (res.club && res.club.id) {
@@ -2679,10 +2770,23 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
         <div className="text-center mb-8">
           <p className="text-[11px] tracking-[0.5em] uppercase mb-2 text-[#f3f4f6]" style={{ fontFamily: FM }}>Step 1 · Onboarding</p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ fontFamily: FC }}>Set Up Your Club</h2>
-          <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details to activate the dashboard.</p>
+          <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details and authorization key to activate the dashboard.</p>
         </div>
 
         <form noValidate onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-1.5">
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Authorization Key</label>
+            <input 
+              type="text" 
+              placeholder="e.g. SPOTLIGHT-XXXX-XXXX" 
+              required
+              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all uppercase tracking-wider font-mono placeholder:normal-case placeholder:font-sans" 
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,61,78,0.3)" }} 
+              value={formData.registrationKey} 
+              onChange={e => setFormData(p => ({ ...p, registrationKey: e.target.value.toUpperCase() }))}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
             <input 

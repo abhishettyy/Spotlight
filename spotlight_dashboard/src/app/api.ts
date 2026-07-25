@@ -192,12 +192,20 @@ export async function fetchClubs() {
   return request('/clubs');
 }
 
+export async function verifyRegistrationKey(key: string) {
+  return request('/clubs/verify-key', {
+    method: 'POST',
+    body: JSON.stringify({ key }),
+  });
+}
+
 export async function createClub(data: {
   name: string;
   email: string;
   logoUrl?: string;
   clerkUserId: string;
   password?: string;
+  registrationKey: string;
 }, token?: string) {
   return request('/clubs', {
     method: 'POST',
