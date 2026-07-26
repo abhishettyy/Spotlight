@@ -112,34 +112,24 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF1A1A1E) : Colors.white;
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF2F3F7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // ─── Top Rich Gradient Header ──────────────────────────────────────────
+          // ─── Header Container with App's Theme Primary Color ───────────────
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 260,
+            height: 250,
             child: Container(
-              padding: EdgeInsets.fromLTRB(28, topPadding + 16, 24, 0),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFC62828), // Rich Crimson Red
-                    Color(0xFF8E0032), // Deep Burgundy
-                    Color(0xFF26082F), // Dark Plum / Deep Purple
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+              padding: EdgeInsets.fromLTRB(24, topPadding + 16, 24, 0),
+              color: cs.primary,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -147,17 +137,17 @@ class _AuthScreenState extends State<AuthScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const SizedBox(width: 24),
-                      Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.7), size: 26),
+                      Icon(Icons.more_horiz, color: cs.onPrimary.withOpacity(0.8), size: 26),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   Text(
                     isLogin ? 'Hello\nSign in!' : 'Hello\nSign up!',
                     style: GoogleFonts.inter(
                       fontSize: 34,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.25,
+                      color: cs.onPrimary,
+                      height: 1.2,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -166,57 +156,59 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
 
-          // ─── Overlapping Rounded Card Container ─────────────────────────────
+          // ─── Overlapping Rounded Card (App's Theme Surface) ───────────────────
           Positioned.fill(
-            top: 210,
+            top: 200,
             child: Container(
               decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.4 : 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, -6),
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 36),
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (isLogin) ...[
-                        _buildInputField(
+                        _buildTextField(
                           controller: _emailController,
-                          labelText: 'Gmail / Email',
-                          hintText: 'your.name@gmail.com',
+                          labelText: 'Email',
+                          hintText: 'Enter your email',
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        const SizedBox(height: 24),
-                        _buildInputField(
+                        const SizedBox(height: 20),
+                        _buildTextField(
                           controller: _passwordController,
                           labelText: 'Password',
-                          hintText: '••••••••',
+                          hintText: 'Enter your password',
                           obscureText: obscurePassword,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: subTextColor,
-                              size: 20,
                             ),
-                            onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                            onPressed: () =>
+                                setState(() => obscurePassword = !obscurePassword),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please contact your administrator to reset your password.')),
+                                const SnackBar(content: Text('Please contact support to reset password.')),
                               );
                             },
                             style: TextButton.styleFrom(
@@ -229,139 +221,123 @@ class _AuthScreenState extends State<AuthScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                color: subTextColor,
                               ),
                             ),
                           ),
                         ),
                       ] else ...[
-                        _buildInputField(
+                        _buildTextField(
                           controller: _nameController,
                           labelText: 'Full Name',
-                          hintText: 'John Doe',
+                          hintText: 'Enter your full name',
                         ),
                         const SizedBox(height: 20),
-                        _buildInputField(
+                        _buildTextField(
                           controller: _emailController,
                           labelText: 'Email',
-                          hintText: 'your.name@gmail.com',
+                          hintText: 'Enter your email',
                           keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 20),
-                        _buildInputField(
+                        _buildTextField(
                           controller: _passwordController,
                           labelText: 'Password',
-                          hintText: 'Create password',
+                          hintText: 'Create a password',
                           obscureText: obscurePassword,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: subTextColor,
-                              size: 20,
                             ),
-                            onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                            onPressed: () =>
+                                setState(() => obscurePassword = !obscurePassword),
                           ),
                         ),
                         const SizedBox(height: 20),
-                        _buildInputField(
+                        _buildTextField(
                           controller: _usnController,
                           labelText: 'USN',
-                          hintText: 'e.g. 4MH23IS001',
+                          hintText: 'e.g., 4MH23IS001',
                         ),
                         const SizedBox(height: 20),
                         Row(
                           children: [
                             Expanded(
-                              child: _buildInputField(
+                              child: _buildTextField(
                                 controller: _branchController,
                                 labelText: 'Branch',
-                                hintText: 'e.g. ISE',
+                                hintText: 'e.g., ISE',
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 16),
                             Expanded(
-                              child: _buildInputField(
+                              child: _buildTextField(
                                 controller: _yearController,
                                 labelText: 'Year',
-                                hintText: 'e.g. 2',
+                                hintText: 'e.g., 2',
                                 keyboardType: TextInputType.number,
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 16),
                             Expanded(
-                              child: _buildInputField(
+                              child: _buildTextField(
                                 controller: _semController,
                                 labelText: 'Sem',
-                                hintText: 'e.g. 4',
+                                hintText: 'e.g., 4',
                                 keyboardType: TextInputType.number,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 20),
-                        _buildInputField(
+                        _buildTextField(
                           controller: _phoneController,
                           labelText: 'Phone Number (Optional)',
-                          hintText: 'Enter phone number',
+                          hintText: 'Enter your phone number',
                           keyboardType: TextInputType.phone,
                         ),
                       ],
 
-                      const SizedBox(height: 36),
+                      const SizedBox(height: 32),
 
-                      // ─── Large Pill Gradient Button ───────────────────────────
-                      Container(
+                      // ─── Primary App Theme Button ──────────────────────────────
+                      SizedBox(
                         width: double.infinity,
                         height: 56,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: _isLoading
-                                ? [Colors.grey[600]!, Colors.grey[700]!]
-                                : [
-                                    const Color(0xFFC62828), // Crimson
-                                    const Color(0xFF5E1742), // Dark Plum/Burgundy
-                                  ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFC62828).withOpacity(0.35),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _submitAuth,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: cs.primary,
+                            foregroundColor: cs.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
                             ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(30),
-                            onTap: _isLoading ? null : _submitAuth,
-                            child: Center(
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                                    )
-                                  : Text(
-                                      isLogin ? 'SIGN IN' : 'SIGN UP',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                            ),
+                            elevation: 0,
                           ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                )
+                              : Text(
+                                  isLogin ? 'SIGN IN' : 'SIGN UP',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: cs.onPrimary,
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
                         ),
                       ),
 
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 40),
 
-                      // ─── Bottom Footer Toggle ──────────────────────────────────
+                      // ─── Toggle Link ──────────────────────────────────────────
                       Align(
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
@@ -381,7 +357,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black,
+                                    color: cs.onBackground,
                                   ),
                                 ),
                               ],
@@ -400,7 +376,7 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildInputField({
+  Widget _buildTextField({
     required TextEditingController controller,
     required String labelText,
     required String hintText,
@@ -409,49 +385,48 @@ class _AuthScreenState extends State<AuthScreen> {
     Widget? suffixIcon,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final subTextColor = theme.brightness == Brightness.dark
+        ? const Color(0xFFA0A0A0)
+        : Colors.grey[600]!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          labelText,
+          labelText.toUpperCase(),
           style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFFC62828), // Red accent label matching reference design
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: subTextColor,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
-          style: GoogleFonts.inter(
-            color: isDark ? Colors.white : Colors.black87,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.inter(color: cs.onBackground, fontSize: 15),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: GoogleFonts.inter(
-              color: isDark ? Colors.white30 : Colors.grey[400],
-              fontSize: 15,
+            hintStyle: GoogleFonts.inter(color: subTextColor.withOpacity(0.6), fontSize: 15),
+            filled: true,
+            fillColor: cs.surface == Colors.white ? const Color(0xFFF3F4F6) : cs.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
             ),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 10),
-            filled: false,
-            border: UnderlineInputBorder(
-              borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey[300]!),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
             ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey[300]!),
-            ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFC62828), width: 2),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: cs.primary, width: 1.5),
             ),
             suffixIcon: suffixIcon,
-            suffixIconConstraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
