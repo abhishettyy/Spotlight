@@ -341,10 +341,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         isLogin ? 'Sign In' : 'Create Account',
                         style: GoogleFonts.inter(
                           fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                ),
+              ),
               if (isLogin) ...[
                 const SizedBox(height: 28),
 
