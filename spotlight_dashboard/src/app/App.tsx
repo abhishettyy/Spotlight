@@ -2280,6 +2280,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
     !!qrFile;
 
   const [showPasswordUpdateModal, setShowPasswordUpdateModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -2651,6 +2652,65 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           )}
         </AnimatePresence>
 
+        <AnimatePresence>
+          {showPrivacyModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto flex flex-col" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white" style={{ fontFamily: FC }}>Dashboard Privacy Policy</h3>
+                    <p className="text-xs text-[#999] mt-1" style={{ fontFamily: FB }}>Last Updated: July 26, 2026</p>
+                  </div>
+                  <button onClick={() => setShowPrivacyModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-[#ccc] leading-relaxed border-t border-b border-white/5 py-6" style={{ fontFamily: FB }}>
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">About the Spotlight Club Dashboard</h4>
+                    <p className="text-xs text-[#bbbbbb]">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">Information We Collect From Clubs</h4>
+                    <p className="text-xs text-[#bbbbbb]">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">Club Authentication (Clerk)</h4>
+                    <p className="text-xs text-[#bbbbbb]">We integrate with Clerk to provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">Participant Information Available to Clubs</h4>
+                    <p className="text-xs text-[#bbbbbb]">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">Handling Participant Information</h4>
+                    <p className="text-xs text-[#bbbbbb]">Clubs must process participant data strictly to organize and conduct the event. You must not sell or share participant data with third parties, use it for unrelated spam/marketing, or store downloaded lists insecurely.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">Third-Party Services</h4>
+                    <p className="text-xs text-[#bbbbbb]">We rely on Clerk (authentication), Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-medium text-sm mb-2">Contact Us</h4>
+                    <p className="text-xs text-[#bbbbbb]">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support at <strong>spotlightapp.help@gmail.com</strong>.</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end mt-6">
+                  <button onClick={() => setShowPrivacyModal(false)} className="px-6 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all font-semibold" style={{ fontFamily: FB }}>Close</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {}
          <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Privacy & Security</h2>
@@ -2674,6 +2734,15 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
               </div>
             </div>
           </div>
+
+         {/* Privacy Policy */}
+         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+           <div>
+             <p className="text-sm font-medium text-white" style={{ fontFamily: FB }}>Privacy Policy</p>
+             <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Read the Spotlight Club Dashboard Privacy Policy.</p>
+           </div>
+           <button onClick={() => setShowPrivacyModal(true)} className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>View Policy</button>
+         </div>
 
          {}
         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(240,61,78,0.05)", border: "1px solid rgba(240,61,78,0.1)" }}>

@@ -10,6 +10,7 @@ import '../core/notification_prefs_provider.dart';
 import 'auth_screen.dart';
 import 'ticket_screen.dart';
 import 'registered_clubs_screen.dart';
+import 'privacy_policy_screen.dart';
 import '../core/smooth_route.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -845,6 +846,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'Help Center',
                 tileColor: tileColor,
                 onTap: _contactSupport,
+              ),
+              _buildListTile(
+                context,
+                Icons.privacy_tip_outlined,
+                'Privacy Policy',
+                tileColor: tileColor,
+                onTap: () => Navigator.push(
+                  context,
+                  SmoothRoute(builder: (_) => const PrivacyPolicyScreen()),
+                ),
               ),
               const SizedBox(height: 32),
 

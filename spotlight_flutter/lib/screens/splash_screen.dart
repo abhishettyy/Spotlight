@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -32,6 +33,15 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ));
 
     _swingController1 = AnimationController(
       vsync: this,
@@ -371,18 +381,16 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Container(
                       width: 56,
                       height: 3,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
                       ),
                       alignment: Alignment.centerLeft,
                       child: FractionallySizedBox(
                         widthFactor: _progressWidthAnim.value,
                         heightFactor: 1.0,
                         child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.55),
-                            borderRadius: BorderRadius.circular(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
                           ),
                         ),
                       ),
