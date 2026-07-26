@@ -3696,7 +3696,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = view === "dashboard" ? "hidden" : "";
+    // On mobile only: lock body scroll when on dashboard (content scrolls inside)
+    // On desktop: body scroll is always allowed
+    const isMobile = window.innerWidth < 768;
+    document.body.style.overflow = (view === "dashboard" && isMobile) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [view]);
 
@@ -3741,7 +3744,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground"
-      style={{ fontFamily: FB, height: view === "dashboard" ? "100vh" : "auto" }}
+      style={{ fontFamily: FB }}
     >
       {/* Cursor flashlight */}
       <div className="pointer-events-none fixed inset-0 z-50" style={{
@@ -3769,8 +3772,8 @@ export default function App() {
         />
       )}
       {(view === "dashboard" || (isSignedIn && view !== "auth" && view !== "landing")) && (
-        <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ height: "100vh" }}
+      <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="dashboard-root"
         >
           <DashboardPage userEmail={userEmail} onSignOut={doSignOut} />
         </motion.div>
@@ -3781,6 +3784,8 @@ export default function App() {
         html { scroll-behavior: smooth; }
         ::-webkit-scrollbar { display: none; }
         * { scrollbar-width: none; }
+        .dashboard-root { height: 100dvh; overflow: hidden; }
+        @media (min-width: 768px) { .dashboard-root { height: auto; min-height: 100vh; overflow: visible; } }
         .blob {
           position: absolute; border-radius: 50%;
           filter: blur(100px); opacity: 0.08; will-change: transform;

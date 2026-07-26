@@ -82,7 +82,8 @@ router.post('/verify-key', async (req: Request, res: Response): Promise<any> => 
 router.post('/verify-admin-secret', async (req: Request, res: Response): Promise<any> => {
   try {
     const { secret } = req.body;
-    const adminSecret = process.env.ADMIN_SECRET || 'spotlightDev@sam2005';
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) return res.status(500).json({ error: 'Admin secret not configured on server.' });
     if (!secret || secret.trim() !== adminSecret.trim()) {
       return res.status(401).json({ error: 'Invalid admin passcode.' });
     }
@@ -94,8 +95,8 @@ router.post('/verify-admin-secret', async (req: Request, res: Response): Promise
 
 router.get('/registration-keys', async (req: Request, res: Response): Promise<any> => {
   try {
-    const adminSecret = process.env.ADMIN_SECRET || 'spotlightDev@sam2005';
-    if (adminSecret && req.headers['x-admin-secret'] !== adminSecret) {
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
       return res.status(403).json({ error: 'Forbidden: Invalid admin secret.' });
     }
     await ensureActiveRegistrationKey();
@@ -124,8 +125,8 @@ router.get('/registration-keys', async (req: Request, res: Response): Promise<an
 
 router.post('/registration-keys/generate', async (req: Request, res: Response): Promise<any> => {
   try {
-    const adminSecret = process.env.ADMIN_SECRET || 'spotlightDev@sam2005';
-    if (adminSecret && req.headers['x-admin-secret'] !== adminSecret) {
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
       return res.status(403).json({ error: 'Forbidden: Invalid admin secret.' });
     }
     const { customCode } = req.body;
