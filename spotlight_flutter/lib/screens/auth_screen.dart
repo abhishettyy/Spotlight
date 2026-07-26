@@ -133,14 +133,7 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(width: 24),
-                      Icon(Icons.more_horiz, color: cs.onPrimary.withOpacity(0.8), size: 26),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   Text(
                     isLogin ? 'Hello\nSign in!' : 'Hello\nSign up!',
                     style: GoogleFonts.inter(
