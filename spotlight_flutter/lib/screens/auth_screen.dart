@@ -260,7 +260,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         _buildTextField(
                           controller: _usnController,
                           labelText: 'USN',
-                          hintText: 'e.g., 4MH23IS001',
+                          hintText: 'Enter USN',
                         ),
                         const SizedBox(height: 20),
                         Row(
@@ -269,7 +269,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: _buildTextField(
                                 controller: _branchController,
                                 labelText: 'Branch',
-                                hintText: 'e.g., ISE',
+                                hintText: 'Branch',
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -277,7 +277,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: _buildTextField(
                                 controller: _yearController,
                                 labelText: 'Year',
-                                hintText: 'e.g., 2',
+                                hintText: 'Year',
                                 keyboardType: TextInputType.number,
                               ),
                             ),
@@ -286,7 +286,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: _buildTextField(
                                 controller: _semController,
                                 labelText: 'Sem',
-                                hintText: 'e.g., 4',
+                                hintText: 'Sem',
                                 keyboardType: TextInputType.number,
                               ),
                             ),
