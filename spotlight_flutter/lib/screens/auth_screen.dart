@@ -357,7 +357,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: cs.onBackground,
+                                    color: cs.primary,
                                   ),
                                 ),
                               ],
@@ -399,7 +399,7 @@ class _AuthScreenState extends State<AuthScreen> {
             fontSize: 11,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.2,
-            color: subTextColor,
+            color: cs.primary,
           ),
         ),
         const SizedBox(height: 8),
