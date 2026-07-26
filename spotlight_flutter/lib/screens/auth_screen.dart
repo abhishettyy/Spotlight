@@ -92,20 +92,15 @@ class _AuthScreenState extends State<AuthScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight > 48 ? constraints.maxHeight - 48 : constraints.maxHeight,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isLogin ? 'Welcome!' : 'Create Account',
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+
+              Text(
+                isLogin ? 'Welcome!' : 'Create Account',
                 style: GoogleFonts.inter(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -353,39 +348,11 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
-              Center(
-                child: TextButton(
-                  onPressed: () {
-
-                    final userProvider = Provider.of<UserProvider>(context, listen: false);
-                    userProvider.setCurrentUser(UserModel(
-                      id: 'dev_user_123',
-                      name: 'Dev Admin',
-                      email: 'dev@spotlight.app',
-                      usn: '1RI22CS000',
-                      branch: 'CS',
-                      phone: '9988776655',
-                    ));
-                    Navigator.pushReplacementNamed(context, '/main');
-                  },
-                  child: Text(
-                    'Skip to Dashboard (Dev Mode)',
-                    style: GoogleFonts.inter(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
-      );
-    },
-  ),
-),
-);
+      ),
+    );
   }
 
   Widget _buildTextField({
