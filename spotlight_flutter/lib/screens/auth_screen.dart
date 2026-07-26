@@ -416,9 +416,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 12),
                       _buildFeatureRow(
-                        icon: Icons.qr_code_2_rounded,
-                        title: "Digital QR Passes",
-                        desc: "Seamless check-ins & live event updates",
+                        icon: Icons.confirmation_number_outlined,
+                        title: "Instant Ticket Management",
+                        desc: "Track entry passes, team passkeys & live updates",
                         cs: cs,
                         subTextColor: subTextColor,
                       ),
