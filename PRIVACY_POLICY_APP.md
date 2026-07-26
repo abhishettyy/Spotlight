@@ -201,7 +201,6 @@ If you have questions, concerns, or requests regarding this Privacy Policy, your
 
 **Spotlight Support**
 
-* **Email:** [OFFICIAL SPOTLIGHT SUPPORT EMAIL]
-* **Website:** [SPOTLIGHT WEBSITE URL]
+* **Email:** spotlightapp.help@gmail.com
 
 *Note: You may also request account deletion or data corrections directly through the Settings screen in the Spotlight mobile app.*

@@ -4,7 +4,7 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
-  X, Key, Copy, Settings, LogOut, Mail
+  X, Key, Copy, Settings, LogOut, Mail, Menu
 } from "lucide-react";
 import {
   useAuth,
@@ -304,7 +304,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   const scrolled = scrollY > 40;
 
   return (
-    <div id="ls" className="h-screen overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: "none" }}>
+    <div id="ls" className="h-screen w-screen overflow-hidden flex flex-col justify-between relative bg-background" style={{ scrollbarWidth: "none" }}>
 
       {}
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-700"
@@ -330,21 +330,16 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </div>
       </nav>
 
-      {}
-      <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
-        {}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div style={{
-            position: "absolute", top: "-10%", left: "50%",
-            transform: "translateX(-50%)",
-            width: "700px", height: "900px",
-            background: "conic-gradient(from 174deg at 50% 0%, transparent 0deg, rgba(255,255,255,0.035) 6deg, transparent 12deg)",
-            filter: "blur(40px)",
-            animation: "beamSweep 10s ease-in-out infinite",
-          }} />
-        </div>
-
-        {}
+      {/* Background Spotlight Beam & floating chips */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div style={{
+          position: "absolute", top: "-10%", left: "50%",
+          transform: "translateX(-50%)",
+          width: "700px", height: "900px",
+          background: "conic-gradient(from 174deg at 50% 0%, transparent 0deg, rgba(255,255,255,0.035) 6deg, transparent 12deg)",
+          filter: "blur(40px)",
+          animation: "beamSweep 10s ease-in-out infinite",
+        }} />
         {[
           { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-12 top-36", y: [0, -14, 0], d: 5.5 },
           { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-16 top-44", y: [0, 12, 0], d: 7 },
@@ -356,7 +351,10 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             style={{ border: "1.5px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.015)", color: "#f9fafb", fontFamily: FM, backdropFilter: "blur(12px)" }}
           >{chip.label}</motion.div>
         ))}
+      </div>
 
+      {/* Hero Content Section */}
+      <section className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-24 pb-4 w-full max-w-4xl mx-auto z-10 relative">
         <motion.div
           initial={{ opacity: 0, y: 70 }}
           animate={{ opacity: 1, y: 0 }}
@@ -365,27 +363,30 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         >
           <motion.p
             initial={{ opacity: 0, letterSpacing: "0.2em" }}
-            animate={{ opacity: 1, letterSpacing: "0.55em" }}
+            animate={{ opacity: 1, letterSpacing: "clamp(0.18em, 1.5vw, 0.55em)" }}
             transition={{ duration: 2, delay: 0.2 }}
-            className="text-[11px] uppercase mb-10" style={{ color: "#f9fafb", fontFamily: FM }}
+            className="text-[11px] uppercase text-center"
+            style={{ color: "#f9fafb", fontFamily: FM, marginBottom: "1.2rem" }}
           >Event Management Platform</motion.p>
 
           <motion.h1
             initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
             animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
             transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-            className="leading-none text-white select-none" style={{
+            className="leading-none text-white select-none text-center" style={{
             fontFamily: F_LOGO, fontWeight: 600,
-            fontSize: "clamp(4rem, 12vw, 12rem)",
+            fontSize: "clamp(2rem, 10vw, 12rem)",
             letterSpacing: "-0.02em",
             textShadow: "0 0 100px rgba(255,255,255,0.15)",
+            marginTop: "0px",
+            marginBottom: "1.2rem"
           }}>SPOTLIGHT</motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 1.2 }}
-            className="mt-8 text-xl md:text-2xl max-w-xl mx-auto"
-            style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB }}
+            className="text-lg md:text-2xl max-w-xl mx-auto text-center"
+            style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB, marginTop: "0px" }}
           >
             Manage Events{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Through Motion.</span>
           </motion.p>
@@ -393,7 +394,8 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           <motion.div
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-14 flex flex-col sm:flex-row gap-4 items-center"
+            className="flex flex-col sm:flex-row gap-4 items-center"
+            style={{ marginTop: "2.5rem" }}
           >
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
@@ -407,51 +409,42 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             </motion.button>
           </motion.div>
         </motion.div>
-
-        {}
-        <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
-          animate={{ y: [0, 10, 0] }} transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <div className="w-px h-14 bg-gradient-to-b from-transparent via-white/15 to-white/45" />
-          <p className="text-[11px] tracking-[0.6em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>Scroll</p>
-        </motion.div>
       </section>
 
-      {}
-      <section className="pt-10 pb-32 px-6">
-        <div className="max-w-6xl mx-auto">
+      {/* Bottom Stats and Footer container */}
+      <div className="w-full flex flex-col items-center gap-6 pb-6 px-6 z-10">
+        {/* Stats Section */}
+        <div className="max-w-6xl mx-auto w-full border-t border-white/5 pt-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.8 }}
-            className="flex flex-wrap justify-center gap-16"
+            className="flex flex-wrap justify-center gap-8 md:gap-16"
           >
             {[
               { v: stats.liveEvents.toString(), l: "Active Events" },
               { v: stats.registrations.toLocaleString(), l: "Registrations" },
               { v: stats.clubs.toString(), l: "Clubs" }
             ].map(s => (
-              <div key={s.l} className="text-center">
-                <p className="text-3xl font-semibold text-white mb-1.5">{s.v}</p>
-                <p className="text-[11px] tracking-[0.45em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>{s.l}</p>
+              <div key={s.l} className="text-center min-w-[100px]">
+                <p className="text-2xl md:text-3xl font-semibold text-white mb-1">{s.v}</p>
+                <p className="text-[10px] tracking-[0.4em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>{s.l}</p>
               </div>
             ))}
           </motion.div>
         </div>
-      </section>
 
-      {}
-      <footer className="py-10 px-8" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="text-base tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
-          <p className="text-sm" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
-          <div className="flex gap-6 text-sm" style={{ color: "#94a3b8" }}>
+        {/* Footer */}
+        <footer className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
+          <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
+          <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
+          <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
             {["Privacy", "Terms", "Contact"].map(l => (
               <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>{l}</a>
             ))}
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
+
     </div>
   );
 }
@@ -1077,7 +1070,7 @@ function EventsPage({
     const teamsList = Array.from(teamGroups.values());
 
     return (
-      <div className="p-8 lg:p-10 space-y-8 max-w-6xl">
+      <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-6xl">
         <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
           className="flex items-center gap-2 text-sm transition-all duration-300"
           style={{ color: "#d1d5db", fontFamily: FB }}
@@ -1337,7 +1330,7 @@ function EventsPage({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: "Total Capacity", value: activeEvent.capacity || '∞' },
                 { label: "Registered",     value: registrations.length },
@@ -1683,7 +1676,7 @@ function EventsPage({
   }
 
   return (
-    <div className="p-8 lg:p-10 space-y-8 max-w-7xl">
+    <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-7xl">
       <div className="flex items-end justify-between">
          <div>
             <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Directory</p>
@@ -2062,13 +2055,13 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
   };
 
   return (
-    <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
+    <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-4xl">
       <div>
         <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Publish</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Create New Event</h1>
       </div>
 
-      <div className="space-y-6 p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className="space-y-6 p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
 
         {}
         <div className="space-y-1.5">
@@ -2418,7 +2411,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
   };
 
   return (
-    <div className="p-8 lg:p-10 space-y-8 max-w-4xl relative">
+    <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-4xl relative">
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
@@ -2426,8 +2419,8 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
 
 
       <div className="space-y-6">
-        {}
-        <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        {/* Profile Settings */}
+        <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Profile Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
@@ -2456,7 +2449,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         </div>
 
         {}
-        <div id="payment-settings" className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div id="payment-settings" className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
@@ -2484,7 +2477,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         </div>
 
         {}
-        <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white" style={{ fontFamily: FB }}>Save All Settings</p>
@@ -2495,7 +2488,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         </div>
 
         {/* Contact Us */}
-        <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -2961,6 +2954,47 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     return localStorage.getItem("show_first_time_notice") === "true";
   });
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const renderProfileSection = () => (
+    <div className="p-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      <div className="flex items-center gap-2.5 mb-3 px-1">
+        {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
+          <img
+            src={currentClub.logoUrl}
+            alt={name}
+            className="w-7 h-7 rounded-full flex-shrink-0 object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const sibling = e.currentTarget.nextSibling as HTMLElement;
+              if (sibling) sibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+          <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
+          <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="overflow-hidden">
+          <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.75)", fontFamily: FB }}>{name}</p>
+          <p className="text-[11px]" style={{ color: "#f3f4f6", fontFamily: FM }}>Admin</p>
+        </div>
+      </div>
+      <button onClick={onSignOut}
+        className="w-full py-2 text-xs rounded-lg transition-all duration-300"
+        style={{ color: "#f3f4f6", border: "1px solid rgba(255,255,255,0.03)", fontFamily: FB }}
+        onMouseEnter={e => { e.currentTarget.style.color = "#cccccc"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+        onMouseLeave={e => { e.currentTarget.style.color = "#bbbbbb"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.03)"; }}
+      >Sign Out</button>
+    </div>
+  );
+
   const getInitialEventId = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("eventId");
@@ -3100,8 +3134,8 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
-      {}
-      <aside className="w-56 flex-shrink-0 flex flex-col h-screen"
+      {/* Desktop Sidebar (hidden on mobile/tablet/iPad Pro) */}
+      <aside className="hidden xl:flex w-56 flex-shrink-0 flex-col h-screen"
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
@@ -3135,99 +3169,135 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
             );
           })}
         </nav>
-        <div className="p-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-          <div className="flex items-center gap-2.5 mb-3 px-1">
-            {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
-              <img
-                src={currentClub.logoUrl}
-                alt={name}
-                className="w-7 h-7 rounded-full flex-shrink-0 object-cover"
-                onError={(e) => {
-
-                  e.currentTarget.style.display = 'none';
-                  const sibling = e.currentTarget.nextSibling as HTMLElement;
-                  if (sibling) sibling.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
-              <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
-                {name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
-              <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
-                {name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="overflow-hidden">
-              <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.75)", fontFamily: FB }}>{name}</p>
-              <p className="text-[11px]" style={{ color: "#f3f4f6", fontFamily: FM }}>Admin</p>
-            </div>
-          </div>
-          <button onClick={onSignOut}
-            className="w-full py-2 text-xs rounded-lg transition-all duration-300"
-            style={{ color: "#f3f4f6", border: "1px solid rgba(255,255,255,0.03)", fontFamily: FB }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#cccccc"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "#bbbbbb"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.03)"; }}
-          >Sign Out</button>
-        </div>
+        {renderProfileSection()}
       </aside>
 
-      {}
-      <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
-        <AnimatePresence mode="wait">
-          {activeTab === "create" && (
-            <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} />
-            </motion.div>
-          )}
-          {activeTab === "overview" && (
-            <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                <OverviewPage
-                  name={name}
-                  onNavigate={(tab, eventId) => setActiveTab(tab, true, eventId)}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Mobile/Tablet/iPad Pro Header */}
+        <header className="xl:hidden flex items-center justify-between px-6 py-4 flex-shrink-0"
+          style={{ background: "rgba(5,5,5,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
+        >
+          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white hover:text-[#F03D4E] transition-colors p-1">
+            <Menu size={20} />
+          </button>
+          <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+          <div className="w-8" />
+        </header>
 
-                 totalEvents={totalEvents}
-                 totalRegistrations={totalRegistrations}
-                 pendingCount={pendingCount}
-                 recentActivity={recentActivity}
-                 clubEvents={clubEvents}
-               />
-            </motion.div>
-          )}
-          {activeTab === "events" && (
-            <motion.div key="events" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <EventsPage
-                 EVENTS={clubEvents}
-                 allRegistrations={allRegistrations}
-                 onRegistrationsChange={setAllRegistrations}
-                 getToken={getToken}
-                 selectedEventId={selectedEventId}
-                 setSelectedEventId={handleSetSelectedEventId}
-                 showTeams={showTeams}
-                 setShowTeams={handleSetShowTeams}
-                 refreshEvents={refreshEvents}
-               />
-            </motion.div>
-          )}
-          {activeTab === "teams" && (
-            <motion.div key="teams" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <TeamsPage />
-            </motion.div>
-          )}
-          {activeTab === "settings" && (
-            <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-               <SettingsPage club={clubs.find((c: any) => c.id === profile?.clubId)} profile={profile} getToken={getToken} onUpdate={refreshEvents} onLogout={onSignOut} />
-            </motion.div>
-          )}
-          {activeTab !== "overview" && activeTab !== "teams" && activeTab !== "events" && activeTab !== "settings" && activeTab !== "create" && (
-            <motion.div key="fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-10 text-[#444] text-sm" style={{ fontFamily: FB }}>
-               {DASH_NAV.find(n => n.id === activeTab)?.label || activeTab} Module - Under Construction
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
+          <AnimatePresence mode="wait">
+            {activeTab === "create" && (
+              <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} />
+              </motion.div>
+            )}
+            {activeTab === "overview" && (
+              <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <OverviewPage
+                    name={name}
+                    onNavigate={(tab, eventId) => setActiveTab(tab, true, eventId)}
+
+                   totalEvents={totalEvents}
+                   totalRegistrations={totalRegistrations}
+                   pendingCount={pendingCount}
+                   recentActivity={recentActivity}
+                   clubEvents={clubEvents}
+                 />
+              </motion.div>
+            )}
+            {activeTab === "events" && (
+              <motion.div key="events" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                 <EventsPage
+                   EVENTS={clubEvents}
+                   allRegistrations={allRegistrations}
+                   onRegistrationsChange={setAllRegistrations}
+                   getToken={getToken}
+                   selectedEventId={selectedEventId}
+                   setSelectedEventId={handleSetSelectedEventId}
+                   showTeams={showTeams}
+                   setShowTeams={handleSetShowTeams}
+                   refreshEvents={refreshEvents}
+                 />
+              </motion.div>
+            )}
+            {activeTab === "teams" && (
+              <motion.div key="teams" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                 <TeamsPage />
+              </motion.div>
+            )}
+            {activeTab === "settings" && (
+              <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                 <SettingsPage club={clubs.find((c: any) => c.id === profile?.clubId)} profile={profile} getToken={getToken} onUpdate={refreshEvents} onLogout={onSignOut} />
+              </motion.div>
+            )}
+            {activeTab !== "overview" && activeTab !== "teams" && activeTab !== "events" && activeTab !== "settings" && activeTab !== "create" && (
+              <motion.div key="fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-10 text-[#444] text-sm" style={{ fontFamily: FB }}>
+                 {DASH_NAV.find(n => n.id === activeTab)?.label || activeTab} Module - Under Construction
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* Mobile Drawer Navigation */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm xl:hidden"
+            />
+            {/* Drawer */}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col h-screen xl:hidden"
+              style={{ background: "rgba(5,5,5,0.98)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
+            >
+              <div className="px-6 pt-6 pb-5 flex items-center justify-between flex-shrink-0">
+                <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white transition-colors p-1">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="px-4 mb-5 flex-shrink-0">
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => { setActiveTab("create"); setIsMobileMenuOpen(false); }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300"
+                  style={{ fontFamily: FB }}
+                ><Plus size={14} /> Create Event</motion.button>
+              </div>
+              <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+                {DASH_NAV.map(({ id, icon: Icon, label }) => {
+                  const active = id === activeTab;
+                  return (
+                    <button key={id} onClick={() => { setActiveTab(id); setIsMobileMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-300"
+                      style={{
+                        background: active ? "rgba(255,255,255,0.065)" : "transparent",
+                        color:      active ? "#fff" : "#999999",
+                        border:     active ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+                        fontFamily: FB,
+                      }}
+                      onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#dddddd"; }}
+                      onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#999999"; }}
+                    ><Icon size={14} />{label}</button>
+                  );
+                })}
+              </nav>
+              {renderProfileSection()}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {showOnboardingNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -3325,12 +3395,12 @@ function OverviewPage({
   }
 
   return (
-    <div className="p-8 lg:p-10 space-y-10 max-w-7xl">
-      {}
+    <div className="p-5 md:p-8 lg:p-10 space-y-8 md:space-y-10 max-w-7xl">
+      {/* Welcome banner */}
       <motion.div
         initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-        className="relative p-8 rounded-2xl overflow-hidden"
+        className="relative p-6 md:p-8 rounded-2xl overflow-hidden"
         style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.06)" }}
       >
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(255,255,255,0.03) 0%, transparent 60%)" }} />
@@ -3399,7 +3469,7 @@ function OverviewPage({
             No upcoming events yet. <button onClick={() => onNavigate("create")} className="text-[#F03D4E] hover:underline">Create one →</button>
           </div>
         ) : (
-          <div className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory" style={{ scrollbarWidth: "none", margin: "0 -2rem", padding: "0 2rem" }}>
+          <div className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10" style={{ scrollbarWidth: "none" }}>
             {clubEvents.filter(e => e.status === 'upcoming').map((ev, i) => (
               <motion.div key={ev.id}
                 initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }}

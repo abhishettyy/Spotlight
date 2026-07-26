@@ -157,5 +157,4 @@ For questions, concerns, deactivation requests, or reports of unauthorized accou
 
 **Spotlight Dashboard Support**
 
-* **Email:** [OFFICIAL SPOTLIGHT SUPPORT EMAIL]
-* **Website:** [SPOTLIGHT WEBSITE URL]
+* **Email:** spotlightapp.help@gmail.com
