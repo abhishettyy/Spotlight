@@ -9,7 +9,6 @@ import '../core/user_provider.dart';
 import '../core/api_service.dart';
 import '../core/events_provider.dart';
 import '../core/notifications_provider.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -348,120 +347,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(
-                      color: isDark ? Colors.white10 : Colors.grey[300],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      '- OR -',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: subTextColor.withOpacity(0.6),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Divider(
-                      color: isDark ? Colors.white10 : Colors.grey[300],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: OutlinedButton.icon(
-                  onPressed: _isLoading ? null : () async {
-                    setState(() => _isLoading = true);
-                    try {
-
-                      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
-                      final googleUser = await googleSignIn.signIn();
-
-                      if (googleUser == null) {
-
-                        setState(() => _isLoading = false);
-                        return;
-                      }
-
-                      final googleAuth = await googleUser.authentication;
-                      final idToken = googleAuth.idToken;
-
-                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                      final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
-                      final apiService = ApiService();
-
-                      final userId = 'google_${googleUser.id}';
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setString('userId', userId);
-
-                      if (idToken != null) {
-                        await prefs.setString('auth_token', idToken);
-                      }
-                      await authProvider.tryAutoLogin();
-
-                      final user = await apiService.checkAndSyncProfile(
-                        userId,
-                        googleUser.email,
-                        googleUser.displayName ?? 'Spotlight User',
-                      );
-
-                      if (user != null && mounted) {
-                        userProvider.setCurrentUser(user);
-                        await eventsProvider.loadEvents();
-
-                        if (user.isProfileIncomplete) {
-                          Navigator.pushReplacementNamed(context, '/onboarding');
-                        } else {
-                          Navigator.pushReplacementNamed(context, '/main');
-                        }
-                      } else if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Failed to sync profile. Please try again.')),
-                        );
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Google sign-in error: $e')),
-                        );
-                      }
-                    } finally {
-                      if (mounted) setState(() => _isLoading = false);
-                    }
-                  },
-                  icon: const Icon(Icons.account_circle_outlined, size: 24),
-                  label: Text(
-                    'Continue with Google',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: cs.onBackground,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: theme.cardTheme.color,
-                    side: BorderSide(
-                      color: isDark ? Colors.white10 : Colors.grey[300]!,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
               Center(
                 child: TextButton(
                   onPressed: () {

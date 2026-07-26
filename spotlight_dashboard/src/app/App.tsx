@@ -495,28 +495,6 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    try {
-      setError(null);
-      if (tab === "login") {
-        if (!isSignInLoaded || !signIn) return;
-        await signIn.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      } else {
-        if (!isSignUpLoaded || !signUp) return;
-        await signUp.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      }
-    } catch (err: any) {
-      setError(formatAuthError(err, "Google Redirect Auth failed. Please try again."));
-    }
-  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -894,30 +872,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
                 </motion.button>
               </form>
 
-              {tab === "login" && (
-                <>
-                  <div className="flex items-center gap-4 my-6">
-                    <div className="h-[1px] bg-white/10 flex-1" />
-                    <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
-                    <div className="h-[1px] bg-white/10 flex-1" />
-                  </div>
 
-                  <motion.button
-                    onClick={handleGoogleAuth}
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
-                    style={{ fontFamily: FB }}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
-                      <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
-                      <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
-                      <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
-                    </svg>
-                    Continue with Google
-                  </motion.button>
-                </>
-              )}
             </motion.div>
           </AnimatePresence>
         </div>
