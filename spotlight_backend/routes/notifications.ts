@@ -145,7 +145,7 @@ router.post('/event-reminders', async (req: Request, res: Response): Promise<any
         .map(r => ({
           userId: r.userId!,
           type: 'event_reminder',
-          title: `${event.name} is Today! 📅`,
+          title: `${event.name} is Today!`,
           body: `Your event starts at ${eventTime}. Venue: ${event.club?.name ?? 'TBD'}. Don't forget to bring your ticket!`,
           eventId: event.id,
         }));

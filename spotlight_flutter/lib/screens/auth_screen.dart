@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -229,7 +230,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 _buildTextField(
                   controller: _usnController,
                   labelText: 'USN',
-                  hintText: 'e.g., 4MH23IS001',
+                  hintText: 'Enter your USN',
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -238,7 +239,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: _buildTextField(
                         controller: _branchController,
                         labelText: 'Branch',
-                        hintText: 'e.g., ISE',
+                        hintText: 'Branch',
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -246,7 +247,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: _buildTextField(
                         controller: _yearController,
                         labelText: 'Year',
-                        hintText: 'e.g., 2',
+                        hintText: 'Year',
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -255,7 +256,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: _buildTextField(
                         controller: _semController,
                         labelText: 'Sem',
-                        hintText: 'e.g., 4',
+                        hintText: 'Sem',
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -264,7 +265,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 20),
                 _buildTextField(
                   controller: _phoneController,
-                  labelText: 'Phone Number (Optional)',
+                  labelText: 'Phone Number',
                   hintText: 'Enter your phone number',
                   keyboardType: TextInputType.phone,
                 ),
@@ -276,6 +277,31 @@ class _AuthScreenState extends State<AuthScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : () async {
+                    // Validate fields before proceeding
+                    if (isLogin) {
+                      if (_emailController.text.trim().isEmpty ||
+                          _passwordController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please fill in all fields.')),
+                        );
+                        return;
+                      }
+                    } else {
+                      if (_nameController.text.trim().isEmpty ||
+                          _emailController.text.trim().isEmpty ||
+                          _passwordController.text.trim().isEmpty ||
+                          _usnController.text.trim().isEmpty ||
+                          _branchController.text.trim().isEmpty ||
+                          _yearController.text.trim().isEmpty ||
+                          _semController.text.trim().isEmpty ||
+                          _phoneController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please fill in all fields.')),
+                        );
+                        return;
+                      }
+                    }
+
                     setState(() => _isLoading = true);
                     try {
                       final apiService = ApiService();
@@ -336,157 +362,22 @@ class _AuthScreenState extends State<AuthScreen> {
                     elevation: 0,
                   ),
                   child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const JumpingDotsLoader(color: Colors.white)
                     : Text(
                         isLogin ? 'Sign In' : 'Create Account',
                         style: GoogleFonts.inter(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
-              if (isLogin) ...[
-                const SizedBox(height: 28),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account? ",
-                      style: GoogleFonts.inter(fontSize: 14, color: subTextColor),
-                    ),
-                    GestureDetector(
-                      onTap: () => setState(() => isLogin = false),
-                      child: Text(
-                        "Sign Up",
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: cs.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 28),
-
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: cs.primary.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(Icons.stars_rounded, size: 20, color: cs.primary),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            "Why Spotlight?",
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: cs.onBackground,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildFeatureRow(
-                        icon: Icons.flash_on_rounded,
-                        title: "Instant Registrations",
-                        desc: "Join campus workshops & hackathons in one tap",
-                        cs: cs,
-                        subTextColor: subTextColor,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildFeatureRow(
-                        icon: Icons.confirmation_number_outlined,
-                        title: "Instant Ticket Management",
-                        desc: "Track entry passes, team passkeys & live updates",
-                        cs: cs,
-                        subTextColor: subTextColor,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildFeatureRow(
-                        icon: Icons.shield_outlined,
-                        title: "Verified Student Network",
-                        desc: "Connect & form teams with verified peers",
-                        cs: cs,
-                        subTextColor: subTextColor,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-                Center(
-                  child: Text(
-                    "Spotlight Platform • Empowering Campus Culture",
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: subTextColor.withOpacity(0.5),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFeatureRow({
-    required IconData icon,
-    required String title,
-    required String desc,
-    required ColorScheme cs,
-    required Color subTextColor,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: cs.primary.withOpacity(0.85)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onBackground,
-                ),
-              ),
-              Text(
-                desc,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: subTextColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -547,3 +438,62 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 }
+
+class JumpingDotsLoader extends StatefulWidget {
+  final Color color;
+  final double size;
+  const JumpingDotsLoader({super.key, this.color = Colors.white, this.size = 7.0});
+
+  @override
+  State<JumpingDotsLoader> createState() => _JumpingDotsLoaderState();
+}
+
+class _JumpingDotsLoaderState extends State<JumpingDotsLoader> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final delay = index * 0.2;
+            final value = (math.sin((_controller.value * 2 * math.pi) - (delay * 2 * math.pi)) + 1) / 2;
+            final offsetY = -6.0 * value;
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              transform: Matrix4.translationValues(0, offsetY, 0),
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
-import { uploadBase64Image } from '../utils/storage';
+import { uploadBase64Image, deleteImage } from '../utils/storage';
 
 const router = Router();
 
@@ -92,7 +92,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
 router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
-    const { eventDate, registrationDeadline, venue, registrationLimit, password } = req.body;
+    const { eventDate, registrationDeadline, venue, registrationLimit, bannerUrl, password } = req.body;
 
     const userId = req.auth!.userId;
     const profile = await prisma.profile.findUnique({ where: { id: userId } });
@@ -114,6 +114,27 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
       }
     }
 
+    let finalBannerUrl = existingEvent.bannerUrl;
+    if (bannerUrl !== undefined) {
+      if (bannerUrl && typeof bannerUrl === 'string' && bannerUrl.startsWith('data:image/')) {
+        finalBannerUrl = await uploadBase64Image(bannerUrl, 'events/banners');
+        if (existingEvent.bannerUrl && existingEvent.bannerUrl !== finalBannerUrl) {
+          deleteImage(existingEvent.bannerUrl).catch(err =>
+            console.error('[Storage] Error deleting old banner:', err)
+          );
+        }
+      } else if (!bannerUrl) {
+        finalBannerUrl = null;
+        if (existingEvent.bannerUrl) {
+          deleteImage(existingEvent.bannerUrl).catch(err =>
+            console.error('[Storage] Error deleting old banner:', err)
+          );
+        }
+      } else {
+        finalBannerUrl = bannerUrl;
+      }
+    }
+
     const updatedEvent = await prisma.event.update({
       where: { id: id as string },
       data: {
@@ -121,6 +142,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
         ...(registrationDeadline ? { registrationDeadline: new Date(registrationDeadline) } : {}),
         ...(venue !== undefined ? { venue } : {}),
         ...(registrationLimit !== undefined ? { registrationLimit: parseInt(registrationLimit) } : {}),
+        bannerUrl: finalBannerUrl,
       },
       include: { club: true },
     });

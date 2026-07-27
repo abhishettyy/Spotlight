@@ -5,8 +5,6 @@ import '../core/api_service.dart';
 import '../core/user_provider.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
-import '../core/smooth_route.dart';
-import 'club_events_screen.dart';
 
 class RegisteredClubsScreen extends StatefulWidget {
   const RegisteredClubsScreen({super.key});
@@ -65,6 +63,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 24, 0),
               child: Row(
@@ -169,71 +168,57 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        SmoothRoute(
-          builder: (_) => ClubEventsScreen(club: club),
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: isDark
+            ? null
+            : Border.all(
+                color: Colors.grey.shade200,
+                width: 1.0,
+              ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: isDark
-              ? null
-              : Border.all(
-                  color: Colors.grey.shade200,
-                  width: 1.0,
-                ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: isDark ? Colors.white12 : Colors.grey[200]!),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],
-                shape: BoxShape.circle,
-                border: Border.all(
-                    color: isDark ? Colors.white12 : Colors.grey[200]!),
-              ),
-              child: (club.logoUrl != null &&
-                      club.logoUrl!.isNotEmpty &&
-                      club.logoUrl !=
-                          'https://images.unsplash.com/photo-1516321318423-f06f85e504b3')
-                  ? ClipOval(
-                      child: CustomImage(
-                          url: club.logoUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
-                              Icons.groups_outlined,
-                              color: subText)),
-                    )
-                  : Icon(Icons.groups_outlined, color: subText),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                club.name,
+            child: (club.logoUrl != null &&
+                    club.logoUrl!.isNotEmpty)
+                ? ClipOval(
+                    child: CustomImage(url: club.logoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.groups_outlined,
+                            color: subText)),
+                  )
+                : Icon(Icons.groups_outlined, color: subText),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(club.name,
                 style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onBackground,
-                ),
-              ),
-            ),
-            Icon(Icons.chevron_right, color: subText, size: 20),
-          ],
-        ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onBackground)),
+          ),
+          Icon(Icons.chevron_right, color: subText),
+        ],
       ),
     );
   }

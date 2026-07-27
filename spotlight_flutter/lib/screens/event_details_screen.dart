@@ -1,20 +1,48 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'register_screen.dart';
-import 'payment_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/events_provider.dart';
 import '../core/saved_events_provider.dart';
+import '../core/api_service.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
 import 'package:share_plus/share_plus.dart';
 
-class EventDetailsScreen extends StatelessWidget {
+class EventDetailsScreen extends StatefulWidget {
   final String eventId;
 
   const EventDetailsScreen({super.key, required this.eventId});
+
+  @override
+  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
+}
+
+class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  // null = still checking, true = registered, false = not registered
+  bool? _isRegistered;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRegistration();
+  }
+
+  Future<void> _checkRegistration() async {
+    try {
+      final tickets = await ApiService().fetchUserTickets();
+      if (mounted) {
+        setState(() {
+          _isRegistered = tickets.any((t) => t.event?.id == widget.eventId);
+        });
+      }
+    } catch (_) {
+      // On error, assume not registered so the button stays usable
+      if (mounted) setState(() => _isRegistered = false);
+    }
+  }
 
   String _formatDeadline(DateTime deadline) {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -80,7 +108,7 @@ class EventDetailsScreen extends StatelessWidget {
 
     final eventsProvider = Provider.of<EventsProvider>(context);
     final event = eventsProvider.events.firstWhere(
-      (e) => e.id == eventId,
+      (e) => e.id == widget.eventId,
       orElse: () => EventModel(
         id: 'unknown',
         title: 'Event Not Found',
@@ -97,12 +125,41 @@ class EventDetailsScreen extends StatelessWidget {
     final description = event.description ?? 'No Description';
     final date = event.date ?? 'No Date';
     final venue = event.venue;
-    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
-    final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1000&auto=format&fit=crop';
+    final price = event.price > 0 ? 'Paid' : 'Free';
+    final imageUrl = event.imageUrl;
 
     final bool isClosed = event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!);
 
+    // Still checking registration status
+    final bool isChecking = _isRegistered == null;
+    final bool alreadyRegistered = _isRegistered == true;
+
     final dateData = _parseDate(date);
+
+    // Determine button state
+    final bool buttonDisabled = isClosed || alreadyRegistered || isChecking;
+
+    Color btnBg;
+    Color btnTextColor;
+    String btnLabel;
+
+    if (isChecking) {
+      btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+      btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+      btnLabel = '';
+    } else if (alreadyRegistered) {
+      btnBg = isDark ? const Color(0xFF1A2E1A) : const Color(0xFFE8F5E9);
+      btnTextColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+      btnLabel = 'Already Registered';
+    } else if (isClosed) {
+      btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+      btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+      btnLabel = 'Registration Closed';
+    } else {
+      btnBg = cs.primary;
+      btnTextColor = Colors.white;
+      btnLabel = 'Register Now';
+    }
 
     return Scaffold(
       backgroundColor: pageBg,
@@ -133,202 +190,208 @@ class EventDetailsScreen extends StatelessWidget {
           Positioned.fill(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
                 top: MediaQuery.of(context).padding.top + 16,
                 bottom: 120,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   SizedBox(height: MediaQuery.of(context).size.height * 0.28),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                    decoration: BoxDecoration(
+                      color: pageBg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            _glassPill(event.category),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
 
-                  Row(
-                    children: [
-                      _glassPill(event.category),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              title,
-                              style: GoogleFonts.inter(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: textPrimary,
-                                letterSpacing: -1,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Venue: $venue',
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                color: textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                              if (event.clubName != null && event.clubName!.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Hosted by: ${event.clubName}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: cs.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                              if (event.registrationDeadline != null) ...[
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.access_time_rounded,
-                                      size: 13,
-                                      color: Colors.yellow[600],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: textPrimary,
+                                      letterSpacing: -1,
                                     ),
-                                    const SizedBox(width: 4),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Venue: $venue',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      color: textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  if (event.clubName != null && event.clubName!.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
                                     Text(
-                                      'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                                      'Hosted by: ${event.clubName}',
                                       style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        color: Colors.yellow[600],
+                                        fontSize: 14,
+                                        color: cs.primary,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
+                                  if (event.registrationDeadline != null) ...[
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time_rounded,
+                                          size: 13,
+                                          color: Colors.yellow[600],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            color: Colors.yellow[600],
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                price,
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : cs.primary,
                                 ),
-                              ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 28),
+
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: cardBg,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      dateData['day']!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: textPrimary,
+                                      ),
+                                    ),
+                                    Text(
+                                      dateData['month']!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.0,
+                                        color: textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      dateData['weekday']!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '9:00 AM',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: cardBg,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 20,
+                                  color: textSecondary,
+                                ),
+                              ),
                             ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          price,
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'About this event',
                           style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : cs.primary,
+                            color: textPrimary,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: cardBg,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                dateData['day']!,
-                                style: GoogleFonts.inter(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: textPrimary,
-                                ),
-                              ),
-                              Text(
-                                dateData['month']!,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
-                                  color: textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                dateData['weekday']!,
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '9:00 AM',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: cardBg,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.calendar_today_outlined,
-                            size: 20,
+                        const SizedBox(height: 12),
+                        Text(
+                          description,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
                             color: textSecondary,
+                            height: 1.6,
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  Text(
-                    'About this event',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    description,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      color: textSecondary,
-                      height: 1.6,
                     ),
                   ),
                 ],
@@ -349,7 +412,7 @@ class EventDetailsScreen extends StatelessWidget {
                       'on Spotlight!\n\n'
                       'Venue: ${event.venue}\n'
                       'Date: ${event.date ?? 'TBA'}\n'
-                      'Price: ${event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free'}\n\n'
+                      'Price: ${event.price > 0 ? 'â‚¹${event.price.toStringAsFixed(0)}' : 'Free'}\n\n'
                       'Download the Spotlight app to register now!';
                   Share.share(shareText);
                 }),
@@ -376,9 +439,9 @@ class EventDetailsScreen extends StatelessWidget {
 
               Consumer<SavedEventsProvider>(
                 builder: (context, savedProvider, _) {
-                  final isSaved = savedProvider.isSaved(eventId);
+                  final isSaved = savedProvider.isSaved(widget.eventId);
                   return GestureDetector(
-                    onTap: () => savedProvider.toggleSave(eventId),
+                    onTap: () => savedProvider.toggleSave(widget.eventId),
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -398,7 +461,7 @@ class EventDetailsScreen extends StatelessWidget {
 
               Expanded(
                 child: ElevatedButton(
-                  onPressed: isClosed ? null : () {
+                  onPressed: buttonDisabled ? null : () {
                     Navigator.push(
                       context,
                       SmoothRoute(
@@ -415,57 +478,37 @@ class EventDetailsScreen extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isClosed 
-                      ? (isDark ? Colors.grey[800] : Colors.grey[300])
-                      : Theme.of(context).colorScheme.primary,
+                    backgroundColor: btnBg,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    isClosed ? 'Registration Closed' : 'Register Now',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isClosed 
-                        ? (isDark ? Colors.grey[500] : Colors.grey[600])
-                        : Colors.white,
-                    ),
-                  ),
+                  child: isChecking
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isDark ? Colors.grey[400]! : Colors.grey[500]!,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        btnLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: btnTextColor,
+                        ),
+                      ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _bulletItem(BuildContext context, String text, IconData icon) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                color: textSecondary,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

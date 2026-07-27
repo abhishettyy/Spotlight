@@ -250,7 +250,7 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
       const notifData = newlyApproved.map(r => ({
         userId: r.userId!,
         type: 'registration_approved',
-        title: 'Registration Approved! 🎉',
+        title: 'Registration Approved',
         body: `Your registration for ${eventName} by ${clubName} has been confirmed. See you there!`,
         eventId: registration.eventId,
       }));
@@ -278,7 +278,7 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
         data: {
           userId: registration.userId!,
           type: 'registration_approved',
-          title: 'Registration Approved! 🎉',
+          title: 'Registration Approved',
           body: `Your registration for ${eventName} by ${clubName} has been confirmed. See you there!`,
           eventId: registration.eventId,
         },
@@ -288,6 +288,87 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
     return res.status(200).json({ message: 'Registration approved and notifications sent.' });
   } catch (error: any) {
     console.error('Approve error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = req.params.id as string;
+
+    const registration = await prisma.registration.findUnique({
+      where: { id },
+      include: {
+        event: { include: { club: true } },
+        team: { include: { registrations: true } },
+      },
+    });
+
+    if (!registration) return res.status(404).json({ error: 'Registration not found.' });
+
+    const eventName = registration.event?.name ?? 'an event';
+    const clubName = registration.event?.club?.name ?? 'the club';
+
+    if (registration.teamId && registration.team) {
+      const teamRegistrations = registration.team.registrations;
+      const proofUrls = teamRegistrations
+        .map(r => r.paymentProofUrl)
+        .filter((url): url is string => url !== null && url !== undefined);
+
+      await prisma.registration.updateMany({
+        where: { teamId: registration.teamId },
+        data: { 
+          status: 'REJECTED',
+          paymentProofUrl: null
+        },
+      });
+
+      for (const url of proofUrls) {
+        deleteImage(url).catch(err => console.error('[Storage] Async delete failed:', err));
+      }
+
+      const notifData = teamRegistrations.filter(r => r.userId).map(r => ({
+        userId: r.userId!,
+        type: 'registration_rejected',
+        title: 'Registration Update',
+        body: `Your registration for ${eventName} by ${clubName} was not approved. Please contact the club for details.`,
+        eventId: registration.eventId,
+      }));
+
+      if (notifData.length > 0) {
+        await prisma.notification.createMany({ data: notifData });
+      }
+    } else {
+      const proofUrl = registration.paymentProofUrl;
+
+      await prisma.registration.update({
+        where: { id },
+        data: { 
+          status: 'REJECTED',
+          paymentProofUrl: null
+        },
+      });
+
+      if (proofUrl) {
+        deleteImage(proofUrl).catch(err => console.error('[Storage] Async delete failed:', err));
+      }
+
+      if (registration.userId) {
+        await prisma.notification.create({
+          data: {
+            userId: registration.userId,
+            type: 'registration_rejected',
+            title: 'Registration Update',
+            body: `Your registration for ${eventName} by ${clubName} was not approved. Please contact the club for details.`,
+            eventId: registration.eventId,
+          },
+        });
+      }
+    }
+
+    return res.status(200).json({ message: 'Registration rejected successfully.' });
+  } catch (error: any) {
+    console.error('Reject error:', error);
     return res.status(500).json({ error: error.message });
   }
 });

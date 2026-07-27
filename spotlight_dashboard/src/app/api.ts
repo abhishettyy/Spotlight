@@ -180,6 +180,7 @@ export async function updateEvent(eventId: string, data: {
   registrationDeadline?: string;
   venue?: string;
   registrationLimit?: number;
+  bannerUrl?: string;
   password?: string;
 }, token?: string) {
   return request(`/events/${eventId}`, {
@@ -234,6 +235,12 @@ export async function fetchEventRegistrations(eventId: string, token?: string) {
 export async function approveRegistration(registrationId: string, token?: string) {
   return request(`/registrations/${registrationId}/approve`, {
     method: 'PUT',
+  }, token);
+}
+
+export async function rejectRegistration(registrationId: string, token?: string) {
+  return request(`/registrations/${registrationId}/reject`, {
+    method: 'DELETE',
   }, token);
 }
 

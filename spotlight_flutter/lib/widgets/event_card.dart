@@ -18,13 +18,14 @@ class EventCard extends StatelessWidget {
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 16),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SpotlightTheme.deepBlack, 
         borderRadius: BorderRadius.circular(24),
-        image: const DecorationImage(
-          image: NetworkImage('https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=600'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1E24), Color(0xFF0F0F12), Color(0xFF141419)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Stack(

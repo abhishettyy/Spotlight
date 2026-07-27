@@ -84,6 +84,7 @@ model Registration {
 enum RegistrationStatus {
   PENDING
   CONFIRMED
+  REJECTED
 }
 
 model Notification {

@@ -182,7 +182,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
       }
     }
 
-    final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop';
+    final imageUrl = event.imageUrl;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
 
     return GestureDetector(
@@ -194,10 +194,19 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
         height: 280,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          image: DecorationImage(
-            image: NetworkImage(imageUrl),
-            fit: BoxFit.cover,
-          ),
+          image: imageUrl != null && imageUrl.isNotEmpty
+              ? DecorationImage(
+                  image: NetworkImage(imageUrl),
+                  fit: BoxFit.cover,
+                )
+              : null,
+          gradient: imageUrl == null || imageUrl.isEmpty
+              ? const LinearGradient(
+                  colors: [Color(0xFF1E1E24), Color(0xFF0F0F12), Color(0xFF141419)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),

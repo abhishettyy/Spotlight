@@ -560,63 +560,66 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Row(
                       children: clubsProvider.clubs.map((club) {
                         return GestureDetector(
                           onTap: () => Navigator.push(
                             context,
                             SmoothRoute(
-                              builder: (_) => ClubEventsScreen(club: club),
+                              builder: (_) => ClubEventsScreen(
+                                clubId: club.id,
+                                clubName: club.name,
+                                clubLogoUrl: club.logoUrl,
+                              ),
                             ),
                           ),
                           child: Container(
-                            margin: const EdgeInsets.only(right: 20),
-                            width: 72,
-                            child: Column(
-                              children: [
-                                Container(
-                                  width: 64,
-                                  height: 64,
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF1E1E1E)
-                                        : Colors.grey[100],
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: isDark
-                                            ? Colors.white12
-                                            : Colors.grey[200]!),
-                                  ),
-                                  child: (club.logoUrl != null &&
-                                          club.logoUrl!.isNotEmpty &&
-                                          club.logoUrl !=
-                                              'https://images.unsplash.com/photo-1516321318423-f06f85e504b3')
-                                      ? ClipOval(
-                                          child: CustomImage(
-                                            url: club.logoUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Icon(Icons.groups_outlined,
-                                                    color: subTextColor),
-                                          ),
-                                        )
-                                      : Icon(Icons.groups_outlined,
-                                          color: subTextColor),
+                          margin: const EdgeInsets.only(right: 20),
+                          width: 72,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E1E1E)
+                                      : Colors.grey[100],
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: isDark
+                                          ? Colors.white12
+                                          : Colors.grey[200]!),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  club.name,
-                                  style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: textColor),
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                                child: (club.logoUrl != null &&
+                                        club.logoUrl!.isNotEmpty)
+                                    ? ClipOval(
+                                        child: CustomImage(
+                                          url: club.logoUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              Icon(Icons.groups_outlined,
+                                                  color: subTextColor),
+                                        ),
+                                      )
+                                    : Icon(Icons.groups_outlined,
+                                        color: subTextColor),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                club.name,
+                                style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor),
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
+                        ),
                         );
                       }).toList(),
                     ),
@@ -626,6 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 120),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -660,7 +664,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    final imageUrl = event.imageUrl ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1000&auto=format&fit=crop';
+    final imageUrl = event.imageUrl;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
 
     return Container(
@@ -668,10 +672,19 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-        ),
+        image: imageUrl != null && imageUrl.isNotEmpty
+            ? DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
+        gradient: imageUrl == null || imageUrl.isEmpty
+            ? const LinearGradient(
+                colors: [Color(0xFF1E1E24), Color(0xFF0F0F12), Color(0xFF141419)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),

@@ -136,7 +136,6 @@ class EventModel {
   final int? teamSizeLimit;
   final String? upiId;
   final String? clubName;
-  final String? clubId;
   final int registrationCount;
   final DateTime? registrationDeadline;
 
@@ -154,7 +153,6 @@ class EventModel {
     this.teamSizeLimit,
     this.upiId,
     this.clubName,
-    this.clubId,
     required this.registrationCount,
     this.registrationDeadline,
   });
@@ -175,7 +173,6 @@ class EventModel {
       teamSizeLimit: json['teamSizeLimit'] ?? json['team_size_limit'],
       upiId: club?['upiId'] ?? club?['upi_id'],
       clubName: club?['name'],
-      clubId: json['club_id'] ?? json['clubId'] ?? club?['id'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationDeadline: json['registration_deadline'] != null
           ? DateTime.tryParse(json['registration_deadline'].toString())
@@ -359,13 +356,23 @@ class NotificationModel {
     this.createdAt,
   });
 
+  static String _cleanEmoji(String text) {
+    final emojiRegex = RegExp(
+      r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]',
+      unicode: true,
+    );
+    return text.replaceAll(emojiRegex, '').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    final rawTitle = json['title'] ?? '';
+    final rawBody = json['body'] ?? '';
     return NotificationModel(
       id: json['id'] ?? '',
       type: json['type'] ?? '',
-      title: json['title'] ?? '',
-      body: json['body'] ?? '',
-      isRead: json['is_read'] ?? false,
+      title: _cleanEmoji(rawTitle),
+      body: _cleanEmoji(rawBody),
+      isRead: json['is_read'] ?? json['isRead'] ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : null,
