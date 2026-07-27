@@ -374,10 +374,145 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
+              // ── Social proof section (Sign In only) ──────────────────────
+              if (isLogin) ...[
+                const SizedBox(height: 52),
+
+                // Avatar stack + joined count
+                Center(
+                  child: Column(
+                    children: [
+                      // Overlapping avatar circles
+                      SizedBox(
+                        height: 40,
+                        width: 120,
+                        child: Stack(
+                          children: [
+                            _avatarCircle(0,  const Color(0xFFE57373)),
+                            _avatarCircle(26, const Color(0xFF64B5F6)),
+                            _avatarCircle(52, const Color(0xFF81C784)),
+                            _avatarCircle(78, const Color(0xFFFFB74D)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Join 500+ students already on Spotlight',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Discover events happening at your campus',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: subTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 36),
+
+                // Stats row
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1A1A1A) : Colors.grey[50],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey[200]!,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _statItem(context, '20+', 'Events', isDark),
+                      _dividerLine(isDark),
+                      _statItem(context, '10+', 'Clubs', isDark),
+                      _dividerLine(isDark),
+                      _statItem(context, '500+', 'Students', isDark),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Terms line
+                Center(
+                  child: Text(
+                    'By signing in you agree to our Terms & Privacy Policy',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: subTextColor.withOpacity(0.55),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _avatarCircle(double left, Color color) {
+    return Positioned(
+      left: left,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            width: 2.5,
+          ),
+        ),
+        child: Icon(Icons.person, color: Colors.white, size: 18),
+      ),
+    );
+  }
+
+  Widget _statItem(BuildContext context, String value, String label, bool isDark) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: cs.primary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white54 : Colors.grey[500],
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dividerLine(bool isDark) {
+    return Container(
+      width: 1,
+      height: 32,
+      color: isDark ? Colors.white12 : Colors.grey[300],
     );
   }
 

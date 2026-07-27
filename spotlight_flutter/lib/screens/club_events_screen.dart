@@ -40,11 +40,11 @@ class ClubEventsScreen extends StatelessWidget {
 
     final eventsProvider = Provider.of<EventsProvider>(context);
 
-    // Filter events for this club with a date >= today
+    // Filter events for this club by clubId, date >= today
     final clubEvents = eventsProvider.events.where((e) {
-      final isThisClub = (e.clubName ?? '').toLowerCase() == clubName.toLowerCase();
+      final isThisClub = e.clubId == clubId;
       if (!isThisClub) return false;
-      if (e.date == null) return true; // no date = treat as upcoming
+      if (e.date == null) return true;
       final parsed = DateTime.tryParse(e.date!);
       if (parsed == null) return true;
       return !parsed.isBefore(DateTime(now.year, now.month, now.day));

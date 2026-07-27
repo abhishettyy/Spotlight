@@ -414,7 +414,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       {/* Bottom Stats and Footer container */}
       <div className="w-full flex flex-col items-center gap-6 pb-6 px-6 z-10">
         {/* Stats Section */}
-        <div className="max-w-6xl mx-auto w-full border-t border-white/5 pt-6">
+        <div className="max-w-6xl mx-auto w-full pt-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.8 }}
@@ -434,7 +434,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </div>
 
         {/* Footer */}
-        <footer className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
+        <footer className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4 pt-4">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
           <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
           <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
@@ -966,6 +966,7 @@ function EventsPage({
   const [showBannerPasswordModal, setShowBannerPasswordModal] = useState(false);
   const [bannerPassword, setBannerPassword] = useState("");
   const [bannerPasswordError, setBannerPasswordError] = useState<string | null>(null);
+  const [showBannerPassword, setShowBannerPassword] = useState(false);
 
   useEffect(() => {
     setShowParticipants(false);
@@ -3957,10 +3958,11 @@ export default function App() {
   // Auto-navigate to dashboard when signed in (covers both Clerk login and local login)
   // Triggers from any non-dashboard view so after login you always end up on dashboard
   useEffect(() => {
+    if (!isClerkLoaded && !isLocalSignedIn) return; // wait for Clerk to settle
     if (isSignedIn && (view === "auth" || view === "landing")) {
       updateNavigation("dashboard");
     }
-  }, [isSignedIn, view]);
+  }, [isSignedIn, view, isClerkLoaded]);
 
   useEffect(() => {
     const fn = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -4044,7 +4046,7 @@ export default function App() {
           }}
         />
       )}
-      {(view === "dashboard" || (isSignedIn && view !== "auth" && view !== "landing")) && (
+      {(view === "dashboard" || (isClerkLoaded && isSignedIn && view !== "auth" && view !== "landing")) && (
       <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="dashboard-root"
         >
