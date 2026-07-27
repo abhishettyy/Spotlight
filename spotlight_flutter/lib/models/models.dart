@@ -136,6 +136,7 @@ class EventModel {
   final int? teamSizeLimit;
   final String? upiId;
   final String? clubName;
+  final String? clubId;
   final int registrationCount;
   final DateTime? registrationDeadline;
 
@@ -153,6 +154,7 @@ class EventModel {
     this.teamSizeLimit,
     this.upiId,
     this.clubName,
+    this.clubId,
     required this.registrationCount,
     this.registrationDeadline,
   });
@@ -173,6 +175,7 @@ class EventModel {
       teamSizeLimit: json['teamSizeLimit'] ?? json['team_size_limit'],
       upiId: club?['upiId'] ?? club?['upi_id'],
       clubName: club?['name'],
+      clubId: json['club_id'] ?? json['clubId'] ?? club?['id'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationDeadline: json['registration_deadline'] != null
           ? DateTime.tryParse(json['registration_deadline'].toString())

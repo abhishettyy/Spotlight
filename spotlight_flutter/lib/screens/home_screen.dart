@@ -11,6 +11,7 @@ import '../core/user_provider.dart';
 import '../core/notifications_provider.dart';
 import '../core/clubs_provider.dart';
 import 'all_events_screen.dart';
+import 'club_events_screen.dart';
 import 'package:spotlight_flutter/models/models.dart';
 import '../core/smooth_route.dart';
 import 'package:provider/provider.dart';
@@ -559,57 +560,63 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Row(
                       children: clubsProvider.clubs.map((club) {
-                        return Container(
-                          margin: const EdgeInsets.only(right: 20),
-                          width: 72,
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF1E1E1E)
-                                      : Colors.grey[100],
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: isDark
-                                          ? Colors.white12
-                                          : Colors.grey[200]!),
-                                ),
-                                child: (club.logoUrl != null &&
-                                        club.logoUrl!.isNotEmpty &&
-                                        club.logoUrl !=
-                                            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3')
-                                    ? ClipOval(
-                                        child: CustomImage(
-                                          url: club.logoUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Icon(Icons.groups_outlined,
-                                                  color: subTextColor),
-                                        ),
-                                      )
-                                    : Icon(Icons.groups_outlined,
-                                        color: subTextColor),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                club.name,
-                                style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: textColor),
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            SmoothRoute(
+                              builder: (_) => ClubEventsScreen(club: club),
+                            ),
                           ),
-                        );
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 20),
+                            width: 72,
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 64,
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1E1E1E)
+                                        : Colors.grey[100],
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: isDark
+                                            ? Colors.white12
+                                            : Colors.grey[200]!),
+                                  ),
+                                  child: (club.logoUrl != null &&
+                                          club.logoUrl!.isNotEmpty &&
+                                          club.logoUrl !=
+                                              'https://images.unsplash.com/photo-1516321318423-f06f85e504b3')
+                                      ? ClipOval(
+                                          child: CustomImage(
+                                            url: club.logoUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Icon(Icons.groups_outlined,
+                                                    color: subTextColor),
+                                          ),
+                                        )
+                                      : Icon(Icons.groups_outlined,
+                                          color: subTextColor),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  club.name,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor),
+                                  maxLines: 2,
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
                       }).toList(),
                     ),
                   );
