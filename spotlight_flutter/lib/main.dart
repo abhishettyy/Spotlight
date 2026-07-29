@@ -81,7 +81,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
     try {
 
-      final minSplash = Future.delayed(const Duration(milliseconds: 3500));
+      final minSplash = Future.value(); // no delay — go straight in
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.tryAutoLogin();
@@ -91,9 +91,8 @@ class _AppInitializerState extends State<AppInitializer> {
         final apiService = ApiService();
 
         try {
-
           final user = await apiService.getProfile(authProvider.userId!)
-              .timeout(const Duration(seconds: 8));
+              .timeout(const Duration(seconds: 4));
           if (user != null) userProvider.setCurrentUser(user);
         } catch (_) {
 
@@ -104,14 +103,10 @@ class _AppInitializerState extends State<AppInitializer> {
 
       if (mounted) setState(() => _initialized = true);
     } catch (e) {
-
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isAuthenticated) {
-
-        await Future.delayed(const Duration(milliseconds: 3500));
         if (mounted) setState(() => _initialized = true);
       } else {
-
         if (mounted) setState(() => _hasError = true);
       }
     }

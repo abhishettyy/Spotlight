@@ -282,6 +282,7 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
 function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister: () => void }) {
   const [scrollY, setScrollY] = useState(0);
   const [stats, setStats] = useState({ liveEvents: 0, registrations: 0, clubs: 0 });
+  const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'contact' | null>(null);
 
   useEffect(() => {
     fetchPublicStats().then(data => {
@@ -316,11 +317,6 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       >
         <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
           <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
-          <div className="hidden md:flex items-center gap-8 text-sm">
-            {["Platform", "Events", "About"].map(l => (
-              <a key={l} href="#" onClick={e => e.preventDefault()} className="text-white/50 hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>{l}</a>
-            ))}
-          </div>
           <button onClick={onEnter}
             className="text-sm px-5 py-2 rounded-full text-white/85 hover:text-white transition-all duration-400"
             style={{ border: "1.5px solid rgba(255,255,255,0.2)" }}
@@ -353,68 +349,67 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         ))}
       </div>
 
-      {/* Hero Content Section */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-24 pb-4 w-full max-w-4xl mx-auto z-10 relative">
-        <motion.div
-          initial={{ opacity: 0, y: 70 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center"
-        >
-          <motion.p
-            initial={{ opacity: 0, letterSpacing: "0.2em" }}
-            animate={{ opacity: 1, letterSpacing: "clamp(0.18em, 1.5vw, 0.55em)" }}
-            transition={{ duration: 2, delay: 0.2 }}
-            className="text-[11px] uppercase text-center"
-            style={{ color: "#f9fafb", fontFamily: FM, marginBottom: "1.2rem" }}
-          >Event Management Platform</motion.p>
-
-          <motion.h1
-            initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
-            animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-            className="leading-none text-white select-none text-center" style={{
-            fontFamily: F_LOGO, fontWeight: 600,
-            fontSize: "clamp(2rem, 10vw, 12rem)",
-            letterSpacing: "-0.02em",
-            textShadow: "0 0 100px rgba(255,255,255,0.15)",
-            marginTop: "0px",
-            marginBottom: "1.2rem"
-          }}>SPOTLIGHT</motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 1.2 }}
-            className="text-lg md:text-2xl max-w-xl mx-auto text-center"
-            style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB, marginTop: "0px" }}
-          >
-            Manage Events{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Through Motion.</span>
-          </motion.p>
-
+      {/* Hero + Stats Content Section (Initial Viewport Fold) */}
+      <div className="min-h-screen flex flex-col justify-between px-6 pt-24 pb-6 w-full max-w-5xl mx-auto z-10 relative">
+        {/* Hero Section */}
+        <section className="flex-1 flex flex-col items-center justify-center text-center py-6">
           <motion.div
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row gap-4 items-center"
-            style={{ marginTop: "2.5rem" }}
+            initial={{ opacity: 0, y: 70 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center"
           >
-            <motion.button
-              whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onEnter}
-              className="cursor-pointer group relative flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
-              style={{ cursor: "pointer" }}
-            >
-              <span className="pointer-events-none">Enter Dashboard</span>
-              <ArrowRight size={15} className="absolute right-5 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      </section>
+            <motion.p
+              initial={{ opacity: 0, letterSpacing: "0.2em" }}
+              animate={{ opacity: 1, letterSpacing: "clamp(0.18em, 1.5vw, 0.55em)" }}
+              transition={{ duration: 2, delay: 0.2 }}
+              className="text-[11px] uppercase text-center mb-5 md:mb-6 tracking-[0.3em]"
+              style={{ color: "#f9fafb", fontFamily: FM }}
+            >Event Management Platform</motion.p>
 
-      {/* Bottom Stats and Footer container */}
-      <div className="w-full flex flex-col items-center gap-6 pb-6 px-6 z-10">
-        {/* Stats Section */}
-        <div className="max-w-6xl mx-auto w-full pt-6">
+            <motion.h1
+              initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
+              animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              className="leading-none text-white select-none text-center w-full flex items-center justify-center mx-auto" style={{
+              fontFamily: F_LOGO, fontWeight: 600,
+              fontSize: "clamp(2rem, 10vw, 12rem)",
+              letterSpacing: "-0.02em",
+              textShadow: "0 0 100px rgba(255,255,255,0.15)",
+              marginTop: "0px",
+              marginBottom: "0.8rem"
+            }}>SPOTLIGHT</motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ delay: 0.7, duration: 1.2 }}
+              className="text-lg md:text-2xl max-w-xl mx-auto text-center"
+              style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB, marginTop: "0px" }}
+            >
+              The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Event Management Hub.</span>
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col sm:flex-row gap-4 items-center mt-6"
+            >
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onEnter}
+                className="cursor-pointer group relative flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
+                style={{ cursor: "pointer" }}
+              >
+                <span className="pointer-events-none">Enter Dashboard</span>
+                <ArrowRight size={15} className="absolute right-5 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* Stats Section (Visible on initial screen) */}
+        <div className="w-full pt-2 pb-2 -mt-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.8 }}
@@ -432,18 +427,115 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
             ))}
           </motion.div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <footer className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4 pt-4">
+      {/* Footer Bar (Visible only after scrolling down) */}
+      <div className="w-full max-w-6xl mx-auto px-6 pt-16 pb-12 mt-16 z-10">
+        <footer className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
           <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
-          <div className="flex gap-6 text-xs" style={{ color: "#94a3b8" }}>
-            {["Privacy", "Terms", "Contact"].map(l => (
-              <a key={l} href="#" onClick={e => e.preventDefault()} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>{l}</a>
-            ))}
+          <div className="flex items-center gap-6 text-[11px]" style={{ color: "#94a3b8" }}>
+            <button onClick={() => setActiveModal('privacy')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Privacy</button>
+            <button onClick={() => setActiveModal('terms')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Terms</button>
+            <button onClick={() => setActiveModal('contact')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Contact Us</button>
           </div>
         </footer>
       </div>
+
+      {/* Individual Modals for Privacy, Terms, Contact Us */}
+      <AnimatePresence>
+        {activeModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-6">
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto flex flex-col" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-white" style={{ fontFamily: FC }}>
+                    {activeModal === 'privacy' && 'Dashboard Privacy Policy'}
+                    {activeModal === 'terms' && 'Dashboard Terms of Service'}
+                    {activeModal === 'contact' && 'Contact Us'}
+                  </h3>
+                  <p className="text-xs text-[#999] mt-1" style={{ fontFamily: FB }}>
+                    {activeModal === 'contact' ? 'Reach out to Spotlight Support' : 'Last Updated: July 26, 2026'}
+                  </p>
+                </div>
+                <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-[#ccc] leading-relaxed border-t border-b border-white/5 py-6 text-left" style={{ fontFamily: FB }}>
+                {activeModal === 'privacy' && (
+                  <>
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Information We Collect From Clubs</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Participant Information Available to Clubs</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Handling Participant Information</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">Clubs must process participant data strictly to organize and conduct the event. You must not sell or share participant data with third parties, use it for unrelated spam/marketing, or store downloaded lists insecurely.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Third-Party Services</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">We rely on secure authentication services, Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
+                    </div>
+                  </>
+                )}
+
+                {activeModal === 'terms' && (
+                  <>
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">About the Spotlight Club Dashboard</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Club Authentication</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">We provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Participant Data Compliance</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed">Clubs must handle participant registrations responsibly. Downloading participant data for third-party commercial use or unauthorized solicitation is strictly prohibited.</p>
+                    </div>
+                  </>
+                )}
+
+                {activeModal === 'contact' && (
+                  <>
+                    <div>
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Reach Out For Support</h4>
+                      <p className="text-xs text-[#bbbbbb] leading-relaxed mb-4">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support directly at:</p>
+                      <a 
+                        href="mailto:spotlightapp.help@gmail.com" 
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F03D4E]/10 border border-[#F03D4E]/30 text-[#F03D4E] hover:bg-[#F03D4E]/20 text-xs font-semibold transition-all"
+                      >
+                        <Mail size={16} />
+                        <span>spotlightapp.help@gmail.com</span>
+                      </a>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/5">
+                      <h4 className="text-white font-semibold text-sm mb-1.5">Response Guidelines</h4>
+                      <p className="text-xs text-[#888] leading-relaxed">Our support team reviews requests within 24-48 hours. Please include your registered Club Name and Email Address in your message.</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button onClick={() => setActiveModal(null)} className="px-6 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all font-semibold" style={{ fontFamily: FB }}>Close</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
@@ -2751,7 +2843,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         </div>
 
         {}
-        <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="p-6 md:p-8 rounded-3xl space-y-3" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white" style={{ fontFamily: FB }}>Save All Settings</p>
@@ -2759,6 +2851,13 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             </div>
             <button onClick={handleSaveInit} disabled={!isDirty || isSaving} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
+          <AnimatePresence>
+            {successMsg && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-400 text-sm font-medium pt-2 flex items-center justify-end gap-1.5" style={{ fontFamily: FB }}>
+                {successMsg}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Contact Us */}
@@ -2782,14 +2881,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             </a>
           </div>
         </div>
-
-        <AnimatePresence>
-          {successMsg && (
-            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-400 text-sm font-medium px-1" style={{ fontFamily: FB }}>
-              {successMsg}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <AnimatePresence>
           {showPasswordPrompt && (

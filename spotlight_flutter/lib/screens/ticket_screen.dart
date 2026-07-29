@@ -808,44 +808,31 @@ class _TicketScreenState extends State<TicketScreen> {
 
   Widget _statusBadge(String status) {
     final upper = status.toUpperCase();
-    Color bg;
-    IconData icon;
+
+    Color textColor;
     String label;
 
     switch (upper) {
       case 'CONFIRMED':
-        bg = Colors.green.withOpacity(0.9);
-        icon = Icons.check_circle_outline;
+        textColor = const Color(0xFF22C55E);
         label = 'Confirmed';
         break;
       case 'PENDING':
-        bg = Colors.orange.withOpacity(0.85);
-        icon = Icons.pending_outlined;
+        textColor = const Color(0xFFFDE68A);
         label = 'Pending';
         break;
       default:
-        bg = Colors.black.withOpacity(0.6);
-        icon = Icons.info_outline;
+        textColor = Colors.white70;
         label = status;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 13),
-          const SizedBox(width: 4),
-          Text(label,
-              style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600)),
-        ],
+    return Text(
+      label,
+      style: GoogleFonts.inter(
+        color: textColor,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.3,
       ),
     );
   }
