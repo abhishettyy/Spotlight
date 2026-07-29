@@ -8,6 +8,7 @@ import '../core/saved_events_provider.dart';
 import '../models/models.dart';
 import 'event_details_screen.dart';
 import '../core/smooth_route.dart';
+import '../core/custom_toast.dart';
 import '../widgets/custom_image.dart';
 
 class AllEventsScreen extends StatefulWidget {
@@ -315,7 +316,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${event.registrationCount} Participants going',
+                            '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: Colors.white70,
@@ -339,7 +340,15 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                               builder: (context, savedProvider, _) {
                                 final isSaved = savedProvider.isSaved(event.id);
                                 return GestureDetector(
-                                  onTap: () => savedProvider.toggleSave(event.id),
+                                  onTap: () {
+                                    final wasSaved = savedProvider.isSaved(event.id);
+                                    savedProvider.toggleSave(event.id);
+                                    showSpotlightToast(
+                                      context,
+                                      wasSaved ? 'Event removed from saved list' : 'Event saved to your list',
+                                      icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_added_rounded,
+                                    );
+                                  },
                                   child: Icon(
                                     isSaved ? Icons.bookmark : Icons.bookmark_border,
                                     color: isSaved ? cs.primary : Colors.white70,

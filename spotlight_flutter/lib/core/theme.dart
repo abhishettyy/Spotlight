@@ -108,6 +108,21 @@ class SpotlightTheme {
         ),
         hintStyle: GoogleFonts.inter(color: Colors.grey[500]),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF1E1E1E),
+        contentTextStyle: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFF333333), width: 1),
+        ),
+        elevation: 10,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      ),
     );
   }
 
@@ -174,6 +189,21 @@ class SpotlightTheme {
           borderSide: BorderSide.none,
         ),
         hintStyle: GoogleFonts.inter(color: lightGray),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF242222),
+        contentTextStyle: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withOpacity(0.12), width: 1),
+        ),
+        elevation: 10,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       ),
     );
   }

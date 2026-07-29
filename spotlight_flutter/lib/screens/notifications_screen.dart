@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../core/notifications_provider.dart';
 import '../core/notification_prefs_provider.dart';
+import '../core/custom_toast.dart';
 import '../models/models.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -147,16 +148,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           onTap: () async {
                             await provider.markAllRead();
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text(
-                                      'All notifications marked as read'),
-                                  backgroundColor: cs.primary,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12)),
-                                ),
+                              showSpotlightToast(
+                                context,
+                                'All notifications marked as read',
+                                icon: Icons.done_all_rounded,
                               );
                             }
                           },
@@ -220,6 +215,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         ),
                                         onDismissed: (direction) {
                                           provider.deleteNotification(n.id);
+                                          showSpotlightToast(
+                                            context,
+                                            'Notification deleted',
+                                            icon: Icons.delete_outline_rounded,
+                                          );
                                         },
                                         child: GestureDetector(
                                           behavior: HitTestBehavior.opaque,

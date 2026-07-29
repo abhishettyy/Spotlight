@@ -161,17 +161,22 @@ class EventModel {
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
     final club = json['club'] as Map<String, dynamic>?;
+    String categoryStr = json['category'] ?? 'Other';
+    if (categoryStr == 'Individual') categoryStr = 'Solo';
+    String? typeStr = json['eventType'] ?? json['event_type'];
+    if (typeStr == 'Individual') typeStr = 'Solo';
+
     return EventModel(
       id: json['id'],
       title: json['title'] ?? 'No Title',
       venue: json['venue'] ?? 'No Venue',
       imageUrl: json['image_url'] ?? json['imageUrl'],
-      category: json['category'] ?? 'Other',
+      category: categoryStr,
       price: (json['price'] ?? 0).toDouble(),
       description: json['description'],
       date: json['date'],
       qrUrl: json['qrUrl'] ?? json['qr_url'],
-      eventType: json['eventType'] ?? json['event_type'],
+      eventType: typeStr,
       teamSizeLimit: json['teamSizeLimit'] ?? json['team_size_limit'],
       upiId: club?['upiId'] ?? club?['upi_id'],
       clubId: club?['id'],
@@ -184,6 +189,27 @@ class EventModel {
               : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'venue': venue,
+        'imageUrl': imageUrl,
+        'category': category,
+        'price': price,
+        'description': description,
+        'date': date,
+        'qrUrl': qrUrl,
+        'eventType': eventType,
+        'teamSizeLimit': teamSizeLimit,
+        'registrationCount': registrationCount,
+        'registrationDeadline': registrationDeadline?.toIso8601String(),
+        'club': {
+          'id': clubId,
+          'name': clubName,
+          'upiId': upiId,
+        },
+      };
 }
 
 class ClubModel {

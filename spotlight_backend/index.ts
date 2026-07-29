@@ -47,6 +47,12 @@ app.use('/api/clubs', clubsRouter);
 app.use('/api', registrationsRouter); 
 app.use('/api/notifications', notificationsRouter);
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server cleanly listening on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server cleanly listening on port ${PORT}`);
+  });
+}
+
+export default app;
+export { app };
+

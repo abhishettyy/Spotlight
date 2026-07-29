@@ -443,7 +443,7 @@ class _TicketScreenState extends State<TicketScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${event.registrationCount} Participants going',
+                            '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: Colors.white70,

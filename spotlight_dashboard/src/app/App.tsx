@@ -183,7 +183,7 @@ function useSpotlightData() {
           console.log("[SpotlightData] load() clubId found, loading dashboard stats for clubId:", freshProfile.clubId);
           await loadDashboardStats(freshProfile.clubId, token);
         } else {
-          console.log("[SpotlightData] load() profile has no clubId, skipping stats load.");
+          console.log("[SpotlightData] load() profile has no clubId, sin kipping stats load.");
         }
       } catch (e) {
         console.error("Failed to load dashboard data:", e);
@@ -2277,8 +2277,8 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
       if (formData.minTeamSize && formData.teamSizeLimit) {
         const min = parseInt(formData.minTeamSize);
         const max = parseInt(formData.teamSizeLimit);
-        if (min < 1) errors.minTeamSize = "Min team size must be at least 1.";
-        if (max < 1) errors.teamSizeLimit = "Max team size must be at least 1.";
+        if (min < 2) errors.minTeamSize = "Min team size must be at least 2.";
+        if (max < 2) errors.teamSizeLimit = "Max team size must be at least 2.";
         if (!errors.minTeamSize && !errors.teamSizeLimit && min > max) errors.minTeamSize = "Min size cannot exceed max size.";
       }
     }

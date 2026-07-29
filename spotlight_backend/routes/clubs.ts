@@ -154,7 +154,7 @@ router.post('/registration-keys/generate', async (req: Request, res: Response): 
   }
 });
 
-router.post('/', async (req: Request, res: Response): Promise<any> => {
+router.post('/', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const { name, email, logoUrl, password, registrationKey } = req.body;
     if (!name || !email) {

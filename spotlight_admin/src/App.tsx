@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Key,
   Copy,
   Check,
   RefreshCw,
   Plus,
-  Shield,
-  Lock,
   LogOut,
   Sparkles,
   Search,
-  Building2,
-  Clock,
   CheckCircle2,
   XCircle,
   AlertCircle

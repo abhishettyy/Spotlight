@@ -44,22 +44,30 @@ router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<an
     const userId = req.auth!.userId;
     const { full_name, usn, branch, phone, year, sem } = req.body;
 
-    if (usn) {
-      const existing = await prisma.profile.findUnique({ where: { usn } });
+    const currentProfile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!currentProfile) {
+      return res.status(404).json({ error: 'Profile not found.' });
+    }
+
+    let finalUsn = currentProfile.usn;
+    if (!finalUsn && usn && typeof usn === 'string' && usn.trim()) {
+      const cleanUsn = usn.trim();
+      const existing = await prisma.profile.findUnique({ where: { usn: cleanUsn } });
       if (existing && existing.id !== userId) {
         return res.status(400).json({ error: 'This USN is already registered to another account.' });
       }
+      finalUsn = cleanUsn;
     }
 
     const profile = await prisma.profile.update({
       where: { id: userId },
       data: {
-        fullName: full_name || undefined,
-        usn: usn || undefined,
-        branch: branch || undefined,
-        phone: phone || undefined,
-        year: year ? parseInt(year, 10) : undefined,
-        sem: sem ? parseInt(sem, 10) : undefined,
+        fullName: full_name !== undefined ? (full_name ? String(full_name).trim() : null) : undefined,
+        usn: finalUsn !== undefined ? (finalUsn ? String(finalUsn).trim() : null) : undefined,
+        branch: branch !== undefined ? (branch ? String(branch).trim() : null) : undefined,
+        phone: phone !== undefined ? (phone ? String(phone).trim() : null) : undefined,
+        year: year !== undefined && year !== '' ? parseInt(String(year), 10) : undefined,
+        sem: sem !== undefined && sem !== '' ? parseInt(String(sem), 10) : undefined,
       }
     });
 

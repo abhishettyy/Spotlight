@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/theme_provider.dart';
@@ -12,6 +13,7 @@ import 'ticket_screen.dart';
 import 'registered_clubs_screen.dart';
 import 'privacy_policy_screen.dart';
 import '../core/smooth_route.dart';
+import '../core/custom_toast.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -42,8 +44,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       print('Error launching Play Store: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open Play Store. App is not published yet.')),
+        showSpotlightToast(
+          context,
+          'Could not open Play Store. App is not published yet.',
+          isError: true,
         );
       }
     }
@@ -79,10 +83,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       print('Error launching support email: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open email app. Please email support at spotlightapp.help@gmail.com'),
-          ),
+        showSpotlightToast(
+          context,
+          'Could not open email app. Please email support at spotlightapp.help@gmail.com',
+          isError: true,
         );
       }
     }
@@ -122,12 +126,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = userProvider.currentUser;
 
-    final nameController    = TextEditingController(text: user?.name ?? '');
-    final usnController     = TextEditingController(text: user?.usn ?? '');
-    final branchController  = TextEditingController(text: user?.branch ?? '');
-    final phoneController   = TextEditingController(text: user?.phone ?? '');
-    final yearController    = TextEditingController(text: user?.year ?? '');
-    final semController     = TextEditingController(text: user?.sem ?? '');
+    final initialName   = user?.name ?? '';
+    final initialUsn    = user?.usn ?? '';
+    final initialBranch = user?.branch ?? '';
+    final initialPhone  = user?.phone ?? '';
+    final initialYear   = user?.year ?? '';
+    final initialSem    = user?.sem ?? '';
+
+    final nameController    = TextEditingController(text: initialName);
+    final usnController     = TextEditingController(text: initialUsn);
+    final branchController  = TextEditingController(text: initialBranch);
+    final phoneController   = TextEditingController(text: initialPhone);
+    final yearController    = TextEditingController(text: initialYear);
+    final semController     = TextEditingController(text: initialSem);
 
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
@@ -143,10 +154,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final fieldBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
         final labelColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
-        InputDecoration fieldDecoration(String label, {String? hint}) {
+        InputDecoration fieldDecoration(String label, {String? hint, String? helperText}) {
           return InputDecoration(
             labelText: label,
             hintText: hint,
+            helperText: helperText,
+            helperStyle: GoogleFonts.inter(color: Colors.amber[800], fontSize: 11, fontWeight: FontWeight.w500),
             labelStyle: GoogleFonts.inter(color: labelColor, fontSize: 13),
             hintStyle: GoogleFonts.inter(color: labelColor.withOpacity(0.5), fontSize: 14),
             filled: true,
@@ -156,6 +169,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
             ),
@@ -175,8 +192,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
 
+        final bool hasUsnSet = user?.usn != null && user!.usn!.isNotEmpty;
+
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            void notifyChanged() => setSheetState(() {});
+
+            nameController.removeListener(notifyChanged);
+            nameController.addListener(notifyChanged);
+
+            usnController.removeListener(notifyChanged);
+            usnController.addListener(notifyChanged);
+
+            branchController.removeListener(notifyChanged);
+            branchController.addListener(notifyChanged);
+
+            phoneController.removeListener(notifyChanged);
+            phoneController.addListener(notifyChanged);
+
+            yearController.removeListener(notifyChanged);
+            yearController.addListener(notifyChanged);
+
+            semController.removeListener(notifyChanged);
+            semController.addListener(notifyChanged);
+
+            final bool hasChanges =
+                nameController.text.trim() != initialName.trim() ||
+                (!hasUsnSet && usnController.text.trim().toUpperCase() != initialUsn.trim().toUpperCase()) ||
+                branchController.text.trim().toUpperCase() != initialBranch.trim().toUpperCase() ||
+                phoneController.text.trim() != initialPhone.trim() ||
+                yearController.text.trim() != initialYear.trim() ||
+                semController.text.trim() != initialSem.trim();
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -232,12 +278,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         TextFormField(
                           controller: usnController,
-                          style: GoogleFonts.inter(color: cs.onBackground),
+                          enabled: !hasUsnSet,
+                          style: GoogleFonts.inter(color: hasUsnSet ? labelColor : cs.onBackground),
                           textCapitalization: TextCapitalization.characters,
-                          decoration: fieldDecoration('USN', hint: 'e.g. 4MH23IS001'),
+                          decoration: fieldDecoration(
+                            'USN',
+                            hint: hasUsnSet ? 'USN is locked' : 'e.g. 4MH23IS001',
+                            helperText: hasUsnSet ? '🔒 USN cannot be edited once set' : 'Note: USN cannot be edited once set',
+                          ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'USN is required';
-                            if (v.trim().length < 5) return 'Enter a valid USN';
+                            if (!hasUsnSet) {
+                              if (v == null || v.trim().isEmpty) return 'USN is required';
+                              if (v.trim().length < 5) return 'Enter a valid USN';
+                            }
                             return null;
                           },
                         ),
@@ -293,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: isSaving
+                            onPressed: (isSaving || !hasChanges)
                                 ? null
                                 : () async {
                                     if (!formKey.currentState!.validate()) return;
@@ -324,14 +377,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         userProvider.setCurrentUser(updatedUser);
                                       }
 
-                                      if (context.mounted) Navigator.pop(context);
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        showSpotlightToast(
+                                          context,
+                                          'Changes saved',
+                                          icon: Icons.check_circle_rounded,
+                                        );
+                                      }
                                     } catch (e) {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Error: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
+                                        showSpotlightToast(
+                                          context,
+                                          'Failed to update profile: $e',
+                                          isError: true,
                                         );
                                       }
                                     } finally {
@@ -711,43 +770,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: hasUsn 
-                                ? cs.primary 
-                                : (isDark ? const Color(0xFF2A2A2A) : Colors.grey[200]),
-                            borderRadius: BorderRadius.circular(20),
-                            border: hasUsn
-                                ? null
-                                : (isDark
-                                    ? null
-                                    : Border.all(
-                                        color: Colors.grey.shade300,
-                                        width: 1.0,
-                                      )),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                hasUsn ? Icons.check : Icons.pending_outlined,
-                                color: hasUsn 
-                                    ? Colors.white 
-                                    : (isDark ? Colors.white70 : Colors.grey[700]),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                hasUsn ? 'Verified' : 'Pending',
-                                style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: hasUsn 
-                                        ? Colors.white 
-                                        : (isDark ? Colors.white70 : Colors.grey[700])),
-                              ),
-                            ],
+                        InkWell(
+                          onTap: hasUsn
+                              ? () {
+                                  Clipboard.setData(ClipboardData(text: usn));
+                                  showSpotlightToast(
+                                    context,
+                                    'USN copied to clipboard!',
+                                    icon: Icons.copy_rounded,
+                                  );
+                                }
+                              : null,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: hasUsn 
+                                  ? cs.primary 
+                                  : (isDark ? const Color(0xFF2A2A2A) : Colors.grey[200]),
+                              borderRadius: BorderRadius.circular(20),
+                              border: hasUsn
+                                  ? null
+                                  : (isDark
+                                      ? null
+                                      : Border.all(
+                                          color: Colors.grey.shade300,
+                                          width: 1.0,
+                                        )),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  hasUsn ? Icons.copy_rounded : Icons.pending_outlined,
+                                  color: hasUsn 
+                                      ? Colors.white 
+                                      : (isDark ? Colors.white70 : Colors.grey[700]),
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  hasUsn ? 'Copy' : 'Not set',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: hasUsn 
+                                          ? Colors.white 
+                                          : (isDark ? Colors.white70 : Colors.grey[700])),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

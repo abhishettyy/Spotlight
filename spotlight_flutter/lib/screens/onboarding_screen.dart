@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/api_service.dart';
 import '../core/user_provider.dart';
+import '../core/custom_toast.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -45,8 +46,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+        showSpotlightToast(
+          context,
+          '$e',
+          isError: true,
         );
       }
     } finally {
@@ -89,7 +92,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 48),
 
-                  _buildLabel('USN'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildLabel('USN'),
+                      Text(
+                        'Cannot be edited later',
+                        style: GoogleFonts.inter(fontSize: 11, color: Colors.amber[800], fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                   TextFormField(
                     controller: _usnController,
                     style: GoogleFonts.inter(color: cs.onBackground),

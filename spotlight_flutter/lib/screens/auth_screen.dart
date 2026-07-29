@@ -10,6 +10,7 @@ import '../core/user_provider.dart';
 import '../core/api_service.dart';
 import '../core/events_provider.dart';
 import '../core/notifications_provider.dart';
+import '../core/custom_toast.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -63,6 +64,12 @@ class _AuthScreenState extends State<AuthScreen> {
         Provider.of<NotificationsProvider>(context, listen: false).load();
 
         if (mounted) {
+          showSpotlightToast(
+            context,
+            isLogin ? 'Signed in successfully!' : 'Account created successfully!',
+            icon: Icons.check_circle_rounded,
+          );
+
           if (user.isProfileIncomplete) {
             Navigator.pushReplacementNamed(context, '/onboarding');
           } else {
@@ -74,8 +81,10 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Auth Error: $e')),
+        showSpotlightToast(
+          context,
+          '$e',
+          isError: true,
         );
       }
     } finally {
@@ -231,6 +240,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   controller: _usnController,
                   labelText: 'USN',
                   hintText: 'Enter your USN',
+                  helperText: 'Note: USN cannot be edited once set',
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -281,8 +291,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     if (isLogin) {
                       if (_emailController.text.trim().isEmpty ||
                           _passwordController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please fill in all fields.')),
+                        showSpotlightToast(
+                          context,
+                          'Please fill in all fields.',
+                          isError: true,
                         );
                         return;
                       }
@@ -295,8 +307,10 @@ class _AuthScreenState extends State<AuthScreen> {
                           _yearController.text.trim().isEmpty ||
                           _semController.text.trim().isEmpty ||
                           _phoneController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please fill in all fields.')),
+                        showSpotlightToast(
+                          context,
+                          'Please fill in all fields.',
+                          isError: true,
                         );
                         return;
                       }
@@ -337,6 +351,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         Provider.of<NotificationsProvider>(context, listen: false).load();
 
                         if (mounted) {
+                          showSpotlightToast(
+                            context,
+                            isLogin ? 'Signed in successfully!' : 'Account created successfully!',
+                            icon: Icons.check_circle_rounded,
+                          );
+
                           if (user.isProfileIncomplete) {
                             Navigator.pushReplacementNamed(context, '/onboarding');
                           } else {
@@ -346,8 +366,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       }
                     } catch (e) {
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Auth Error: $e')),
+                        showSpotlightToast(
+                          context,
+                          '$e',
+                          isError: true,
                         );
                       }
                     } finally {
@@ -520,6 +542,7 @@ class _AuthScreenState extends State<AuthScreen> {
     required TextEditingController controller,
     required String labelText,
     required String hintText,
+    String? helperText,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
     Widget? suffixIcon,
@@ -551,6 +574,8 @@ class _AuthScreenState extends State<AuthScreen> {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: GoogleFonts.inter(color: subTextColor.withOpacity(0.6), fontSize: 15),
+            helperText: helperText,
+            helperStyle: GoogleFonts.inter(color: Colors.amber[800], fontSize: 11, fontWeight: FontWeight.w500),
             filled: true,
             fillColor: cs.surface,
             border: OutlineInputBorder(

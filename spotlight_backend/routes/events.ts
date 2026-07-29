@@ -18,25 +18,28 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
       orderBy: { eventDate: 'asc' },
     });
 
-    const mapped = events.map((e) => ({
-      id: e.id,
-      title: e.name,
-      venue: e.venue ?? 'TBD',
-      image_url: e.bannerUrl ?? null,
-      category: e.eventType ?? 'Other',
-      price: e.fee ?? 0,
-      description: e.description ?? '',
-      date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
-      eventType: e.eventType ?? 'Solo',
-      teamSizeLimit: e.teamSizeLimit,
-      minTeamSize: e.minTeamSize ?? null,
-      registration_deadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
-      registration_limit: e.registrationLimit,
-      club: e.club ? { id: e.club.id, name: e.club.name, upiId: e.club.upiId } : null,
-      qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
-      bannerUrl: e.bannerUrl ?? null,
-      registrationCount: e._count?.registrations ?? 0,
-    }));
+    const mapped = events.map((e) => {
+      const normalizedType = e.eventType === 'Individual' ? 'Solo' : (e.eventType ?? 'Solo');
+      return {
+        id: e.id,
+        title: e.name,
+        venue: e.venue ?? 'TBD',
+        image_url: e.bannerUrl ?? null,
+        category: normalizedType,
+        price: e.fee ?? 0,
+        description: e.description ?? '',
+        date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
+        eventType: normalizedType,
+        teamSizeLimit: e.teamSizeLimit,
+        minTeamSize: e.minTeamSize ?? null,
+        registration_deadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
+        registration_limit: e.registrationLimit,
+        club: e.club ? { id: e.club.id, name: e.club.name, upiId: e.club.upiId } : null,
+        qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
+        bannerUrl: e.bannerUrl ?? null,
+        registrationCount: e._count?.registrations ?? 0,
+      };
+    });
 
     return res.status(200).json({ events: mapped });
   } catch (error: any) {

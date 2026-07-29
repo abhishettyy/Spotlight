@@ -14,6 +14,7 @@ import 'all_events_screen.dart';
 import 'club_events_screen.dart';
 import 'package:spotlight_flutter/models/models.dart';
 import '../core/smooth_route.dart';
+import '../core/custom_toast.dart';
 import 'package:provider/provider.dart';
 import '../widgets/custom_image.dart';
 
@@ -106,16 +107,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           Consumer<UserProvider>(
                             builder: (context, userProvider, child) {
                               final name = userProvider.currentUser?.name ?? "User";
-                              return Text(
+                              return FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
                                 name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
-                                  fontSize: 24,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: textColor,
                                   letterSpacing: -0.5,
                                 ),
+                              ),
                               );
                             },
                           ),
@@ -232,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: GoogleFonts.inter(color: textColor),
                   onChanged: (v) => setState(() => _searchQuery = v.toLowerCase().trim()),
                   decoration: InputDecoration(
-                    hintText: 'Search events, clubs...',
+                    hintText: 'Search events...',
                     hintStyle: GoogleFonts.inter(color: subTextColor),
                     prefixIcon: Icon(Icons.search, color: subTextColor),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -576,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           child: Container(
                           margin: const EdgeInsets.only(right: 20),
-                          width: 72,
+                          width: 80,
                           child: Column(
                             children: [
                               Container(
@@ -613,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     color: textColor),
-                                maxLines: 2,
+                                maxLines: 1,
                                 textAlign: TextAlign.center,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -641,27 +646,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
     String day = '01';
     String month = 'JAN';
-    if (event.registrationDeadline != null) {
-      day = event.registrationDeadline!.day.toString().padLeft(2, '0');
-      final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-      month = months[event.registrationDeadline!.month - 1];
-    } else if (event.date != null) {
+    final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+    if (event.date != null && event.date!.trim().isNotEmpty) {
       final parsed = DateTime.tryParse(event.date!);
       if (parsed != null) {
         day = parsed.day.toString().padLeft(2, '0');
-        final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         month = months[parsed.month - 1];
       } else {
-        final parts = event.date!.split('-');
-        if (parts.length == 3) {
-          day = parts[2].padLeft(2, '0');
-          final mIndex = int.tryParse(parts[1]);
-          if (mIndex != null && mIndex >= 1 && mIndex <= 12) {
-            final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-            month = months[mIndex - 1];
+        final parts = event.date!.split(RegExp(r'[-/\s]'));
+        if (parts.length >= 3) {
+          if (parts[0].length == 4) {
+            day = parts[2].padLeft(2, '0');
+            final mIndex = int.tryParse(parts[1]);
+            if (mIndex != null && mIndex >= 1 && mIndex <= 12) month = months[mIndex - 1];
+          } else {
+            day = parts[0].padLeft(2, '0');
+            final mIndex = int.tryParse(parts[1]);
+            if (mIndex != null && mIndex >= 1 && mIndex <= 12) month = months[mIndex - 1];
           }
         }
       }
+    } else if (event.registrationDeadline != null) {
+      day = event.registrationDeadline!.day.toString().padLeft(2, '0');
+      month = months[event.registrationDeadline!.month - 1];
     }
 
     final imageUrl = event.imageUrl;
@@ -826,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${event.registrationCount} participants',
+                          '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: Colors.white70,
@@ -870,8 +878,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               Consumer<SavedEventsProvider>(
                                 builder: (context, savedProvider, _) {
                                   final isSaved = savedProvider.isSaved(event.id);
-                                  return GestureDetector(
-                                    onTap: () => savedProvider.toggleSave(event.id),
+                                    return GestureDetector(
+                                      onTap: () {
+                                        final wasSaved = savedProvider.isSaved(event.id);
+                                        savedProvider.toggleSave(event.id);
+                                        showSpotlightToast(
+                                          context,
+                                          wasSaved ? 'Event removed from saved list' : 'Event saved to your list',
+                                          icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_added_rounded,
+                                        );
+                                      },
                                     child: Icon(
                                       isSaved ? Icons.bookmark : Icons.bookmark_border,
                                       color: isSaved ? cs.primary : Colors.white70,

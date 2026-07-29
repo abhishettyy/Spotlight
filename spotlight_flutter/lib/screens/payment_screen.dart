@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/api_service.dart';
 import '../core/smooth_route.dart';
+import '../core/custom_toast.dart';
 import '../widgets/custom_image.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -61,15 +62,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _submitPayment() async {
     final utr = _utrController.text.trim();
     if (utr.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your Transaction ID / UTR number.')),
+      showSpotlightToast(
+        context,
+        'Please enter your Transaction ID / UTR number.',
+        isError: true,
       );
       return;
     }
 
     if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload a screenshot of your payment.')),
+      showSpotlightToast(
+        context,
+        'Please upload a screenshot of your payment.',
+        isError: true,
       );
       return;
     }
@@ -88,6 +93,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
       );
 
       if (mounted) {
+        showSpotlightToast(
+          context,
+          'Registration submitted successfully!',
+          icon: Icons.check_circle_rounded,
+        );
         Navigator.pushReplacement(
           context,
           SmoothRoute(builder: (_) => const PaymentPendingScreen()),
@@ -95,8 +105,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submission failed: $e')),
+        showSpotlightToast(
+          context,
+          'Submission failed: $e',
+          isError: true,
         );
       }
     } finally {
@@ -173,8 +185,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               icon: const Icon(Icons.copy_rounded, size: 20),
                               onPressed: () {
                                 Clipboard.setData(ClipboardData(text: widget.upiId!));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('UPI ID copied to clipboard!'), duration: Duration(seconds: 1)),
+                                showSpotlightToast(
+                                  context,
+                                  'UPI ID copied to clipboard!',
+                                  icon: Icons.copy_rounded,
                                 );
                               },
                             ),
@@ -197,8 +211,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             icon: const Icon(Icons.copy_rounded, size: 20),
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: displayCode));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Reference Code copied!'), duration: Duration(seconds: 1)),
+                              showSpotlightToast(
+                                context,
+                                'Reference Code copied!',
+                                icon: Icons.copy_rounded,
                               );
                             },
                           ),
