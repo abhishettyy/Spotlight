@@ -304,7 +304,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   const scrolled = scrollY > 40;
 
   return (
-    <div id="ls" className="h-screen w-screen overflow-hidden flex flex-col justify-between relative bg-background" style={{ scrollbarWidth: "none" }}>
+    <div id="ls" className="min-h-screen w-screen overflow-y-auto flex flex-col justify-between relative bg-background" style={{ scrollbarWidth: "none" }}>
 
       {}
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-700"
