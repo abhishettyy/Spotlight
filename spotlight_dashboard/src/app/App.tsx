@@ -281,7 +281,13 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
 
 function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister: () => void }) {
   const [scrollY, setScrollY] = useState(0);
-  const [stats, setStats] = useState({ liveEvents: 0, registrations: 0, clubs: 0 });
+  const [stats, setStats] = useState({
+    liveEvents: 0,
+    registrations: 0,
+    clubs: 0,
+    totalEvents: 0,
+    totalStudents: 0
+  });
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'contact' | null>(null);
 
   useEffect(() => {
@@ -289,7 +295,9 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       setStats({
         liveEvents: data.liveEvents || 0,
         registrations: data.registrations || 0,
-        clubs: data.clubs || 0
+        clubs: data.clubs || 0,
+        totalEvents: data.totalEvents || 0,
+        totalStudents: data.totalStudents || 0
       });
     }).catch(e => console.error("Failed to fetch public stats", e));
   }, []);
@@ -305,7 +313,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   const scrolled = scrollY > 40;
 
   return (
-    <div id="ls" className="min-h-screen w-screen overflow-y-auto flex flex-col justify-between relative bg-background" style={{ scrollbarWidth: "none" }}>
+    <div id="ls" className="h-screen w-screen overflow-hidden flex flex-col relative bg-background">
 
       {}
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-700"
@@ -337,8 +345,11 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           animation: "beamSweep 10s ease-in-out infinite",
         }} />
         {[
-          { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-12 top-36", y: [0, -14, 0], d: 5.5 },
-          { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-16 top-44", y: [0, 12, 0], d: 7 },
+          { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-[11%] top-[15%]", y: [0, -14, 0], d: 5.5 },
+          { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-[12%] top-[32%]", y: [0, 12, 0], d: 7 },
+          { label: `● ${stats.clubs} ACTIVE CLUBS`, delay: 0.7, x: "left-[6%] top-[48%]", y: [0, 15, 0], d: 6.2 },
+          { label: `${stats.totalEvents} EVENTS HOSTED`, delay: 2.2, x: "right-[10%] top-[65%]", y: [0, -10, 0], d: 6.8 },
+          { label: `${stats.totalStudents.toLocaleString()}+ REGISTERED STUDENTS`, delay: 1.1, x: "left-[11%] top-[82%]", y: [0, 12, 0], d: 7.5 },
         ].map(chip => (
           <motion.div key={chip.label}
             animate={{ y: chip.y }}
@@ -349,8 +360,8 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         ))}
       </div>
 
-      {/* Hero + Stats Content Section (Initial Viewport Fold) */}
-      <div className="min-h-screen flex flex-col justify-between px-6 pt-24 pb-6 w-full max-w-5xl mx-auto z-10 relative">
+      {/* Hero Content Section */}
+      <div className="flex-1 flex flex-col justify-between px-8 pt-24 pb-6 w-full max-w-5xl mx-auto z-10 relative">
         {/* Hero Section */}
         <section className="flex-1 flex flex-col items-center justify-center text-center py-6">
           <motion.div
@@ -408,30 +419,8 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           </motion.div>
         </section>
 
-        {/* Stats Section (Visible on initial screen) */}
-        <div className="w-full pt-2 pb-2 -mt-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.8 }}
-            className="flex flex-wrap justify-center gap-8 md:gap-16"
-          >
-            {[
-              { v: stats.liveEvents.toString(), l: "Active Events" },
-              { v: stats.registrations.toLocaleString(), l: "Registrations" },
-              { v: stats.clubs.toString(), l: "Clubs" }
-            ].map(s => (
-              <div key={s.l} className="text-center min-w-[100px]">
-                <p className="text-2xl md:text-3xl font-semibold text-white mb-1">{s.v}</p>
-                <p className="text-[10px] tracking-[0.4em] uppercase" style={{ color: "#f3f4f6", fontFamily: FM }}>{s.l}</p>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Footer Bar (Visible only after scrolling down) */}
-      <div className="w-full max-w-6xl mx-auto px-6 pt-16 pb-12 mt-16 z-10">
-        <footer className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Footer Bar */}
+        <footer className="w-full flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5 pt-4">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
           <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
           <div className="flex items-center gap-6 text-[11px]" style={{ color: "#94a3b8" }}>

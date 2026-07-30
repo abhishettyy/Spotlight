@@ -390,10 +390,20 @@ router.get('/public/stats', async (req: Request, res: Response): Promise<any> =>
 
     const clubs = await prisma.club.count();
 
+    const totalEvents = await prisma.event.count();
+
+    const totalStudents = await prisma.profile.count({
+      where: {
+        clubId: null,
+      },
+    });
+
     return res.status(200).json({
       liveEvents,
       registrations,
       clubs,
+      totalEvents,
+      totalStudents,
     });
   } catch (error: any) {
     console.error('Failed to fetch public stats:', error);

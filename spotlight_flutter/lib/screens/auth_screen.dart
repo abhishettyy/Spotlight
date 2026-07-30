@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/auth_provider.dart';
@@ -11,6 +12,7 @@ import '../core/api_service.dart';
 import '../core/events_provider.dart';
 import '../core/notifications_provider.dart';
 import '../core/custom_toast.dart';
+import 'privacy_policy_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -22,6 +24,31 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
   bool obscurePassword = true;
+
+  int _eventsCount = 0;
+  int _clubsCount = 0;
+  int _studentsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPublicStats();
+  }
+
+  Future<void> _loadPublicStats() async {
+    try {
+      final stats = await ApiService().fetchPublicStats();
+      if (mounted) {
+        setState(() {
+          _eventsCount = stats['totalEvents'] ?? stats['liveEvents'] ?? 0;
+          _clubsCount = stats['clubs'] ?? 0;
+          _studentsCount = stats['totalStudents'] ?? 0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load public stats on login: $e');
+    }
+  }
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -396,49 +423,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
-              // ── Social proof section (Sign In only) ──────────────────────
+              // ── Social Proof Stats & "Why Spotlight?" Section (Sign In only) ──
               if (isLogin) ...[
-                const SizedBox(height: 52),
-
-                // Avatar stack + joined count
-                Center(
-                  child: Column(
-                    children: [
-                      // Overlapping avatar circles
-                      SizedBox(
-                        height: 40,
-                        width: 120,
-                        child: Stack(
-                          children: [
-                            _avatarCircle(0,  const Color(0xFFE57373)),
-                            _avatarCircle(26, const Color(0xFF64B5F6)),
-                            _avatarCircle(52, const Color(0xFF81C784)),
-                            _avatarCircle(78, const Color(0xFFFFB74D)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Join 500+ students already on Spotlight',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white70 : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Discover events happening at your campus',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: subTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 36),
+                const SizedBox(height: 40),
 
                 // Stats row
                 Container(
@@ -453,24 +440,101 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _statItem(context, '20+', 'Events', isDark),
+                      _statItem(context, '${_eventsCount}+', 'Events', isDark),
                       _dividerLine(isDark),
-                      _statItem(context, '10+', 'Clubs', isDark),
+                      _statItem(context, '${_clubsCount}+', 'Clubs', isDark),
                       _dividerLine(isDark),
-                      _statItem(context, '500+', 'Students', isDark),
+                      _statItem(context, '${_studentsCount}+', 'Students', isDark),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 48),
+
+                // "Why Spotlight?" Section Title
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Why Spotlight?',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                _benefitItem(
+                  context,
+                  icon: Icons.explore_outlined,
+                  title: 'Discover campus events',
+                  subtitle: 'Find all university workshops, hackathons & fests in real-time.',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _benefitItem(
+                  context,
+                  icon: Icons.touch_app_outlined,
+                  title: 'Register in one tap',
+                  subtitle: 'Seamless quick registration for solo and team fests.',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _benefitItem(
+                  context,
+                  icon: Icons.workspace_premium_outlined,
+                  title: 'Earn certificates & rewards',
+                  subtitle: 'Automatically receive verified digital participation certificates.',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _benefitItem(
+                  context,
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Instant event notifications',
+                  subtitle: 'Stay updated with dynamic reminders and slot alerts.',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _benefitItem(
+                  context,
+                  icon: Icons.qr_code_scanner_outlined,
+                  title: 'Direct UPI & QR tickets',
+                  subtitle: 'Quick payment moderation with automated check-ins.',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 48),
 
                 // Terms line
                 Center(
-                  child: Text(
-                    'By signing in you agree to our Terms & Privacy Policy',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: subTextColor.withOpacity(0.55),
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'By signing in you agree to our ',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: subTextColor.withOpacity(0.55),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'Terms & Privacy Policy',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black87,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const PrivacyPolicyScreen(),
+                                ),
+                              );
+                            },
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -501,6 +565,61 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         child: Icon(Icons.person, color: Colors.white, size: 18),
       ),
+    );
+  }
+
+  Widget _benefitItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: cs.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: cs.primary,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: subTextColor,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

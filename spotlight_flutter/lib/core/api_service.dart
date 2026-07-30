@@ -601,4 +601,22 @@ class ApiService {
       throw AppException(formatExceptionMessage(e, 'Failed to update profile.'));
     }
   }
+
+  Future<Map<String, dynamic>> fetchPublicStats() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/public/stats'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw AppException('Failed to load public stats: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Failed to fetch public stats.'));
+    }
+  }
 }
