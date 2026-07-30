@@ -46,10 +46,35 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   String _formatDeadline(DateTime deadline) {
+    final local = deadline.toLocal();
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final hour = deadline.hour.toString().padLeft(2, '0');
-    final minute = deadline.minute.toString().padLeft(2, '0');
-    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year}  $hour:$minute';
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '${months[local.month - 1]} ${local.day}, ${local.year}  $hour:$minute';
+  }
+
+  String _formatDateTimeRange(DateTime? start, DateTime? end) {
+    if (start == null && end == null) return 'TBD';
+    final st = start ?? DateTime.now();
+    final en = end ?? DateTime(st.year, st.month, st.day, 23, 59);
+
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    String formatTime(DateTime d) {
+      final hourInt = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final amPm = d.hour >= 12 ? 'PM' : 'AM';
+      final minStr = d.minute.toString().padLeft(2, '0');
+      return '$hourInt:$minStr $amPm';
+    }
+
+    String formatDate(DateTime d) {
+      return '${months[d.month - 1]} ${d.day}, ${d.year}';
+    }
+
+    if (st.year == en.year && st.month == en.month && st.day == en.day) {
+      return '${formatDate(st)}  ·  ${formatTime(st)} - ${formatTime(en)}';
+    } else {
+      return '${formatDate(st)} (${formatTime(st)}) → ${formatDate(en)} (${formatTime(en)})';
+    }
   }
 
   Map<String, String> _parseDate(String? dateStr) {
@@ -57,7 +82,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       return {'day': '01', 'month': 'JAN', 'weekday': 'Monday', 'year': '2026'};
     }
     try {
-      final parsed = DateTime.tryParse(dateStr);
+      final parsed = DateTime.tryParse(dateStr)?.toLocal();
       if (parsed != null) {
         final months = [
           'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
@@ -135,7 +160,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final bool isChecking = _isRegistered == null;
     final bool alreadyRegistered = _isRegistered == true;
 
-    final dateData = _parseDate(date);
+    final dateData = _parseDate(event.startDate?.toIso8601String() ?? date);
 
     // Determine button state
     final bool buttonDisabled = isClosed || alreadyRegistered || isChecking;
@@ -211,7 +236,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _glassPill(event.category),
+                            Row(
+                              children: [
+                                _glassPill(event.category),
+                                if (event.isLive) ...[
+                                  const SizedBox(width: 8),
+                                  _liveTag(),
+                                ],
+                              ],
+                            ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
@@ -300,58 +333,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: cardBg,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      dateData['day']!,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: textPrimary,
-                                      ),
-                                    ),
-                                    Text(
-                                      dateData['month']!,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.0,
-                                        color: textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      dateData['weekday']!,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '9:00 AM',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        color: textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: cardBg,
@@ -361,6 +342,31 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   Icons.calendar_today_outlined,
                                   size: 20,
                                   color: textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Date & Time',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatDateTimeRange(event.startDate, event.effectiveEndDate),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -545,6 +551,51 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ),
+      );
+
+  Widget _liveTag() => ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEF4444),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFFEF4444),
+                        blurRadius: 6,
+                        spreadRadius: 1.5,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'LIVE NOW',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFEF4444),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

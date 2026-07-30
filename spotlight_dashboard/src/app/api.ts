@@ -152,6 +152,7 @@ export async function createEvent(data: {
   description?: string;
   venue?: string;
   eventDate?: string;
+  eventEndDate?: string;
   registrationDeadline?: string;
   fee?: number;
   registrationLimit?: number;
@@ -177,6 +178,7 @@ export async function updateEventDeadline(eventId: string, deadline: string, tok
 
 export async function updateEvent(eventId: string, data: {
   eventDate?: string;
+  eventEndDate?: string;
   registrationDeadline?: string;
   venue?: string;
   registrationLimit?: number;

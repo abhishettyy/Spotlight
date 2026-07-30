@@ -139,6 +139,43 @@ class EventModel {
   final String? clubName;
   final int registrationCount;
   final DateTime? registrationDeadline;
+  final DateTime? eventDate;
+  final DateTime? eventEndDate;
+
+  DateTime? get startDate {
+    if (eventDate != null) return eventDate;
+    if (date == null || date!.trim().isEmpty) return null;
+    return DateTime.tryParse(date!);
+  }
+
+  DateTime? get effectiveEndDate {
+    if (eventEndDate != null) return eventEndDate;
+    final st = startDate;
+    if (st == null) return null;
+    return DateTime(st.year, st.month, st.day, 23, 59, 59, 999);
+  }
+
+  bool get isLive {
+    final st = startDate;
+    final end = effectiveEndDate;
+    if (st == null || end == null) return false;
+    final now = DateTime.now();
+    return (now.isAfter(st) || now.isAtSameMomentAs(st)) && (now.isBefore(end) || now.isAtSameMomentAs(end));
+  }
+
+  bool get isUpcoming {
+    final end = effectiveEndDate;
+    if (end == null) return true;
+    final now = DateTime.now();
+    return now.isBefore(end);
+  }
+
+  bool get isPast {
+    final end = effectiveEndDate;
+    if (end == null) return false;
+    final now = DateTime.now();
+    return now.isAfter(end);
+  }
 
   EventModel({
     required this.id,
@@ -157,6 +194,8 @@ class EventModel {
     this.clubName,
     required this.registrationCount,
     this.registrationDeadline,
+    this.eventDate,
+    this.eventEndDate,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -183,9 +222,21 @@ class EventModel {
       clubName: club?['name'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationDeadline: json['registration_deadline'] != null
-          ? DateTime.tryParse(json['registration_deadline'].toString())
+          ? DateTime.tryParse(json['registration_deadline'].toString())?.toLocal()
           : json['registrationDeadline'] != null
-              ? DateTime.tryParse(json['registrationDeadline'].toString())
+              ? DateTime.tryParse(json['registrationDeadline'].toString())?.toLocal()
+              : null,
+      eventDate: json['eventDate'] != null
+          ? DateTime.tryParse(json['eventDate'].toString())?.toLocal()
+          : json['event_date'] != null
+              ? DateTime.tryParse(json['event_date'].toString())?.toLocal()
+              : json['date'] != null
+                  ? DateTime.tryParse(json['date'].toString())?.toLocal()
+                  : null,
+      eventEndDate: json['eventEndDate'] != null
+          ? DateTime.tryParse(json['eventEndDate'].toString())?.toLocal()
+          : json['event_end_date'] != null
+              ? DateTime.tryParse(json['event_end_date'].toString())?.toLocal()
               : null,
     );
   }
@@ -204,6 +255,8 @@ class EventModel {
         'teamSizeLimit': teamSizeLimit,
         'registrationCount': registrationCount,
         'registrationDeadline': registrationDeadline?.toIso8601String(),
+        'eventDate': eventDate?.toIso8601String(),
+        'eventEndDate': eventEndDate?.toIso8601String(),
         'club': {
           'id': clubId,
           'name': clubName,
@@ -243,6 +296,43 @@ class TicketEventInfo {
   final String? clubName;
   final String? clubLogoUrl;
   final String? imageUrl;
+  final DateTime? eventDate;
+  final DateTime? eventEndDate;
+
+  DateTime? get startDate {
+    if (eventDate != null) return eventDate;
+    if (date == null || date!.trim().isEmpty) return null;
+    return DateTime.tryParse(date!);
+  }
+
+  DateTime? get effectiveEndDate {
+    if (eventEndDate != null) return eventEndDate;
+    final st = startDate;
+    if (st == null) return null;
+    return DateTime(st.year, st.month, st.day, 23, 59, 59, 999);
+  }
+
+  bool get isLive {
+    final st = startDate;
+    final end = effectiveEndDate;
+    if (st == null || end == null) return false;
+    final now = DateTime.now();
+    return (now.isAfter(st) || now.isAtSameMomentAs(st)) && (now.isBefore(end) || now.isAtSameMomentAs(end));
+  }
+
+  bool get isUpcoming {
+    final end = effectiveEndDate;
+    if (end == null) return true;
+    final now = DateTime.now();
+    return now.isBefore(end);
+  }
+
+  bool get isPast {
+    final end = effectiveEndDate;
+    if (end == null) return false;
+    final now = DateTime.now();
+    return now.isAfter(end);
+  }
 
   TicketEventInfo({
     required this.id,
@@ -255,6 +345,8 @@ class TicketEventInfo {
     this.clubName,
     this.clubLogoUrl,
     this.imageUrl,
+    this.eventDate,
+    this.eventEndDate,
   });
 
   factory TicketEventInfo.fromJson(Map<String, dynamic> json) {
@@ -265,11 +357,21 @@ class TicketEventInfo {
       venue: json['venue'] ?? 'TBD',
       date: json['date'],
       price: (json['price'] ?? 0).toDouble(),
-      qrUrl: json['qr_url'],
+      qrUrl: json['qr_url'] ?? json['qrUrl'],
       clubId: club?['id'],
       clubName: club?['name'],
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'],
-      imageUrl: json['image_url'],
+      imageUrl: json['image_url'] ?? json['imageUrl'],
+      eventDate: json['eventDate'] != null
+          ? DateTime.tryParse(json['eventDate'].toString())?.toLocal()
+          : json['event_date'] != null
+              ? DateTime.tryParse(json['event_date'].toString())?.toLocal()
+              : null,
+      eventEndDate: json['eventEndDate'] != null
+          ? DateTime.tryParse(json['eventEndDate'].toString())?.toLocal()
+          : json['event_end_date'] != null
+              ? DateTime.tryParse(json['event_end_date'].toString())?.toLocal()
+              : null,
     );
   }
 }
@@ -355,10 +457,8 @@ class TicketModel {
   }
 
   bool get isUpcoming {
-    if (event?.date == null) return true;
-    final date = DateTime.tryParse(event!.date!);
-    if (date == null) return true;
-    return date.isAfter(DateTime.now());
+    if (event == null) return true;
+    return event!.isUpcoming;
   }
 
   bool get isConfirmed =>

@@ -4,7 +4,7 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
-  X, Key, Copy, Settings, LogOut, Mail, Menu
+  X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle
 } from "lucide-react";
 import {
   useAuth,
@@ -23,10 +23,43 @@ const FB = "'Manrope', sans-serif";
 type View = "landing" | "auth" | "dashboard";
 type AuthTab = "login" | "register";
 
+const formatEventHeaderDate = (eventDateStr?: string | null, endDateStr?: string | null) => {
+  if (!eventDateStr) return "TBD";
+  const start = new Date(eventDateStr);
+  if (isNaN(start.getTime())) return eventDateStr;
+
+  let end: Date;
+  if (endDateStr) {
+    const parsedEnd = new Date(endDateStr);
+    end = !isNaN(parsedEnd.getTime())
+      ? parsedEnd
+      : new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
+  } else {
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
+  }
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const formatDate = (d: Date) => `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  const formatTime = (d: Date) => {
+    const h = d.getHours() % 12 === 0 ? 12 : d.getHours() % 12;
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
+    return `${h}:${m} ${ampm}`;
+  };
+
+  if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth() && start.getDate() === end.getDate()) {
+    return `${formatDate(start)} · ${formatTime(start)} - ${formatTime(end)}`;
+  } else {
+    return `${formatDate(start)} (${formatTime(start)}) → ${formatDate(end)} (${formatTime(end)})`;
+  }
+};
+
 interface ClubEvent {
   id: string;
   title: string;
   date: string | null;
+  eventDate?: string | null;
+  eventEndDate?: string | null;
   venue: string;
   capacity: number;
   type: string;
@@ -1036,11 +1069,12 @@ function EventsPage({
   const [showApprovals, setShowApprovals] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ date: "", deadline: "", venue: "", capacity: "" });
-  const [editOriginal, setEditOriginal] = useState({ date: "", deadline: "", venue: "", capacity: "" });
+  const [editForm, setEditForm] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "" });
+  const [editOriginal, setEditOriginal] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "" });
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [showEditPasswordModal, setShowEditPasswordModal] = useState(false);
   const [editPassword, setEditPassword] = useState("");
+  const [showEditPasswordText, setShowEditPasswordText] = useState(false);
   const [editPasswordError, setEditPasswordError] = useState<string | null>(null);
   const [updatingEvent, setUpdatingEvent] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
@@ -1068,6 +1102,15 @@ function EventsPage({
     : [];
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
+  const isEventFinished = activeEvent 
+    ? (activeEvent.status === "previous" || (() => {
+        if (!activeEvent.date) return false;
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const d = new Date(activeEvent.date + 'T23:59:59');
+        return d < todayStart;
+      })())
+    : false;
   const pending  = registrations.filter(r => r.status?.toLowerCase() === "pending");
   const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
 
@@ -1118,6 +1161,7 @@ function EventsPage({
   }, [selectedEventId]);
 
   const handleApprove = async (id: string, e: React.MouseEvent) => {
+    if (isEventFinished) return;
     try {
 
       const x = e.clientX / window.innerWidth;
@@ -1152,6 +1196,7 @@ function EventsPage({
   };
 
   const handleReject = async (id: string) => {
+    if (isEventFinished) return;
     try {
       const token = await getToken();
       // Optimistic UI: mark as REJECTED immediately
@@ -1241,6 +1286,13 @@ function EventsPage({
               <button onClick={() => setShowApprovals(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all self-start sm:self-auto" style={{ fontFamily: FB }}>Return to Event</button>
             </div>
 
+            {isEventFinished && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center gap-2.5" style={{ fontFamily: FB }}>
+                <AlertTriangle size={16} className="flex-shrink-0" />
+                <span>This event has finished. Approving or rejecting pending registrations is disabled.</span>
+              </div>
+            )}
+
             {/* Pending requests table */}
             <div>
               <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Pending Requests ({pending.length})</p>
@@ -1311,13 +1363,23 @@ function EventsPage({
                               <td className="p-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
                                   <button
-                                    onClick={(e) => handleApprove(req.id, e)}
-                                    className="px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[11px] font-bold border border-green-500/20 transition-all flex items-center gap-1.5"
+                                    disabled={isEventFinished}
+                                    onClick={(e) => !isEventFinished && handleApprove(req.id, e)}
+                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                                      isEventFinished 
+                                        ? 'bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50' 
+                                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/20'
+                                    }`}
                                     style={{ fontFamily: FB }}
                                   ><Check size={12} /> Approve</button>
                                   <button
-                                    onClick={() => handleReject(req.id)}
-                                    className="px-3 py-1.5 rounded-lg bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] text-[11px] font-bold border border-[#F03D4E]/20 transition-all flex items-center gap-1.5"
+                                    disabled={isEventFinished}
+                                    onClick={() => !isEventFinished && handleReject(req.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                                      isEventFinished 
+                                        ? 'bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50' 
+                                        : 'bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/20'
+                                    }`}
                                     style={{ fontFamily: FB }}
                                   ><X size={12} /> Reject</button>
                                 </div>
@@ -1695,7 +1757,7 @@ function EventsPage({
               </div>
               <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
               <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: "#f9fafb", fontFamily: FB }}>
-                 <span className="flex items-center gap-1.5"><Calendar size={12} />{activeEvent.date}</span>
+                 <span className="flex items-center gap-1.5"><Calendar size={12} />{formatEventHeaderDate(activeEvent.eventDate || activeEvent.date, activeEvent.eventEndDate)}</span>
                  <span className="flex items-center gap-1.5"><MapPin size={12} />{activeEvent.venue}</span>
               </div>
             </div>
@@ -1738,14 +1800,23 @@ function EventsPage({
                      return `${year}-${month}-${day}T${hours}:${mins}`;
                    };
 
+                   const startDateVal = formatLocalDateStr(activeEvent.eventDate || activeEvent.date);
+                   let defaultEndDateVal = formatLocalDateStr(activeEvent.eventEndDate);
+                   if (!defaultEndDateVal && startDateVal) {
+                     const datePart = startDateVal.split('T')[0];
+                     defaultEndDateVal = `${datePart}T23:59`;
+                   }
+
                    setEditForm({
-                     date: formatLocalDateStr(activeEvent.date),
+                     date: startDateVal,
+                     endDate: defaultEndDateVal,
                      deadline: formatLocalDateStr(activeEvent.registrationDeadline),
                      venue: activeEvent.venue || "",
                      capacity: activeEvent.capacity ? String(activeEvent.capacity) : "",
                    });
                    setEditOriginal({
-                     date: formatLocalDateStr(activeEvent.date),
+                     date: startDateVal,
+                     endDate: defaultEndDateVal,
                      deadline: formatLocalDateStr(activeEvent.registrationDeadline),
                      venue: activeEvent.venue || "",
                      capacity: activeEvent.capacity ? String(activeEvent.capacity) : "",
@@ -1773,29 +1844,42 @@ function EventsPage({
             <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
               {}
               <div 
-                onClick={() => setShowApprovals(true)}
-                className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
+                onClick={() => {
+                  if (!isEventFinished) setShowApprovals(true);
+                }}
+                className={`p-5 rounded-2xl flex items-center gap-5 transition-all duration-300 ${
+                  isEventFinished ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-white/[0.03] hover:border-white/10'
+                }`}
                 style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "280px" }}
                 onMouseEnter={e => {
+                  if (isEventFinished) return;
                   e.currentTarget.style.background = "rgba(255,255,255,0.03)";
                   e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
                   e.currentTarget.style.transform = "translateY(-2px)";
                 }}
                 onMouseLeave={e => {
+                  if (isEventFinished) return;
                   e.currentTarget.style.background = "rgba(255,255,255,0.015)";
                   e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
                   e.currentTarget.style.transform = "none";
                 }}
               >
                 <div className="relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <CheckCircle size={20} className="text-white/70" />
-                  {pending.length > 0 && (
+                  <CheckCircle size={20} className={isEventFinished ? "text-white/30" : "text-white/70"} />
+                  {!isEventFinished && pending.length > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-[#F03D4E] text-white text-[10px] font-bold flex items-center justify-center" style={{ fontFamily: FM }}>{pending.length}</span>
                   )}
                 </div>
                 <div>
-                  <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Registration Approval</h3>
-                  <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Review & approve pending requests</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className={`font-medium text-lg leading-tight ${isEventFinished ? 'text-white/40' : 'text-white'}`} style={{ fontFamily: FC }}>Registration Approval</h3>
+                    {isEventFinished && (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Closed</span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: isEventFinished ? "#666" : "#888", fontFamily: FB }}>
+                    {isEventFinished ? "Disabled (Event has ended)" : "Review & approve pending requests"}
+                  </p>
                 </div>
               </div>
 
@@ -1862,11 +1946,26 @@ function EventsPage({
                     <p className="text-xs text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Update event details. Name, type, team size and payment cannot be changed.</p>
 
                     <div className="space-y-5">
-                      {/* Event Date */}
+                      {/* Event Start Date */}
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Date &amp; Time</label>
-                        <GlassDatePicker value={editForm.date} onChange={v => { setEditForm(p => ({...p, date: v})); setEditErrors(e => ({...e, date: ""})); }} />
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Start Date &amp; Time</label>
+                        <GlassDatePicker value={editForm.date} onChange={v => {
+                          let newEnd = editForm.endDate;
+                          if (v && (!editForm.endDate || editForm.endDate.split('T')[0] === editForm.date.split('T')[0])) {
+                            const datePart = v.split('T')[0];
+                            newEnd = `${datePart}T23:59`;
+                          }
+                          setEditForm(p => ({...p, date: v, endDate: newEnd}));
+                          setEditErrors(e => ({...e, date: "", endDate: ""}));
+                        }} />
                         {editErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.date}</p>}
+                      </div>
+
+                      {/* Event End Date */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event End Date &amp; Time</label>
+                        <GlassDatePicker value={editForm.endDate} onChange={v => { setEditForm(p => ({...p, endDate: v})); setEditErrors(e => ({...e, endDate: ""})); }} defaultTime="23:59" />
+                        {editErrors.endDate && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.endDate}</p>}
                       </div>
 
                       {/* Registration Deadline */}
@@ -1895,11 +1994,13 @@ function EventsPage({
                       onClick={() => {
                         const now = new Date();
                         const errs: Record<string, string> = {};
-                        if (!editForm.date) errs.date = "Event date is required.";
-                        else if (new Date(editForm.date) <= now) errs.date = "Event date must be in the future.";
+                        if (!editForm.date) errs.date = "Event start date is required.";
+                        else if (editForm.date !== editOriginal.date && new Date(editForm.date) <= now) errs.date = "Event start date must be in the future.";
+                        if (!editForm.endDate) errs.endDate = "Event end date is required.";
+                        else if (editForm.date && new Date(editForm.endDate) < new Date(editForm.date)) errs.endDate = "End date & time must be at or after start date.";
                         if (!editForm.deadline) errs.deadline = "Registration deadline is required.";
-                        else if (new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
-                        else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event date.";
+                        else if (editForm.deadline !== editOriginal.deadline && new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
+                        else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event start date.";
                         if (!editForm.venue.trim()) errs.venue = "Venue is required.";
                         if (!editForm.capacity) errs.capacity = "Capacity is required.";
                         else if (parseInt(editForm.capacity) < 1) errs.capacity = "Capacity must be at least 1.";
@@ -1912,6 +2013,7 @@ function EventsPage({
                       }}
                       disabled={updatingEvent || (
                         editForm.date === editOriginal.date &&
+                        editForm.endDate === editOriginal.endDate &&
                         editForm.deadline === editOriginal.deadline &&
                         editForm.venue.trim() === editOriginal.venue.trim() &&
                         editForm.capacity === editOriginal.capacity
@@ -1937,49 +2039,60 @@ function EventsPage({
 
                     <div className="space-y-1.5 mb-6">
                       <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
-                      <input
-                        autoFocus
-                        type="password"
-                        placeholder="Enter password"
-                        value={editPassword}
-                        onChange={e => setEditPassword(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === "Enter" && !updatingEvent) {
-                            (async () => {
-                              if (!editPassword) {
-                                setEditPasswordError("Password is required to save changes.");
-                                return;
-                              }
-                              setUpdatingEvent(true);
-                              setEditPasswordError(null);
-                              try {
-                                const token = await getToken();
-                                if (token && activeEvent) {
-                                  await updateEvent(activeEvent.id, {
-                                    eventDate: editForm.date || undefined,
-                                    registrationDeadline: editForm.deadline || undefined,
-                                    venue: editForm.venue || undefined,
-                                    registrationLimit: editForm.capacity ? parseInt(editForm.capacity) : undefined,
-                                    password: editPassword,
-                                  }, token);
-                                  await refreshEvents();
-                                  setShowEditPasswordModal(false);
-                                  setShowEditModal(false);
-                                  setEditPassword("");
+                      <div className="relative">
+                        <input
+                          autoFocus
+                          type={showEditPasswordText ? "text" : "password"}
+                          placeholder="Enter password"
+                          value={editPassword}
+                          onChange={e => setEditPassword(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && !updatingEvent) {
+                              (async () => {
+                                if (!editPassword) {
+                                  setEditPasswordError("Password is required to save changes.");
+                                  return;
                                 }
-                              } catch (err: any) {
-                                setEditPasswordError(sanitizeErrorMessage(err, "Incorrect password. Please try again."));
-                              } finally {
-                                setUpdatingEvent(false);
-                              }
-                            })();
-                          }
-                        }}
-                        className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
-                        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
-                        onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                        onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                      />
+                                setUpdatingEvent(true);
+                                setEditPasswordError(null);
+                                try {
+                                  const token = await getToken();
+                                  if (token && activeEvent) {
+                                    await updateEvent(activeEvent.id, {
+                                      eventDate: editForm.date || undefined,
+                                      eventEndDate: editForm.endDate || undefined,
+                                      registrationDeadline: editForm.deadline || undefined,
+                                      venue: editForm.venue || undefined,
+                                      registrationLimit: editForm.capacity ? parseInt(editForm.capacity) : undefined,
+                                      password: editPassword,
+                                    }, token);
+                                    await refreshEvents();
+                                    setShowEditPasswordModal(false);
+                                    setShowEditModal(false);
+                                    setEditPassword("");
+                                    setShowEditPasswordText(false);
+                                  }
+                                } catch (err: any) {
+                                  setEditPasswordError(sanitizeErrorMessage(err, "Incorrect password. Please try again."));
+                                } finally {
+                                  setUpdatingEvent(false);
+                                }
+                              })();
+                            }
+                          }}
+                          className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all"
+                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+                          onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
+                          onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditPasswordText(!showEditPasswordText)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {showEditPasswordText ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
                     </div>
 
                     {editPasswordError && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{editPasswordError}</p>}
@@ -2046,7 +2159,7 @@ function EventsPage({
         <div>
           <h2 className="text-lg font-medium text-white mb-5" style={{ fontFamily: FB }}>Upcoming Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {EVENTS.filter(e => e.status === "upcoming").map((ev, i) => {
+            {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
               const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
               return (
@@ -2074,16 +2187,23 @@ function EventsPage({
                       <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
                       <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                     </div>
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
-                      background: "rgba(240,61,78,0.05)",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      color: "#f9fafb",
-                      fontFamily: FM,
-                    }}>Upcoming</span>
+                    {ev.status === "live" ? (
+                      <span className="text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 flex items-center gap-1.5 font-bold" style={{ fontFamily: FM }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                        LIVE NOW
+                      </span>
+                    ) : (
+                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
+                        background: "rgba(240,61,78,0.05)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        color: "#f9fafb",
+                        fontFamily: FM,
+                      }}>Upcoming</span>
+                    )}
                   </div>
                   <h3 className="text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
                   <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#f3f4f6" }}>
-                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
+                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{formatEventHeaderDate(ev.eventDate || ev.date, ev.eventEndDate)}</span>
                     {ev.registrationDeadline && (
                       <span className="flex items-center gap-1.5 text-xs text-[#f59e0b]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2107,7 +2227,7 @@ function EventsPage({
                 </motion.div>
               );
             })}
-            {EVENTS.filter(e => e.status === "upcoming").length === 0 && (
+            {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").length === 0 && (
               <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
                 No upcoming events yet.
               </div>
@@ -2141,7 +2261,7 @@ function EventsPage({
                   </div>
                   <h3 className="text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
                   <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#94a3b8" }}>
-                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{ev.date ?? 'TBD'}</span>
+                    <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{formatEventHeaderDate(ev.eventDate || ev.date, ev.eventEndDate)}</span>
                     {ev.registrationDeadline && (
                       <span className="flex items-center gap-1.5 text-xs text-[#94a3b8]/70">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2182,7 +2302,17 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
   const [currentMonth, setCurrentMonth] = useState(dateObj.getMonth());
   const [currentYear, setCurrentYear] = useState(dateObj.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(value ? dateObj : null);
-  const [timeStr, setTimeStr] = useState(value ? (value.includes("T") ? value.split("T")[1] : defaultTime) : defaultTime);
+  const [timeStr, setTimeStr] = useState(() => {
+    if (value) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+      }
+    }
+    return defaultTime;
+  });
 
   useEffect(() => {
     if (value) {
@@ -2191,9 +2321,9 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
         setSelectedDate(d);
         setCurrentMonth(d.getMonth());
         setCurrentYear(d.getFullYear());
-        if (value.includes("T")) {
-          setTimeStr(value.split("T")[1]);
-        }
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        setTimeStr(`${hh}:${mm}`);
       }
     } else {
       setSelectedDate(null);
@@ -2224,7 +2354,7 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
   return (
     <div className="relative">
       <div onClick={() => setOpen(!open)} className="w-full rounded-xl px-4 py-3 text-sm text-white cursor-pointer flex items-center justify-between transition-all" style={{ background: "rgba(255,255,255,0.02)", border: open ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
-        <span className={value ? "text-white" : "text-[#888]"}>{value ? (() => { const d = new Date(value); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${h}:${m}`; })() : "Select Date & Time"}</span>
+        <span className={value ? "text-white" : "text-[#888]"}>{value ? (() => { const d = new Date(value); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const h = d.getHours() % 12 === 0 ? 12 : d.getHours() % 12; const m = String(d.getMinutes()).padStart(2,'0'); const ampm = d.getHours() >= 12 ? 'PM' : 'AM'; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${h}:${m} ${ampm}`; })() : "Select Date & Time"}</span>
         <Calendar size={14} className="text-[#d1d5db]" />
       </div>
 
@@ -2284,7 +2414,7 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
 
 function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null }) {
   const [formData, setFormData] = useState({
-    title: "", desc: "", date: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
+    title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
     eventType: "Solo", teamSizeLimit: "", minTeamSize: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
@@ -2341,11 +2471,13 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
     const errors: Record<string, string> = {};
     const now = new Date();
     if (!formData.title.trim()) errors.title = "Event name is required.";
-    if (!formData.date) errors.date = "Event date & time is required.";
-    else if (new Date(formData.date) <= now) errors.date = "Event date must be in the future.";
+    if (!formData.date) errors.date = "Event start date & time is required.";
+    else if (new Date(formData.date) <= now) errors.date = "Event start date must be in the future.";
+    if (!formData.endDate) errors.endDate = "Event end date & time is required.";
+    else if (formData.date && new Date(formData.endDate) < new Date(formData.date)) errors.endDate = "End date & time must be at or after start date & time.";
     if (!formData.deadline) errors.deadline = "Registration deadline is required.";
     else if (new Date(formData.deadline) <= now) errors.deadline = "Registration deadline must be in the future.";
-    else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event date.";
+    else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event start date.";
     if (!formData.desc.trim()) errors.desc = "Description is required.";
     if (!formData.venue.trim()) errors.venue = "Venue is required.";
     if (!formData.capacity) errors.capacity = "Capacity is required.";
@@ -2393,6 +2525,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         description: formData.desc || undefined,
         venue: formData.venue || undefined,
         eventDate: formData.date || undefined,
+        eventEndDate: formData.endDate || undefined,
         fee: formData.type === "paid" ? parseInt(formData.amount) || 0 : 0,
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
@@ -2444,16 +2577,30 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
           )}
         </div>
 
+        <div className="space-y-1.5">
+          <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Name</label>
+          <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.title ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.title} onChange={e => { setFormData(p => ({...p, title: e.target.value})); setFieldErrors(fe => ({...fe, title: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.title ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.title ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+          {fieldErrors.title && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.title}</p>}
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Name</label>
-            <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.title ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.title} onChange={e => { setFormData(p => ({...p, title: e.target.value})); setFieldErrors(fe => ({...fe, title: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.title ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.title ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
-            {fieldErrors.title && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.title}</p>}
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Start Date &amp; Time</label>
+            <GlassDatePicker value={formData.date} onChange={v => {
+              let defaultEnd = formData.endDate;
+              if (v && (!formData.endDate || (formData.date && formData.endDate.split('T')[0] === formData.date.split('T')[0]))) {
+                const datePart = v.split('T')[0];
+                defaultEnd = `${datePart}T23:59`;
+              }
+              setFormData(p => ({...p, date: v, endDate: defaultEnd}));
+              setFieldErrors(fe => ({...fe, date: "", endDate: ""}));
+            }} />
+            {fieldErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.date}</p>}
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Date & Time</label>
-            <GlassDatePicker value={formData.date} onChange={v => { setFormData(p => ({...p, date: v})); setFieldErrors(fe => ({...fe, date: ""})); }} />
-            {fieldErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.date}</p>}
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>End Date &amp; Time</label>
+            <GlassDatePicker value={formData.endDate} onChange={v => { setFormData(p => ({...p, endDate: v})); setFieldErrors(fe => ({...fe, endDate: ""})); }} defaultTime="23:59" />
+            {fieldErrors.endDate && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.endDate}</p>}
           </div>
         </div>
 
@@ -3771,7 +3918,7 @@ function OverviewPage({
       {/* KPI Cards — live data */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => e.status === 'upcoming').length} upcoming`,  delay: 0    },
+          { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').length} active`,  delay: 0    },
           { label: "Total Registrations",   value: totalRegistrations, suffix: "",  sub: "Across all events",                                                   delay: 0.08 },
           { label: "Pending Approvals",     value: pendingCount,       suffix: "",  sub: "Awaiting your review",                                                delay: 0.16 },
         ].map(k => (
@@ -3805,11 +3952,11 @@ function OverviewPage({
         ))}
       </div>
 
-      {/* Upcoming Events strip — live */}
+      {/* Upcoming & Live Events strip — live */}
       <div>
         <div className="flex items-end justify-between mb-5">
           <div>
-            <p className="text-[11px] tracking-[0.5em] uppercase mb-1" style={{ color: "#f3f4f6", fontFamily: FM }}>Upcoming</p>
+            <p className="text-[11px] tracking-[0.5em] uppercase mb-1" style={{ color: "#f3f4f6", fontFamily: FM }}>Upcoming & Live</p>
             <h2 className="text-xl font-semibold text-white" style={{ fontFamily: FC }}>Events</h2>
           </div>
           <button className="group flex items-center gap-1.5 text-sm font-medium transition-all duration-300 text-white/70 hover:text-white cursor-pointer" style={{ fontFamily: FB }}
@@ -3820,13 +3967,13 @@ function OverviewPage({
           </button>
         </div>
 
-        {clubEvents.filter(e => e.status === 'upcoming').length === 0 ? (
+        {clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').length === 0 ? (
           <div className="p-8 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
             No upcoming events yet. <button onClick={() => onNavigate("create")} className="text-[#F03D4E] hover:underline">Create one →</button>
           </div>
         ) : (
           <div className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10" style={{ scrollbarWidth: "none" }}>
-            {clubEvents.filter(e => e.status === 'upcoming').map((ev, i) => (
+            {clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').map((ev, i) => (
               <motion.div key={ev.id}
                 initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
@@ -3853,11 +4000,18 @@ function OverviewPage({
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
                     <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                   </div>
-                  <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
+                  {ev.status === 'live' ? (
+                    <span className="text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 flex items-center gap-1.5 font-bold" style={{ fontFamily: FM }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      LIVE NOW
+                    </span>
+                  ) : (
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
+                  )}
                 </div>
                 <h3 className="text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>
                 <div className="flex items-center gap-3 mb-3" style={{ color: "#d1d5db" }}>
-                  <span className="flex items-center gap-1 text-[11px]"><Calendar size={9} />{ev.date ?? 'TBD'}</span>
+                  <span className="flex items-center gap-1 text-[11px]"><Calendar size={9} />{formatEventHeaderDate(ev.eventDate || ev.date, ev.eventEndDate)}</span>
                   <span className="flex items-center gap-1 text-[11px]"><MapPin size={9} />{ev.venue}</span>
                 </div>
                 {ev.registrationDeadline && (

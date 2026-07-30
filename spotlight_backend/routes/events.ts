@@ -28,7 +28,9 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         category: normalizedType,
         price: e.fee ?? 0,
         description: e.description ?? '',
-        date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
+        date: e.eventDate ? e.eventDate.toISOString() : null,
+        eventDate: e.eventDate ? e.eventDate.toISOString() : null,
+        eventEndDate: e.eventEndDate ? e.eventEndDate.toISOString() : null,
         eventType: normalizedType,
         teamSizeLimit: e.teamSizeLimit,
         minTeamSize: e.minTeamSize ?? null,
@@ -51,7 +53,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const { name, description, venue, eventDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, clubId, bannerUrl, qrUrl } = req.body;
+    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, clubId, bannerUrl, qrUrl } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
 
@@ -65,6 +67,10 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
       finalQrUrl = await uploadBase64Image(finalQrUrl, 'events/qrs');
     }
 
+    const startDate = eventDate ? new Date(eventDate) : new Date();
+    const defaultEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59, 999);
+    const finalEndDate = eventEndDate ? new Date(eventEndDate) : defaultEndDate;
+
     const event = await prisma.event.create({
       data: {
         name,
@@ -76,7 +82,8 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         fee: parsedFee,
         registrationLimit: registrationLimit ? parseInt(registrationLimit) : 100,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),
-        eventDate: eventDate ? new Date(eventDate) : new Date(),
+        eventDate: startDate,
+        eventEndDate: finalEndDate,
         clubId: clubId || "",
         bannerUrl: finalBannerUrl,
         qrUrl: finalQrUrl,
@@ -95,7 +102,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
 router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
-    const { eventDate, registrationDeadline, venue, registrationLimit, bannerUrl, password } = req.body;
+    const { eventDate, eventEndDate, registrationDeadline, venue, registrationLimit, bannerUrl, password } = req.body;
 
     const userId = req.auth!.userId;
     const profile = await prisma.profile.findUnique({ where: { id: userId } });
@@ -142,6 +149,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
       where: { id: id as string },
       data: {
         ...(eventDate ? { eventDate: new Date(eventDate) } : {}),
+        ...(eventEndDate ? { eventEndDate: new Date(eventEndDate) } : {}),
         ...(registrationDeadline ? { registrationDeadline: new Date(registrationDeadline) } : {}),
         ...(venue !== undefined ? { venue } : {}),
         ...(registrationLimit !== undefined ? { registrationLimit: parseInt(registrationLimit) } : {}),

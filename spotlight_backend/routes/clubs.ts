@@ -404,8 +404,24 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       orderBy: { eventDate: 'asc' },
     });
 
+    const getEventStatus = (eventDate: Date | null, eventEndDate?: Date | null): 'live' | 'upcoming' | 'previous' => {
+      if (!eventDate) return 'upcoming';
+      const now = new Date();
+      const startDate = new Date(eventDate);
+      let endDate: Date;
+      if (eventEndDate) {
+        endDate = new Date(eventEndDate);
+      } else {
+        endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59, 999);
+      }
+
+      if (now < startDate) return 'upcoming';
+      if (now >= startDate && now <= endDate) return 'live';
+      return 'previous';
+    };
+
     const upcomingEventsCount = clubEvents.filter(
-      e => e.eventDate && new Date(e.eventDate) >= new Date()
+      e => getEventStatus(e.eventDate, e.eventEndDate) !== 'previous'
     ).length;
 
     const registrations = await prisma.registration.findMany({
@@ -488,13 +504,15 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
     const mappedEvents = clubEvents.map(e => ({
       id: e.id,
       title: e.name,
-      date: e.eventDate ? e.eventDate.toISOString().split('T')[0] : null,
+      date: e.eventDate ? e.eventDate.toISOString() : null,
+      eventDate: e.eventDate ? e.eventDate.toISOString() : null,
+      eventEndDate: e.eventEndDate ? e.eventEndDate.toISOString() : null,
       venue: e.venue ?? 'TBD',
       capacity: e.registrationLimit ?? 0,
       type: e.eventType ?? 'Solo',
       club: e.club?.name ?? '',
       club_id: e.clubId,
-      status: e.eventDate && new Date(e.eventDate) < new Date() ? 'previous' : 'upcoming',
+      status: getEventStatus(e.eventDate, e.eventEndDate),
       price: e.fee,
       qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
       bannerUrl: e.bannerUrl ?? null,

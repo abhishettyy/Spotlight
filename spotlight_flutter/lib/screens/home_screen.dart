@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'event_details_screen.dart';
 import 'profile_screen.dart';
-import 'register_screen.dart';
 import 'notifications_screen.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
@@ -440,10 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final now = DateTime.now();
                   final filters = _buildFilters(provider.events);
                   final filteredEvents = provider.events.where((e) {
-                    final date =
-                        e.date != null ? DateTime.tryParse(e.date!) : null;
-                    final isUpcoming =
-                        date == null || date.isAfter(now);
+                    final isUpcoming = e.isUpcoming;
                     final matchesCategory = _activeFilter == 0 ||
                         (_activeFilter < filters.length &&
                             e.category.toLowerCase() ==
@@ -767,37 +763,92 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            if (event.clubName != null && event.clubName!.isNotEmpty)
-              Positioned(
-                top: 16,
-                left: 16,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        event.clubName!.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 1.0,
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Row(
+                children: [
+                  if (event.clubName != null && event.clubName!.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            event.clubName!.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  if (event.isLive) ...[
+                    if (event.clubName != null && event.clubName!.isNotEmpty)
+                      const SizedBox(width: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFFEF4444).withOpacity(0.6),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0xFFEF4444),
+                                      blurRadius: 6,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LIVE',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFFEF4444),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
+            ),
 
             Positioned(
               bottom: 20,

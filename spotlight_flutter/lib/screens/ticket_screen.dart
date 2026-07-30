@@ -574,7 +574,6 @@ class _TicketScreenState extends State<TicketScreen> {
     final title = event?.title ?? 'Unknown Event';
     final clubName = event?.clubName ?? '';
     final venue = event?.venue ?? 'TBD';
-    final isPending = ticket.isPending;
 
     String dateStr = 'TBD';
     String timeStr = '';
@@ -659,7 +658,7 @@ class _TicketScreenState extends State<TicketScreen> {
                   Positioned(
                     top: 14,
                     right: 14,
-                    child: _statusBadge(ticket.status),
+                    child: _statusBadge(ticket),
                   ),
                 ],
               ),
@@ -806,9 +805,42 @@ class _TicketScreenState extends State<TicketScreen> {
     );
   }
 
-  Widget _statusBadge(String status) {
-    final upper = status.toUpperCase();
+  Widget _statusBadge(TicketModel ticket) {
+    if (ticket.event != null && ticket.event!.isLive) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withOpacity(0.5), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              'LIVE NOW',
+              style: GoogleFonts.inter(
+                color: Colors.redAccent,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
+    final upper = ticket.status.toUpperCase();
     Color textColor;
     String label;
 
@@ -823,7 +855,7 @@ class _TicketScreenState extends State<TicketScreen> {
         break;
       default:
         textColor = Colors.white70;
-        label = status;
+        label = ticket.status;
     }
 
     return Text(

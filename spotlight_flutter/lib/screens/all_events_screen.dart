@@ -115,10 +115,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
 
                   final now = DateTime.now();
                   var events = provider.events.where((e) {
-                    final date =
-                        e.date != null ? DateTime.tryParse(e.date!) : null;
-                    final isUpcoming =
-                        date == null || date.isAfter(now);
+                    final isUpcoming = e.isUpcoming;
                     final matchesQuery = _query.isEmpty ||
                         e.title.toLowerCase().contains(_query) ||
                         e.venue.toLowerCase().contains(_query) ||

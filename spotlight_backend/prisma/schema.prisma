@@ -48,6 +48,7 @@ model Event {
   registrationLimit   Int            @map("registration_limit")
   registrationDeadline DateTime       @map("registration_deadline")
   eventDate           DateTime       @map("event_date")
+  eventEndDate        DateTime?      @map("event_end_date")
   qrUrl               String?        @map("qr_url")
   bannerUrl           String?        @map("banner_url") // Added to store event banners/posters
   registrations       Registration[]

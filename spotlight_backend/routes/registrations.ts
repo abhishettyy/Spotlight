@@ -55,6 +55,8 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
         title: r.event.name,
         venue: r.event.venue ?? 'TBD',
         date: r.event.eventDate ? r.event.eventDate.toISOString().split('T')[0] : null,
+        eventDate: r.event.eventDate ? r.event.eventDate.toISOString() : null,
+        eventEndDate: (r.event as any).eventEndDate ? new Date((r.event as any).eventEndDate).toISOString() : null,
 
         price: r.event.fee ?? 0,
         image_url: r.event.bannerUrl,
@@ -220,6 +222,11 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
     });
 
     if (!registration) return res.status(404).json({ error: 'Registration not found.' });
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (registration.event?.eventDate && new Date(registration.event.eventDate) < todayStart) {
+      return res.status(400).json({ error: 'Cannot approve registrations for an event that has already finished.' });
+    }
     if (registration.status === 'CONFIRMED') {
       return res.status(400).json({ error: 'Already confirmed.' });
     }
@@ -305,6 +312,11 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
     });
 
     if (!registration) return res.status(404).json({ error: 'Registration not found.' });
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (registration.event?.eventDate && new Date(registration.event.eventDate) < todayStart) {
+      return res.status(400).json({ error: 'Cannot reject registrations for an event that has already finished.' });
+    }
 
     const eventName = registration.event?.name ?? 'an event';
     const clubName = registration.event?.club?.name ?? 'the club';
