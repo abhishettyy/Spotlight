@@ -345,11 +345,11 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           animation: "beamSweep 10s ease-in-out infinite",
         }} />
         {[
-          { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-[11%] top-[15%]", y: [0, -14, 0], d: 5.5 },
-          { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-[12%] top-[32%]", y: [0, 12, 0], d: 7 },
-          { label: `● ${stats.clubs} ACTIVE CLUBS`, delay: 0.7, x: "left-[6%] top-[48%]", y: [0, 15, 0], d: 6.2 },
-          { label: `${stats.totalEvents} EVENTS HOSTED`, delay: 2.2, x: "right-[10%] top-[65%]", y: [0, -10, 0], d: 6.8 },
-          { label: `${stats.totalStudents.toLocaleString()}+ REGISTERED STUDENTS`, delay: 1.1, x: "left-[11%] top-[82%]", y: [0, 12, 0], d: 7.5 },
+          { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-[8%] top-[15%]", y: [0, -14, 0], d: 5.5 },
+          { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-[9%] top-[32%]", y: [0, 12, 0], d: 7 },
+          { label: `● ${stats.clubs} ACTIVE CLUBS`, delay: 0.7, x: "left-[5%] top-[48%]", y: [0, 15, 0], d: 6.2 },
+          { label: `${stats.totalEvents} EVENTS HOSTED`, delay: 2.2, x: "right-[8%] top-[65%]", y: [0, -10, 0], d: 6.8 },
+          { label: `${stats.totalStudents.toLocaleString()}+ REGISTERED STUDENTS`, delay: 1.1, x: "left-[8%] top-[82%]", y: [0, 12, 0], d: 7.5 },
         ].map(chip => (
           <motion.div key={chip.label}
             animate={{ y: chip.y }}
@@ -360,67 +360,69 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         ))}
       </div>
 
-      {/* Hero Content Section */}
-      <div className="flex-1 flex flex-col justify-between px-8 pt-24 pb-6 w-full max-w-5xl mx-auto z-10 relative">
-        {/* Hero Section */}
-        <section className="flex-1 flex flex-col items-center justify-center text-center py-6">
-          <motion.div
-            initial={{ opacity: 0, y: 70 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center"
-          >
-            <motion.p
-              initial={{ opacity: 0, letterSpacing: "0.2em" }}
-              animate={{ opacity: 1, letterSpacing: "clamp(0.18em, 1.5vw, 0.55em)" }}
-              transition={{ duration: 2, delay: 0.2 }}
-              className="text-[11px] uppercase text-center mb-5 md:mb-6 tracking-[0.3em]"
-              style={{ color: "#f9fafb", fontFamily: FM }}
-            >Event Management Platform</motion.p>
-
-            <motion.h1
-              initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
-              animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-              className="leading-none text-white select-none text-center w-full flex items-center justify-center mx-auto" style={{
-              fontFamily: F_LOGO, fontWeight: 600,
-              fontSize: "clamp(2rem, 10vw, 12rem)",
-              letterSpacing: "-0.02em",
-              textShadow: "0 0 100px rgba(255,255,255,0.15)",
-              marginTop: "0px",
-              marginBottom: "0.8rem"
-            }}>SPOTLIGHT</motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 1.2 }}
-              className="text-lg md:text-2xl max-w-xl mx-auto text-center"
-              style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB, marginTop: "0px" }}
-            >
-              The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Event Management Hub.</span>
-            </motion.p>
-
+      {/* Hero Content Section & Footer Wrapper */}
+      <div className="flex-1 flex flex-col justify-between z-10 relative">
+        {/* Centered Hero Section (constrained to max-w-5xl) */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pt-24 pb-6 w-full max-w-5xl mx-auto">
+          <section className="flex-1 flex flex-col items-center justify-center text-center py-6 w-full">
             <motion.div
-              initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col sm:flex-row gap-4 items-center mt-6"
+              initial={{ opacity: 0, y: 70 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center"
             >
-              <motion.button
-                whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onEnter}
-                className="cursor-pointer group relative flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
-                style={{ cursor: "pointer" }}
-              >
-                <span className="pointer-events-none">Enter Dashboard</span>
-                <ArrowRight size={15} className="absolute right-5 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </section>
+              <motion.p
+                initial={{ opacity: 0, letterSpacing: "0.2em" }}
+                animate={{ opacity: 1, letterSpacing: "clamp(0.18em, 1.5vw, 0.55em)" }}
+                transition={{ duration: 2, delay: 0.2 }}
+                className="text-[11px] uppercase text-center mb-5 md:mb-6 tracking-[0.3em]"
+                style={{ color: "#f9fafb", fontFamily: FM }}
+              >Event Management Platform</motion.p>
 
-        {/* Footer Bar */}
-        <footer className="w-full flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5 pt-4">
+              <motion.h1
+                initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
+                animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
+                transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                className="leading-none text-white select-none text-center w-full flex items-center justify-center mx-auto" style={{
+                fontFamily: F_LOGO, fontWeight: 600,
+                fontSize: "clamp(2rem, 10vw, 12rem)",
+                letterSpacing: "-0.02em",
+                textShadow: "0 0 100px rgba(255,255,255,0.15)",
+                marginTop: "0px",
+                marginBottom: "0.8rem"
+              }}>SPOTLIGHT</motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 1.2 }}
+                className="text-lg md:text-2xl max-w-xl mx-auto text-center"
+                style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB, marginTop: "0px" }}
+              >
+                The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Event Management Hub.</span>
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="flex flex-col sm:flex-row gap-4 items-center mt-6"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={onEnter}
+                  className="cursor-pointer group relative flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
+                  style={{ cursor: "pointer" }}
+                >
+                  <span className="pointer-events-none">Enter Dashboard</span>
+                  <ArrowRight size={15} className="absolute right-5 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </section>
+        </div>
+
+        {/* End-to-End Footer Bar */}
+        <footer className="w-full px-8 md:px-16 pb-6 pt-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
           <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
           <div className="flex items-center gap-6 text-[11px]" style={{ color: "#94a3b8" }}>
