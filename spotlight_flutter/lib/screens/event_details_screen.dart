@@ -239,6 +239,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             Row(
                               children: [
                                 _glassPill(event.category),
+                                const SizedBox(width: 8),
+                                _glassPill(
+                                  (event.eventType ?? '').toLowerCase() == 'team'
+                                      ? (event.teamSizeLimit != null ? 'Team (${event.teamSizeLimit} Max)' : 'Team')
+                                      : 'Solo',
+                                ),
                                 if (event.isLive) ...[
                                   const SizedBox(width: 8),
                                   _liveTag(),
@@ -372,6 +378,62 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ],
                           ),
                         ),
+                        if ((event.eventType ?? '').toLowerCase() == 'team' || event.teamSizeLimit != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: cardBg,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.groups_rounded,
+                                    size: 20,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Team Format',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        event.teamSizeLimit != null
+                                            ? 'Maximum of ${event.teamSizeLimit} members per team'
+                                            : 'Team participation required',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 32),
 
                         Text(
@@ -562,37 +624,35 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5), width: 1),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 7,
-                  height: 7,
+                  width: 5,
+                  height: 5,
                   decoration: const BoxDecoration(
                     color: Color(0xFFEF4444),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: Color(0xFFEF4444),
-                        blurRadius: 6,
-                        spreadRadius: 1.5,
+                        blurRadius: 4,
+                        spreadRadius: 1,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
                 Text(
                   'LIVE NOW',
                   style: GoogleFonts.inter(
                     color: const Color(0xFFEF4444),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
                   ),
                 ),
               ],

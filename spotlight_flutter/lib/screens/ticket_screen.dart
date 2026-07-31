@@ -809,10 +809,8 @@ class _TicketScreenState extends State<TicketScreen> {
     if (ticket.event != null && ticket.event!.isLive) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withOpacity(0.5), width: 1),
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

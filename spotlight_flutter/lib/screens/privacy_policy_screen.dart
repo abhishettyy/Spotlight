@@ -136,31 +136,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               _buildSectionCard(
                 context,
-                icon: Icons.cloud_done_outlined,
-                title: '5. Third-Party Integrations',
-                cardBg: cardBg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildSubSection(
-                      title: 'Google Sign-In API',
-                      body: 'Used for authentication on mobile devices, requesting your name, email, and profile photo.',
-                    ),
-                    buildSubSection(
-                      title: 'Supabase Storage',
-                      body: 'All uploaded screenshots of payment proofs, event banners, and club logos are stored securely on Supabase cloud servers.',
-                    ),
-                    buildSubSection(
-                      title: 'Clerk Auth',
-                      body: 'Used by the Spotlight system to authorize and verify backend sessions.',
-                    ),
-                  ],
-                ),
-              ),
-              _buildSectionCard(
-                context,
                 icon: Icons.phonelink_setup_rounded,
-                title: '6. Device Permissions',
+                title: '5. Device Permissions',
                 cardBg: cardBg,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,7 +151,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               _buildSectionCard(
                 context,
                 icon: Icons.security_outlined,
-                title: '7. Data Security & Retention',
+                title: '6. Data Security & Retention',
                 cardBg: cardBg,
                 child: Text(
                   'We use secure JWT controls and HTTPS endpoints. We retain data while your account is active or as needed for event history. You can request account deletion in the profile settings menu.',
@@ -184,7 +161,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               _buildSectionCard(
                 context,
                 icon: Icons.mail_outline_rounded,
-                title: '8. Contact Us',
+                title: '7. Contact Us',
                 cardBg: cardBg,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

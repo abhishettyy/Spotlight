@@ -804,13 +804,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444).withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: const Color(0xFFEF4444).withOpacity(0.6),
-                              width: 1,
-                            ),
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

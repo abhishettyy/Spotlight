@@ -178,18 +178,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
               actions: [
-                TextButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: passkey));
-                    showSpotlightToast(
-                      context,
-                      'Passkey copied to clipboard!',
-                      icon: Icons.copy_rounded,
-                    );
-                  },
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text('Copy Key'),
-                ),
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Got it'),
@@ -217,6 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 registrationId: registrationId!,
                 referenceCode: referenceCode!,
                 upiId: widget.upiId,
+                teamSizeLimit: widget.teamSizeLimit,
               ),
             ),
           );
@@ -387,6 +376,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       enabled: false,
                     ),
                     const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _phoneController,
+                      label: 'Phone Number',
+                      hint: 'Enter 10 digit phone number',
+                      keyboardType: TextInputType.phone,
+                      validator: (v) => (v == null || v.trim().length != 10) ? 'Enter valid 10 digit phone number' : null,
+                    ),
+                    const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -417,6 +414,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       label: 'Team Passkey',
                       hint: 'Enter 5-character passkey',
                       validator: (v) => (v == null || v.trim().length != 5) ? 'Passkey must be 5 characters' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _phoneController,
+                      label: 'Phone Number',
+                      hint: 'Enter 10 digit phone number',
+                      keyboardType: TextInputType.phone,
+                      validator: (v) => (v == null || v.trim().length != 10) ? 'Enter valid 10 digit phone number' : null,
                     ),
                   ],
 

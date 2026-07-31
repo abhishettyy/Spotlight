@@ -27,7 +27,7 @@ interface RegistrationKeyRecord {
   usedAt?: string | null;
 }
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://10.144.78.122:5000/api';
 
 export default function App() {
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -68,7 +68,7 @@ export default function App() {
       setKeys(data.keys || []);
     } catch (err: any) {
       const msg = err.message === 'Failed to fetch'
-        ? 'Cannot connect to backend server at http://localhost:5000. Please ensure backend server is running.'
+        ? `Cannot connect to backend server at ${API_BASE}. Please ensure backend server is running.`
         : (err.message || 'Error connecting to backend server.');
       setActionError(msg);
     } finally {

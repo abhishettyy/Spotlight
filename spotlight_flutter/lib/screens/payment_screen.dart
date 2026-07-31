@@ -16,6 +16,7 @@ class PaymentScreen extends StatefulWidget {
   final String? upiId;
   final String registrationId;
   final String referenceCode;
+  final int? teamSizeLimit;
 
   const PaymentScreen({
     super.key,
@@ -25,6 +26,7 @@ class PaymentScreen extends StatefulWidget {
     this.upiId,
     required this.registrationId,
     required this.referenceCode,
+    this.teamSizeLimit,
   });
 
   @override
@@ -150,7 +152,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     children: [
                       Text('Paying for', style: GoogleFonts.inter(color: Colors.grey)),
                       const SizedBox(height: 8),
-                      Text(widget.eventName, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(widget.eventName, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                      if (widget.teamSizeLimit != null) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Team Event · Max ${widget.teamSizeLimit} members per team',
+                            style: GoogleFonts.inter(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Text('₹${widget.price.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.bold, color: cs.primary)),
                     ],

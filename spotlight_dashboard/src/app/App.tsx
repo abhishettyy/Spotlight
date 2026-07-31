@@ -1111,7 +1111,13 @@ function EventsPage({
         return d < todayStart;
       })())
     : false;
-  const pending  = registrations.filter(r => r.status?.toLowerCase() === "pending");
+  const pending  = registrations.filter(r => {
+    if (r.status?.toLowerCase() !== "pending") return false;
+    if (r.team) {
+      return r.team.leaderId === r.user?.id;
+    }
+    return true;
+  });
   const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
 
   useEffect(() => {
@@ -1942,8 +1948,7 @@ function EventsPage({
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start pt-16 justify-center p-6 overflow-y-auto" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
                   <div className="w-full max-w-lg p-8 rounded-3xl relative mb-24" style={{ background: "#0c0c0c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.7)" }}>
                     <button onClick={() => setShowEditModal(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
-                    <h2 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: FC }}>Update Event</h2>
-                    <p className="text-xs text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Update event details. Name, type, team size and payment cannot be changed.</p>
+                    <h2 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: FC }}>Update Event</h2>
 
                     <div className="space-y-5">
                       {/* Event Start Date */}
@@ -2188,8 +2193,8 @@ function EventsPage({
                       <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                     </div>
                     {ev.status === "live" ? (
-                      <span className="text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 flex items-center gap-1.5 font-bold" style={{ fontFamily: FM }}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-transparent text-red-400 flex items-center gap-1 font-semibold tracking-wider" style={{ fontFamily: FM }}>
+                        <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
                         LIVE NOW
                       </span>
                     ) : (
@@ -4001,8 +4006,8 @@ function OverviewPage({
                     <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                   </div>
                   {ev.status === 'live' ? (
-                    <span className="text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 flex items-center gap-1.5 font-bold" style={{ fontFamily: FM }}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-transparent text-red-400 flex items-center gap-1 font-semibold tracking-wider" style={{ fontFamily: FM }}>
+                      <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
                       LIVE NOW
                     </span>
                   ) : (
