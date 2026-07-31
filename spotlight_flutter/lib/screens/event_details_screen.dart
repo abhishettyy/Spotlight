@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'register_screen.dart';
+import 'payment_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/events_provider.dart';
 import '../core/saved_events_provider.dart';
@@ -24,6 +25,7 @@ class EventDetailsScreen extends StatefulWidget {
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   // null = still checking, true = registered, false = not registered
   bool? _isRegistered;
+  TicketModel? _pendingPaymentTicket;
 
   @override
   void initState() {
@@ -35,13 +37,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     try {
       final tickets = await ApiService().fetchUserTickets();
       if (mounted) {
+        TicketModel? pendingTicket;
+        TicketModel? confirmedTicket;
+
+        for (final t in tickets) {
+          if (t.event?.id == widget.eventId) {
+            final hasProof = t.paymentProofUrl != null && t.paymentProofUrl!.trim().isNotEmpty;
+            final isFree = (t.event?.price ?? 0) == 0;
+            if (hasProof || isFree || t.isConfirmed) {
+              confirmedTicket = t;
+            } else {
+              pendingTicket = t;
+            }
+          }
+        }
+
         setState(() {
-          _isRegistered = tickets.any((t) => t.event?.id == widget.eventId);
+          if (confirmedTicket != null) {
+            _isRegistered = true;
+            _pendingPaymentTicket = null;
+          } else if (pendingTicket != null) {
+            _isRegistered = false;
+            _pendingPaymentTicket = pendingTicket;
+          } else {
+            _isRegistered = false;
+            _pendingPaymentTicket = null;
+          }
         });
       }
     } catch (_) {
-      // On error, assume not registered so the button stays usable
-      if (mounted) setState(() => _isRegistered = false);
+      if (mounted) {
+        setState(() {
+          _isRegistered = false;
+          _pendingPaymentTicket = null;
+        });
+      }
     }
   }
 
@@ -159,6 +189,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     // Still checking registration status
     final bool isChecking = _isRegistered == null;
     final bool alreadyRegistered = _isRegistered == true;
+    final bool hasPendingPayment = _pendingPaymentTicket != null;
 
     final dateData = _parseDate(event.startDate?.toIso8601String() ?? date);
 
@@ -177,6 +208,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       btnBg = isDark ? const Color(0xFF1A2E1A) : const Color(0xFFE8F5E9);
       btnTextColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
       btnLabel = 'Already Registered';
+    } else if (hasPendingPayment) {
+      btnBg = const Color(0xFFF59E0B);
+      btnTextColor = Colors.black;
+      btnLabel = 'Complete Payment';
     } else if (isClosed) {
       btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
       btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
@@ -238,13 +273,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           children: [
                             Row(
                               children: [
-                                _glassPill(event.category),
-                                const SizedBox(width: 8),
-                                _glassPill(
-                                  (event.eventType ?? '').toLowerCase() == 'team'
-                                      ? (event.teamSizeLimit != null ? 'Team (${event.teamSizeLimit} Max)' : 'Team')
-                                      : 'Solo',
-                                ),
+                                _glassPill(event.category, isDark: isDark),
                                 if (event.isLive) ...[
                                   const SizedBox(width: 8),
                                   _liveTag(),
@@ -469,12 +498,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               children: [
                 _circleBtn(Icons.arrow_back_ios_new, () => Navigator.pop(context)),
                 _circleBtn(Icons.share_outlined, () {
+                  final formattedPrice = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
                   final shareText = 'Hey! Check out this event "${event.title}"'
                       '${event.clubName != null && event.clubName!.isNotEmpty ? ' hosted by ${event.clubName}' : ''} '
                       'on Spotlight!\n\n'
-                      'Venue: ${event.venue}\n'
-                      'Date: ${event.date ?? 'TBA'}\n'
-                      'Price: ${event.price > 0 ? 'â‚¹${event.price.toStringAsFixed(0)}' : 'Free'}\n\n'
+                      '📍 Venue: ${event.venue}\n'
+                      '📅 Date: ${event.date ?? 'TBA'}\n'
+                      '🏷️ Price: $formattedPrice\n\n'
                       'Download the Spotlight app to register now!';
                   Share.share(shareText);
                 }),
@@ -519,9 +549,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        isSaved ? Icons.favorite : Icons.favorite_border,
-                        color: isSaved ? Colors.redAccent : (isDark ? Colors.white : Colors.black),
-                        size: 24,
+                        isSaved ? Icons.bookmark : Icons.bookmark_border,
+                        color: isSaved ? cs.primary : (isDark ? Colors.white : Colors.black87),
+                        size: 22,
                       ),
                     ),
                   );
@@ -532,20 +562,40 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: buttonDisabled ? null : () {
-                    Navigator.push(
-                      context,
-                      SmoothRoute(
-                        builder: (_) => RegisterScreen(
-                          eventId: event.id,
-                          eventName: event.title,
-                          price: event.price,
-                          qrUrl: event.qrUrl,
-                          eventType: event.eventType,
-                          teamSizeLimit: event.teamSizeLimit,
-                          upiId: event.upiId,
+                    if (_pendingPaymentTicket != null) {
+                      final ticket = _pendingPaymentTicket!;
+                      final eventInfo = ticket.event;
+                      final refCode = ticket.id.length > 6 ? ticket.id.substring(0, 6).toUpperCase() : ticket.id.toUpperCase();
+                      Navigator.push(
+                        context,
+                        SmoothRoute(
+                          builder: (_) => PaymentScreen(
+                            eventName: eventInfo?.title ?? event.title,
+                            price: eventInfo?.price ?? event.price,
+                            qrUrl: eventInfo?.qrUrl ?? event.qrUrl,
+                            registrationId: ticket.id,
+                            referenceCode: refCode,
+                            upiId: eventInfo?.upiId ?? event.upiId,
+                            teamSizeLimit: eventInfo?.teamSizeLimit ?? event.teamSizeLimit,
+                          ),
                         ),
-                      ),
-                    );
+                      ).then((_) => _checkRegistration());
+                    } else {
+                      Navigator.push(
+                        context,
+                        SmoothRoute(
+                          builder: (_) => RegisterScreen(
+                            eventId: event.id,
+                            eventName: event.title,
+                            price: event.price,
+                            qrUrl: event.qrUrl,
+                            eventType: event.eventType,
+                            teamSizeLimit: event.teamSizeLimit,
+                            upiId: event.upiId,
+                          ),
+                        ),
+                      ).then((_) => _checkRegistration());
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: btnBg,
@@ -595,21 +645,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
       );
 
-  Widget _glassPill(String text) => ClipRRect(
+  Widget _glassPill(String text, {required bool isDark}) => ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.06),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
+              ),
             ),
             child: Text(
               text,
               style: GoogleFonts.inter(
-                color: Colors.white,
+                color: isDark ? Colors.white : Colors.black87,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

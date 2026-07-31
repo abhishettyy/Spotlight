@@ -142,9 +142,18 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildBulletItem('Camera/Gallery:', 'To select and upload screenshots of payment proofs.'),
-                    _buildBulletItem('Clipboard:', 'To copy club UPI IDs and registration codes.'),
-                    _buildBulletItem('External Apps:', 'To launch UPI apps and web browsers for payments.'),
+                    buildSubSection(
+                      title: 'Camera & Photo Library',
+                      body: 'To select and upload screenshots of payment proofs during event registration.',
+                    ),
+                    buildSubSection(
+                      title: 'Clipboard Access',
+                      body: 'To copy club UPI IDs and registration passkeys to your clipboard.',
+                    ),
+                    buildSubSection(
+                      title: 'External App Launch',
+                      body: 'To open external UPI payment apps (Google Pay, PhonePe, Paytm) and web links.',
+                    ),
                   ],
                 ),
               ),
@@ -154,7 +163,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 title: '6. Data Security & Retention',
                 cardBg: cardBg,
                 child: Text(
-                  'We use secure JWT controls and HTTPS endpoints. We retain data while your account is active or as needed for event history. You can request account deletion in the profile settings menu.',
+                  'We use secure JWT authentication and encrypted HTTPS endpoints. We retain account and event registration data while your account remains active as required for college event verification and record-keeping.',
                   style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
                 ),
               ),
@@ -167,13 +176,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'If you have questions or want to request manual account deletion, contact support:',
+                      'If you have any questions regarding this Privacy Policy or need assistance, contact our support team:',
                       style: GoogleFonts.inter(fontSize: 13, height: 1.4, color: subText),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.email_outlined, size: 16, color: cs.primary),
+                        const Icon(Icons.email_outlined, size: 16, color: Color(0xFF10B981)),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -181,7 +190,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: cs.onBackground,
+                              color: const Color(0xFF10B981),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),

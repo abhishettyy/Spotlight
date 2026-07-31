@@ -217,7 +217,7 @@ class EventModel {
       qrUrl: json['qrUrl'] ?? json['qr_url'],
       eventType: typeStr,
       teamSizeLimit: json['teamSizeLimit'] ?? json['team_size_limit'],
-      upiId: club?['upiId'] ?? club?['upi_id'],
+      upiId: json['upiId'] ?? json['upi_id'] ?? club?['upiId'] ?? club?['upi_id'],
       clubId: club?['id'],
       clubName: club?['name'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
@@ -292,6 +292,8 @@ class TicketEventInfo {
   final String? date;
   final double price;
   final String? qrUrl;
+  final String? upiId;
+  final int? teamSizeLimit;
   final String? clubId;
   final String? clubName;
   final String? clubLogoUrl;
@@ -341,6 +343,8 @@ class TicketEventInfo {
     this.date,
     required this.price,
     this.qrUrl,
+    this.upiId,
+    this.teamSizeLimit,
     this.clubId,
     this.clubName,
     this.clubLogoUrl,
@@ -358,6 +362,8 @@ class TicketEventInfo {
       date: json['date'],
       price: (json['price'] ?? 0).toDouble(),
       qrUrl: json['qr_url'] ?? json['qrUrl'],
+      upiId: json['upi_id'] ?? json['upiId'] ?? club?['upiId'] ?? club?['upi_id'],
+      teamSizeLimit: json['team_size_limit'] ?? json['teamSizeLimit'],
       clubId: club?['id'],
       clubName: club?['name'],
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'],

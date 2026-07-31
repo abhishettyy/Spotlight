@@ -33,4 +33,11 @@ class SavedEventsProvider with ChangeNotifier {
     notifyListeners();
     await _persist();
   }
+
+  Future<void> clear() async {
+    _savedEventIds.clear();
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }

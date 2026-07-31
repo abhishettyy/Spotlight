@@ -616,11 +616,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
 
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
                       color: cs.primary,
                       borderRadius: BorderRadius.circular(20),
@@ -635,197 +635,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         return Text(initials,
                             style: GoogleFonts.inter(
                                 color: Colors.white,
-                                fontSize: 32,
+                                fontSize: 28,
                                 fontWeight: FontWeight.bold));
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(Provider.of<UserProvider>(context).currentUser?.name ?? "User",
-                            style: GoogleFonts.inter(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: cs.onBackground)),
-                        const SizedBox(height: 4),
-                        Text(Provider.of<UserProvider>(context).currentUser?.email ?? "Not logged in",
-                            style: GoogleFonts.inter(
-                                fontSize: 13, color: subText)),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF2A2A2A)
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Consumer<UserProvider>(
-                            builder: (context, up, _) {
-                              final u = up.currentUser;
-                              if (u == null) return const SizedBox.shrink();
-                              final parts = <String>[
-                                if (u.branch != null && u.branch!.isNotEmpty) u.branch!,
-                                if (u.usn != null && u.usn!.isNotEmpty) u.usn!,
-                                if (u.year != null && u.year!.isNotEmpty) 'Year ${u.year}',
-                                if (u.sem != null && u.sem!.isNotEmpty) 'Sem ${u.sem}',
-                              ];
-                              return Text(
-                                parts.isEmpty ? 'Incomplete Profile' : parts.join(' · '),
-                                style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: subText),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _showEditSheet,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF2A2A2A)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: isDark
-                            ? null
-                            : Border.all(
-                                color: Colors.grey.shade200,
-                                width: 1.0,
-                              ),
-                        boxShadow: isDark
-                            ? null
-                            : [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.07),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                      ),
-                      child: Text('Edit',
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: cs.onBackground)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              Consumer<UserProvider>(
-                builder: (context, userProvider, child) {
-                  final usn = userProvider.currentUser?.usn;
-                  final hasUsn = usn != null && usn.isNotEmpty;
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: isDark
-                          ? null
-                          : Border.all(
-                              color: Colors.grey.shade200,
-                              width: 1.0,
-                            ),
-                      boxShadow: isDark
-                          ? null
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text('USN',
+                            Expanded(
+                              child: Text(
+                                Provider.of<UserProvider>(context).currentUser?.name ?? "User",
                                 style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: subText)),
-                            const SizedBox(height: 4),
-                            Text(
-                              hasUsn ? usn : 'Not set',
-                              style: GoogleFonts.inter(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: hasUsn ? cs.onBackground : subText),
+                                  color: cs.onBackground,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: _showEditSheet,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: isDark ? null : Border.all(color: Colors.grey.shade300, width: 1),
+                                  boxShadow: isDark ? null : [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.06),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'Edit',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onBackground,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        InkWell(
-                          onTap: hasUsn
-                              ? () {
-                                  Clipboard.setData(ClipboardData(text: usn));
-                                  showSpotlightToast(
-                                    context,
-                                    'USN copied to clipboard!',
-                                    icon: Icons.copy_rounded,
-                                  );
-                                }
-                              : null,
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: hasUsn 
-                                  ? cs.primary 
-                                  : (isDark ? const Color(0xFF2A2A2A) : Colors.grey[200]),
-                              borderRadius: BorderRadius.circular(20),
-                              border: hasUsn
-                                  ? null
-                                  : (isDark
-                                      ? null
-                                      : Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 1.0,
-                                        )),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  hasUsn ? Icons.copy_rounded : Icons.pending_outlined,
-                                  color: hasUsn 
-                                      ? Colors.white 
-                                      : (isDark ? Colors.white70 : Colors.grey[700]),
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  hasUsn ? 'Copy' : 'Not set',
-                                  style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: hasUsn 
-                                          ? Colors.white 
-                                          : (isDark ? Colors.white70 : Colors.grey[700])),
-                                ),
-                              ],
-                            ),
-                          ),
+                        const SizedBox(height: 2),
+                        Text(
+                          Provider.of<UserProvider>(context).currentUser?.email ?? "Not logged in",
+                          style: GoogleFonts.inter(fontSize: 12, color: subText),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -872,6 +747,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
+
+              Text('ACADEMIC PROFILE',
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      color: subText)),
+              const SizedBox(height: 16),
+              Consumer<UserProvider>(
+                builder: (context, up, _) {
+                  final u = up.currentUser;
+                  final usn = (u?.usn != null && u!.usn!.isNotEmpty) ? u.usn! : 'Not set';
+                  final branch = (u?.branch != null && u!.branch!.isNotEmpty) ? u.branch! : 'Not set';
+                  final year = (u?.year != null && u!.year!.isNotEmpty) ? 'Year ${u.year}' : 'Not set';
+                  final sem = (u?.sem != null && u!.sem!.isNotEmpty) ? 'Sem ${u.sem}' : 'Not set';
+
+                  return Column(
+                    children: [
+                      _buildListTile(context, Icons.badge_outlined, 'USN', trailingText: usn, tileColor: tileColor),
+                      _buildListTile(context, Icons.school_outlined, 'Branch', trailingText: branch, tileColor: tileColor),
+                      _buildListTile(context, Icons.calendar_today_outlined, 'Academic Year', trailingText: year, tileColor: tileColor),
+                      _buildListTile(context, Icons.auto_stories_outlined, 'Semester', trailingText: sem, tileColor: tileColor),
                     ],
                   );
                 },
@@ -937,6 +839,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: () async {
                     await context.read<AuthProvider>().logout();
                     if (context.mounted) {
+                      await context.read<SavedEventsProvider>().clear();
                       Navigator.pushAndRemoveUntil(
                         context,
                         SmoothRoute(builder: (_) => const AuthScreen()),
@@ -1083,11 +986,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontSize: 14,
                       color: subText,
                       fontWeight: FontWeight.w500)),
-            if (trailingText != null) const SizedBox(width: 8),
-            Icon(Icons.chevron_right, color: subText, size: 20),
+            if (onTap != null) ...[
+              if (trailingText != null) const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: subText, size: 20),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildThemeTag(BuildContext context, String label, String value, bool isDark, ColorScheme cs) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            color: cs.primary,
+            letterSpacing: 0.6,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: cs.onBackground,
+          ),
+        ),
+      ],
     );
   }
 }

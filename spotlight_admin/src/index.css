@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer base {
-  body {
+  html, body, input, button, select, textarea {
     background-color: #050505;
     color: #ffffff;
     font-family: 'Manrope', sans-serif;

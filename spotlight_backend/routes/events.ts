@@ -36,7 +36,8 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         minTeamSize: e.minTeamSize ?? null,
         registration_deadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
         registration_limit: e.registrationLimit,
-        club: e.club ? { id: e.club.id, name: e.club.name, upiId: e.club.upiId } : null,
+        club: e.club ? { id: e.club.id, name: e.club.name, upiId: (e as any).upiId ?? e.club.upiId } : null,
+        upiId: (e as any).upiId ?? e.club?.upiId ?? null,
         qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
         bannerUrl: e.bannerUrl ?? null,
         registrationCount: e._count?.registrations ?? 0,
@@ -53,7 +54,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, clubId, bannerUrl, qrUrl } = req.body;
+    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, clubId, bannerUrl, qrUrl, upiId } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
 
@@ -71,7 +72,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
     const defaultEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59, 999);
     const finalEndDate = eventEndDate ? new Date(eventEndDate) : defaultEndDate;
 
-    const event = await prisma.event.create({
+    const event = await (prisma.event as any).create({
       data: {
         name,
         description: description || "",
@@ -87,6 +88,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         clubId: clubId || "",
         bannerUrl: finalBannerUrl,
         qrUrl: finalQrUrl,
+        upiId: upiId || null,
       },
 
       include: { club: true },

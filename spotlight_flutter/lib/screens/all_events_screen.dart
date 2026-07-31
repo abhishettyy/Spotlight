@@ -161,11 +161,16 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
 
     String day = '01';
     String month = 'JAN';
-    if (event.date != null) {
+    final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+    final st = event.startDate;
+    if (st != null) {
+      day = st.day.toString().padLeft(2, '0');
+      month = months[st.month - 1];
+    } else if (event.date != null && event.date!.trim().isNotEmpty) {
       final parsed = DateTime.tryParse(event.date!);
       if (parsed != null) {
         day = parsed.day.toString().padLeft(2, '0');
-        final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         month = months[parsed.month - 1];
       } else {
         final parts = event.date!.split('-');
@@ -173,12 +178,16 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
           day = parts[2].padLeft(2, '0');
           final mIndex = int.tryParse(parts[1]);
           if (mIndex != null && mIndex >= 1 && mIndex <= 12) {
-            final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
             month = months[mIndex - 1];
           }
         }
       }
+    } else if (event.registrationDeadline != null) {
+      day = event.registrationDeadline!.day.toString().padLeft(2, '0');
+      month = months[event.registrationDeadline!.month - 1];
     }
+
+    month = month.length > 3 ? month.substring(0, 3).toUpperCase() : month.toUpperCase();
 
     final imageUrl = event.imageUrl;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
@@ -236,14 +245,15 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
               ),
 
               Positioned(
-                top: 16,
-                right: 16,
+                top: 14,
+                right: 14,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      constraints: const BoxConstraints(minWidth: 52, maxWidth: 64),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(16),
@@ -254,22 +264,37 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            day,
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              day,
+                              style: GoogleFonts.inter(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                height: 1.1,
+                              ),
+                              maxLines: 1,
+                              softWrap: false,
                             ),
                           ),
-                          Text(
-                            month,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white70,
-                              letterSpacing: 0.5,
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              month,
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white70,
+                                letterSpacing: 0.5,
+                                height: 1.1,
+                              ),
+                              maxLines: 1,
+                              softWrap: false,
                             ),
                           ),
                         ],
@@ -280,14 +305,95 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
               ),
 
               Positioned(
+                top: 14,
+                left: 14,
+                right: 86,
+                child: Row(
+                  children: [
+                    if (event.clubName != null && event.clubName!.isNotEmpty)
+                      Flexible(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                event.clubName!.toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 0.8,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (event.isLive) ...[
+                      if (event.clubName != null && event.clubName!.isNotEmpty)
+                        const SizedBox(width: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEF4444),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'LIVE',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFFEF4444),
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              Positioned(
                 bottom: 18,
-                left: 20,
-                right: 20,
+                left: 18,
+                right: 18,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${event.category.toUpperCase()}${event.clubName != null && event.clubName!.isNotEmpty ? ' • ${event.clubName!.toUpperCase()}' : ''}',
+                      event.category.toUpperCase(),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -295,31 +401,49 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                         color: cs.primary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       event.title,
                       style: GoogleFonts.inter(
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        letterSpacing: -0.5,
+                        letterSpacing: -0.4,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    if (event.registrationDeadline != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded, size: 11, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Deadline: ${DateFormat('MMM d, yyyy HH:mm').format(event.registrationDeadline!)}',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                color: const Color(0xFFF59E0B),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Text(
-                            '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: Colors.white70,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         Row(
@@ -332,7 +456,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             Consumer<SavedEventsProvider>(
                               builder: (context, savedProvider, _) {
                                 final isSaved = savedProvider.isSaved(event.id);
@@ -349,7 +473,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                                   child: Icon(
                                     isSaved ? Icons.bookmark : Icons.bookmark_border,
                                     color: isSaved ? cs.primary : Colors.white70,
-                                    size: 20,
+                                    size: 19,
                                   ),
                                 );
                               },

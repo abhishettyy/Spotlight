@@ -162,6 +162,7 @@ export async function createEvent(data: {
   clubId?: string;
   bannerUrl?: string;
   qrUrl?: string;
+  upiId?: string;
 }, token?: string) {
   return request('/events/create', {
     method: 'POST',

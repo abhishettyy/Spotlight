@@ -126,7 +126,8 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
+  html, body, input, button, select, textarea {
+    font-family: 'Manrope', sans-serif;
     @apply bg-background text-foreground;
   }
 

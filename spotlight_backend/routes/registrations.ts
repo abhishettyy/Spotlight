@@ -61,6 +61,8 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
         price: r.event.fee ?? 0,
         image_url: r.event.bannerUrl,
         qr_url: r.event.qrUrl ?? (r.event.fee > 0 && r.event.club ? r.event.club.qrUrl : null),
+        upi_id: (r.event as any).upiId ?? r.event.club?.upiId ?? null,
+        team_size_limit: r.event.teamSizeLimit ?? null,
         club: r.event.club ? { 
           id: r.event.club.id, 
           name: r.event.club.name,
@@ -154,6 +156,17 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       where: { eventId: eventId, userId: clerkUserId }
     });
     if (alreadyRegistered) return res.status(400).json({ error: 'You are already registered for this event.' });
+
+    // Check team size limit
+    const currentMemberCount = await prisma.registration.count({
+      where: { teamId: team.id }
+    });
+    const maxTeamSize = team.event?.teamSizeLimit;
+    if (maxTeamSize && currentMemberCount >= maxTeamSize) {
+      return res.status(400).json({
+        error: 'This team is already full.'
+      });
+    }
 
     const leaderReg = await prisma.registration.findFirst({
       where: { eventId: eventId, userId: team.leaderId }

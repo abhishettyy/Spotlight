@@ -50,6 +50,7 @@ model Event {
   eventDate           DateTime       @map("event_date")
   eventEndDate        DateTime?      @map("event_end_date")
   qrUrl               String?        @map("qr_url")
+  upiId               String?        @map("upi_id")
   bannerUrl           String?        @map("banner_url") // Added to store event banners/posters
   registrations       Registration[]
   teams               Team[]

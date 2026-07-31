@@ -644,7 +644,11 @@ class _HomeScreenState extends State<HomeScreen> {
     String month = 'JAN';
     final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-    if (event.date != null && event.date!.trim().isNotEmpty) {
+    final st = event.startDate;
+    if (st != null) {
+      day = st.day.toString().padLeft(2, '0');
+      month = months[st.month - 1];
+    } else if (event.date != null && event.date!.trim().isNotEmpty) {
       final parsed = DateTime.tryParse(event.date!);
       if (parsed != null) {
         day = parsed.day.toString().padLeft(2, '0');
@@ -668,11 +672,16 @@ class _HomeScreenState extends State<HomeScreen> {
       month = months[event.registrationDeadline!.month - 1];
     }
 
+    month = month.length > 3 ? month.substring(0, 3).toUpperCase() : month.toUpperCase();
+
     final imageUrl = event.imageUrl;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = (screenWidth * 0.80).clamp(270.0, 340.0);
+
     return Container(
-      width: 320,
+      width: cardWidth,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -720,14 +729,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Positioned(
-              top: 16,
-              right: 16,
+              top: 14,
+              right: 14,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    constraints: const BoxConstraints(minWidth: 52, maxWidth: 64),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(16),
@@ -738,22 +748,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          day,
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            day,
+                            style: GoogleFonts.inter(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.1,
+                            ),
+                            maxLines: 1,
+                            softWrap: false,
                           ),
                         ),
-                        Text(
-                          month,
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white70,
-                            letterSpacing: 0.5,
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            month,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white70,
+                              letterSpacing: 0.5,
+                              height: 1.1,
+                            ),
+                            maxLines: 1,
+                            softWrap: false,
                           ),
                         ),
                       ],
@@ -764,32 +789,37 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Positioned(
-              top: 16,
-              left: 16,
+              top: 14,
+              left: 14,
+              right: 86,
               child: Row(
                 children: [
                   if (event.clubName != null && event.clubName!.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
+                    Flexible(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            event.clubName!.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: 1.0,
+                            child: Text(
+                              event.clubName!.toUpperCase(),
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.8,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -797,15 +827,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   if (event.isLive) ...[
                     if (event.clubName != null && event.clubName!.isNotEmpty)
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                          decoration: const BoxDecoration(
-                            color: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -816,23 +847,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 decoration: const BoxDecoration(
                                   color: Color(0xFFEF4444),
                                   shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color(0xFFEF4444),
-                                      blurRadius: 6,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
                                 ),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'LIVE',
                                 style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
                                   color: const Color(0xFFEF4444),
-                                  letterSpacing: 0.8,
+                                  letterSpacing: 0.6,
                                 ),
                               ),
                             ],
@@ -846,9 +870,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
+              bottom: 18,
+              left: 18,
+              right: 18,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -861,88 +885,82 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: cs.primary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     event.title,
                     style: GoogleFonts.inter(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.4,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  if (event.registrationDeadline != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time_rounded, size: 11, color: Color(0xFFF59E0B)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: const Color(0xFFF59E0B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Expanded(
-                        child: Text(
-                          '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: Colors.white70,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      Row(
                         children: [
-                          if (event.registrationDeadline != null) ...[
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.access_time_rounded, size: 10, color: Color(0xFFF59E0B)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    color: const Color(0xFFF59E0B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            price,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 4),
-                          ],
-                          Row(
-                            children: [
-                              Text(
-                                price,
-                                style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Consumer<SavedEventsProvider>(
-                                builder: (context, savedProvider, _) {
-                                  final isSaved = savedProvider.isSaved(event.id);
-                                    return GestureDetector(
-                                      onTap: () {
-                                        final wasSaved = savedProvider.isSaved(event.id);
-                                        savedProvider.toggleSave(event.id);
-                                        showSpotlightToast(
-                                          context,
-                                          wasSaved ? 'Event removed from saved list' : 'Event saved to your list',
-                                          icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_added_rounded,
-                                        );
-                                      },
-                                    child: Icon(
-                                      isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                      color: isSaved ? cs.primary : Colors.white70,
-                                      size: 20,
-                                    ),
+                          ),
+                          const SizedBox(width: 8),
+                          Consumer<SavedEventsProvider>(
+                            builder: (context, savedProvider, _) {
+                              final isSaved = savedProvider.isSaved(event.id);
+                              return GestureDetector(
+                                onTap: () {
+                                  final wasSaved = savedProvider.isSaved(event.id);
+                                  savedProvider.toggleSave(event.id);
+                                  showSpotlightToast(
+                                    context,
+                                    wasSaved ? 'Event removed from saved list' : 'Event saved to your list',
+                                    icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_added_rounded,
                                   );
                                 },
-                              ),
-                            ],
+                                child: Icon(
+                                  isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                  color: isSaved ? cs.primary : Colors.white70,
+                                  size: 19,
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),

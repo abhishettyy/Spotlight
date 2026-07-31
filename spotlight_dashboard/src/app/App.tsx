@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
-  CheckCircle, Zap, Shield, ChevronLeft, Check, Upload,
+  CheckCircle, Zap, Shield, ChevronLeft, ChevronDown, Check, Upload,
   X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle
 } from "lucide-react";
 import {
@@ -53,6 +53,48 @@ const formatEventHeaderDate = (eventDateStr?: string | null, endDateStr?: string
     return `${formatDate(start)} (${formatTime(start)}) → ${formatDate(end)} (${formatTime(end)})`;
   }
 };
+
+function LiveDot() {
+  return (
+    <span className="relative flex h-2 w-2 items-center justify-center flex-shrink-0">
+      <span
+        className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"
+        style={{
+          willChange: "transform, opacity",
+          transform: "translateZ(0)",
+          animationDuration: "1.2s",
+        }}
+      />
+      <span
+        className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500 shadow-[0_0_8px_#f03d4e]"
+        style={{ transform: "translateZ(0)" }}
+      />
+    </span>
+  );
+}
+
+function LiveTag({ size = "normal" }: { size?: "normal" | "large" }) {
+  if (size === "large") {
+    return (
+      <span
+        className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.25em] uppercase text-red-400 px-1 py-0.5"
+        style={{ fontFamily: FM, transform: "translateZ(0)" }}
+      >
+        <LiveDot />
+        LIVE NOW
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase text-red-400 px-1 py-0.5"
+      style={{ fontFamily: FM, transform: "translateZ(0)" }}
+    >
+      <LiveDot />
+      LIVE NOW
+    </span>
+  );
+}
 
 interface ClubEvent {
   id: string;
@@ -258,9 +300,9 @@ function useEvents() {
 }
 
 const QUICK_ACTIONS = [
-  { id: "create",   icon: Plus,        label: "Create Event",     desc: "Launch a new event in minutes"   },
-  { id: "events",   icon: CheckCircle, label: "Review Payments",  desc: "Approve pending verifications"   },
-  { id: "events",    icon: Users,       label: "Manage Teams",     desc: "Oversee team registrations per event"      },
+  { id: "create",   icon: Plus,     label: "Create Event",        desc: "Launch a new event in minutes" },
+  { id: "settings", icon: Settings, label: "Update Club Profile", desc: "Edit club info, UPI ID & security" },
+  { id: "events",   icon: Users,    label: "Manage Teams",        desc: "Oversee team registrations per event" },
 ];
 const FEATURES = [
   { icon: Calendar, title: "Liquid Event Creation", desc: "Craft events with a fluid step-by-step builder. From concept to live in under two minutes."      },
@@ -538,7 +580,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
                       <p className="text-xs text-[#bbbbbb] leading-relaxed mb-4">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support directly at:</p>
                       <a 
                         href="mailto:spotlightapp.help@gmail.com" 
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F03D4E]/10 border border-[#F03D4E]/30 text-[#F03D4E] hover:bg-[#F03D4E]/20 text-xs font-semibold transition-all"
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold transition-all"
                       >
                         <Mail size={16} />
                         <span>spotlightapp.help@gmail.com</span>
@@ -1324,70 +1366,76 @@ function EventsPage({
                         {pending.map((req) => {
                           const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                           return (
-                            <motion.tr key={req.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, height: 0 }} className="hover:bg-white/[0.01] transition-colors">
-                              <td className="p-4">
+                            <motion.tr key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }} className="hover:bg-white/[0.01] transition-colors">
+                              <td className="p-4 max-w-[180px]">
                                 <div className="flex items-center gap-2.5">
                                   <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                  <p className="text-sm font-medium text-white/80" style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                                  <p className="text-sm font-medium text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
                                 </div>
                               </td>
-                              <td className="p-4 text-xs text-[#aaa]" style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                              <td className="p-4 text-xs font-mono text-[#aaa]">{req.user?.usn ?? '—'}</td>
-                              <td className="p-4 text-xs text-[#aaa]">{req.user?.branch ?? '—'}</td>
-                              <td className="p-4 text-xs">
+                              <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                              <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                              <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                              <td className="p-4 text-xs text-[#888] max-w-[180px]">
                                 {req.team ? (
                                   <div>
-                                    <span className="font-medium text-white/80" style={{ fontFamily: FB }}>{req.team.name}</span>
-                                    <p className="text-[11px] text-[#94a3b8] mt-0.5 font-mono">Passkey: {req.team.passkey}</p>
+                                    <span className="font-medium text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
+                                    <p className="text-[10px] text-[#94a3b8] font-mono">Passkey: {req.team.passkey}</p>
                                   </div>
                                 ) : (
                                   <span className="text-[#888] font-mono">—</span>
                                 )}
                               </td>
-                              <td className="p-4 text-xs font-mono">
+                              <td className="p-4 text-xs font-mono text-[#888] max-w-[150px]">
                                 {activeEvent.price === 0 ? (
                                   <span className="text-[#94a3b8]">Free</span>
                                 ) : req.team ? (
                                   isLeader ? (
                                     req.transaction_id ? (
-                                      <span className="select-all text-[#a3e635] bg-white/5 px-2 py-1 rounded border border-white/5">{req.transaction_id}</span>
+                                      <span className="select-all text-[#a3e635] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
                                     ) : (
-                                      <span className="text-[#e59866] text-[11px] uppercase tracking-wider">Pending Upload</span>
+                                      <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
                                     )
                                   ) : (
                                     <span className="text-[#94a3b8] italic text-[11px]">Member</span>
                                   )
                                 ) : (
                                   req.transaction_id ? (
-                                    <span className="select-all text-[#a3e635] bg-white/5 px-2 py-1 rounded border border-white/5">{req.transaction_id}</span>
+                                    <span className="select-all text-[#a3e635] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
                                   ) : (
-                                    <span className="text-[#e59866] text-[11px] uppercase tracking-wider">Pending Upload</span>
+                                    <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
                                   )
                                 )}
                               </td>
-                              <td className="p-4 text-[11px] text-[#888] font-mono">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                              <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
                               <td className="p-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     disabled={isEventFinished}
                                     onClick={(e) => !isEventFinished && handleApprove(req.id, e)}
-                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                                    title="Approve Registration"
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                                       isEventFinished 
                                         ? 'bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50' 
-                                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/20'
+                                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/20 hover:scale-105'
                                     }`}
                                     style={{ fontFamily: FB }}
-                                  ><Check size={12} /> Approve</button>
+                                  >
+                                    <Check size={14} /> Approve
+                                  </button>
                                   <button
                                     disabled={isEventFinished}
                                     onClick={() => !isEventFinished && handleReject(req.id)}
-                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                                    title="Reject Registration"
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                                       isEventFinished 
                                         ? 'bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50' 
-                                        : 'bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/20'
+                                        : 'bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/20 hover:scale-105'
                                     }`}
                                     style={{ fontFamily: FB }}
-                                  ><X size={12} /> Reject</button>
+                                  >
+                                    <X size={14} /> Reject
+                                  </button>
                                 </div>
                               </td>
                             </motion.tr>
@@ -1425,26 +1473,36 @@ function EventsPage({
                         const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                         return (
                           <tr key={req.id} className="hover:bg-white/[0.01] transition-colors">
-                            <td className="p-4">
+                            <td className="p-4 max-w-[180px]">
                               <div className="flex items-center gap-2.5">
                                 <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                <p className="text-sm font-medium text-white/70" style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                                <p className="text-sm font-medium text-white/70 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
                               </div>
                             </td>
-                            <td className="p-4 text-xs text-[#888]" style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[#888]">{req.user?.usn ?? '—'}</td>
-                            <td className="p-4 text-xs text-[#888]">{req.user?.branch ?? '—'}</td>
-                            <td className="p-4 text-xs text-[#888]">{req.team?.name ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[#888]">
+                            <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                            <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                            <td className="p-4 text-xs text-[#888] max-w-[180px]">
+                              {req.team?.name ? (
+                                <span className="truncate block" title={req.team.name}>{req.team.name}</span>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                            <td className="p-4 text-xs font-mono text-[#888] max-w-[150px]">
                               {activeEvent.price === 0 ? (
                                 <span className="text-[#94a3b8]">Free</span>
                               ) : req.team ? (
-                                isLeader ? (req.transaction_id ?? '—') : <span className="italic text-[11px]">Member</span>
+                                isLeader ? (
+                                  <span className="truncate block" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
+                                ) : (
+                                  <span className="italic text-[11px]">Member</span>
+                                )
                               ) : (
-                                req.transaction_id ?? '—'
+                                <span className="truncate block" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
                               )}
                             </td>
-                            <td className="p-4 text-[11px] text-[#888] font-mono">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
                             <td className="p-4 text-right">
                               <span className="text-[11px] text-green-500 uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Approved</span>
                             </td>
@@ -1758,7 +1816,13 @@ function EventsPage({
 
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-[11px] tracking-[0.4em] uppercase" style={{ color: "#F03D4E", fontFamily: FM }}>{activeEvent.status === "live" ? "Live Now" : "Upcoming"}</span>
+                {activeEvent.status === "live" ? (
+                  <LiveTag size="large" />
+                ) : (
+                  <span className="text-[11px] tracking-[0.3em] uppercase px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#aaa]" style={{ fontFamily: FM }}>
+                    Upcoming
+                  </span>
+                )}
                 <span className="text-[11px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
@@ -2167,6 +2231,7 @@ function EventsPage({
             {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
               const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
+              const pendingApprovals = allRegistrations.filter(r => r.eventId === ev.id && r.status?.toLowerCase() === 'pending').length;
               return (
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
@@ -2189,22 +2254,26 @@ function EventsPage({
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
                       <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                     </div>
-                    {ev.status === "live" ? (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-transparent text-red-400 flex items-center gap-1 font-semibold tracking-wider" style={{ fontFamily: FM }}>
-                        <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
-                        LIVE NOW
-                      </span>
-                    ) : (
-                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
-                        background: "rgba(240,61,78,0.05)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        color: "#f9fafb",
-                        fontFamily: FM,
-                      }}>Upcoming</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {pendingApprovals > 0 && (
+                        <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full" style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontFamily: FM }}>
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                          {pendingApprovals > 9 ? '9+' : pendingApprovals} pending
+                        </span>
+                      )}
+                      {ev.status === "live" ? (
+                        <LiveTag />
+                      ) : (
+                        <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
+                          background: "rgba(240,61,78,0.05)",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                          color: "#f9fafb",
+                          fontFamily: FM,
+                        }}>Upcoming</span>
+                      )}
+                    </div>
                   </div>
                   <h3 className="text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
                   <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#f3f4f6" }}>
@@ -2232,6 +2301,7 @@ function EventsPage({
                 </motion.div>
               );
             })}
+
             {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").length === 0 && (
               <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
                 No upcoming events yet.
@@ -2259,7 +2329,6 @@ function EventsPage({
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.04)", color: "#f3f4f6", fontFamily: FM }}>{ev.club}</span>
                       <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                     </div>
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#94a3b8", fontFamily: FM }}>Ended</span>
@@ -2419,7 +2488,7 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
 
 function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null }) {
   const [formData, setFormData] = useState({
-    title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true,
+    title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
     eventType: "Solo", teamSizeLimit: "", minTeamSize: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
@@ -2490,6 +2559,11 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
     if (formData.type === "paid") {
       if (!formData.amount) errors.amount = "Amount is required for paid events.";
       else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
+
+      if (!formData.useDefaultQr) {
+        if (!formData.customUpiId.trim()) errors.customUpiId = "Custom UPI ID is required for custom payment setup.";
+        if (!formData.qrFile && !formData.qrCode) errors.qrCode = "Custom QR code image is required.";
+      }
     }
     if (formData.eventType === "Team") {
       if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
@@ -2539,6 +2613,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         clubId: clubId,
         bannerUrl,
         qrUrl,
+        upiId: (!formData.useDefaultQr && formData.customUpiId.trim()) ? formData.customUpiId.trim() : undefined,
         registrationDeadline: formData.deadline || undefined,
       }, token ?? undefined);
       onCreated();
@@ -2636,10 +2711,13 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
           </div>
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Pricing</label>
-            <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.type} onChange={e => setFormData(p => ({...p, type: e.target.value, amount: "", qrCode: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
-              <option value="free" style={{ background: "#111" }}>Free</option>
-              <option value="paid" style={{ background: "#111" }}>Paid</option>
-            </select>
+            <div className="relative">
+              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.type} onChange={e => setFormData(p => ({...p, type: e.target.value, amount: "", qrCode: "", customUpiId: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+                <option value="free" style={{ background: "#111" }}>Free</option>
+                <option value="paid" style={{ background: "#111" }}>Paid</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+            </div>
             {formData.type === "free" && (
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -bottom-5 left-1 text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>
                 FCFS. No approval needed.
@@ -2651,10 +2729,13 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Participation Type</label>
-            <select className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all appearance-none" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: "", minTeamSize: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
-              <option value="Solo" style={{ background: "#111" }}>Solo</option>
-              <option value="Team" style={{ background: "#111" }}>Team</option>
-            </select>
+            <div className="relative">
+              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: "", minTeamSize: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+                <option value="Solo" style={{ background: "#111" }}>Solo</option>
+                <option value="Team" style={{ background: "#111" }}>Team</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+            </div>
           </div>
           <AnimatePresence>
             {formData.eventType === "Team" && (
@@ -2690,33 +2771,57 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
               <div className="p-6 rounded-2xl grid md:grid-cols-2 gap-6" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                 <div className="space-y-1.5">
                   <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Amount (INR)</label>
-                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.amount} onChange={e => setFormData(p => ({...p, amount: e.target.value}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(240,61,78,0.4)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.amount ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.amount} onChange={e => { setFormData(p => ({...p, amount: e.target.value})); setFieldErrors(fe => ({...fe, amount: ""})); }} onFocus={e => e.currentTarget.style.borderColor = "rgba(240,61,78,0.4)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                  {fieldErrors.amount && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.amount}</p>}
                 </div>
+
                 <div className="space-y-3">
-                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Payment QR Code</label>
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Payment Setup</label>
                   <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <button onClick={() => setFormData(p => ({...p, useDefaultQr: true}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${formData.useDefaultQr ? "bg-white/10 text-white" : "text-[#888] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Default QR</button>
-                    <button onClick={() => setFormData(p => ({...p, useDefaultQr: false}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${!formData.useDefaultQr ? "bg-white/10 text-white" : "text-[#888] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Custom QR</button>
+                    <button onClick={() => setFormData(p => ({...p, useDefaultQr: true, customUpiId: ""}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${formData.useDefaultQr ? "bg-white/10 text-white" : "text-[#888] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Default QR &amp; UPI</button>
+                    <button onClick={() => setFormData(p => ({...p, useDefaultQr: false}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${!formData.useDefaultQr ? "bg-white/10 text-white" : "text-[#888] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Custom QR &amp; UPI</button>
                   </div>
+
                   {!formData.useDefaultQr && (
-                    <>
-                      <input type="file" accept="image/*" className="hidden" id="qr-upload" onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setFormData(p => ({...p, qrFile: file, qrCode: file.name}));
-                        }
-                      }} />
-                      <label htmlFor="qr-upload" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
-                        <span>{formData.qrFile ? formData.qrFile.name : "Upload QR Image..."}</span>
-                        <Upload size={14} className={formData.qrFile ? "text-green-400" : ""} />
-                      </label>
-                    </>
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block mb-1" style={{ fontFamily: FM }}>Upload Custom QR Image</label>
+                        <input type="file" accept="image/*" className="hidden" id="qr-upload" onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFormData(p => ({...p, qrFile: file, qrCode: file.name}));
+                            setFieldErrors(fe => ({...fe, qrCode: ""}));
+                          }
+                        }} />
+                        <label htmlFor="qr-upload" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.qrCode ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }}>
+                          <span>{formData.qrFile ? formData.qrFile.name : "Upload Custom QR Image..."}</span>
+                          <Upload size={14} className={formData.qrFile ? "text-green-400" : ""} />
+                        </label>
+                        {fieldErrors.qrCode && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.qrCode}</p>}
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block mb-1" style={{ fontFamily: FM }}>Custom UPI ID (for this event)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. event@upi"
+                          className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                          style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.customUpiId ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }}
+                          value={formData.customUpiId}
+                          onChange={e => { setFormData(p => ({...p, customUpiId: e.target.value})); setFieldErrors(fe => ({...fe, customUpiId: ""})); }}
+                          onFocus={e => e.currentTarget.style.borderColor = fieldErrors.customUpiId ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
+                          onBlur={e => e.currentTarget.style.borderColor = fieldErrors.customUpiId ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}
+                        />
+                        {fieldErrors.customUpiId && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.customUpiId}</p>}
+                      </div>
+                    </div>
                   )}
+
                   {formData.useDefaultQr && (
                     clubQrUrl ? (
-                      <div className="text-xs text-[#d1d5db] px-2" style={{ fontFamily: FB }}>Using the default QR code from your Payment Settings.</div>
+                      <div className="text-xs text-[#d1d5db] px-2" style={{ fontFamily: FB }}>Using default QR code &amp; UPI ID from Settings.</div>
                     ) : (
-                      <div className="text-xs text-[#F03D4E] px-2 font-medium" style={{ fontFamily: FB }}>Default QR code is not uploaded. Please upload a Custom QR or configure it in Settings.</div>
+                      <div className="text-xs text-[#F03D4E] px-2 font-medium" style={{ fontFamily: FB }}>Default QR code is not uploaded in Settings. Please upload a Custom QR &amp; UPI or configure it in Settings.</div>
                     )
                   )}
                 </div>
@@ -3017,8 +3122,8 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             </div>
             <a
               href="mailto:spotlightapp.help@gmail.com"
-              className="px-5 py-2.5 text-xs font-semibold text-white/80 hover:text-white rounded-xl transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+              className="px-5 py-2.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 rounded-xl transition-all"
+              style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", fontFamily: FB }}
             >
               spotlightapp.help@gmail.com
             </a>
@@ -4002,14 +4107,10 @@ function OverviewPage({
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "#f9fafb", fontFamily: FM }}>{ev.club}</span>
                     <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                   </div>
                   {ev.status === 'live' ? (
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-transparent text-red-400 flex items-center gap-1 font-semibold tracking-wider" style={{ fontFamily: FM }}>
-                      <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
-                      LIVE NOW
-                    </span>
+                    <LiveTag />
                   ) : (
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
                   )}

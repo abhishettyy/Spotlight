@@ -11,7 +11,7 @@ void showSpotlightToast(
   final cs = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  final IconData effectiveIcon = icon ?? (isError ? Icons.wifi_off_rounded : Icons.check_circle_rounded);
+  final IconData effectiveIcon = icon ?? (isError ? Icons.error_outline_rounded : Icons.check_circle_rounded);
 
   final bgColor = isError
       ? const Color(0xFFC62828)

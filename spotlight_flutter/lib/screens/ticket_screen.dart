@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../widgets/custom_image.dart';
 import 'ticket_details_screen.dart';
 import 'event_details_screen.dart';
+import 'payment_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
@@ -60,7 +61,7 @@ class _TicketScreenState extends State<TicketScreen> {
       _tickets.where((t) => t.isUpcoming).toList();
 
   List<TicketModel> get _past =>
-      _tickets.where((t) => !t.isUpcoming).toList();
+      _tickets.where((t) => !t.isUpcoming && t.isConfirmed).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -590,32 +591,51 @@ class _TicketScreenState extends State<TicketScreen> {
     final shortId = 'SPT-${ticket.id.substring(0, 8).toUpperCase()}';
 
     return GestureDetector(
-      onTap: ticket.isConfirmed
-          ? () => Navigator.push(
-                context,
-                SmoothRoute(
-                  builder: (_) => TicketDetailsScreen(ticket: {
-                    'title': title,
-                    'venue': venue,
-                    'date': event?.date ?? '',
-                    'qr_code_string': ticket.id,
-                    'price': event?.price ?? 0,
-                    'team': ticket.team != null
-                        ? {
-                            'name': ticket.team!.name,
-                            'passkey': ticket.team!.passkey,
-                            'members': ticket.team!.members
-                                .map((m) => {
-                                      'name': m.name,
-                                      'isLeader': m.isLeader,
-                                    })
-                                .toList(),
-                          }
-                        : null,
-                  }),
-                ),
-              )
-          : null,
+      onTap: () {
+        final hasPendingPayment = !ticket.isConfirmed && (ticket.paymentProofUrl == null || ticket.paymentProofUrl!.isEmpty) && (event?.price ?? 0) > 0;
+        if (ticket.isConfirmed) {
+          Navigator.push(
+            context,
+            SmoothRoute(
+              builder: (_) => TicketDetailsScreen(ticket: {
+                'title': title,
+                'venue': venue,
+                'date': event?.date ?? '',
+                'qr_code_string': ticket.id,
+                'price': event?.price ?? 0,
+                'team': ticket.team != null
+                    ? {
+                        'name': ticket.team!.name,
+                        'passkey': ticket.team!.passkey,
+                        'members': ticket.team!.members
+                            .map((m) => {
+                                  'name': m.name,
+                                  'isLeader': m.isLeader,
+                                })
+                            .toList(),
+                      }
+                    : null,
+              }),
+            ),
+          );
+        } else if (hasPendingPayment && event != null) {
+          final refCode = ticket.id.length > 6 ? ticket.id.substring(0, 6).toUpperCase() : ticket.id.toUpperCase();
+          Navigator.push(
+            context,
+            SmoothRoute(
+              builder: (_) => PaymentScreen(
+                eventName: event.title,
+                price: event.price,
+                qrUrl: event.qrUrl,
+                registrationId: ticket.id,
+                referenceCode: refCode,
+                upiId: event.upiId,
+                teamSizeLimit: event.teamSizeLimit,
+              ),
+            ),
+          ).then((_) => _loadTickets());
+        }
+      },
       child: Container(
         decoration: cardDecoration,
         child: Column(
@@ -726,7 +746,7 @@ class _TicketScreenState extends State<TicketScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (ticket.isConfirmed) ...[
+                      if (ticket.isConfirmed)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -739,61 +759,55 @@ class _TicketScreenState extends State<TicketScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold)),
                           ],
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            SmoothRoute(
-                              builder: (_) => TicketDetailsScreen(ticket: {
-                                'title': title,
-                                'venue': venue,
-                                'date': event?.date ?? '',
-                                'qr_code_string': ticket.id,
-                                'price': event?.price ?? 0,
-                                'team': ticket.team != null
-                                    ? {
-                                        'name': ticket.team!.name,
-                                        'passkey': ticket.team!.passkey,
-                                        'members': ticket.team!.members
-                                            .map((m) => {
-                                                  'name': m.name,
-                                                  'isLeader': m.isLeader,
-                                                })
-                                            .toList(),
-                                      }
-                                    : null,
-                              }),
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: cs.primary,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                          ),
-                          child: Text('View Ticket',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ] else ...[
+                        )
+                      else
                         const SizedBox(),
-                        Container(
+                      ElevatedButton(
+                        onPressed: ticket.isConfirmed
+                            ? () => Navigator.push(
+                                  context,
+                                  SmoothRoute(
+                                    builder: (_) => TicketDetailsScreen(ticket: {
+                                      'title': title,
+                                      'venue': venue,
+                                      'date': event?.date ?? '',
+                                      'qr_code_string': ticket.id,
+                                      'price': event?.price ?? 0,
+                                      'team': ticket.team != null
+                                          ? {
+                                              'name': ticket.team!.name,
+                                              'passkey': ticket.team!.passkey,
+                                              'members': ticket.team!.members
+                                                  .map((m) => {
+                                                        'name': m.name,
+                                                        'isLeader': m.isLeader,
+                                                      })
+                                                  .toList(),
+                                            }
+                                          : null,
+                                    }),
+                                  ),
+                                )
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: cs.primary,
+                          disabledBackgroundColor: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.grey.shade200,
+                          disabledForegroundColor: isDark
+                              ? Colors.white38
+                              : Colors.grey.shade500,
+                          elevation: ticket.isConfirmed ? 2 : 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: processingBg,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text('Awaiting Payment',
-                              style: GoogleFonts.inter(
-                                  color: subText,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
                         ),
-                      ],
+                        child: Text('View Ticket',
+                            style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
                 ],
@@ -807,62 +821,109 @@ class _TicketScreenState extends State<TicketScreen> {
 
   Widget _statusBadge(TicketModel ticket) {
     if (ticket.event != null && ticket.event!.isLive) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.redAccent.withOpacity(0.3), width: 1),
             ),
-            const SizedBox(width: 5),
-            Text(
-              'LIVE NOW',
-              style: GoogleFonts.inter(
-                color: Colors.redAccent,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'LIVE NOW',
+                  style: GoogleFonts.inter(
+                    color: Colors.redAccent,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
 
     final upper = ticket.status.toUpperCase();
+    final hasProof = ticket.paymentProofUrl != null && ticket.paymentProofUrl!.trim().isNotEmpty;
+    final isPaidEvent = (ticket.event?.price ?? 0) > 0;
+
+    Color badgeBg;
+    Color borderColor;
     Color textColor;
+    IconData icon;
     String label;
 
-    switch (upper) {
-      case 'CONFIRMED':
-        textColor = const Color(0xFF22C55E);
-        label = 'Confirmed';
-        break;
-      case 'PENDING':
-        textColor = const Color(0xFFFDE68A);
-        label = 'Pending';
-        break;
-      default:
-        textColor = Colors.white70;
-        label = ticket.status;
+    if (upper == 'CONFIRMED' || upper == 'APPROVED') {
+      badgeBg = const Color(0xFF22C55E).withOpacity(0.15);
+      borderColor = const Color(0xFF22C55E).withOpacity(0.35);
+      textColor = const Color(0xFF4ADE80);
+      icon = Icons.check_circle_rounded;
+      label = 'Confirmed';
+    } else if (upper == 'REJECTED') {
+      badgeBg = const Color(0xFFEF4444).withOpacity(0.15);
+      borderColor = const Color(0xFFEF4444).withOpacity(0.35);
+      textColor = const Color(0xFFF87171);
+      icon = Icons.cancel_rounded;
+      label = 'Rejected';
+    } else if (isPaidEvent && !hasProof) {
+      badgeBg = const Color(0xFFF59E0B).withOpacity(0.15);
+      borderColor = const Color(0xFFF59E0B).withOpacity(0.35);
+      textColor = const Color(0xFFFBBF24);
+      icon = Icons.payment_rounded;
+      label = 'Pending Payment';
+    } else {
+      badgeBg = const Color(0xFF38BDF8).withOpacity(0.15);
+      borderColor = const Color(0xFF38BDF8).withOpacity(0.35);
+      textColor = const Color(0xFF38BDF8);
+      icon = Icons.hourglass_top_rounded;
+      label = 'Approval Pending';
     }
 
-    return Text(
-      label,
-      style: GoogleFonts.inter(
-        color: textColor,
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.3,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: badgeBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: textColor),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: textColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
