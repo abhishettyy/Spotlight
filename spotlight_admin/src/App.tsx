@@ -9,7 +9,9 @@ import {
   Search,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const FC = "'Playfair Display', serif";
@@ -187,9 +189,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all text-xs"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all p-1"
+                  aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
                 >
-                  {showPasscode ? 'Hide' : 'Show'}
+                  {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
