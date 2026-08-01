@@ -450,10 +450,10 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
 
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
-      if (r.status === 'CONFIRMED') return true;           
-      if (r.paymentProofUrl !== null) return true;         
-      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;   
-      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;     
+      if (r.status === 'CONFIRMED' || r.status === 'REJECTED') return true;
+      if (r.paymentProofUrl !== null) return true;
+      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
+      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
       return false;
     });
 

@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_image.dart';
 import 'ticket_details_screen.dart';
 import 'event_details_screen.dart';
@@ -22,10 +24,11 @@ class TicketScreen extends StatefulWidget {
 }
 
 class _TicketScreenState extends State<TicketScreen> {
-  late int _selectedTab;
+  int _selectedTab = 0;
   List<TicketModel> _tickets = [];
   bool _isLoading = true;
   String? _error;
+  String _currentUserId = '';
 
   @override
   void initState() {
@@ -40,6 +43,8 @@ class _TicketScreenState extends State<TicketScreen> {
       _error = null;
     });
     try {
+      final prefs = await SharedPreferences.getInstance();
+      _currentUserId = prefs.getString('userId') ?? '';
       final tickets = await ApiService().fetchUserTickets();
       if (mounted) {
         setState(() {
@@ -591,7 +596,6 @@ class _TicketScreenState extends State<TicketScreen> {
 
     return GestureDetector(
       onTap: () {
-        final hasPendingPayment = !ticket.isConfirmed && (ticket.paymentProofUrl == null || ticket.paymentProofUrl!.isEmpty) && (event?.price ?? 0) > 0;
         if (ticket.isConfirmed) {
           Navigator.push(
             context,
@@ -617,22 +621,6 @@ class _TicketScreenState extends State<TicketScreen> {
               }),
             ),
           );
-        } else if (hasPendingPayment && event != null) {
-          final refCode = ticket.id.length > 6 ? ticket.id.substring(0, 6).toUpperCase() : ticket.id.toUpperCase();
-          Navigator.push(
-            context,
-            SmoothRoute(
-              builder: (_) => PaymentScreen(
-                eventName: event.title,
-                price: event.price,
-                qrUrl: event.qrUrl,
-                registrationId: ticket.id,
-                referenceCode: refCode,
-                upiId: event.upiId,
-                teamSizeLimit: event.teamSizeLimit,
-              ),
-            ),
-          ).then((_) => _loadTickets());
         }
       },
       child: Container(
@@ -734,20 +722,108 @@ class _TicketScreenState extends State<TicketScreen> {
                           overflow: TextOverflow.ellipsis),
                     ),
                   ]),
-                  if (ticket.team != null) ...[
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      Icon(Icons.group_outlined, color: subText, size: 13),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                            '${ticket.team!.name}  ·  ${ticket.team!.passkey}',
-                            style: GoogleFonts.inter(
-                                color: subText, fontSize: 12),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                  if (ticket.team != null && ticket.team!.passkey.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                        ),
                       ),
-                    ]),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Icon(Icons.group_outlined, color: subText, size: 14),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    ticket.team!.name,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: mainText,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: (isDark ? const Color(0xFFF03D4E) : const Color(0xFFD32F2F)).withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    ticket.team!.passkey,
+                                    style: GoogleFonts.robotoMono(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? const Color(0xFFF03D4E) : const Color(0xFFD32F2F),
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: ticket.team!.passkey));
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 16),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Passkey copied: ${ticket.team!.passkey}',
+                                        style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: const Color(0xFF1E1E1E),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.copy_rounded, size: 12, color: mainText),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Copy',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: mainText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 14),
                   Divider(color: dividerColor),
@@ -873,6 +949,8 @@ class _TicketScreenState extends State<TicketScreen> {
     final upper = ticket.status.toUpperCase();
     final hasProof = ticket.paymentProofUrl != null && ticket.paymentProofUrl!.trim().isNotEmpty;
     final isPaidEvent = (ticket.event?.price ?? 0) > 0;
+    final isTeamMember = ticket.team != null;
+    final isLeader = isTeamMember && (ticket.team!.leaderId.isNotEmpty ? ticket.team!.leaderId == _currentUserId : ticket.team!.members.any((m) => m.isLeader && m.id == _currentUserId));
 
     Color badgeBg;
     Color borderColor;
@@ -892,7 +970,7 @@ class _TicketScreenState extends State<TicketScreen> {
       textColor = const Color(0xFFF87171);
       icon = Icons.cancel_rounded;
       label = 'Rejected';
-    } else if (isPaidEvent && !hasProof) {
+    } else if (isPaidEvent && !hasProof && (!isTeamMember || isLeader)) {
       badgeBg = const Color(0xFFF59E0B).withOpacity(0.15);
       borderColor = const Color(0xFFF59E0B).withOpacity(0.35);
       textColor = const Color(0xFFFBBF24);

@@ -386,11 +386,13 @@ class TicketTeamMember {
   final String id;
   final String name;
   final bool isLeader;
+  final String status;
 
   TicketTeamMember({
     required this.id,
     required this.name,
     required this.isLeader,
+    this.status = 'PENDING',
   });
 
   factory TicketTeamMember.fromJson(Map<String, dynamic> json) {
@@ -398,6 +400,7 @@ class TicketTeamMember {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       isLeader: json['isLeader'] ?? false,
+      status: json['status'] ?? 'PENDING',
     );
   }
 }
@@ -406,12 +409,14 @@ class TicketTeamInfo {
   final String id;
   final String name;
   final String passkey;
+  final String leaderId;
   final List<TicketTeamMember> members;
 
   TicketTeamInfo({
     required this.id,
     required this.name,
     required this.passkey,
+    this.leaderId = '',
     this.members = const [],
   });
 
@@ -420,6 +425,7 @@ class TicketTeamInfo {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       passkey: json['passkey'] ?? '',
+      leaderId: json['leaderId'] ?? '',
       members: (json['members'] as List<dynamic>?)
               ?.map((e) => TicketTeamMember.fromJson(e))
               .toList() ??

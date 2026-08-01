@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,11 +28,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   // null = still checking, true = registered, false = not registered
   bool? _isRegistered;
   TicketModel? _pendingPaymentTicket;
+  Timer? _deadlineTimer;
 
   @override
   void initState() {
     super.initState();
     _checkRegistration();
+    _deadlineTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _deadlineTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkRegistration() async {
@@ -46,10 +57,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
         for (final t in tickets) {
           if (t.event?.id == widget.eventId) {
+            final isRejected = t.status.toUpperCase() == 'REJECTED';
+            if (isRejected) continue; // Allow rejected users to register again!
+
             final hasProof = t.paymentProofUrl != null && t.paymentProofUrl!.trim().isNotEmpty;
             final isFree = (t.event?.price ?? 0) == 0;
             final isTeamMember = t.team != null;
-            final isLeader = isTeamMember && (t.team!.members.any((m) => m.isLeader && m.id == currentUserId) || (t.team!.members.isEmpty));
+            final isLeader = isTeamMember && (t.team!.leaderId.isNotEmpty ? t.team!.leaderId == currentUserId : t.team!.members.any((m) => m.isLeader && m.id == currentUserId));
 
             if (hasProof || isFree || t.isConfirmed || (isTeamMember && !isLeader)) {
               confirmedTicket = t;

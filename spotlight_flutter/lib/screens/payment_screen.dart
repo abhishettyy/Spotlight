@@ -66,7 +66,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (utr.isEmpty) {
       showSpotlightToast(
         context,
-        'Please enter your Transaction ID / UTR number.',
+        'Please enter your Transaction ID.',
         isError: true,
       );
       return;
@@ -271,12 +271,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                Text('Transaction ID / UTR Number', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                Text('Transaction ID', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _utrController,
                   decoration: InputDecoration(
-                    hintText: 'Enter 12-digit UPI UTR / Ref No.',
+                    hintText: 'Enter Transaction ID',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: Theme.of(context).colorScheme.surface,

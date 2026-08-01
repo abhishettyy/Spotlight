@@ -44,10 +44,12 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
         id: r.team.id, 
         name: r.team.teamName, 
         passkey: r.team.passkey,
+        leaderId: r.team.leaderId,
         members: r.team.registrations.map((reg: any) => ({
           id: reg.profile.id,
           name: reg.profile.fullName,
-          isLeader: reg.profile.id === r.team?.leaderId
+          isLeader: reg.profile.id === r.team?.leaderId,
+          status: reg.status
         }))
       } : null,
       event: r.event ? {
@@ -86,14 +88,15 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
+    if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
+      return res.status(400).json({ error: 'Registration deadline has passed.' });
+    }
+
     const alreadyRegistered = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: clerkUserId }
+      where: { eventId: eventId, userId: clerkUserId, status: { in: ['PENDING', 'CONFIRMED'] } }
     });
     if (alreadyRegistered) {
-      if (alreadyRegistered.status !== 'REJECTED') {
-        return res.status(400).json({ error: 'You are already registered for this event.' });
-      }
-      await prisma.registration.delete({ where: { id: alreadyRegistered.id } });
+      return res.status(400).json({ error: 'You are already registered for this event.' });
     }
 
     if (event.registrationLimit) {
@@ -121,14 +124,15 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
+    if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
+      return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
+    }
+
     const alreadyRegistered = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: clerkUserId }
+      where: { eventId: eventId, userId: clerkUserId, status: { in: ['PENDING', 'CONFIRMED'] } }
     });
     if (alreadyRegistered) {
-      if (alreadyRegistered.status !== 'REJECTED') {
-        return res.status(400).json({ error: 'You are already registered for this event.' });
-      }
-      await prisma.registration.delete({ where: { id: alreadyRegistered.id } });
+      return res.status(400).json({ error: 'You are already registered for this event.' });
     }
 
     const passkey = await generateUniquePasskey();
@@ -162,14 +166,15 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
     });
     if (!team) return res.status(404).json({ error: 'Invalid passkey.' });
 
+    if (team.event?.registrationDeadline && new Date() > new Date(team.event.registrationDeadline)) {
+      return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
+    }
+
     const alreadyRegistered = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: clerkUserId }
+      where: { eventId: eventId, userId: clerkUserId, status: { in: ['PENDING', 'CONFIRMED'] } }
     });
     if (alreadyRegistered) {
-      if (alreadyRegistered.status !== 'REJECTED') {
-        return res.status(400).json({ error: 'You are already registered for this event.' });
-      }
-      await prisma.registration.delete({ where: { id: alreadyRegistered.id } });
+      return res.status(400).json({ error: 'You are already registered for this event.' });
     }
 
     // Check team size limit
@@ -183,10 +188,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       });
     }
 
-    const leaderReg = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: team.leaderId }
-    });
-    const status = (team.event?.fee === 0 || leaderReg?.status === 'CONFIRMED') ? 'CONFIRMED' : 'PENDING';
+    const status = (team.event?.fee === 0) ? 'CONFIRMED' : 'PENDING';
 
     const registration = await prisma.registration.create({
       data: { eventId: eventId, userId: clerkUserId, teamId: team.id, status }
@@ -218,6 +220,10 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
 
     if (registration.userId !== req.auth!.userId) {
       return res.status(403).json({ error: 'Forbidden: You cannot upload payment proof for another user.' });
+    }
+
+    if (registration.event?.registrationDeadline && new Date() > new Date(registration.event.registrationDeadline)) {
+      return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
     const publicUrl = await uploadBase64Image(paymentProof, 'payments/proofs');

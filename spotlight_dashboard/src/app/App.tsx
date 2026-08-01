@@ -1156,14 +1156,12 @@ function EventsPage({
         return d < todayStart;
       })())
     : false;
-  const pending  = registrations.filter(r => {
-    if (r.status?.toLowerCase() !== "pending") return false;
-    if (r.team) {
-      return r.team.leaderId === r.user?.id;
-    }
-    return true;
-  });
+  const pending = registrations.filter(r => r.status?.toLowerCase() === "pending");
   const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
+  const rejected = registrations.filter(r => {
+    const s = r.status?.toLowerCase();
+    return s === "rejected" || s === "cancelled";
+  });
 
   useEffect(() => {
     if (!selectedEventId) return;
@@ -1267,7 +1265,7 @@ function EventsPage({
   if (activeEvent) {
     const teamGroups = new Map<string, { id: string; name: string; passkey: string; members: Registration[] }>();
     registrations.forEach(r => {
-      if (r.team) {
+      if (r.team && r.status?.toLowerCase() !== 'rejected') {
         if (!teamGroups.has(r.team.id)) {
           teamGroups.set(r.team.id, { ...r.team, members: [] });
         }
@@ -1329,7 +1327,7 @@ function EventsPage({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Registration Approval</h1>
-                <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>{pending.length} pending · {approved.length} approved</p>
+                <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>{pending.length} pending · {approved.length} approved · {rejected.length} rejected</p>
               </div>
               <button onClick={() => setShowApprovals(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all self-start sm:self-auto" style={{ fontFamily: FB }}>Return to Event</button>
             </div>
@@ -1358,7 +1356,7 @@ function EventsPage({
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Action</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -1408,8 +1406,8 @@ function EventsPage({
                                 )}
                               </td>
                               <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
-                              <td className="p-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
+                              <td className="p-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
                                   <button
                                     disabled={isEventFinished}
                                     onClick={(e) => !isEventFinished && handleApprove(req.id, e)}
@@ -1465,7 +1463,7 @@ function EventsPage({
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Status</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -1503,8 +1501,86 @@ function EventsPage({
                               )}
                             </td>
                             <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
-                            <td className="p-4 text-right">
+                            <td className="p-4 text-center">
                               <span className="text-[11px] text-green-500 uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Approved</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Rejected section */}
+            <div>
+              <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Rejected ({rejected.length})</p>
+              {rejected.length === 0 ? (
+                <div className="p-8 rounded-xl text-center text-xs text-[#94a3b8]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>No rejected registrations.</div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {rejected.map((req) => {
+                        const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
+                        return (
+                          <tr key={req.id} className="hover:bg-white/[0.01] transition-colors">
+                            <td className="p-4 max-w-[180px]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
+                                <p className="text-sm font-medium text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                              </div>
+                            </td>
+                            <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                            <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                            <td className="p-4 text-xs text-[#888] max-w-[180px]">
+                              {req.team ? (
+                                <div>
+                                  <span className="font-medium text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
+                                  <p className="text-[10px] text-[#94a3b8] font-mono">Passkey: {req.team.passkey}</p>
+                                </div>
+                              ) : (
+                                <span className="text-[#888] font-mono">—</span>
+                              )}
+                            </td>
+                            <td className="p-4 text-xs font-mono text-[#888] max-w-[150px]">
+                              {activeEvent.price === 0 ? (
+                                <span className="text-[#94a3b8]">Free</span>
+                              ) : req.team ? (
+                                isLeader ? (
+                                  req.transaction_id ? (
+                                    <span className="select-all text-[#f87171] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
+                                  ) : (
+                                    <span className="text-[#888] text-[10px] uppercase tracking-wider">—</span>
+                                  )
+                                ) : (
+                                  <span className="text-[#94a3b8] italic text-[11px]">Member</span>
+                                )
+                              ) : (
+                                req.transaction_id ? (
+                                  <span className="select-all text-[#f87171] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
+                                ) : (
+                                  <span className="text-[#888] text-[10px] uppercase tracking-wider">—</span>
+                                )
+                              )}
+                            </td>
+                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                            <td className="p-4 text-center">
+                              <span className="text-[11px] text-[#F03D4E] uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Rejected</span>
                             </td>
                           </tr>
                         );
@@ -1729,12 +1805,10 @@ function EventsPage({
                     {activeEvent.bannerUrl ? (
                       <img src={activeEvent.bannerUrl} alt={activeEvent.title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex flex-col justify-end p-6 md:p-8"
-                        style={{ background: "linear-gradient(135deg, rgba(240,61,78,0.12) 0%, rgba(5,5,5,0.98) 100%)" }}
+                      <div className="w-full h-full flex items-center justify-center relative"
+                        style={{ background: "linear-gradient(135deg, rgba(240,61,78,0.05) 0%, rgba(12,12,12,0.95) 100%)" }}
                       >
-                        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 80% 20%, rgba(240,61,78,0.08), transparent 50%)" }} />
-                        <span className="text-[11px] tracking-[0.4em] uppercase text-[#F03D4E] font-bold" style={{ fontFamily: FM }}>SPOTLIGHT EXPERIENCE</span>
-                        <h2 className="text-xl md:text-2xl font-bold text-white mt-1 leading-tight" style={{ fontFamily: FC }}>{activeEvent.title}</h2>
+                        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(240,61,78,0.06), transparent 70%)" }} />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />

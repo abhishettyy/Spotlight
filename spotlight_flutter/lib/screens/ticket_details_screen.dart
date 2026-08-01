@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
@@ -88,11 +89,59 @@ class TicketDetailsScreen extends StatelessWidget {
                         const SizedBox(height: 8),
                         _infoChip(context, Icons.location_on_outlined, venue),
                         if (team != null) ...[
-                          const SizedBox(height: 8),
-                          _infoChip(
-                              context,
-                              Icons.group_outlined,
-                              '${team['name']}  ·  ${team['passkey']}'),
+                          const SizedBox(height: 10),
+                          InkWell(
+                            onTap: () {
+                              final pk = team['passkey']?.toString() ?? '';
+                              if (pk.isNotEmpty) {
+                                Clipboard.setData(ClipboardData(text: pk));
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text('Passkey copied: $pk', style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                                      ],
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: const Color(0xFF1E1E1E),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: isDark ? Colors.white12 : Colors.grey[300]!),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.group_outlined, size: 14, color: subText),
+                                  const SizedBox(width: 6),
+                                  Text('${team['name']}', style: GoogleFonts.inter(fontSize: 12, color: cs.onBackground, fontWeight: FontWeight.w500)),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: cs.primary.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text('${team['passkey']}', style: GoogleFonts.robotoMono(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.copy_rounded, size: 12, color: subText),
+                                ],
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.all(12),
