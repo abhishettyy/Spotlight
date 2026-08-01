@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
-import { requireAuth } from '../middlewares/auth';
+import { requireAuth, requireOptionalAuth } from '../middlewares/auth';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 
@@ -154,7 +154,7 @@ router.post('/registration-keys/generate', async (req: Request, res: Response): 
   }
 });
 
-router.post('/', requireAuth, async (req: Request, res: Response): Promise<any> => {
+router.post('/', requireOptionalAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const { name, email, logoUrl, password, registrationKey } = req.body;
     if (!name || !email) {

@@ -29,7 +29,7 @@ interface RegistrationKeyRecord {
   usedAt?: string | null;
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://10.144.78.122:5000/api';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://192.168.1.46:5000/api';
 
 export default function App() {
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -183,13 +183,14 @@ export default function App() {
                   placeholder="Enter developer passcode"
                   value={adminPasscode}
                   onChange={(e) => setAdminPasscode(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-red-500/50 transition-all"
+                  className="w-full pl-4 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-red-500/50 transition-all"
                   style={{ fontFamily: FB }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all p-1 bg-transparent border-none outline-none flex items-center justify-center cursor-pointer"
+                  style={{ background: 'transparent' }}
                   aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
                 >
                   {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}

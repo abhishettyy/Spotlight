@@ -777,21 +777,24 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
       });
 
       if (result.status === "complete") {
-        console.log("[CustomSignUp] Clerk signup verified successfully. Auto-provisioning club...");
-
-        const res = await createClub({
-          name: clubName,
-          email: email,
-          password: password, 
-          clerkUserId: result.createdUserId!,
-          logoUrl: "",
-          registrationKey: registrationKey.trim(),
-        });
-        localStorage.setItem("show_first_time_notice", "true");
-
-        console.log("[CustomSignUp] Database club creation complete:", res);
-
+        console.log("[CustomSignUp] Clerk signup verified successfully. Activating session & auto-provisioning club...");
         await setSignUpActive({ session: result.createdSessionId });
+
+        try {
+          const res = await createClub({
+            name: clubName,
+            email: email,
+            password: password, 
+            clerkUserId: result.createdUserId!,
+            logoUrl: "",
+            registrationKey: registrationKey.trim(),
+          });
+          localStorage.setItem("show_first_time_notice", "true");
+          console.log("[CustomSignUp] Database club creation complete:", res);
+        } catch (clubErr: any) {
+          console.error("[CustomSignUp] Failed to create club in database:", clubErr);
+          setError(sanitizeErrorMessage(clubErr, "Failed to create club."));
+        }
       } else {
         setError("Verification not complete.");
       }
@@ -1211,7 +1214,6 @@ function EventsPage({
   const handleApprove = async (id: string, e: React.MouseEvent) => {
     if (isEventFinished) return;
     try {
-
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
       confetti({
@@ -1227,12 +1229,9 @@ function EventsPage({
       const token = await getToken();
       await approveRegistration(id, token ?? undefined);
 
-      const reg = allRegistrations.find(r => r.id === id);
-      const teamId = reg?.team?.id;
-
       onRegistrationsChange(prev =>
         prev.map(r => {
-          if (r.id === id || (teamId && r.team?.id === teamId)) {
+          if (r.id === id) {
             return { ...r, status: 'CONFIRMED' };
           }
           return r;
@@ -1247,12 +1246,13 @@ function EventsPage({
     if (isEventFinished) return;
     try {
       const token = await getToken();
-      // Optimistic UI: mark as REJECTED immediately
+      const targetReg = allRegistrations.find(r2 => r2.id === id);
+      const isLeader = targetReg?.team && targetReg.user?.id === targetReg.team.leaderId;
+      const teamId = targetReg?.team?.id;
+
       onRegistrationsChange(prev =>
         prev.map(r => {
-          const reg = allRegistrations.find(r2 => r2.id === id);
-          const teamId = reg?.team?.id;
-          if (r.id === id || (teamId && r.team?.id === teamId)) {
+          if (r.id === id || (isLeader && teamId && r.team?.id === teamId)) {
             return { ...r, status: 'REJECTED' };
           }
           return r;
@@ -3712,13 +3712,9 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   useEffect(() => {
     if (profile) {
-      if (!profile.clubId) {
-        setActiveTab("onboarding", false);
-      } else {
-        const params = new URLSearchParams(window.location.search);
-        if (!params.get("tab") || activeTab === "onboarding") {
-          setActiveTab("overview", false);
-        }
+      const params = new URLSearchParams(window.location.search);
+      if (!params.get("tab") || activeTab === "onboarding") {
+        setActiveTab("overview", false);
       }
     }
   }, [profile]);
@@ -3731,17 +3727,6 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           <p className="text-xs tracking-[0.4em] uppercase text-[#94a3b8]" style={{ fontFamily: FM }}>Loading Dashboard</p>
         </div>
       </div>
-    );
-  }
-
-  if (activeTab === "onboarding") {
-    return (
-      <ClubOnboardingPage 
-        onSuccess={async (newClubId) => {
-          await refreshEvents();
-          setActiveTab("overview");
-        }} 
-      />
     );
   }
 

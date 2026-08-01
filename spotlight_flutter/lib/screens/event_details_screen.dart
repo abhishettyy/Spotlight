@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'payment_screen.dart';
 import '../core/smooth_route.dart';
@@ -35,6 +36,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   Future<void> _checkRegistration() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = prefs.getString('userId') ?? '';
+
       final tickets = await ApiService().fetchUserTickets();
       if (mounted) {
         TicketModel? pendingTicket;
@@ -44,7 +48,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           if (t.event?.id == widget.eventId) {
             final hasProof = t.paymentProofUrl != null && t.paymentProofUrl!.trim().isNotEmpty;
             final isFree = (t.event?.price ?? 0) == 0;
-            if (hasProof || isFree || t.isConfirmed) {
+            final isTeamMember = t.team != null;
+            final isLeader = isTeamMember && (t.team!.members.any((m) => m.isLeader && m.id == currentUserId) || (t.team!.members.isEmpty));
+
+            if (hasProof || isFree || t.isConfirmed || (isTeamMember && !isLeader)) {
               confirmedTicket = t;
             } else {
               pendingTicket = t;

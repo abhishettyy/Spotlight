@@ -524,7 +524,6 @@ class _TicketScreenState extends State<TicketScreen> {
 
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
     final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
-    final processingBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
     final mainText = isDark ? Colors.white : const Color(0xFF111111);
 
     final cardDecoration = isDark
@@ -695,13 +694,17 @@ class _TicketScreenState extends State<TicketScreen> {
                             color: subText,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2)),
+                            letterSpacing: 1.2),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Text(title,
                       style: GoogleFonts.inter(
                           color: mainText,
                           fontSize: 18,
-                          fontWeight: FontWeight.bold)),
+                          fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 10),
                   Row(children: [
                     Icon(Icons.calendar_today_outlined,
@@ -724,19 +727,26 @@ class _TicketScreenState extends State<TicketScreen> {
                     Icon(Icons.location_on_outlined,
                         color: subText, size: 13),
                     const SizedBox(width: 4),
-                    Text(venue,
-                        style:
-                            GoogleFonts.inter(color: subText, fontSize: 12)),
+                    Expanded(
+                      child: Text(venue,
+                          style: GoogleFonts.inter(color: subText, fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ),
                   ]),
                   if (ticket.team != null) ...[
                     const SizedBox(height: 4),
                     Row(children: [
                       Icon(Icons.group_outlined, color: subText, size: 13),
                       const SizedBox(width: 4),
-                      Text(
-                          '${ticket.team!.name}  ·  ${ticket.team!.passkey}',
-                          style: GoogleFonts.inter(
-                              color: subText, fontSize: 12)),
+                      Expanded(
+                        child: Text(
+                            '${ticket.team!.name}  ·  ${ticket.team!.passkey}',
+                            style: GoogleFonts.inter(
+                                color: subText, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
                     ]),
                   ],
                   const SizedBox(height: 14),

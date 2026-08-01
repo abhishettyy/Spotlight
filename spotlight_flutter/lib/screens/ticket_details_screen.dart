@@ -214,8 +214,14 @@ class TicketDetailsScreen extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 13, color: textColor),
         const SizedBox(width: 6),
-        Text(text,
-            style: GoogleFonts.inter(fontSize: 12, color: textColor)),
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.inter(fontSize: 12, color: textColor),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
       ]),
     );
   }

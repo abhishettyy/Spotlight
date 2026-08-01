@@ -50,3 +50,39 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: 'Unauthorized: Authentication required.' });
   }
 };
+
+export const requireOptionalAuth = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    if (req.auth?.userId) {
+      return next();
+    }
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        if (decoded && decoded.userId) {
+          req.auth = { userId: decoded.userId } as any;
+          return next();
+        }
+      } catch (err) {}
+
+      try {
+        const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+        if (googleRes.ok) {
+          const googleData = await googleRes.json() as any;
+          if (googleData && googleData.sub) {
+            req.auth = { userId: `google_${googleData.sub}` } as any;
+            return next();
+          }
+        }
+      } catch (err) {}
+    }
+
+    return next();
+  } catch (error: any) {
+    return next();
+  }
+};
