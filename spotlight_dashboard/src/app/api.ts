@@ -265,3 +265,10 @@ export async function fetchAllRegistrationsForEvents(
 export async function fetchClubDashboardStats(clubId: string, token?: string) {
   return request(`/clubs/${clubId}/dashboard-stats`, {}, token);
 }
+
+export async function verifyTicketQR(ticketId: string, eventId: string, token?: string) {
+  return request(`/registrations/verify-ticket`, {
+    method: 'POST',
+    body: JSON.stringify({ ticketId, eventId }),
+  }, token);
+}

@@ -221,6 +221,38 @@ class TicketDetailsScreen extends StatelessWidget {
                         Text('Scan at the venue',
                             style: GoogleFonts.inter(
                                 fontSize: 12, color: subText)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.06)
+                                : Colors.black.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'TICKET ID: ',
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: subText,
+                                ),
+                              ),
+                              SelectableText(
+                                qrCodeString,
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -4,15 +4,16 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, ChevronDown, Check, Upload,
-  X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle
+  X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle, Image as ImageIcon, Camera, QrCode
 } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import {
   useAuth,
   useUser,
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
 
 const FC = "'Playfair Display', serif";
@@ -112,11 +113,14 @@ interface ClubEvent {
   bannerUrl?: string | null;
   qrUrl?: string | null;
   registrationDeadline?: string | null;
+  pendingCount?: number;
+  teamSizeLimit?: number | null;
 }
 
 interface Registration {
   id: string;
   status: string;
+  checkedInAt?: string | Date | null;
   created_at: string;
   eventTitle: string;
   eventId: string;
@@ -1123,6 +1127,328 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   );
 }
 
+const checkScanStatus = (_eventDateStr?: string | null) => {
+  // Time restriction disabled — scanner always available
+  return { enabled: true, reason: "Scanner Active" };
+};
+
+function TicketScannerModal({
+  activeEvent,
+  getToken,
+  onClose,
+  onScanSuccess,
+}: {
+  activeEvent: any;
+  getToken: () => Promise<string | null>;
+  onClose: () => void;
+  onScanSuccess?: (ticket: any) => void;
+}) {
+  const [scanResult, setScanResult] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState("");
+  const [alreadyCheckedIn, setAlreadyCheckedIn] = useState<string | null>(null);
+
+  useEffect(() => {
+    let html5Qrcode: Html5Qrcode | null = null;
+    const elementId = "qr-reader-canvas";
+
+    const startScanner = async () => {
+      try {
+        html5Qrcode = new Html5Qrcode(elementId);
+        await html5Qrcode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          async (decodedText) => {
+            if (decodedText) {
+              if (html5Qrcode && html5Qrcode.isScanning) {
+                await html5Qrcode.stop().catch(() => {});
+              }
+              handleProcessTicket(decodedText);
+            }
+          },
+          () => {}
+        );
+      } catch (err: any) {
+        console.warn("[QR Scanner] Camera initialize warning:", err);
+      }
+    };
+
+    // Only start the scanner when showing the scan view (not result/already-checked-in view)
+    if (!scanResult && !alreadyCheckedIn) {
+      const timer = setTimeout(startScanner, 150);
+      return () => {
+        clearTimeout(timer);
+        if (html5Qrcode && html5Qrcode.isScanning) {
+          html5Qrcode.stop().catch(() => {});
+        }
+      };
+    }
+  }, [scanResult, alreadyCheckedIn]);
+
+  const handleProcessTicket = async (ticketId: string) => {
+    if (!ticketId.trim()) return;
+    setLoading(true);
+    setScanError(null);
+    setAlreadyCheckedIn(null);
+    try {
+      const token = await getToken();
+      const res = await verifyTicketQR(ticketId.trim(), activeEvent.id, token ?? undefined);
+      if (res.valid && res.alreadyCheckedIn) {
+        setAlreadyCheckedIn(res.message || 'This ticket has already been checked in.');
+      } else if (res.valid && res.ticket) {
+        setScanResult(res.ticket);
+        if (onScanSuccess) {
+          onScanSuccess(res.ticket);
+        }
+      } else {
+        setScanError(res.error || "Unrecognized or invalid ticket.");
+      }
+    } catch (err: any) {
+      setScanError(err.message || "Failed to verify ticket QR code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-2xl border border-[#F03D4E]/20 bg-[#F03D4E]/[0.03] overflow-hidden"
+    >
+      {/* Panel Header */}
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2.5">
+          <Camera size={16} className="text-[#F03D4E]" />
+          <span className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>
+            Scan Ticket QR
+          </span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>
+            Live
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-white/40 hover:text-white transition-colors cursor-pointer p-1 rounded-lg hover:bg-white/10"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="p-5">
+        {alreadyCheckedIn ? (
+          /* Already Checked In Panel */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    <path d="M12 8v4"/>
+                    <path d="M12 16h.01"/>
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-amber-400" style={{ fontFamily: FM }}>
+                    ALREADY CHECKED IN
+                  </span>
+                  <p className="text-sm font-semibold text-white mt-0.5" style={{ fontFamily: FB }}>
+                    {alreadyCheckedIn}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setAlreadyCheckedIn(null); setScanError(null); setManualCode(""); }}
+                className="text-xs px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer font-semibold"
+                style={{ fontFamily: FB }}
+              >
+                Scan Next Ticket
+              </button>
+            </div>
+            <p className="text-xs text-[#888] text-center" style={{ fontFamily: FB }}>
+              This team/attendee is already marked as present. No duplicate entry was created.
+            </p>
+          </div>
+        ) : !scanResult ? (
+          <div className="flex flex-col lg:flex-row gap-5">
+            {/* Camera Feed */}
+            <div className="flex-shrink-0">
+              <div
+                className="relative rounded-xl overflow-hidden bg-black border border-white/10"
+                style={{ width: 280, height: 240 }}
+              >
+                <div id="qr-reader-canvas" className="w-full h-full" />
+                {loading && (
+                  <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-3 z-20">
+                    <div className="w-7 h-7 border-2 border-[#F03D4E] border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs text-white/80" style={{ fontFamily: FB }}>Verifying...</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-white/30 mt-2 text-center" style={{ fontFamily: FB }}>
+                Point camera at attendee's QR code
+              </p>
+            </div>
+
+            {/* Manual Entry */}
+            <div className="flex-1 flex flex-col justify-center gap-4">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-white/60 uppercase tracking-wider" style={{ fontFamily: FM }}>
+                  Or enter Ticket ID or Team Passkey
+                </p>
+                <p className="text-[11px] text-white/30" style={{ fontFamily: FB }}>
+                  Enter Ticket ID or Team Passkey manually if camera cannot scan
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Paste Ticket ID or Team Passkey..."
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleProcessTicket(manualCode);
+                  }}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-xs text-white bg-white/5 border border-white/10 outline-none focus:border-[#F03D4E]/50 transition-all"
+                  style={{ fontFamily: FB }}
+                />
+                <button
+                  onClick={() => handleProcessTicket(manualCode)}
+                  disabled={loading || !manualCode.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-[#F03D4E] text-white text-xs font-semibold hover:bg-[#d63545] transition-all disabled:opacity-40 cursor-pointer flex-shrink-0"
+                  style={{ fontFamily: FB }}
+                >
+                  Verify
+                </button>
+              </div>
+              {scanError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-[#F03D4E] font-medium" style={{ fontFamily: FB }}>
+                  ⚠️ {scanError}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Inline Result Panel */
+          <div className="space-y-5">
+            {/* Verified Header Bar */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-emerald-400" style={{ fontFamily: FM }}>
+                      TICKET VERIFIED · {scanResult.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-white mt-0.5" style={{ fontFamily: FB }}>
+                    {scanResult.event.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setScanResult(null); setScanError(null); setManualCode(""); }}
+                className="text-xs px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer font-semibold"
+                style={{ fontFamily: FB }}
+              >
+                Scan Next Ticket
+              </button>
+            </div>
+
+            {/* Scanned Attendee Profile Summary */}
+            {scanResult.attendee && (
+              <div className="p-5 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                  <span className="text-[11px] uppercase tracking-widest text-[#f3f4f6] font-semibold" style={{ fontFamily: FM }}>
+                    Scanned Attendee Details
+                  </span>
+                  {scanResult.team && (
+                    <span className="text-xs text-white/70 font-mono" style={{ fontFamily: FB }}>
+                      Team: <strong className="text-white">{scanResult.team.name}</strong> (Passkey: <span className="text-emerald-400 font-bold">{scanResult.team.passkey}</span>)
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-[#94a3b8]" style={{ fontFamily: FB }}>
+                  <div>
+                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Full Name</span>
+                    <span className="text-white font-medium text-sm">{scanResult.attendee.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>USN</span>
+                    <span className="text-white font-mono">{scanResult.attendee.usn || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Email</span>
+                    <span className="text-white font-mono text-[11px]">{scanResult.attendee.email || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Branch / Sem</span>
+                    <span className="text-white">
+                      {scanResult.attendee.branch || '—'}
+                      {scanResult.attendee.sem ? `, Sem ${scanResult.attendee.sem}` : ''}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Team Members List */}
+            {scanResult.team && scanResult.team.members.length > 0 && (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#f3f4f6]" style={{ fontFamily: FM }}>
+                    Team Roster ({scanResult.team.members.length} members checked-in)
+                  </h4>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.005]">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/5 text-[#94a3b8]" style={{ fontFamily: FM }}>
+                        <th className="p-3">Member Name</th>
+                        <th className="p-3">USN</th>
+                        <th className="p-3">Email</th>
+                        <th className="p-3">Branch</th>
+                        <th className="p-3 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-white/80" style={{ fontFamily: FB }}>
+                      {scanResult.team.members.map((member: any) => (
+                        <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="p-3 font-semibold text-white flex items-center gap-2">
+                            {member.name}
+                            {member.isLeader && (
+                              <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Leader</span>
+                            )}
+                          </td>
+                          <td className="p-3 font-mono text-[#94a3b8]">{member.usn || '—'}</td>
+                          <td className="p-3 text-[#94a3b8]">{member.email || '—'}</td>
+                          <td className="p-3 text-[#94a3b8]">{member.branch || '—'}</td>
+                          <td className="p-3 text-right">
+                            <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" style={{ fontFamily: FM }}>
+                              CONFIRMED
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+
+
 function EventsPage({ 
   EVENTS, 
   allRegistrations, 
@@ -1165,6 +1491,9 @@ function EventsPage({
   const [bannerPassword, setBannerPassword] = useState("");
   const [bannerPasswordError, setBannerPasswordError] = useState<string | null>(null);
   const [showBannerPassword, setShowBannerPassword] = useState(false);
+  const [showFullBannerModal, setShowFullBannerModal] = useState(false);
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [scannedAttendees, setScannedAttendees] = useState<any[]>([]);
 
   useEffect(() => {
     setShowParticipants(false);
@@ -1176,6 +1505,9 @@ function EventsPage({
     setShowBannerPasswordModal(false);
     setBannerPassword("");
     setBannerPasswordError(null);
+    setShowFullBannerModal(false);
+    setShowScannerModal(false);
+    setScannedAttendees([]);
   }, [selectedEventId]);
 
   const registrations = selectedEventId
@@ -1631,157 +1963,283 @@ function EventsPage({
               )}
             </div>
           </div>
-        ) : showParticipants ? (
-          <div className="mt-4 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-              <div>
-                <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
-                <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>Total registrations: {registrations.length} ({approved.length} approved, {pending.length} pending)</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => {
-                    const headers = ["Name", "Email", "USN", "Branch", "Year", "Semester", "Contact", "Type", "Team Name", "Status"];
-                    const rows = registrations.map(r => {
-                      const rawPhone = r.user?.phone ? String(r.user.phone).trim() : '';
-                      const phoneFormatted = rawPhone ? `\t${rawPhone}` : '';
-                      return [
-                        r.user?.name ?? 'Unknown',
-                        r.user?.email ?? '',
-                        r.user?.usn ?? '',
-                        r.user?.branch ?? '',
-                        r.user?.year ? `Y${r.user.year}` : '',
-                        r.user?.sem ? `Sem ${r.user.sem}` : '',
-                        phoneFormatted,
-                        r.team ? 'TEAM' : 'SOLO',
-                        r.team?.name ?? '-',
-                        (r.status ?? '').toUpperCase()
-                      ];
-                    });
-                    const csvContent = [headers, ...rows]
-                      .map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
-                      .join("\n");
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", `${activeEvent.title.replace(/\s+/g, "_")}_attendees.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                  className="text-xs px-4 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300 border border-green-500/20 transition-all font-semibold" 
-                  style={{ fontFamily: FB }}
-                >
-                  Export CSV
-                </button>
-                <button onClick={() => setShowParticipants(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
-              </div>
-            </div>
+        ) : showParticipants ? (() => {
+          const dbConfirmed = registrations.filter(r => !!r.checkedInAt).map(r => ({
+            id: r.id,
+            attendee: {
+              name: r.user?.name ?? 'Unknown',
+              email: r.user?.email ?? '',
+              usn: r.user?.usn ?? '',
+              branch: r.user?.branch ?? '',
+              phone: r.user?.phone ?? '',
+              year: r.user?.year,
+              sem: r.user?.sem,
+              status: r.status,
+              isLeader: r.team?.leaderId === r.user?.id,
+            },
+            team: r.team ? {
+              name: r.team.name,
+              passkey: r.team.passkey,
+            } : null,
+            status: 'CONFIRMED',
+          }));
 
-            {}
-            <div className="relative max-w-md">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search by name, email, USN, branch or team..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#F03D4E]/40 focus:ring-1 focus:ring-[#F03D4E]/40 transition-all"
-                style={{ fontFamily: FB }}
-              />
-            </div>
+          const combinedAttendanceMap = new Map<string, any>();
+          [...dbConfirmed, ...scannedAttendees].forEach(item => {
+            const key = item.attendee?.usn || item.attendee?.email || item.id;
+            if (key && !combinedAttendanceMap.has(key)) {
+              combinedAttendanceMap.set(key, item);
+            }
+          });
+          const combinedAttendanceList = Array.from(combinedAttendanceMap.values());
 
-            {}
-            <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch / Sem</th>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Contact</th>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Type</th>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
-                    <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {registrations.filter(r => {
-                    const q = searchQuery.toLowerCase().trim();
-                    if (!q) return true;
+          return (
+            <div className="mt-4 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+                <div>
+                  <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees (Attendance List)</h1>
+                  <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>
+                    Scanned Attendees: <span className="text-[#10b981] font-bold">{combinedAttendanceList.length} checked-in</span> ({registrations.length} total registered)
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      const headers = ["Name", "Email", "USN", "Branch", "Year", "Semester", "Contact", "Type", "Team Name", "Status"];
+                      const rows = combinedAttendanceList.map(s => {
+                        const attendee = s.attendee || {};
+                        const team = s.team || null;
+                        const rawPhone = attendee.phone ? String(attendee.phone).trim() : '';
+                        const phoneFormatted = rawPhone ? `\t${rawPhone}` : '';
+                        return [
+                          attendee.name ?? 'Unknown',
+                          attendee.email ?? '',
+                          attendee.usn ?? '',
+                          attendee.branch ?? '',
+                          attendee.year ? `Y${attendee.year}` : '',
+                          attendee.sem ? `Sem ${attendee.sem}` : '',
+                          phoneFormatted,
+                          team ? 'TEAM' : 'SOLO',
+                          team?.name ?? '-',
+                          (s.status ?? 'CHECKED_IN').toUpperCase()
+                        ];
+                      });
+                      const csvContent = [headers, ...rows]
+                        .map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+                        .join("\n");
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", url);
+                      link.setAttribute("download", `${activeEvent.title.replace(/\s+/g, "_")}_scanned_attendance.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    disabled={combinedAttendanceList.length === 0}
+                    className="text-xs px-4 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300 border border-green-500/20 transition-all font-semibold disabled:opacity-40 disabled:cursor-not-allowed" 
+                    style={{ fontFamily: FB }}
+                  >
+                    Export CSV
+                  </button>
+                  {(() => {
+                    const scanInfo = checkScanStatus(activeEvent.eventDate || activeEvent.date);
                     return (
-                      (r.user?.name ?? '').toLowerCase().includes(q) ||
-                      (r.user?.email ?? '').toLowerCase().includes(q) ||
-                      (r.user?.usn ?? '').toLowerCase().includes(q) ||
-                      (r.user?.branch ?? '').toLowerCase().includes(q) ||
-                      (r.team?.name ?? '').toLowerCase().includes(q)
+                      <button
+                        disabled={!scanInfo.enabled}
+                        onClick={() => scanInfo.enabled && setShowScannerModal(true)}
+                        title={scanInfo.reason}
+                        className={`text-xs px-4 py-2 rounded-lg border transition-all font-semibold flex items-center gap-2 ${
+                          scanInfo.enabled
+                            ? "bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/30 cursor-pointer shadow-sm"
+                            : "bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50"
+                        }`}
+                        style={{ fontFamily: FB }}
+                      >
+                        <Camera size={14} /> Scan Ticket QR
+                        {!scanInfo.enabled && (
+                          <span className="text-[10px] text-amber-400 font-mono">({scanInfo.reason})</span>
+                        )}
+                      </button>
                     );
-                  }).map(r => {
-                    return (
-                      <tr key={r.id} className="hover:bg-white/[0.01] transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{(r.user?.name ?? '?').charAt(0)}</div>
-                            <div>
-                              <p className="text-sm font-medium text-white/80" style={{ fontFamily: FB }}>{r.user?.name ?? 'Unknown'}</p>
-                              <p className="text-[11px] text-[#94a3b8] mt-0.5" style={{ fontFamily: FM }}>{r.user?.email}</p>
+                  })()}
+                  <button onClick={() => setShowParticipants(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
+                </div>
+              </div>
+
+              {/* Inline Ticket Scanner Panel */}
+              {showScannerModal && (
+                <TicketScannerModal
+                  activeEvent={activeEvent}
+                  getToken={getToken}
+                  onClose={() => setShowScannerModal(false)}
+                  onScanSuccess={async (scannedTicket) => {
+                    await refreshEvents();
+                    setScannedAttendees(prev => {
+                      let newEntries: any[] = [];
+                      if (scannedTicket.team && Array.isArray(scannedTicket.team.members) && scannedTicket.team.members.length > 0) {
+                        newEntries = scannedTicket.team.members.map((m: any) => ({
+                          id: m.id || `${scannedTicket.id}-${m.email || m.usn}`,
+                          attendee: {
+                            name: m.name,
+                            email: m.email,
+                            usn: m.usn,
+                            branch: m.branch,
+                            phone: m.phone,
+                            year: m.year,
+                            sem: m.sem,
+                            status: 'CONFIRMED',
+                            isLeader: m.isLeader,
+                          },
+                          team: {
+                            name: scannedTicket.team.name,
+                            passkey: scannedTicket.team.passkey,
+                            leader: scannedTicket.team.leader,
+                          },
+                          status: 'CONFIRMED',
+                        }));
+                      } else {
+                        newEntries = [scannedTicket];
+                      }
+
+                      const updated = [...prev];
+                      for (const entry of newEntries) {
+                        const entryKey = entry.attendee?.usn || entry.attendee?.email || entry.id;
+                        const alreadyExists = updated.some(existing => {
+                          const existingKey = existing.attendee?.usn || existing.attendee?.email || existing.id;
+                          return existingKey === entryKey;
+                        });
+                        if (!alreadyExists) {
+                          updated.push(entry);
+                        }
+                      }
+                      return updated;
+                    });
+                  }}
+                />
+              )}
+
+              {}
+              <div className="relative max-w-md">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search scanned attendees by name, USN, email, branch or team..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#F03D4E]/40 focus:ring-1 focus:ring-[#F03D4E]/40 transition-all"
+                  style={{ fontFamily: FB }}
+                />
+              </div>
+
+              {}
+              <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch / Sem</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Contact</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Type</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Attendance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {combinedAttendanceList.filter(s => {
+                      const q = searchQuery.toLowerCase().trim();
+                      if (!q) return true;
+                      const a = s.attendee || {};
+                      const t = s.team || {};
+                      return (
+                        (a.name ?? '').toLowerCase().includes(q) ||
+                        (a.email ?? '').toLowerCase().includes(q) ||
+                        (a.usn ?? '').toLowerCase().includes(q) ||
+                        (a.branch ?? '').toLowerCase().includes(q) ||
+                        (t.name ?? '').toLowerCase().includes(q)
+                      );
+                    }).map(s => {
+                      const attendee = s.attendee || {};
+                      const team = s.team || null;
+                      return (
+                        <tr key={s.id} className="hover:bg-white/[0.01] transition-colors">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">
+                                {(attendee.name ?? '?').charAt(0)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-white/90 flex items-center gap-2" style={{ fontFamily: FB }}>
+                                  {attendee.name ?? 'Unknown'}
+                                  {attendee.isLeader && (
+                                    <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">Leader</span>
+                                  )}
+                                </p>
+                                <p className="text-[11px] text-[#94a3b8] mt-0.5" style={{ fontFamily: FM }}>{attendee.email}</p>
+                              </div>
                             </div>
+                          </td>
+                          <td className="p-4 text-xs font-mono text-[#aaa]">{attendee.usn ?? 'N/A'}</td>
+                          <td className="p-4 text-xs text-[#aaa]">
+                            {attendee.branch ? (
+                              <div>
+                                <p>{attendee.branch}</p>
+                                <p className="text-[11px] text-[#94a3b8] mt-0.5 font-mono">
+                                  {attendee.year ? `Y${attendee.year}` : ''}
+                                  {attendee.year && attendee.sem ? ' · ' : ''}
+                                  {attendee.sem ? `Sem ${attendee.sem}` : ''}
+                                  {!attendee.year && !attendee.sem ? 'N/A' : ''}
+                                </p>
+                              </div>
+                            ) : 'N/A'}
+                          </td>
+                          <td className="p-4 text-xs text-[#aaa] font-mono">{attendee.phone ?? 'N/A'}</td>
+                          <td className="p-4">
+                            {team ? (
+                              <div>
+                                <span className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
+                                <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">Passkey: {team.passkey}</p>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-xs">
+                            {team?.name ? (
+                              <span className="font-medium text-white/90" style={{ fontFamily: FB }}>{team.name}</span>
+                            ) : (
+                              <span className="text-[#888] font-mono">-</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-right">
+                            <span className="text-[11px] uppercase tracking-widest px-2.5 py-1 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" style={{ fontFamily: FM }}>
+                              CHECKED IN
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {combinedAttendanceList.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-12 text-center">
+                          <div className="flex flex-col items-center justify-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F03D4E]/10 border border-[#F03D4E]/20 flex items-center justify-center text-[#F03D4E]">
+                              <Camera size={24} />
+                            </div>
+                            <p className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>No attendees scanned yet</p>
+                            <p className="text-xs text-[#888] max-w-sm" style={{ fontFamily: FB }}>
+                              Students must present their ticket QR code at the event. Click <span className="text-[#F03D4E] font-semibold">"Scan Ticket QR"</span> above to start scanning and marking attendance.
+                            </p>
                           </div>
                         </td>
-                        <td className="p-4 text-xs font-mono text-[#aaa]">{r.user?.usn ?? 'N/A'}</td>
-                        <td className="p-4 text-xs text-[#aaa]">
-                          {r.user?.branch ? (
-                            <div>
-                              <p>{r.user.branch}</p>
-                              <p className="text-[11px] text-[#94a3b8] mt-0.5 font-mono">
-                                {r.user.year ? `Y${r.user.year}` : ''}
-                                {r.user.year && r.user.sem ? ' · ' : ''}
-                                {r.user.sem ? `Sem ${r.user.sem}` : ''}
-                                {!r.user.year && !r.user.sem ? 'N/A' : ''}
-                              </p>
-                            </div>
-                          ) : 'N/A'}
-                        </td>
-                        <td className="p-4 text-xs text-[#aaa] font-mono">{r.user?.phone ?? 'N/A'}</td>
-                        <td className="p-4">
-                          {r.team ? (
-                            <div>
-                              <span className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
-                              <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">Passkey: {r.team.passkey}</p>
-                            </div>
-                          ) : (
-                            <span className="text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-xs">
-                          {r.team?.name ? (
-                            <span className="font-medium text-white/90" style={{ fontFamily: FB }}>{r.team.name}</span>
-                          ) : (
-                            <span className="text-[#888] font-mono">-</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-right">
-                          <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 rounded-sm" style={{ 
-                            color: r.status?.toLowerCase() === 'confirmed' ? '#10b981' : '#f59e0b',
-                            background: r.status?.toLowerCase() === 'confirmed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                            fontFamily: FM
-                          }}>
-                            {r.status}
-                          </span>
-                        </td>
                       </tr>
-                    );
-                  })}
-                  {registrations.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-xs text-[#94a3b8]" style={{ fontFamily: FB }}>No participants registered for this event yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        ) : (
+          );
+        })() : (
           <>
             {(() => {
               const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1841,46 +2299,81 @@ function EventsPage({
 
               return (
                 <>
-                  <div className="relative w-full h-48 md:h-64 rounded-2xl overflow-hidden shadow-2xl" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl mb-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
                     {activeEvent.bannerUrl ? (
-                      <img src={activeEvent.bannerUrl} alt={activeEvent.title} className="w-full h-full object-cover" />
+                      <div className="flex items-center gap-3.5 cursor-pointer group" onClick={() => setShowFullBannerModal(true)}>
+                        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 relative border border-white/10 shadow-md">
+                          <img src={activeEvent.bannerUrl} alt="Banner thumbnail" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold text-white group-hover:text-[#F03D4E] transition-colors flex items-center gap-2" style={{ fontFamily: FB }}>
+                            <Eye size={15} className="text-[#F03D4E]" /> Click to view full banner
+                          </span>
+                        </div>
+                      </div>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center relative"
-                        style={{ background: "linear-gradient(135deg, rgba(240,61,78,0.05) 0%, rgba(12,12,12,0.95) 100%)" }}
-                      >
-                        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(240,61,78,0.06), transparent 70%)" }} />
+                      <div className="flex items-center gap-2.5 text-xs text-[#94a3b8]" style={{ fontFamily: FB }}>
+                        <ImageIcon size={16} className="text-white/40" /> No banner image uploaded for this event.
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
 
-                    {/* Update Banner button */}
-                    <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3 ml-auto">
                       {bannerError && (
-                        <p className="text-[11px] text-[#F03D4E] font-medium truncate mr-4" style={{ fontFamily: FB }}>{bannerError}</p>
+                        <p className="text-[11px] text-[#F03D4E] font-medium truncate" style={{ fontFamily: FB }}>{bannerError}</p>
                       )}
-                      <div className="ml-auto">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          id="banner-update-input"
-                          className="hidden"
-                          onChange={handleBannerChange}
-                          disabled={bannerUploading || activeEvent.status === "previous"}
-                        />
-                        <label
-                          htmlFor="banner-update-input"
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${activeEvent.status === "previous" ? "opacity-40 pointer-events-none" : "cursor-pointer hover:bg-white/20"}`}
-                          style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "#f3f4f6", fontFamily: FB, backdropFilter: "blur(8px)" }}
-                        >
-                          {bannerUploading ? (
-                            <><div className="w-3.5 h-3.5 rounded-full border-2 border-white/60 border-t-transparent animate-spin" /> Uploading...</>
-                          ) : (
-                            <><Upload size={13} /> Update Banner</>
-                          )}
-                        </label>
-                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="banner-update-input"
+                        className="hidden"
+                        onChange={handleBannerChange}
+                        disabled={bannerUploading || activeEvent.status === "previous"}
+                      />
+                      <label
+                        htmlFor="banner-update-input"
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${activeEvent.status === "previous" ? "opacity-40 pointer-events-none" : "cursor-pointer bg-white/5 hover:bg-white/10 text-white"}`}
+                        style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}
+                      >
+                        {bannerUploading ? (
+                          <><div className="w-3.5 h-3.5 rounded-full border-2 border-white/60 border-t-transparent animate-spin" /> Uploading...</>
+                        ) : (
+                          <><Upload size={13} /> {activeEvent.bannerUrl ? "Update Banner" : "Upload Banner"}</>
+                        )}
+                      </label>
                     </div>
                   </div>
+
+                  {/* Full Banner Lightbox Modal */}
+                  <AnimatePresence>
+                    {showFullBannerModal && activeEvent.bannerUrl && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[70] flex items-center justify-center p-4 md:p-8"
+                        style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(16px)" }}
+                        onClick={() => setShowFullBannerModal(false)}
+                      >
+                        <button 
+                          onClick={() => setShowFullBannerModal(false)}
+                          className="fixed top-6 right-6 z-[80] p-3 text-white/80 hover:text-white transition-all bg-white/10 hover:bg-white/20 rounded-full cursor-pointer shadow-lg backdrop-blur-md"
+                          title="Close"
+                        >
+                          <X size={22} />
+                        </button>
+                        <div 
+                          className="relative max-w-5xl max-h-[85vh] flex items-center justify-center p-2 rounded-2xl"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <img 
+                            src={activeEvent.bannerUrl} 
+                            alt={activeEvent.title} 
+                            className="w-auto h-auto max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-white/10" 
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Banner password confirmation modal */}
                   <AnimatePresence>
@@ -2092,6 +2585,7 @@ function EventsPage({
                 </div>
               </div>
 
+
               {}
               {teamsList.length > 0 && (
                 <div 
@@ -2186,7 +2680,9 @@ function EventsPage({
                         else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event start date.";
                         if (!editForm.venue.trim()) errs.venue = "Venue is required.";
                         if (!editForm.capacity) errs.capacity = "Capacity is required.";
-                        else if (parseInt(editForm.capacity) < 1) errs.capacity = "Capacity must be at least 1.";
+                        else if ((activeEvent?.type ?? '').toLowerCase() === 'team' && activeEvent?.teamSizeLimit && parseInt(editForm.capacity) < activeEvent.teamSizeLimit) {
+                          errs.capacity = `Capacity cannot be less than max team size (${activeEvent.teamSizeLimit}).`;
+                        } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Capacity must be at least 1.";
                         if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
 
                         setEditErrors({});
@@ -2345,7 +2841,11 @@ function EventsPage({
             {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
               const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
-              const pendingApprovals = allRegistrations.filter(r => r.eventId === ev.id && r.status?.toLowerCase() === 'pending').length;
+              const pendingFromState = allRegistrations.filter(r => r.eventId === ev.id && r.status?.toLowerCase() === 'pending');
+              const pendingTeamIds = new Set(pendingFromState.filter(r => r.team?.id).map(r => r.team!.id));
+              const pendingSolo = pendingFromState.filter(r => !r.team?.id).length;
+              const calculatedPending = pendingSolo + pendingTeamIds.size;
+              const pendingApprovals = allRegistrations.length > 0 ? calculatedPending : (ev.pendingCount ?? 0);
               return (
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
@@ -2600,10 +3100,10 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
   );
 }
 
-function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; refreshProfile?: () => Promise<any> }) {
+function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; clubUpiId?: string | null; refreshProfile?: () => Promise<any> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
-    eventType: "Solo", teamSizeLimit: "",
+    eventType: "Solo", minTeamSize: "2", teamSizeLimit: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
   const [submitting, setSubmitting] = useState(false);
@@ -2656,6 +3156,10 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
 
 
   const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+
     const errors: Record<string, string> = {};
     const now = new Date();
     if (!formData.title.trim()) errors.title = "Event name is required.";
@@ -2669,7 +3173,9 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
     if (!formData.desc.trim()) errors.desc = "Description is required.";
     if (!formData.venue.trim()) errors.venue = "Venue is required.";
     if (!formData.capacity) errors.capacity = "Capacity is required.";
-    else if (parseInt(formData.capacity) < 2) errors.capacity = "Capacity must be at least 2.";
+    else if (formData.eventType === "Team" && formData.teamSizeLimit && parseInt(formData.capacity) < parseInt(formData.teamSizeLimit)) {
+      errors.capacity = `Capacity cannot be less than max team size (${formData.teamSizeLimit}).`;
+    } else if (parseInt(formData.capacity) < 2) errors.capacity = "Capacity must be at least 2.";
     if (formData.type === "paid") {
       if (!formData.amount) errors.amount = "Amount is required for paid events.";
       else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
@@ -2680,19 +3186,36 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
       }
     }
     if (formData.eventType === "Team") {
+      if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
+      else if (parseInt(formData.minTeamSize) < 2) errors.minTeamSize = "Min team size must be at least 2.";
+
       if (!formData.teamSizeLimit) errors.teamSizeLimit = "Max team size is required.";
-      else if (parseInt(formData.teamSizeLimit) < 2) errors.teamSizeLimit = "Max team size must be at least 2.";
+      else if (parseInt(formData.teamSizeLimit) < parseInt(formData.minTeamSize || "2")) {
+        errors.teamSizeLimit = `Max team size must be at least ${formData.minTeamSize || "2"}.`;
+      }
     }
-    if (formData.type === "paid" && formData.useDefaultQr && !clubQrUrl) {
-      setError("Default QR code is not uploaded in settings. Please upload one or choose Custom QR.");
+    if (formData.type === "paid" && formData.useDefaultQr) {
+      if (!clubQrUrl && !clubUpiId) {
+        setError("Default payment QR code and UPI ID are not configured in Club Settings. Please update Settings or choose Custom QR & UPI.");
+        setSubmitting(false);
+        return;
+      } else if (!clubQrUrl) {
+        setError("Default payment QR code is not uploaded in Club Settings. Please update Settings or choose Custom QR & UPI.");
+        setSubmitting(false);
+        return;
+      } else if (!clubUpiId) {
+        setError("Default payment UPI ID is not added in Club Settings. Please update Settings or choose Custom QR & UPI.");
+        setSubmitting(false);
+        return;
+      }
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setSubmitting(false);
       return;
     }
     setFieldErrors({});
-    setSubmitting(true);
-    setError(null);
+
     try {
       const token = await getToken();
 
@@ -2731,7 +3254,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
-        minTeamSize: formData.eventType === "Team" ? 2 : undefined,
+        minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : 2,
         clubId: resolvedClubId,
         bannerUrl,
         qrUrl,
@@ -2741,7 +3264,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
       onCreated();
     } catch (e: any) {
       setError(e.message ?? "Failed to create event.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -2828,7 +3350,10 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
-            <input type="number" placeholder="e.g. 200" min={2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+            <input type="number" placeholder="e.g. 200" min={formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : 2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+            {formData.eventType === "Team" && formData.teamSizeLimit && (
+              <p className="text-[10px] text-[#a1a1aa] mt-0.5" style={{ fontFamily: FM }}>Minimum capacity is {formData.teamSizeLimit} (Max Team Size).</p>
+            )}
             {fieldErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.capacity}</p>}
           </div>
           <div className="space-y-1.5 relative">
@@ -2865,11 +3390,48 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="space-y-1.5"
+                className="grid grid-cols-2 gap-4"
               >
-                <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
-                <input type="number" placeholder="e.g. 4" min={2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.teamSizeLimit} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 2) { setFormData(p => ({...p, teamSizeLimit: v})); setFieldErrors(fe => ({...fe, teamSizeLimit: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
-                {fieldErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.teamSizeLimit}</p>}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Min Team Size</label>
+                  <input
+                    type="number"
+                    placeholder="Min (e.g. 2)"
+                    min={2}
+                    className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                    style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }}
+                    value={formData.minTeamSize}
+                    onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setFormData(p => ({ ...p, minTeamSize: v }));
+                      setFieldErrors(fe => ({ ...fe, minTeamSize: "" }));
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
+                    onBlur={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}
+                  />
+                  {fieldErrors.minTeamSize && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.minTeamSize}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                  <input
+                    type="number"
+                    placeholder="Max (e.g. 4)"
+                    min={parseInt(formData.minTeamSize || '2')}
+                    className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                    style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }}
+                    value={formData.teamSizeLimit}
+                    onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setFormData(p => ({ ...p, teamSizeLimit: v }));
+                      setFieldErrors(fe => ({ ...fe, teamSizeLimit: "" }));
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
+                    onBlur={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}
+                  />
+                  {fieldErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.teamSizeLimit}</p>}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -2933,11 +3495,29 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
                   )}
 
                   {formData.useDefaultQr && (
-                    clubQrUrl ? (
-                      <div className="text-xs text-[#d1d5db] px-2" style={{ fontFamily: FB }}>Using default QR code &amp; UPI ID from Settings.</div>
-                    ) : (
-                      <div className="text-xs text-[#F03D4E] px-2 font-medium" style={{ fontFamily: FB }}>Default QR code is not uploaded in Settings. Please upload a Custom QR &amp; UPI or configure it in Settings.</div>
-                    )
+                    <div className="space-y-2 pt-1">
+                      {clubQrUrl && clubUpiId ? (
+                        <div className="text-xs text-emerald-400 font-medium px-2 flex items-center gap-1.5" style={{ fontFamily: FB }}>
+                          <CheckCircle size={13} /> Default QR code &amp; UPI ID ({clubUpiId}) configured in Settings.
+                        </div>
+                      ) : (
+                        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs space-y-1.5" style={{ fontFamily: FB }}>
+                          {!clubQrUrl && (
+                            <p className="text-[#F03D4E] font-medium flex items-center gap-1.5">
+                              ⚠️ Default Payment QR Code is not uploaded in Settings.
+                            </p>
+                          )}
+                          {!clubUpiId && (
+                            <p className="text-[#F03D4E] font-medium flex items-center gap-1.5">
+                              ⚠️ Default Payment UPI ID is not added in Settings.
+                            </p>
+                          )}
+                          <p className="text-[#a1a1aa] text-[11px] pt-0.5">
+                            Please configure payment details in <strong>Club Settings</strong> or select <strong>Custom QR &amp; UPI</strong> above.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -2949,8 +3529,24 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
           <p className="text-xs text-[#F03D4E] px-1" style={{ fontFamily: FM }}>{error}</p>
         )}
         <div className="pt-4 mt-8">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={submitting} className="cursor-pointer px-8 py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50" style={{ fontFamily: FB }} onMouseEnter={e => !submitting && (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")} onMouseLeave={e => !submitting && (e.currentTarget.style.boxShadow = "none")}>
-            {submitting ? "Publishing..." : "Publish Event"}
+          <motion.button 
+            whileHover={submitting ? undefined : { scale: 1.02 }} 
+            whileTap={submitting ? undefined : { scale: 0.98 }} 
+            onClick={handleSubmit} 
+            disabled={submitting} 
+            className={`px-8 py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all ${submitting ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer"}`} 
+            style={{ fontFamily: FB }} 
+            onMouseEnter={e => !submitting && (e.currentTarget.style.boxShadow = "0 0 35px rgba(240,61,78,0.35)")} 
+            onMouseLeave={e => !submitting && (e.currentTarget.style.boxShadow = "none")}
+          >
+            {submitting ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                <span>Publishing...</span>
+              </div>
+            ) : (
+              "Publish Event"
+            )}
           </motion.button>
         </div>
       </div>
@@ -3912,7 +4508,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           <AnimatePresence mode="wait">
             {activeTab === "create" && (
               <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} refreshProfile={refreshProfile} />
+                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} clubUpiId={currentClub?.upiId} refreshProfile={refreshProfile} />
               </motion.div>
             )}
             {activeTab === "overview" && (

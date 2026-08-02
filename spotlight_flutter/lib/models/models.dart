@@ -135,6 +135,7 @@ class EventModel {
   final String? eventType;
   final int? teamSizeLimit;
   final String? upiId;
+  final int? minTeamSize;
   final String? clubId;
   final String? clubName;
   final int registrationCount;
@@ -202,6 +203,7 @@ class EventModel {
     required this.registrationCount,
     this.registrationLimit,
     this.registrationDeadline,
+    this.minTeamSize,
     this.eventDate,
     this.eventEndDate,
   });
@@ -224,6 +226,7 @@ class EventModel {
       date: json['date'],
       qrUrl: json['qrUrl'] ?? json['qr_url'],
       eventType: typeStr,
+      minTeamSize: json['minTeamSize'] ?? json['min_team_size'] ?? (typeStr == 'Team' ? 2 : null),
       teamSizeLimit: json['teamSizeLimit'] ?? json['team_size_limit'],
       upiId: json['upiId'] ?? json['upi_id'] ?? club?['upiId'] ?? club?['upi_id'],
       clubId: club?['id'],
@@ -303,6 +306,7 @@ class TicketEventInfo {
   final String? qrUrl;
   final String? upiId;
   final int? teamSizeLimit;
+  final int? minTeamSize;
   final String? clubId;
   final String? clubName;
   final String? clubLogoUrl;
@@ -354,6 +358,7 @@ class TicketEventInfo {
     this.qrUrl,
     this.upiId,
     this.teamSizeLimit,
+    this.minTeamSize,
     this.clubId,
     this.clubName,
     this.clubLogoUrl,
@@ -373,6 +378,7 @@ class TicketEventInfo {
       qrUrl: json['qr_url'] ?? json['qrUrl'],
       upiId: json['upi_id'] ?? json['upiId'] ?? club?['upiId'] ?? club?['upi_id'],
       teamSizeLimit: json['team_size_limit'] ?? json['teamSizeLimit'],
+      minTeamSize: json['min_team_size'] ?? json['minTeamSize'] ?? 2,
       clubId: club?['id'],
       clubName: club?['name'],
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'],

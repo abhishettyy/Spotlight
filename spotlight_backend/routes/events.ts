@@ -99,7 +99,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         venue: venue || "TBD",
         eventType: eventType || "Solo",
         teamSizeLimit: eventType === "Team" && teamSizeLimit ? parseInt(teamSizeLimit) : null,
-        minTeamSize: eventType === "Team" ? 2 : null,
+        minTeamSize: eventType === "Team" && minTeamSize ? Math.max(2, parseInt(minTeamSize)) : (eventType === "Team" ? 2 : null),
         fee: parsedFee,
         registrationLimit: registrationLimit ? Math.max(2, parseInt(registrationLimit)) : 100,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),
@@ -124,7 +124,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
 router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
-    const { eventDate, eventEndDate, registrationDeadline, venue, registrationLimit, bannerUrl, password } = req.body;
+    const { eventDate, eventEndDate, registrationDeadline, venue, registrationLimit, teamSizeLimit, minTeamSize, bannerUrl, password } = req.body;
 
     const userId = req.auth!.userId;
     const profile = await prisma.profile.findUnique({ where: { id: userId } });
@@ -175,6 +175,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
         ...(registrationDeadline ? { registrationDeadline: new Date(registrationDeadline) } : {}),
         ...(venue !== undefined ? { venue } : {}),
         ...(registrationLimit !== undefined ? { registrationLimit: parseInt(registrationLimit) } : {}),
+        ...(teamSizeLimit !== undefined ? { teamSizeLimit: parseInt(teamSizeLimit) } : {}),
+        ...(minTeamSize !== undefined ? { minTeamSize: Math.max(2, parseInt(minTeamSize)) } : {}),
         bannerUrl: finalBannerUrl,
       },
       include: { club: true },
@@ -198,7 +200,7 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
 
     const teamIdsWithPayment = new Set(
       registrations
-        .filter(r => r.teamId && r.paymentProofUrl !== null)
+        .filter(r => r.teamId && r.transactionId !== null)
         .map(r => r.teamId)
     );
 
@@ -211,7 +213,7 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
       if (r.status === 'CONFIRMED' || r.status === 'REJECTED') return true;
-      if (r.paymentProofUrl !== null) return true;
+      if (r.transactionId !== null) return true;
       if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
       if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
       return false;
@@ -220,6 +222,7 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
     const mapped = filteredRegistrations.map(r => ({
       id: r.id,
       status: r.status,
+      checkedInAt: (r as any).checkedInAt,
       payment_proof_url: r.paymentProofUrl,
       transaction_id: r.transactionId,
       created_at: r.createdAt,

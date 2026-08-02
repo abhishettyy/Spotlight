@@ -60,12 +60,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             final isRejected = t.status.toUpperCase() == 'REJECTED';
             if (isRejected) continue; // Allow rejected users to register again!
 
-            final hasProof = t.paymentProofUrl != null && t.paymentProofUrl!.trim().isNotEmpty;
             final isFree = (t.event?.price ?? 0) == 0;
             final isTeamMember = t.team != null;
             final isLeader = isTeamMember && (t.team!.leaderId.isNotEmpty ? t.team!.leaderId == currentUserId : t.team!.members.any((m) => m.isLeader && m.id == currentUserId));
 
-            if (hasProof || isFree || t.isConfirmed || (isTeamMember && !isLeader)) {
+            if (isFree || t.isConfirmed || (isTeamMember && !isLeader)) {
               confirmedTicket = t;
             } else {
               pendingTicket = t;
@@ -433,7 +432,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ],
                           ),
                         ),
-                        if ((event.eventType ?? '').toLowerCase() == 'team' || event.teamSizeLimit != null) ...[
+                        if ((event.eventType ?? '').toLowerCase() == 'team') ...[
                           const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -473,9 +472,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        event.teamSizeLimit != null
-                                            ? 'Maximum of ${event.teamSizeLimit} members per team'
-                                            : 'Team participation required',
+                                        'Min ${event.minTeamSize ?? 2} · Max ${event.teamSizeLimit ?? 'No limit'} members per team',
                                         style: GoogleFonts.inter(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,

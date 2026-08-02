@@ -76,6 +76,7 @@ model Registration {
   status          RegistrationStatus @default(PENDING)
   createdAt       DateTime           @default(now())
   transactionId   String?            @map("transaction_id")
+  checkedInAt     DateTime?          @map("checked_in_at")
   event           Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   team            Team?              @relation(fields: [teamId], references: [id], onDelete: Cascade)
   profile         Profile            @relation(fields: [userId], references: [id], onDelete: Cascade)

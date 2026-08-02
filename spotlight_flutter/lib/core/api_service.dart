@@ -238,7 +238,7 @@ class ApiService {
 
   Future<void> uploadPaymentProof({
     required String registrationId,
-    required String base64Image,
+    String? base64Image,
     required String transactionId,
   }) async {
     try {
@@ -247,7 +247,7 @@ class ApiService {
         Uri.parse('$baseUrl/registrations/$registrationId/payment'),
         headers: headers,
         body: json.encode({
-          'paymentProof': base64Image,
+          if (base64Image != null) 'paymentProof': base64Image,
           'transactionId': transactionId,
         }),
       );

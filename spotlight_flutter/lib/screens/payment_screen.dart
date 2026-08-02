@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import '../core/api_service.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
@@ -34,7 +31,6 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  File? _image;
   bool _isSubmitting = false;
   final _utrController = TextEditingController();
 
@@ -42,23 +38,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void dispose() {
     _utrController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 50,
-      maxWidth: 1000,
-      maxHeight: 1000,
-    );
-
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    }
   }
 
   Future<void> _submitPayment() async {
@@ -72,25 +51,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
-    if (_image == null) {
-      showSpotlightToast(
-        context,
-        'Please upload a screenshot of your payment.',
-        isError: true,
-      );
-      return;
-    }
-
     setState(() => _isSubmitting = true);
 
     try {
-      final bytes = await _image!.readAsBytes();
-      final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-
       final apiService = ApiService();
       await apiService.uploadPaymentProof(
         registrationId: widget.registrationId,
-        base64Image: base64Image,
         transactionId: utr,
       );
 
@@ -282,35 +248,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fillColor: Theme.of(context).colorScheme.surface,
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                Text('Upload Payment Proof', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: cs.surfaceVariant.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: cs.primary.withOpacity(0.5), width: 2, style: BorderStyle.solid),
-                    ),
-                    child: _image != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Image.file(_image!, fit: BoxFit.cover),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.cloud_upload_outlined, size: 40, color: cs.primary),
-                              const SizedBox(height: 8),
-                              Text('Tap to upload screenshot', style: GoogleFonts.inter(color: cs.primary)),
-                            ],
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitPayment,
@@ -355,7 +293,7 @@ class PaymentPendingScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Your payment screenshot has been uploaded. It will be verified by the organizers shortly.',
+                'Your payment details have been submitted. It will be verified by the organizers shortly.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(fontSize: 16, color: Colors.grey, height: 1.5),
               ),

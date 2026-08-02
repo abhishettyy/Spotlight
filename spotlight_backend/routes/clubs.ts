@@ -438,7 +438,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
 
     const teamIdsWithPayment = new Set(
       registrations
-        .filter(r => r.teamId && r.paymentProofUrl !== null)
+        .filter(r => r.teamId && r.transactionId !== null)
         .map(r => r.teamId)
     );
 
@@ -451,7 +451,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
     const filteredRegistrations = registrations.filter(r => {
       if (r.event.fee === 0) return true;
       if (r.status === 'CONFIRMED' || r.status === 'REJECTED') return true;
-      if (r.paymentProofUrl !== null) return true;
+      if (r.transactionId !== null) return true;
       if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
       if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
       return false;
@@ -501,23 +501,31 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       } : null,
     }));
 
-    const mappedEvents = clubEvents.map(e => ({
-      id: e.id,
-      title: e.name,
-      date: e.eventDate ? e.eventDate.toISOString() : null,
-      eventDate: e.eventDate ? e.eventDate.toISOString() : null,
-      eventEndDate: e.eventEndDate ? e.eventEndDate.toISOString() : null,
-      venue: e.venue ?? 'TBD',
-      capacity: e.registrationLimit ?? 0,
-      type: e.eventType ?? 'Solo',
-      club: e.club?.name ?? '',
-      club_id: e.clubId,
-      status: getEventStatus(e.eventDate, e.eventEndDate),
-      price: e.fee,
-      qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
-      bannerUrl: e.bannerUrl ?? null,
-      registrationDeadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
-    }));
+    const mappedEvents = clubEvents.map(e => {
+      const eventRegs = filteredRegistrations.filter(r => r.eventId === e.id && r.status === 'PENDING');
+      const pendingTeamIds = new Set(eventRegs.filter(r => r.teamId !== null).map(r => r.teamId));
+      const pendingSolo = eventRegs.filter(r => r.teamId === null).length;
+      const eventPendingCount = pendingSolo + pendingTeamIds.size;
+
+      return {
+        id: e.id,
+        title: e.name,
+        date: e.eventDate ? e.eventDate.toISOString() : null,
+        eventDate: e.eventDate ? e.eventDate.toISOString() : null,
+        eventEndDate: e.eventEndDate ? e.eventEndDate.toISOString() : null,
+        venue: e.venue ?? 'TBD',
+        capacity: e.registrationLimit ?? 0,
+        type: e.eventType ?? 'Solo',
+        club: e.club?.name ?? '',
+        club_id: e.clubId,
+        status: getEventStatus(e.eventDate, e.eventEndDate),
+        price: e.fee,
+        qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
+        bannerUrl: e.bannerUrl ?? null,
+        registrationDeadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
+        pendingCount: eventPendingCount,
+      };
+    });
 
     return res.status(200).json({
       totalEvents,

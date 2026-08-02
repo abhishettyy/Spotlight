@@ -593,36 +593,74 @@ class _TicketScreenState extends State<TicketScreen> {
     }
 
     final shortId = 'SPT-${ticket.id.substring(0, 8).toUpperCase()}';
+    final minRequired = event?.minTeamSize ?? 2;
+    final confirmedCount = ticket.team?.members.where((m) => m.status.toUpperCase() == 'CONFIRMED' || m.status.toUpperCase() == 'APPROVED').length ?? (ticket.isConfirmed ? 1 : 0);
+    final isTeamIncomplete = (ticket.team != null) && (confirmedCount < minRequired);
+
+    void openTicket() {
+      if (ticket.status.toUpperCase() == 'REJECTED') {
+        return; // Do nothing at all if ticket is rejected!
+      }
+
+      if (isTeamIncomplete) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'A minimum of $minRequired members must be approved to get the ticket.',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: const Color(0xFFEAB308),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        return;
+      }
+
+      if (ticket.isConfirmed) {
+        Navigator.push(
+          context,
+          SmoothRoute(
+            builder: (_) => TicketDetailsScreen(ticket: {
+              'title': title,
+              'venue': venue,
+              'date': event?.date ?? '',
+              'qr_code_string': ticket.id,
+              'price': event?.price ?? 0,
+              'team': ticket.team != null
+                  ? {
+                      'name': ticket.team!.name,
+                      'passkey': ticket.team!.passkey,
+                      'members': ticket.team!.members
+                          .map((m) => {
+                                'name': m.name,
+                                'isLeader': m.isLeader,
+                              })
+                          .toList(),
+                    }
+                  : null,
+            }),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Your registration is pending approval by the organizers.',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: const Color(0xFF38BDF8),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
 
     return GestureDetector(
-      onTap: () {
-        if (ticket.isConfirmed) {
-          Navigator.push(
-            context,
-            SmoothRoute(
-              builder: (_) => TicketDetailsScreen(ticket: {
-                'title': title,
-                'venue': venue,
-                'date': event?.date ?? '',
-                'qr_code_string': ticket.id,
-                'price': event?.price ?? 0,
-                'team': ticket.team != null
-                    ? {
-                        'name': ticket.team!.name,
-                        'passkey': ticket.team!.passkey,
-                        'members': ticket.team!.members
-                            .map((m) => {
-                                  'name': m.name,
-                                  'isLeader': m.isLeader,
-                                })
-                            .toList(),
-                      }
-                    : null,
-              }),
-            ),
-          );
-        }
-      },
+      onTap: openTicket,
       child: Container(
         decoration: cardDecoration,
         child: Column(
@@ -832,7 +870,27 @@ class _TicketScreenState extends State<TicketScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (ticket.isConfirmed)
+                      if (ticket.team != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Approved Members',
+                              style: GoogleFonts.inter(color: subText, fontSize: 10),
+                            ),
+                            Text(
+                              '$confirmedCount Approved',
+                              style: GoogleFonts.inter(
+                                color: isTeamIncomplete
+                                    ? const Color(0xFFFBBF24)
+                                    : (isDark ? const Color(0xFF4ADE80) : const Color(0xFF22C55E)),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (ticket.isConfirmed)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -849,41 +907,16 @@ class _TicketScreenState extends State<TicketScreen> {
                       else
                         const SizedBox(),
                       ElevatedButton(
-                        onPressed: ticket.isConfirmed
-                            ? () => Navigator.push(
-                                  context,
-                                  SmoothRoute(
-                                    builder: (_) => TicketDetailsScreen(ticket: {
-                                      'title': title,
-                                      'venue': venue,
-                                      'date': event?.date ?? '',
-                                      'qr_code_string': ticket.id,
-                                      'price': event?.price ?? 0,
-                                      'team': ticket.team != null
-                                          ? {
-                                              'name': ticket.team!.name,
-                                              'passkey': ticket.team!.passkey,
-                                              'members': ticket.team!.members
-                                                  .map((m) => {
-                                                        'name': m.name,
-                                                        'isLeader': m.isLeader,
-                                                      })
-                                                  .toList(),
-                                            }
-                                          : null,
-                                    }),
-                                  ),
-                                )
-                            : null,
+                        onPressed: ticket.status.toUpperCase() == 'REJECTED' ? null : openTicket,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: cs.primary,
                           disabledBackgroundColor: isDark
-                              ? Colors.white.withOpacity(0.08)
+                              ? Colors.white.withOpacity(0.05)
                               : Colors.grey.shade200,
                           disabledForegroundColor: isDark
                               ? Colors.white38
-                              : Colors.grey.shade500,
-                          elevation: ticket.isConfirmed ? 2 : 0,
+                              : Colors.grey.shade400,
+                          elevation: (ticket.isConfirmed && ticket.status.toUpperCase() != 'REJECTED') ? 2 : 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(
@@ -947,10 +980,7 @@ class _TicketScreenState extends State<TicketScreen> {
     }
 
     final upper = ticket.status.toUpperCase();
-    final hasProof = ticket.paymentProofUrl != null && ticket.paymentProofUrl!.trim().isNotEmpty;
-    final isPaidEvent = (ticket.event?.price ?? 0) > 0;
     final isTeamMember = ticket.team != null;
-    final isLeader = isTeamMember && (ticket.team!.leaderId.isNotEmpty ? ticket.team!.leaderId == _currentUserId : ticket.team!.members.any((m) => m.isLeader && m.id == _currentUserId));
 
     Color badgeBg;
     Color borderColor;
@@ -970,12 +1000,6 @@ class _TicketScreenState extends State<TicketScreen> {
       textColor = const Color(0xFFF87171);
       icon = Icons.cancel_rounded;
       label = 'Rejected';
-    } else if (isPaidEvent && !hasProof && (!isTeamMember || isLeader)) {
-      badgeBg = const Color(0xFFF59E0B).withOpacity(0.15);
-      borderColor = const Color(0xFFF59E0B).withOpacity(0.35);
-      textColor = const Color(0xFFFBBF24);
-      icon = Icons.payment_rounded;
-      label = 'Pending Payment';
     } else {
       badgeBg = const Color(0xFF38BDF8).withOpacity(0.15);
       borderColor = const Color(0xFF38BDF8).withOpacity(0.35);
