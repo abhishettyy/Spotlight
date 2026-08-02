@@ -54,9 +54,29 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, clubId, bannerUrl, qrUrl, upiId } = req.body;
+    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, bannerUrl, qrUrl, upiId } = req.body;
+    let { clubId } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
+
+    // If clubId is missing or empty, resolve it from the authenticated user's profile
+    if (!clubId || clubId.trim() === '') {
+      console.warn(`[Events] clubId not provided or empty. Attempting to resolve from profile for userId: ${userId}`);
+      const profile = await prisma.profile.findUnique({ where: { id: userId } });
+      if (profile?.clubId) {
+        clubId = profile.clubId;
+        console.log(`[Events] Resolved clubId ${clubId} from user profile.`);
+      } else {
+        console.error(`[Events] Cannot create event: no clubId found for userId ${userId}`);
+        return res.status(400).json({ error: 'Your account is not linked to a club. Please complete club setup before creating events.' });
+      }
+    }
+
+    // Verify the club actually exists
+    const club = await prisma.club.findUnique({ where: { id: clubId } });
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found. Please refresh the page and try again.' });
+    }
 
     const parsedFee = fee ? parseFloat(fee) : 0;
 
@@ -85,7 +105,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),
         eventDate: startDate,
         eventEndDate: finalEndDate,
-        clubId: clubId || "",
+        clubId,
         bannerUrl: finalBannerUrl,
         qrUrl: finalQrUrl,
         upiId: upiId || null,

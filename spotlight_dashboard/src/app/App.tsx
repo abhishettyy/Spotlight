@@ -210,6 +210,26 @@ function useSpotlightData() {
     }
   };
 
+  // Re-syncs profile from server and returns the fresh profile.
+  // Use this when you need a guaranteed up-to-date clubId (e.g. right after club creation).
+  const refreshProfile = async (): Promise<any> => {
+    try {
+      if (isLocalSignedIn) return localProfile;
+      const token = await getToken();
+      if (!token || !userId) return profile;
+      const email = user?.primaryEmailAddress?.emailAddress ?? '';
+      const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
+      const syncResult = await syncProfile(userId, email, name, token);
+      const freshProfile = syncResult.profile;
+      setProfile(freshProfile);
+      console.log("[SpotlightData] refreshProfile → clubId:", freshProfile?.clubId);
+      return freshProfile;
+    } catch (e) {
+      console.error("[SpotlightData] refreshProfile error:", e);
+      return profile;
+    }
+  };
+
   useEffect(() => {
     console.log("[SpotlightData] useEffect triggered. isSignedIn:", isSignedIn, "userId:", userId, "userLoaded:", !!user || isLocalSignedIn);
     if (!isSignedIn || !userId || (!isLocalSignedIn && !user)) {
@@ -269,6 +289,20 @@ function useSpotlightData() {
     }
 
     load();
+
+    const handleClubCreated = async () => {
+      console.log("[SpotlightData] spotlight:club_created event received. Refreshing profile & events...");
+      const freshProf = await refreshProfile();
+      if (freshProf?.clubId) {
+        const token = await getToken();
+        if (token) await loadDashboardStats(freshProf.clubId, token);
+      }
+    };
+    window.addEventListener('spotlight:club_created', handleClubCreated);
+
+    return () => {
+      window.removeEventListener('spotlight:club_created', handleClubCreated);
+    };
   }, [isSignedIn, userId, user]);
 
   return {
@@ -282,6 +316,7 @@ function useSpotlightData() {
     pendingCount,
     recentActivity,
     refreshEvents,
+    refreshProfile,
     setAllRegistrations,
     getToken,
   };
@@ -791,6 +826,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
           });
           localStorage.setItem("show_first_time_notice", "true");
           console.log("[CustomSignUp] Database club creation complete:", res);
+          window.dispatchEvent(new CustomEvent('spotlight:club_created'));
         } catch (clubErr: any) {
           console.error("[CustomSignUp] Failed to create club in database:", clubErr);
           setError(sanitizeErrorMessage(clubErr, "Failed to create club."));
@@ -2560,7 +2596,7 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
   );
 }
 
-function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null }) {
+function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; refreshProfile?: () => Promise<any> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
     eventType: "Solo", teamSizeLimit: "", minTeamSize: "",
@@ -2663,6 +2699,21 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
     try {
       const token = await getToken();
 
+      // If clubId is missing (race condition right after club creation),
+      // re-sync profile from server to get the correct clubId before submitting.
+      let resolvedClubId = clubId;
+      if (!resolvedClubId || resolvedClubId.trim() === '') {
+        console.warn("[CreateEvent] clubId is empty at submit time — re-syncing profile to resolve it.");
+        const freshProfile = refreshProfile ? await refreshProfile() : null;
+        resolvedClubId = freshProfile?.clubId ?? '';
+        if (!resolvedClubId) {
+          setError("Your account is not linked to a club yet. Please refresh the page and try again.");
+          setSubmitting(false);
+          return;
+        }
+        console.log("[CreateEvent] Resolved clubId from refreshed profile:", resolvedClubId);
+      }
+
       let bannerUrl: string | undefined = undefined;
       if (formData.bannerFile) {
         bannerUrl = await fileToBase64(formData.bannerFile);
@@ -2684,7 +2735,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl }: { clubId: s
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
         minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : undefined,
-        clubId: clubId,
+        clubId: resolvedClubId,
         bannerUrl,
         qrUrl,
         upiId: (!formData.useDefaultQr && formData.customUpiId.trim()) ? formData.customUpiId.trim() : undefined,
@@ -3495,6 +3546,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
 
       if (res.club && res.club.id) {
         localStorage.setItem("show_first_time_notice", "true");
+        window.dispatchEvent(new CustomEvent('spotlight:club_created'));
         onSuccess(res.club.id);
       } else {
         throw new Error("Failed to create club.");
@@ -3625,6 +3677,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     pendingCount,
     recentActivity,
     refreshEvents,
+    refreshProfile,
     setAllRegistrations,
     getToken,
   } = useSpotlightData();
@@ -3699,6 +3752,14 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     setActiveTabState(tab);
     setSelectedEventId(eventId || null);
     setShowTeams(sTeams);
+
+    // If navigating to the create tab and profile has no clubId yet (race condition
+    // after fresh signup), proactively re-sync so clubId is ready before the user submits.
+    if (tab === "create" && !profile?.clubId) {
+      console.log("[Dashboard] Navigating to create tab with no clubId — triggering refreshProfile.");
+      refreshProfile();
+    }
+
     if (!pushHistory) return;
 
     const url = new URL(window.location.href);
@@ -3861,7 +3922,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           <AnimatePresence mode="wait">
             {activeTab === "create" && (
               <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} />
+                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} refreshProfile={refreshProfile} />
               </motion.div>
             )}
             {activeTab === "overview" && (
