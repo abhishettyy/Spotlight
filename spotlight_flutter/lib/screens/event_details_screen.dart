@@ -205,7 +205,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final price = event.price > 0 ? 'Paid' : 'Free';
     final imageUrl = event.imageUrl;
 
-    final bool isClosed = event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!);
+    final bool isFull = event.isFull;
+    final bool isClosed = (event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!)) || isFull;
 
     // Still checking registration status
     final bool isChecking = _isRegistered == null;
@@ -233,6 +234,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       btnBg = const Color(0xFFF59E0B);
       btnTextColor = Colors.black;
       btnLabel = 'Complete Payment';
+    } else if (isFull) {
+      btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+      btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+      btnLabel = 'Registration Full';
     } else if (isClosed) {
       btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
       btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;

@@ -177,6 +177,13 @@ class EventModel {
     return now.isAfter(end);
   }
 
+  final int? registrationLimit;
+
+  bool get isFull {
+    if (registrationLimit == null || registrationLimit! <= 0) return false;
+    return registrationCount >= registrationLimit!;
+  }
+
   EventModel({
     required this.id,
     required this.title,
@@ -193,6 +200,7 @@ class EventModel {
     this.clubId,
     this.clubName,
     required this.registrationCount,
+    this.registrationLimit,
     this.registrationDeadline,
     this.eventDate,
     this.eventEndDate,
@@ -221,6 +229,7 @@ class EventModel {
       clubId: club?['id'],
       clubName: club?['name'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
+      registrationLimit: json['registrationLimit'] ?? json['registration_limit'],
       registrationDeadline: json['registration_deadline'] != null
           ? DateTime.tryParse(json['registration_deadline'].toString())?.toLocal()
           : json['registrationDeadline'] != null

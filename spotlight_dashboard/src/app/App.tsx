@@ -1305,7 +1305,11 @@ function EventsPage({
         if (!teamGroups.has(r.team.id)) {
           teamGroups.set(r.team.id, { ...r.team, members: [] });
         }
-        teamGroups.get(r.team.id)!.members.push(r);
+        const currentTeam = teamGroups.get(r.team.id)!;
+        const exists = currentTeam.members.some(m => (m.user?.id && r.user?.id && m.user.id === r.user.id) || m.id === r.id);
+        if (!exists) {
+          currentTeam.members.push(r);
+        }
       }
     });
     const teamsList = Array.from(teamGroups.values());
@@ -2599,7 +2603,7 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
 function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; refreshProfile?: () => Promise<any> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
-    eventType: "Solo", teamSizeLimit: "", minTeamSize: "",
+    eventType: "Solo", teamSizeLimit: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
   const [submitting, setSubmitting] = useState(false);
@@ -2665,7 +2669,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
     if (!formData.desc.trim()) errors.desc = "Description is required.";
     if (!formData.venue.trim()) errors.venue = "Venue is required.";
     if (!formData.capacity) errors.capacity = "Capacity is required.";
-    else if (parseInt(formData.capacity) < 1) errors.capacity = "Capacity must be at least 1.";
+    else if (parseInt(formData.capacity) < 2) errors.capacity = "Capacity must be at least 2.";
     if (formData.type === "paid") {
       if (!formData.amount) errors.amount = "Amount is required for paid events.";
       else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
@@ -2676,15 +2680,8 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
       }
     }
     if (formData.eventType === "Team") {
-      if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
       if (!formData.teamSizeLimit) errors.teamSizeLimit = "Max team size is required.";
-      if (formData.minTeamSize && formData.teamSizeLimit) {
-        const min = parseInt(formData.minTeamSize);
-        const max = parseInt(formData.teamSizeLimit);
-        if (min < 2) errors.minTeamSize = "Min team size must be at least 2.";
-        if (max < 2) errors.teamSizeLimit = "Max team size must be at least 2.";
-        if (!errors.minTeamSize && !errors.teamSizeLimit && min > max) errors.minTeamSize = "Min size cannot exceed max size.";
-      }
+      else if (parseInt(formData.teamSizeLimit) < 2) errors.teamSizeLimit = "Max team size must be at least 2.";
     }
     if (formData.type === "paid" && formData.useDefaultQr && !clubQrUrl) {
       setError("Default QR code is not uploaded in settings. Please upload one or choose Custom QR.");
@@ -2734,7 +2731,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
-        minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : undefined,
+        minTeamSize: formData.eventType === "Team" ? 2 : undefined,
         clubId: resolvedClubId,
         bannerUrl,
         qrUrl,
@@ -2831,7 +2828,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
-            <input type="number" placeholder="e.g. 200" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+            <input type="number" placeholder="e.g. 200" min={2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
             {fieldErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.capacity}</p>}
           </div>
           <div className="space-y-1.5 relative">
@@ -2855,7 +2852,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Participation Type</label>
             <div className="relative">
-              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: "", minTeamSize: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
                 <option value="Solo" style={{ background: "#111" }}>Solo</option>
                 <option value="Team" style={{ background: "#111" }}>Team</option>
               </select>
@@ -2868,18 +2865,11 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, refreshProfil
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-2 gap-4"
+                className="space-y-1.5"
               >
-                <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Min Team Size</label>
-                  <input type="number" placeholder="e.g. 2" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.minTeamSize} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setFormData(p => ({...p, minTeamSize: v})); setFieldErrors(fe => ({...fe, minTeamSize: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
-                  {fieldErrors.minTeamSize && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.minTeamSize}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
-                  <input type="number" placeholder="e.g. 4" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.teamSizeLimit} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setFormData(p => ({...p, teamSizeLimit: v})); setFieldErrors(fe => ({...fe, teamSizeLimit: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
-                  {fieldErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.teamSizeLimit}</p>}
-                </div>
+                <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                <input type="number" placeholder="e.g. 4" min={2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.teamSizeLimit} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 2) { setFormData(p => ({...p, teamSizeLimit: v})); setFieldErrors(fe => ({...fe, teamSizeLimit: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
+                {fieldErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.teamSizeLimit}</p>}
               </motion.div>
             )}
           </AnimatePresence>

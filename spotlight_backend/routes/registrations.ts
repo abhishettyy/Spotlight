@@ -45,12 +45,43 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
         name: r.team.teamName, 
         passkey: r.team.passkey,
         leaderId: r.team.leaderId,
-        members: r.team.registrations.map((reg: any) => ({
-          id: reg.profile.id,
-          name: reg.profile.fullName,
-          isLeader: reg.profile.id === r.team?.leaderId,
-          status: reg.status
-        }))
+        members: (() => {
+          if (!r.team?.registrations) return [];
+          const isTicketConfirmed = r.status === 'CONFIRMED';
+          const validRegs = r.team.registrations.filter((reg: any) => {
+            if (!reg.profile || reg.status === 'REJECTED') return false;
+            if (isTicketConfirmed) {
+              return reg.status === 'CONFIRMED';
+            }
+            return reg.status === 'CONFIRMED' || reg.status === 'PENDING';
+          });
+
+          // Sort so Leader comes first, then CONFIRMED, then PENDING
+          validRegs.sort((a: any, b: any) => {
+            const aIsLeader = a.profile.id === r.team?.leaderId;
+            const bIsLeader = b.profile.id === r.team?.leaderId;
+            if (aIsLeader && !bIsLeader) return -1;
+            if (!aIsLeader && bIsLeader) return 1;
+            if (a.status === 'CONFIRMED' && b.status !== 'CONFIRMED') return -1;
+            if (a.status !== 'CONFIRMED' && b.status === 'CONFIRMED') return 1;
+            return 0;
+          });
+
+          const seen = new Set<string>();
+          const result: any[] = [];
+          for (const reg of validRegs) {
+            if (!seen.has(reg.profile.id)) {
+              seen.add(reg.profile.id);
+              result.push({
+                id: reg.profile.id,
+                name: reg.profile.fullName,
+                isLeader: reg.profile.id === r.team?.leaderId,
+                status: reg.status
+              });
+            }
+          }
+          return result;
+        })()
       } : null,
       event: r.event ? {
         id: r.event.id,
@@ -100,8 +131,10 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
     }
 
     if (event.registrationLimit) {
-      const count = await prisma.registration.count({ where: { eventId: eventId } });
-      if (count >= event.registrationLimit) return res.status(400).json({ error: 'Event is full.' });
+      const activeCount = await prisma.registration.count({
+        where: { eventId: eventId, status: { in: ['PENDING', 'CONFIRMED'] } }
+      });
+      if (activeCount >= event.registrationLimit) return res.status(400).json({ error: 'Registration full. Capacity reached for this event.' });
     }
 
     const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
@@ -133,6 +166,13 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
     });
     if (alreadyRegistered) {
       return res.status(400).json({ error: 'You are already registered for this event.' });
+    }
+
+    if (event.registrationLimit) {
+      const activeCount = await prisma.registration.count({
+        where: { eventId: eventId, status: { in: ['PENDING', 'CONFIRMED'] } }
+      });
+      if (activeCount >= event.registrationLimit) return res.status(400).json({ error: 'Registration full. Capacity reached for this event.' });
     }
 
     const passkey = await generateUniquePasskey();
