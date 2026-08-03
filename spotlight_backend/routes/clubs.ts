@@ -54,7 +54,6 @@ async function ensureActiveRegistrationKey(): Promise<string> {
   }
 }
 
-// Immediately ensure an active registration key exists on route load
 ensureActiveRegistrationKey();
 
 router.post('/verify-key', async (req: Request, res: Response): Promise<any> => {
@@ -105,7 +104,6 @@ router.get('/registration-keys', async (req: Request, res: Response): Promise<an
       orderBy: { createdAt: 'desc' },
     });
 
-    // Directly look up club for every used key — bypasses Prisma relation issues
     const enrichedKeys = await Promise.all(keys.map(async (key) => {
       if (key.usedByClubId) {
         const club = await prisma.club.findUnique({
@@ -292,7 +290,6 @@ router.post('/', requireOptionalAuth, async (req: Request, res: Response): Promi
 
     console.log(`Club created: "${club.name}" (${club.id}) using key ${keyRecord.code} by user ${userId}`);
 
-    // Auto-generate next key immediately
     await ensureActiveRegistrationKey();
 
     return res.status(201).json({ club });

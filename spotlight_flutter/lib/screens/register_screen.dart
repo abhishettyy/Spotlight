@@ -81,7 +81,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String? registrationId;
       String? referenceCode;
 
-      // Update phone number in profile if user edited it
       final newPhone = _phoneController.text.trim();
       if (newPhone.isNotEmpty) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -109,82 +108,105 @@ class _RegisterScreenState extends State<RegisterScreen> {
           teamName: _teamNameController.text.trim(),
           leaderUsn: _usnController.text.trim(),
         );
-        final passkey = result['passkey']!;
+        final passkey = result['passkey'] ?? '';
         final regId = result['registrationId']!;
         registrationId = regId;
-        referenceCode = passkey;
+        referenceCode = passkey.isNotEmpty ? passkey : regId;
 
         if (mounted) {
-          await showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (dialogContext) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: const Text('Team Created!'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Share this passkey with your teammates:'),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: passkey));
-                      showSpotlightToast(
-                        context,
-                        'Passkey copied to clipboard!',
-                        icon: Icons.copy_rounded,
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          if (passkey.isNotEmpty) {
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogContext) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                title: const Text('Team Created!'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Share this passkey with your teammates:'),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: passkey));
+                        showSpotlightToast(
+                          context,
+                          'Passkey copied to clipboard!',
+                          icon: Icons.copy_rounded,
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              passkey,
+                              style: GoogleFonts.inter(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 4,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Icon(
+                              Icons.copy_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 22,
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            passkey,
-                            style: GoogleFonts.inter(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 4,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.copy_rounded,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 22,
-                          ),
-                        ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to copy passkey',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.grey[600],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap to copy passkey',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Got it'),
                   ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Got it'),
+            );
+          } else {
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogContext) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                title: const Text('Team Created!'),
+                content: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Your team has been created. Next, submit your payment details to receive your Team Passkey.'),
+                  ],
                 ),
-              ],
-            ),
-          );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Proceed to Payment'),
+                  ),
+                ],
+              ),
+            );
+          }
         }
       } else {
         await apiService.joinTeam(

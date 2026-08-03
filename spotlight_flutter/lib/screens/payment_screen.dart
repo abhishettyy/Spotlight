@@ -55,21 +55,99 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       final apiService = ApiService();
-      await apiService.uploadPaymentProof(
+      final resData = await apiService.submitPayment(
         registrationId: widget.registrationId,
         transactionId: utr,
       );
 
+      final generatedPasskey = resData['passkey'] as String?;
+
       if (mounted) {
         showSpotlightToast(
           context,
-          'Registration submitted successfully!',
+          'Registration & Payment submitted successfully!',
           icon: Icons.check_circle_rounded,
         );
-        Navigator.pushReplacement(
-          context,
-          SmoothRoute(builder: (_) => const PaymentPendingScreen()),
-        );
+
+        if (generatedPasskey != null && generatedPasskey.isNotEmpty) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: const Text('Team Passkey Unlocked!'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Payment details submitted! Share this Team Passkey with your teammates so they can join:'),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: generatedPasskey));
+                      showSpotlightToast(
+                        context,
+                        'Passkey copied to clipboard!',
+                        icon: Icons.copy_rounded,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            generatedPasskey,
+                            style: GoogleFonts.inter(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 4,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.copy_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 22,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap to copy passkey',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Got it'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            SmoothRoute(builder: (_) => const PaymentPendingScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

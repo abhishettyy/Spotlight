@@ -39,6 +39,7 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
       id: r.id,
       status: r.status,
       payment_proof_url: r.paymentProofUrl,
+      transaction_id: r.transactionId,
       created_at: r.createdAt,
       team: r.team ? { 
         id: r.team.id, 
@@ -56,7 +57,6 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
             return reg.status === 'CONFIRMED' || reg.status === 'PENDING';
           });
 
-          // Sort so Leader comes first, then CONFIRMED, then PENDING
           validRegs.sort((a: any, b: any) => {
             const aIsLeader = a.profile.id === r.team?.leaderId;
             const bIsLeader = b.profile.id === r.team?.leaderId;
@@ -176,7 +176,9 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
       if (activeCount >= event.registrationLimit) return res.status(400).json({ error: 'Registration full. Capacity reached for this event.' });
     }
 
-    const passkey = await generateUniquePasskey();
+    // For free events (fee === 0), generate passkey immediately.
+    // For paid events (fee > 0), passkey is null until payment details are submitted.
+    const passkey = (event.fee === 0) ? await generateUniquePasskey() : null;
 
     const result = await prisma.$transaction(async (tx) => {
       const team = await tx.team.create({
@@ -199,13 +201,13 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
   try {
     const clerkUserId = req.auth!.userId;
     const { eventId, passkey } = req.body;
-    if (!eventId || !passkey) return res.status(400).json({ error: 'Missing fields.' });
+    if (!eventId || !passkey || !passkey.trim()) return res.status(400).json({ error: 'Passkey is required.' });
 
     const team = await prisma.team.findFirst({
-      where: { eventId: eventId, passkey: passkey.toUpperCase() },
+      where: { eventId: eventId, passkey: passkey.trim().toUpperCase() },
       include: { event: true }
     });
-    if (!team) return res.status(404).json({ error: 'Invalid passkey.' });
+    if (!team) return res.status(404).json({ error: 'Invalid passkey or passkey not yet generated.' });
 
     if (team.event?.registrationDeadline && new Date() > new Date(team.event.registrationDeadline)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
@@ -218,7 +220,6 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       return res.status(400).json({ error: 'You are already registered for this event.' });
     }
 
-    // Check team size limit
     const currentMemberCount = await prisma.registration.count({
       where: { teamId: team.id, status: { in: ['PENDING', 'CONFIRMED'] } }
     });
@@ -231,17 +232,13 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
 
     const status = (team.event?.fee === 0) ? 'CONFIRMED' : 'PENDING';
 
-    const existingCheckedIn = await prisma.registration.findFirst({
-      where: { teamId: team.id, checkedInAt: { not: null } } as any
-    });
-
     const registration = await prisma.registration.create({
       data: { 
         eventId: eventId, 
         userId: clerkUserId, 
         teamId: team.id, 
         status,
-        ...(existingCheckedIn ? { checkedInAt: (existingCheckedIn as any).checkedInAt } : {})
+        checkedInAt: null,
       } as any
     });
 
@@ -262,7 +259,7 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
 
     const registration = await prisma.registration.findUnique({
       where: { id },
-      include: { event: true }
+      include: { event: true, team: true }
     });
 
     if (!registration) {
@@ -277,6 +274,19 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
+    let generatedPasskey: string | null = null;
+    if (registration.teamId && registration.team) {
+      if (!registration.team.passkey) {
+        generatedPasskey = await generateUniquePasskey();
+        await prisma.team.update({
+          where: { id: registration.teamId },
+          data: { passkey: generatedPasskey }
+        });
+      } else {
+        generatedPasskey = registration.team.passkey;
+      }
+    }
+
     const updated = await prisma.registration.update({
       where: { id },
       data: {
@@ -285,7 +295,7 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
       }
     });
 
-    return res.status(200).json({ success: true, registration: updated });
+    return res.status(200).json({ success: true, passkey: generatedPasskey, registration: updated });
   } catch (error: any) {
     console.error('Submit payment proof error:', error);
     return res.status(500).json({ error: error.message });
@@ -321,7 +331,7 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
       const isLeader = registration.userId === registration.team.leaderId;
 
       const existingCheckedIn = await prisma.registration.findFirst({
-        where: { teamId: registration.teamId, checkedInAt: { not: null } } as any
+        where: { teamId: registration.teamId, status: 'CONFIRMED', checkedInAt: { not: null } } as any
       });
       const checkedInAtData = existingCheckedIn ? { checkedInAt: (existingCheckedIn as any).checkedInAt } : {};
 
@@ -436,8 +446,9 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
           where: { teamId: registration.teamId },
           data: { 
             status: 'REJECTED',
-            paymentProofUrl: null
-          },
+            paymentProofUrl: null,
+            checkedInAt: null,
+          } as any,
         });
 
         for (const url of proofUrls) {
@@ -460,8 +471,9 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
           where: { id },
           data: { 
             status: 'REJECTED',
-            paymentProofUrl: null
-          },
+            paymentProofUrl: null,
+            checkedInAt: null,
+          } as any,
         });
 
         await prisma.notification.create({
@@ -481,8 +493,9 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
         where: { id },
         data: { 
           status: 'REJECTED',
-          paymentProofUrl: null
-        },
+          paymentProofUrl: null,
+          checkedInAt: null,
+        } as any,
       });
 
       if (proofUrl) {
@@ -532,8 +545,8 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
     });
 
     if (!registration) {
-      // Fallback: check if payload is a Team Passkey
-      const teamMatch = await prisma.team.findUnique({
+      
+      const teamMatch = await prisma.team.findFirst({
         where: { passkey: ticketId.trim().toUpperCase() },
         include: {
           registrations: {
@@ -566,7 +579,6 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
       });
     }
 
-    // Check if already checked in — use checkedInAt (separate from approval status)
     if (registration.teamId) {
       const alreadyCheckedIn = !!(registration as any).checkedInAt ||
         (registration.team?.registrations ?? []).some((r: any) => !!(r as any).checkedInAt);
@@ -587,18 +599,25 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
       }
     }
 
-    // Mark as checked in using checkedInAt — does NOT touch approval status
+    // Clean up any legacy or orphaned checkedInAt timestamps on non-confirmed registrations
+    await prisma.registration.updateMany({
+      where: { status: { in: ['REJECTED', 'PENDING'] }, checkedInAt: { not: null } } as any,
+      data: { checkedInAt: null } as any,
+    });
+
     const now = new Date();
     if (registration.teamId) {
       await prisma.registration.updateMany({
-        where: { teamId: registration.teamId },
+        where: { teamId: registration.teamId, status: 'CONFIRMED' },
         data: { checkedInAt: now } as any,
       });
     } else {
-      await prisma.registration.update({
-        where: { id: registration.id },
-        data: { checkedInAt: now } as any,
-      });
+      if (registration.status === 'CONFIRMED') {
+        await prisma.registration.update({
+          where: { id: registration.id },
+          data: { checkedInAt: now } as any,
+        });
+      }
     }
     (registration as any).checkedInAt = now;
 
@@ -622,7 +641,7 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
       const teamRegs = registration.team.registrations || [];
 
       const members = teamRegs
-        .filter((r) => r.profile && r.status !== 'REJECTED')
+        .filter((r) => r.profile && r.status === 'CONFIRMED')
         .map((r) => ({
           id: r.profile!.id,
           name: r.profile!.fullName,

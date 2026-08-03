@@ -197,7 +197,7 @@ class ApiService {
       final data = json.decode(response.body);
       if (response.statusCode == 201) {
         return {
-          'passkey': data['passkey'] as String,
+          'passkey': (data['passkey'] as String?) ?? '',
           'registrationId': data['registrationId'] as String,
         };
       } else {
@@ -236,7 +236,7 @@ class ApiService {
     }
   }
 
-  Future<void> uploadPaymentProof({
+  Future<Map<String, dynamic>> submitPayment({
     required String registrationId,
     String? base64Image,
     required String transactionId,
@@ -252,10 +252,11 @@ class ApiService {
         }),
       );
 
+      final data = json.decode(response.body);
       if (response.statusCode != 200) {
-        final data = json.decode(response.body);
         throw AppException(data['error'] ?? 'Failed to upload payment proof');
       }
+      return data as Map<String, dynamic>;
     } catch (e) {
       throw AppException(formatExceptionMessage(e, 'Failed to upload payment proof. Please check your connection.'));
     }

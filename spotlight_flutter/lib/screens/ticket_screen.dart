@@ -13,6 +13,7 @@ import '../core/smooth_route.dart';
 import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
+import '../core/custom_toast.dart';
 import '../models/models.dart';
 
 class TicketScreen extends StatefulWidget {
@@ -593,13 +594,16 @@ class _TicketScreenState extends State<TicketScreen> {
     }
 
     final shortId = 'SPT-${ticket.id.substring(0, 8).toUpperCase()}';
+    final isFreeEvent = (event?.price ?? 0) == 0;
     final minRequired = event?.minTeamSize ?? 2;
+    final joinedCount = ticket.team?.members.where((m) => m.status.toUpperCase() != 'REJECTED').length ?? 1;
     final confirmedCount = ticket.team?.members.where((m) => m.status.toUpperCase() == 'CONFIRMED' || m.status.toUpperCase() == 'APPROVED').length ?? (ticket.isConfirmed ? 1 : 0);
-    final isTeamIncomplete = (ticket.team != null) && (confirmedCount < minRequired);
+    final effectiveCount = isFreeEvent ? joinedCount : confirmedCount;
+    final isTeamIncomplete = (ticket.team != null) && (effectiveCount < minRequired);
 
     void openTicket() {
       if (ticket.status.toUpperCase() == 'REJECTED') {
-        return; // Do nothing at all if ticket is rejected!
+        return; 
       }
 
       if (isTeamIncomplete) {
@@ -607,7 +611,9 @@ class _TicketScreenState extends State<TicketScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'A minimum of $minRequired members must be approved to get the ticket.',
+              isFreeEvent
+                  ? 'A minimum of $minRequired members must join to get the ticket.'
+                  : 'A minimum of $minRequired members must be approved to get the ticket.',
               style: GoogleFonts.inter(fontWeight: FontWeight.w600),
             ),
             backgroundColor: const Color(0xFFEAB308),
@@ -626,7 +632,9 @@ class _TicketScreenState extends State<TicketScreen> {
               'title': title,
               'venue': venue,
               'date': event?.date ?? '',
-              'qr_code_string': ticket.id,
+              'qr_code_string': (ticket.team != null && ticket.team!.passkey.isNotEmpty)
+                  ? ticket.team!.passkey
+                  : ticket.id,
               'price': event?.price ?? 0,
               'team': ticket.team != null
                   ? {
@@ -644,14 +652,20 @@ class _TicketScreenState extends State<TicketScreen> {
           ),
         );
       } else {
+        final isPaid = (event?.price ?? 0) > 0;
+        final hasTeamPasskey = ticket.team != null && ticket.team!.passkey.trim().isNotEmpty;
+        final isPaymentPending = isPaid && !ticket.hasPaid && !hasTeamPasskey;
+
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Your registration is pending approval by the organizers.',
+              isPaymentPending
+                  ? 'Payment pending. Please complete your payment.'
+                  : 'Your registration is pending approval by the organizers.',
               style: GoogleFonts.inter(fontWeight: FontWeight.w600),
             ),
-            backgroundColor: const Color(0xFF38BDF8),
+            backgroundColor: isPaymentPending ? const Color(0xFFEAB308) : const Color(0xFF38BDF8),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -659,10 +673,8 @@ class _TicketScreenState extends State<TicketScreen> {
       }
     }
 
-    return GestureDetector(
-      onTap: openTicket,
-      child: Container(
-        decoration: cardDecoration,
+    return Container(
+      decoration: cardDecoration,
         child: Column(
           children: [
 
@@ -875,11 +887,11 @@ class _TicketScreenState extends State<TicketScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Approved Members',
+                              isFreeEvent ? 'Team Members' : 'Approved Members',
                               style: GoogleFonts.inter(color: subText, fontSize: 10),
                             ),
                             Text(
-                              '$confirmedCount Approved',
+                              isFreeEvent ? '$joinedCount Joined' : '$confirmedCount Approved',
                               style: GoogleFonts.inter(
                                 color: isTeamIncomplete
                                     ? const Color(0xFFFBBF24)
@@ -888,20 +900,6 @@ class _TicketScreenState extends State<TicketScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                        )
-                      else if (ticket.isConfirmed)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Ticket ID',
-                                style: GoogleFonts.inter(
-                                    color: subText, fontSize: 10)),
-                            Text(shortId,
-                                style: GoogleFonts.inter(
-                                    color: mainText,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold)),
                           ],
                         )
                       else
@@ -934,8 +932,7 @@ class _TicketScreenState extends State<TicketScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _statusBadge(TicketModel ticket) {
@@ -980,7 +977,9 @@ class _TicketScreenState extends State<TicketScreen> {
     }
 
     final upper = ticket.status.toUpperCase();
-    final isTeamMember = ticket.team != null;
+    final isPaid = (ticket.event?.price ?? 0) > 0;
+    final hasTeamPasskey = ticket.team != null && ticket.team!.passkey.trim().isNotEmpty;
+    final isPaymentPending = isPaid && !ticket.hasPaid && !hasTeamPasskey && upper != 'CONFIRMED' && upper != 'APPROVED';
 
     Color badgeBg;
     Color borderColor;
@@ -1000,6 +999,12 @@ class _TicketScreenState extends State<TicketScreen> {
       textColor = const Color(0xFFF87171);
       icon = Icons.cancel_rounded;
       label = 'Rejected';
+    } else if (isPaymentPending) {
+      badgeBg = const Color(0xFFF59E0B).withOpacity(0.15);
+      borderColor = const Color(0xFFF59E0B).withOpacity(0.35);
+      textColor = const Color(0xFFFBBF24);
+      icon = Icons.payment_rounded;
+      label = 'Payment Pending';
     } else {
       badgeBg = const Color(0xFF38BDF8).withOpacity(0.15);
       borderColor = const Color(0xFF38BDF8).withOpacity(0.35);

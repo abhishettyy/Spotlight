@@ -134,7 +134,10 @@ class TicketDetailsScreen extends StatelessWidget {
                                       color: cs.primary.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Text('${team['passkey']}', style: GoogleFonts.robotoMono(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
+                                    child: Text(
+                                      (team['passkey']?.toString().isNotEmpty == true) ? '${team['passkey']}' : 'Pending Payment',
+                                      style: GoogleFonts.robotoMono(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Icon(Icons.copy_rounded, size: 12, color: subText),
@@ -222,35 +225,66 @@ class TicketDetailsScreen extends StatelessWidget {
                             style: GoogleFonts.inter(
                                 fontSize: 12, color: subText)),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.06)
-                                : Colors.black.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'TICKET ID: ',
-                                style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: subText,
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: qrCodeString));
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 16),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      team != null ? 'Passkey copied to clipboard!' : 'Ticket ID copied to clipboard!',
+                                      style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
                                 ),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: const Color(0xFF1E1E1E),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              SelectableText(
-                                qrCodeString,
-                                style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: cs.primary,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.06)
+                                  : Colors.black.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  team != null ? 'PASSKEY: ' : 'TICKET ID: ',
+                                  style: GoogleFonts.jetBrainsMono(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: subText,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                Flexible(
+                                  child: Text(
+                                    qrCodeString,
+                                    style: GoogleFonts.jetBrainsMono(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: cs.primary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Icon(Icons.copy_rounded, size: 12, color: cs.primary),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),

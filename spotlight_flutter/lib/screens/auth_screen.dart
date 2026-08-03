@@ -314,7 +314,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : () async {
-                    // Validate fields before proceeding
+                    
                     if (isLogin) {
                       if (_emailController.text.trim().isEmpty ||
                           _passwordController.text.trim().isEmpty) {
@@ -423,11 +423,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
-              // ── Social Proof Stats & "Why Spotlight?" Section (Sign In only) ──
               if (isLogin) ...[
                 const SizedBox(height: 40),
 
-                // Stats row
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                   decoration: BoxDecoration(
@@ -451,7 +449,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 48),
 
-                // "Why Spotlight?" Section Title
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -490,7 +487,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // Terms line
                 Center(
                   child: Text.rich(
                     TextSpan(
@@ -759,4 +755,4 @@ class _JumpingDotsLoaderState extends State<JumpingDotsLoader> with SingleTicker
     );
   }
 }
-
+

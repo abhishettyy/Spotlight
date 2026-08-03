@@ -40,7 +40,6 @@ class ClubEventsScreen extends StatelessWidget {
 
     final eventsProvider = Provider.of<EventsProvider>(context);
 
-    // Filter events for this club by clubId, date >= today
     final clubEvents = eventsProvider.events.where((e) {
       final isThisClub = e.clubId == clubId;
       if (!isThisClub) return false;
@@ -64,7 +63,7 @@ class ClubEventsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 16, 24, 0),
               child: Row(
@@ -74,7 +73,7 @@ class ClubEventsScreen extends StatelessWidget {
                     icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
                   ),
                   const SizedBox(width: 4),
-                  // Club avatar
+                  
                   Container(
                     width: 40,
                     height: 40,
@@ -131,7 +130,6 @@ class ClubEventsScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Events list
             Expanded(
               child: eventsProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -246,7 +244,7 @@ class _EventCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Banner thumbnail
+            
             ClipRRect(
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
               child: SizedBox(
@@ -262,14 +260,13 @@ class _EventCard extends StatelessWidget {
               ),
             ),
 
-            // Details
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Category + price
+                    
                     Row(
                       children: [
                         Expanded(
@@ -305,7 +302,6 @@ class _EventCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
 
-                    // Title
                     Text(
                       event.title,
                       style: GoogleFonts.inter(
@@ -319,7 +315,6 @@ class _EventCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
 
-                    // Date
                     Row(
                       children: [
                         Icon(Icons.calendar_today_outlined,
@@ -347,7 +342,6 @@ class _EventCard extends StatelessWidget {
                       ],
                     ),
 
-                    // Deadline
                     if (event.registrationDeadline != null) ...[
                       const SizedBox(height: 4),
                       Row(

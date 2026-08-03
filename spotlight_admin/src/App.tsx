@@ -220,7 +220,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6 md:p-10 max-w-7xl mx-auto space-y-8">
-      {/* Header Bar */}
+      
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden p-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -254,7 +254,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Action Messages */}
       {actionError && (
         <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between" style={{ fontFamily: FB }}>
           <div className="flex items-center gap-2">
@@ -275,7 +274,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <p className="text-[11px] tracking-[0.2em] uppercase text-white/50" style={{ fontFamily: FM }}>Active Unused Key</p>
@@ -296,9 +294,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Section: Current Active Key + Generator */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Key Spotlight */}
+        
         <div className="p-8 rounded-3xl relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(240,61,78,0.08), rgba(255,255,255,0.01))", border: "1px solid rgba(240,61,78,0.2)" }}>
           <div className="flex items-center justify-between mb-4">
             <span className="text-[11px] px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-bold" style={{ fontFamily: FM }}>READY TO USE</span>
@@ -336,7 +333,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Custom Key Generator */}
         <div className="p-8 rounded-3xl flex flex-col justify-between" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -371,7 +367,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Keys Table & History */}
       <div className="space-y-4 pt-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -380,7 +375,7 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
+            
             <div className="relative">
               <input
                 type="text"
@@ -393,7 +388,6 @@ export default function App() {
               <Search size={14} className="absolute left-3 top-2.5 text-white/30" />
             </div>
 
-            {/* Filter Tabs */}
             <div className="flex p-1 rounded-xl bg-white/5 border border-white/10 text-xs">
               {(['all', 'active', 'used'] as const).map(f => (
                 <button
@@ -409,7 +403,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Table Container */}
         <div className="overflow-x-auto rounded-2xl border border-white/5 bg-white/[0.005]">
           <table className="w-full text-left border-collapse">
             <thead>

@@ -85,7 +85,7 @@ class Team {
       eventId: json['event_id'],
       leaderId: json['leader_id'],
       teamName: json['team_name'],
-      passkey: json['passkey'],
+      passkey: json['passkey'] ?? '',
     );
   }
 }
@@ -453,6 +453,7 @@ class TicketModel {
   final String id;
   final String status;
   final String? paymentProofUrl;
+  final String? transactionId;
   final DateTime? createdAt;
   final TicketEventInfo? event;
   final TicketTeamInfo? team;
@@ -461,6 +462,7 @@ class TicketModel {
     required this.id,
     required this.status,
     this.paymentProofUrl,
+    this.transactionId,
     this.createdAt,
     this.event,
     this.team,
@@ -471,6 +473,7 @@ class TicketModel {
       id: json['id'] ?? '',
       status: json['status'] ?? 'pending',
       paymentProofUrl: json['payment_proof_url'],
+      transactionId: json['transaction_id'] ?? json['transactionId'],
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : null,
@@ -493,6 +496,10 @@ class TicketModel {
 
   bool get isPending =>
       status.toUpperCase() == 'PENDING';
+
+  bool get hasPaid =>
+      (transactionId != null && transactionId!.trim().isNotEmpty) ||
+      (paymentProofUrl != null && paymentProofUrl!.trim().isNotEmpty);
 }
 
 class NotificationModel {

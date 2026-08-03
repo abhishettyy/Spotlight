@@ -81,7 +81,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
     try {
 
-      final minSplash = Future.value(); // no delay — go straight in
+      final minSplash = Future.value(); 
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.tryAutoLogin();

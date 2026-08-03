@@ -59,7 +59,6 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
 
-    // If clubId is missing or empty, resolve it from the authenticated user's profile
     if (!clubId || clubId.trim() === '') {
       console.warn(`[Events] clubId not provided or empty. Attempting to resolve from profile for userId: ${userId}`);
       const profile = await prisma.profile.findUnique({ where: { id: userId } });
@@ -72,7 +71,6 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
       }
     }
 
-    // Verify the club actually exists
     const club = await prisma.club.findUnique({ where: { id: clubId } });
     if (!club) {
       return res.status(404).json({ error: 'Club not found. Please refresh the page and try again.' });

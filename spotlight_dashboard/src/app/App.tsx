@@ -214,8 +214,6 @@ function useSpotlightData() {
     }
   };
 
-  // Re-syncs profile from server and returns the fresh profile.
-  // Use this when you need a guaranteed up-to-date clubId (e.g. right after club creation).
   const refreshProfile = async (): Promise<any> => {
     try {
       if (isLocalSignedIn) return localProfile;
@@ -429,7 +427,6 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   return (
     <div id="ls" className="h-screen w-screen overflow-hidden flex flex-col relative bg-background">
 
-      {}
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-700"
         style={{
           background:   scrolled ? "rgba(5,5,5,0.92)" : "transparent",
@@ -448,7 +445,6 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </div>
       </nav>
 
-      {/* Background Spotlight Beam & floating chips */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div style={{
           position: "absolute", top: "-10%", left: "50%",
@@ -474,9 +470,8 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         ))}
       </div>
 
-      {/* Hero Content Section & Footer Wrapper */}
       <div className="flex-1 flex flex-col justify-between z-10 relative">
-        {/* Centered Hero Section (constrained to max-w-5xl) */}
+        
         <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pt-24 pb-6 w-full max-w-5xl mx-auto">
           <section className="flex-1 flex flex-col items-center justify-center text-center py-6 w-full">
             <motion.div
@@ -535,7 +530,6 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           </section>
         </div>
 
-        {/* End-to-End Footer Bar */}
         <footer className="w-full px-8 md:px-16 pb-6 pt-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5">
           <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
           <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
@@ -547,7 +541,6 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </footer>
       </div>
 
-      {/* Individual Modals for Privacy, Terms, Contact Us */}
       <AnimatePresence>
         {activeModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-6">
@@ -845,7 +838,6 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
     }
   };
 
-  // Key gate screen (shown before Sign Up form)
   if (tab === "register" && !keyVerified) {
     return (
       <motion.div
@@ -986,7 +978,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
       ><ChevronLeft size={14} /> Back</button>
 
       <div className="flex flex-col items-center gap-6 w-full max-w-md">
-        {}
+
         <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
           {(["login", "register"] as AuthTab[]).map(t => (
             <button key={t} onClick={() => { setEmail(""); setPassword(""); setClubName(""); setError(null); setShowPassword(false); setRegistrationKey(""); setKeyVerified(false); onTabChange(t); }}
@@ -1128,7 +1120,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
 }
 
 const checkScanStatus = (_eventDateStr?: string | null) => {
-  // Time restriction disabled — scanner always available
+  
   return { enabled: true, reason: "Scanner Active" };
 };
 
@@ -1174,7 +1166,6 @@ function TicketScannerModal({
       }
     };
 
-    // Only start the scanner when showing the scan view (not result/already-checked-in view)
     if (!scanResult && !alreadyCheckedIn) {
       const timer = setTimeout(startScanner, 150);
       return () => {
@@ -1219,7 +1210,7 @@ function TicketScannerModal({
       transition={{ duration: 0.2 }}
       className="rounded-2xl border border-[#F03D4E]/20 bg-[#F03D4E]/[0.03] overflow-hidden"
     >
-      {/* Panel Header */}
+      
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
         <div className="flex items-center gap-2.5">
           <Camera size={16} className="text-[#F03D4E]" />
@@ -1240,7 +1231,7 @@ function TicketScannerModal({
 
       <div className="p-5">
         {alreadyCheckedIn ? (
-          /* Already Checked In Panel */
+          
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
               <div className="flex items-center gap-3">
@@ -1274,7 +1265,7 @@ function TicketScannerModal({
           </div>
         ) : !scanResult ? (
           <div className="flex flex-col lg:flex-row gap-5">
-            {/* Camera Feed */}
+            
             <div className="flex-shrink-0">
               <div
                 className="relative rounded-xl overflow-hidden bg-black border border-white/10"
@@ -1429,8 +1420,12 @@ function TicketScannerModal({
                           <td className="p-3 text-[#94a3b8]">{member.email || '—'}</td>
                           <td className="p-3 text-[#94a3b8]">{member.branch || '—'}</td>
                           <td className="p-3 text-right">
-                            <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" style={{ fontFamily: FM }}>
-                              CONFIRMED
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border ${
+                              member.status?.toUpperCase() === 'CONFIRMED'
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            }`} style={{ fontFamily: FM }}>
+                              {member.status || 'CONFIRMED'}
                             </span>
                           </td>
                         </tr>
@@ -1446,8 +1441,6 @@ function TicketScannerModal({
     </motion.div>
   );
 }
-
-
 
 function EventsPage({ 
   EVENTS, 
@@ -1668,7 +1661,7 @@ function EventsPage({
                   <div className="flex justify-between items-start mb-5">
                     <div>
                       <h3 className="text-white font-semibold text-lg leading-tight" style={{ fontFamily: FC }}>{team.name}</h3>
-                      <p className="text-[11px] text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey}</p>
+                      <p className="text-[11px] text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey || 'Pending Payment'}</p>
                     </div>
                     <span className="text-[11px] bg-white/5 px-2 py-1 rounded text-[#f3f4f6]" style={{ fontFamily: FM }}>{team.members.length} MEMBERS</span>
                   </div>
@@ -1750,7 +1743,7 @@ function EventsPage({
                                 {req.team ? (
                                   <div>
                                     <span className="font-medium text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
-                                    <p className="text-[10px] text-[#94a3b8] font-mono">Passkey: {req.team.passkey}</p>
+                                    <p className="text-[10px] text-[#94a3b8] font-mono">Passkey: {req.team.passkey || 'Pending Payment'}</p>
                                   </div>
                                 ) : (
                                   <span className="text-[#888] font-mono">—</span>
@@ -1818,7 +1811,6 @@ function EventsPage({
               )}
             </div>
 
-            {/* Approved section below */}
             <div>
               <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Approved ({approved.length})</p>
               {approved.length === 0 ? (
@@ -1885,7 +1877,6 @@ function EventsPage({
               )}
             </div>
 
-            {/* Rejected section */}
             <div>
               <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Rejected ({rejected.length})</p>
               {rejected.length === 0 ? (
@@ -2067,7 +2058,6 @@ function EventsPage({
                 </div>
               </div>
 
-              {/* Inline Ticket Scanner Panel */}
               {showScannerModal && (
                 <TicketScannerModal
                   activeEvent={activeEvent}
@@ -2119,7 +2109,6 @@ function EventsPage({
                 />
               )}
 
-              {}
               <div className="relative max-w-md">
                 <input
                   type="text"
@@ -2131,7 +2120,6 @@ function EventsPage({
                 />
               </div>
 
-              {}
               <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -2343,7 +2331,6 @@ function EventsPage({
                     </div>
                   </div>
 
-                  {/* Full Banner Lightbox Modal */}
                   <AnimatePresence>
                     {showFullBannerModal && activeEvent.bannerUrl && (
                       <motion.div
@@ -2375,7 +2362,6 @@ function EventsPage({
                     )}
                   </AnimatePresence>
 
-                  {/* Banner password confirmation modal */}
                   <AnimatePresence>
                     {showBannerPasswordModal && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
@@ -2441,7 +2427,7 @@ function EventsPage({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: "Total Capacity", value: activeEvent.capacity || '∞' },
+                { label: "Venue Capacity", value: activeEvent.capacity || '∞' },
                 { label: "Registered",     value: registrations.length },
                 { label: "Pending Approval", value: pending.length },
               ].map((stat, i) => (
@@ -2517,9 +2503,9 @@ function EventsPage({
                  <Calendar size={14} /> Update Event
                </motion.button>
             </div>
-            {}
+
             <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              {}
+
               <div 
                 onClick={() => {
                   if (!isEventFinished) setShowApprovals(true);
@@ -2560,7 +2546,6 @@ function EventsPage({
                 </div>
               </div>
 
-              {}
               <div 
                 onClick={() => setShowParticipants(true)}
                 className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
@@ -2585,8 +2570,6 @@ function EventsPage({
                 </div>
               </div>
 
-
-              {}
               {teamsList.length > 0 && (
                 <div 
                   onClick={() => setShowTeams(true)}
@@ -2623,7 +2606,7 @@ function EventsPage({
                     <h2 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: FC }}>Update Event</h2>
 
                     <div className="space-y-5">
-                      {/* Event Start Date */}
+                      
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Start Date &amp; Time</label>
                         <GlassDatePicker value={editForm.date} onChange={v => {
@@ -2638,30 +2621,26 @@ function EventsPage({
                         {editErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.date}</p>}
                       </div>
 
-                      {/* Event End Date */}
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event End Date &amp; Time</label>
                         <GlassDatePicker value={editForm.endDate} onChange={v => { setEditForm(p => ({...p, endDate: v})); setEditErrors(e => ({...e, endDate: ""})); }} defaultTime="23:59" />
                         {editErrors.endDate && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.endDate}</p>}
                       </div>
 
-                      {/* Registration Deadline */}
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Registration Deadline</label>
                         <GlassDatePicker value={editForm.deadline} onChange={v => { setEditForm(p => ({...p, deadline: v})); setEditErrors(e => ({...e, deadline: ""})); }} defaultTime="23:59" />
                         {editErrors.deadline && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.deadline}</p>}
                       </div>
 
-                      {/* Venue */}
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue</label>
                         <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.venue} onChange={e => { setEditForm(p => ({...p, venue: e.target.value})); setEditErrors(er => ({...er, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
                         {editErrors.venue && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.venue}</p>}
                       </div>
 
-                      {/* Capacity */}
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
+                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue Capacity</label>
                         <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); setEditErrors(er => ({...er, capacity: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
                         {editErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.capacity}</p>}
                       </div>
@@ -2679,10 +2658,10 @@ function EventsPage({
                         else if (editForm.deadline !== editOriginal.deadline && new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
                         else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event start date.";
                         if (!editForm.venue.trim()) errs.venue = "Venue is required.";
-                        if (!editForm.capacity) errs.capacity = "Capacity is required.";
+                        if (!editForm.capacity) errs.capacity = "Venue capacity is required.";
                         else if ((activeEvent?.type ?? '').toLowerCase() === 'team' && activeEvent?.teamSizeLimit && parseInt(editForm.capacity) < activeEvent.teamSizeLimit) {
-                          errs.capacity = `Capacity cannot be less than max team size (${activeEvent.teamSizeLimit}).`;
-                        } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Capacity must be at least 1.";
+                          errs.capacity = `Venue capacity cannot be less than max team size (${activeEvent.teamSizeLimit}).`;
+                        } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Venue capacity must be at least 1.";
                         if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
 
                         setEditErrors({});
@@ -2707,7 +2686,6 @@ function EventsPage({
               )}
             </AnimatePresence>
 
-            {/* Password Confirmation Modal for Event Update */}
             <AnimatePresence>
               {showEditPasswordModal && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
@@ -2834,7 +2812,7 @@ function EventsPage({
       </div>
 
       <div className="space-y-12 mt-4">
-        {}
+
         <div>
           <h2 className="text-lg font-medium text-white mb-5" style={{ fontFamily: FB }}>Upcoming Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -2924,7 +2902,6 @@ function EventsPage({
           </div>
         </div>
 
-        {}
         <div>
           <div className="flex items-center gap-3 mb-5">
             <h2 className="text-base font-medium text-white/50" style={{ fontFamily: FB }}>Past Events</h2>
@@ -3050,7 +3027,6 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
         {open && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute z-50 top-full mt-2 w-72 p-5 rounded-2xl shadow-2xl left-0" style={{ background: "rgba(15,15,15,0.98)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(24px)" }}>
 
-            {}
             <div className="flex justify-between items-center mb-4">
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
@@ -3065,7 +3041,6 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
               }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white cursor-pointer"><ChevronRight size={16} /></button>
             </div>
 
-            {}
             <div className="grid grid-cols-7 gap-1 mb-2 text-center">
               {days.map(d => <div key={d} className="text-[11px] text-[#94a3b8]" style={{ fontFamily: FM }}>{d}</div>)}
             </div>
@@ -3082,13 +3057,11 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
               })}
             </div>
 
-            {}
             <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
               <span className="text-xs text-[#888]" style={{ fontFamily: FM }}>Time</span>
               <input type="time" className="bg-transparent border border-white/10 rounded-md px-2.5 py-1 text-xs text-white outline-none focus:border-white/40 hover:border-white/30 transition-all cursor-pointer" style={{ colorScheme: "dark", fontFamily: FB, cursor: "pointer" }} value={timeStr} onChange={handleTimeChange} />
             </div>
 
-            {}
             <div className="mt-4 pt-4 border-t border-white/5 text-right">
               <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-colors cursor-pointer" style={{ fontFamily: FB }}>Done</button>
             </div>
@@ -3154,7 +3127,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
     });
   };
 
-
   const handleSubmit = async () => {
     if (submitting) return;
     setSubmitting(true);
@@ -3172,10 +3144,10 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
     else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event start date.";
     if (!formData.desc.trim()) errors.desc = "Description is required.";
     if (!formData.venue.trim()) errors.venue = "Venue is required.";
-    if (!formData.capacity) errors.capacity = "Capacity is required.";
+    if (!formData.capacity) errors.capacity = "Venue capacity is required.";
     else if (formData.eventType === "Team" && formData.teamSizeLimit && parseInt(formData.capacity) < parseInt(formData.teamSizeLimit)) {
-      errors.capacity = `Capacity cannot be less than max team size (${formData.teamSizeLimit}).`;
-    } else if (parseInt(formData.capacity) < 2) errors.capacity = "Capacity must be at least 2.";
+      errors.capacity = `Venue capacity cannot be less than max team size (${formData.teamSizeLimit}).`;
+    } else if (parseInt(formData.capacity) < 2) errors.capacity = "Venue capacity must be at least 2.";
     if (formData.type === "paid") {
       if (!formData.amount) errors.amount = "Amount is required for paid events.";
       else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
@@ -3219,8 +3191,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
     try {
       const token = await getToken();
 
-      // If clubId is missing (race condition right after club creation),
-      // re-sync profile from server to get the correct clubId before submitting.
       let resolvedClubId = clubId;
       if (!resolvedClubId || resolvedClubId.trim() === '') {
         console.warn("[CreateEvent] clubId is empty at submit time — re-syncing profile to resolve it.");
@@ -3277,7 +3247,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
 
       <div className="space-y-6 p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
 
-        {}
         <div className="space-y-1.5">
           <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Banner</label>
           <input type="file" accept="image/*" className="hidden" id="banner-upload" onChange={e => {
@@ -3349,10 +3318,10 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
             {fieldErrors.venue && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.venue}</p>}
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Capacity</label>
+            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue Capacity</label>
             <input type="number" placeholder="e.g. 200" min={formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : 2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
             {formData.eventType === "Team" && formData.teamSizeLimit && (
-              <p className="text-[10px] text-[#a1a1aa] mt-0.5" style={{ fontFamily: FM }}>Minimum capacity is {formData.teamSizeLimit} (Max Team Size).</p>
+              <p className="text-[10px] text-[#a1a1aa] mt-0.5" style={{ fontFamily: FM }}>Minimum venue capacity is {formData.teamSizeLimit} (Max Team Size).</p>
             )}
             {fieldErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.capacity}</p>}
           </div>
@@ -3582,7 +3551,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
     }
   }, [club]);
 
-
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [password, setPassword] = useState("");
@@ -3741,10 +3709,8 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
 
-
-
       <div className="space-y-6">
-        {/* Profile Settings */}
+        
         <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Profile Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -3773,7 +3739,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           </div>
         </div>
 
-        {}
         <div id="payment-settings" className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -3801,7 +3766,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           </div>
         </div>
 
-        {}
         <div className="p-6 md:p-8 rounded-3xl space-y-3" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between">
             <div>
@@ -3819,7 +3783,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           </AnimatePresence>
         </div>
 
-        {/* Contact Us */}
         <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
@@ -4028,7 +3991,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
           )}
         </AnimatePresence>
 
-        {}
          <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Privacy & Security</h2>
             <div className="space-y-4">
@@ -4052,7 +4014,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
             </div>
           </div>
 
-         {/* Privacy Policy */}
          <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
            <div>
              <p className="text-sm font-medium text-white" style={{ fontFamily: FB }}>Privacy Policy</p>
@@ -4061,7 +4022,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
            <button onClick={() => setShowPrivacyModal(true)} className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>View Policy</button>
          </div>
 
-         {}
         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(240,61,78,0.05)", border: "1px solid rgba(240,61,78,0.1)" }}>
           <div>
             <p className="text-sm font-medium text-[#F03D4E]" style={{ fontFamily: FB }}>Sign Out</p>
@@ -4339,8 +4299,6 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     setSelectedEventId(eventId || null);
     setShowTeams(sTeams);
 
-    // If navigating to the create tab and profile has no clubId yet (race condition
-    // after fresh signup), proactively re-sync so clubId is ready before the user submits.
     if (tab === "create" && !profile?.clubId) {
       console.log("[Dashboard] Navigating to create tab with no clubId — triggering refreshProfile.");
       refreshProfile();
@@ -4453,7 +4411,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
-      {/* Desktop Sidebar (hidden on mobile/tablet/iPad Pro) */}
+      
       <aside className="hidden xl:flex w-56 flex-shrink-0 flex-col h-screen"
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
@@ -4492,7 +4450,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
       </aside>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Mobile/Tablet/iPad Pro Header */}
+        
         <header className="xl:hidden flex items-center justify-between px-6 py-4 flex-shrink-0"
           style={{ background: "rgba(5,5,5,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
         >
@@ -4503,7 +4461,6 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           <div className="w-8" />
         </header>
 
-        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
           <AnimatePresence mode="wait">
             {activeTab === "create" && (
@@ -4559,11 +4516,10 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         </main>
       </div>
 
-      {/* Mobile Drawer Navigation */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            {/* Backdrop */}
+            
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -4571,7 +4527,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               onClick={() => setIsMobileMenuOpen(false)}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm xl:hidden"
             />
-            {/* Drawer */}
+            
             <motion.aside
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -4632,21 +4588,21 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               Your club has been successfully created, but a few settings are yet to be completed. Please configure the pending fields below:
             </p>
             <div className="space-y-3 mb-8">
-              {}
+
               {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
                 <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
                   <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Club Logo is not uploaded</span>
                 </div>
               )}
-              {}
+
               {!currentClub?.upiId && (
                 <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
                   <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Default UPI ID is not configured</span>
                 </div>
               )}
-              {}
+
               {!currentClub?.qrUrl && (
                 <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
@@ -4715,7 +4671,7 @@ function OverviewPage({
 
   return (
     <div className="p-5 md:p-8 lg:p-10 space-y-8 md:space-y-10 max-w-7xl">
-      {/* Welcome banner */}
+      
       <motion.div
         initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
@@ -4920,7 +4876,6 @@ function OverviewPage({
   );
 }
 
-// ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const { isSignedIn: isClerkSignedIn, isLoaded: isClerkLoaded, signOut: clerkSignOut } = useAuth();
   const [localToken, setLocalToken] = useState<string | null>(() => localStorage.getItem("spotlight_token"));
@@ -4928,14 +4883,12 @@ export default function App() {
   const isSignedIn = isClerkSignedIn || isLocalSignedIn;
   const { user } = useUser();
 
-  // Helper to parse initial search parameters
-  // If already signed in on load, always start on dashboard to prevent refresh-to-login flicker
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab };
     const params = new URLSearchParams(window.location.search);
     const v = (params.get("view") as View) || "landing";
     const t = (params.get("authTab") as AuthTab) || "login";
-    // If already authenticated (local token present), always start on dashboard
+
     const hasLocalToken = !!localStorage.getItem("spotlight_token");
     if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t };
     return { view: v, authTab: t };
@@ -4946,7 +4899,6 @@ export default function App() {
   const [authTab,   setAuthTab]   = useState<AuthTab>(initial.authTab);
   const [mousePos,  setMousePos]  = useState({ x: -9999, y: -9999 });
 
-  // Sync state changes with the URL and push to browser history
   const updateNavigation = (newView: View, newAuthTab?: AuthTab) => {
     setView(newView);
     if (newAuthTab) setAuthTab(newAuthTab);
@@ -4962,7 +4914,6 @@ export default function App() {
         url.searchParams.delete("authTab");
       }
 
-      // Keep active tab synced if moving to dashboard
       if (newView === "dashboard") {
         const tab = url.searchParams.get("tab") || "overview";
         url.searchParams.set("tab", tab);
@@ -4984,7 +4935,6 @@ export default function App() {
     }
   };
 
-  // Sync state on popstate (browser back/forward or mobile swipe gestures)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state;
@@ -5003,10 +4953,8 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Auto-navigate to dashboard when signed in (covers both Clerk login and local login)
-  // Triggers from any non-dashboard view so after login you always end up on dashboard
   useEffect(() => {
-    if (!isClerkLoaded && !isLocalSignedIn) return; // wait for Clerk to settle
+    if (!isClerkLoaded && !isLocalSignedIn) return;
     if (isSignedIn && (view === "auth" || view === "landing")) {
       updateNavigation("dashboard");
     }
@@ -5019,8 +4967,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // On mobile only: lock body scroll when on dashboard (content scrolls inside)
-    // On desktop: body scroll is always allowed
+
     const isMobile = window.innerWidth < 768;
     document.body.style.overflow = (view === "dashboard" && isMobile) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -5035,7 +4982,7 @@ export default function App() {
       await clerkSignOut();
     }
     const url = new URL(window.location.href);
-    url.search = ""; // clear all routing parameters
+    url.search = "";
     window.history.pushState({ view: "landing" }, "", url.toString());
     setView("landing");
   };
@@ -5051,9 +4998,6 @@ export default function App() {
       })()
     : (user?.primaryEmailAddress?.emailAddress ?? "");
 
-  // Wait for Clerk to resolve auth state before rendering.
-  // Without this, on refresh Clerk briefly shows isSignedIn=undefined and the
-  // landing/auth page flashes before the effect can redirect to dashboard.
   if (!isClerkLoaded && !isLocalSignedIn) {
     return (
       <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>

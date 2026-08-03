@@ -25,7 +25,7 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
-  // null = still checking, true = registered, false = not registered
+  
   bool? _isRegistered;
   TicketModel? _pendingPaymentTicket;
   Timer? _deadlineTimer;
@@ -58,7 +58,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         for (final t in tickets) {
           if (t.event?.id == widget.eventId) {
             final isRejected = t.status.toUpperCase() == 'REJECTED';
-            if (isRejected) continue; // Allow rejected users to register again!
+            if (isRejected) continue; 
 
             final isFree = (t.event?.price ?? 0) == 0;
             final isTeamMember = t.team != null;
@@ -207,14 +207,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final bool isFull = event.isFull;
     final bool isClosed = (event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!)) || isFull;
 
-    // Still checking registration status
     final bool isChecking = _isRegistered == null;
     final bool alreadyRegistered = _isRegistered == true;
     final bool hasPendingPayment = _pendingPaymentTicket != null;
 
     final dateData = _parseDate(event.startDate?.toIso8601String() ?? date);
 
-    // Determine button state
     final bool buttonDisabled = isClosed || alreadyRegistered || isChecking;
 
     Color btnBg;
