@@ -8,12 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_image.dart';
 import 'ticket_details_screen.dart';
 import 'event_details_screen.dart';
-import 'payment_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
-import '../core/custom_toast.dart';
 import '../models/models.dart';
 
 class TicketScreen extends StatefulWidget {
@@ -593,7 +591,6 @@ class _TicketScreenState extends State<TicketScreen> {
       }
     }
 
-    final shortId = 'SPT-${ticket.id.substring(0, 8).toUpperCase()}';
     final isFreeEvent = (event?.price ?? 0) == 0;
     final minRequired = event?.minTeamSize ?? 2;
     final joinedCount = ticket.team?.members.where((m) => m.status.toUpperCase() != 'REJECTED').length ?? 1;
