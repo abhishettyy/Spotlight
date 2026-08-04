@@ -65,8 +65,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             final isFree = (t.event?.price ?? 0) == 0;
             final isTeamMember = t.team != null;
             final isLeader = isTeamMember && (t.team!.leaderId.isNotEmpty ? t.team!.leaderId == currentUserId : t.team!.members.any((m) => m.isLeader && m.id == currentUserId));
+            final hasPaid = t.hasPaid;
 
-            if (isFree || t.isConfirmed || (isTeamMember && !isLeader)) {
+            if (isFree || t.isConfirmed || hasPaid || (isTeamMember && !isLeader)) {
               confirmedTicket = t;
             } else {
               pendingTicket = t;
