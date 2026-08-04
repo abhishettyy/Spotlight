@@ -435,7 +435,10 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         }}
       >
         <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-          <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
+            <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
+          </div>
           <button onClick={onEnter}
             className="text-sm px-5 py-2 rounded-full text-white/85 hover:text-white transition-all duration-400"
             style={{ border: "1.5px solid rgba(255,255,255,0.2)" }}
@@ -519,11 +522,10 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
                   whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onEnter}
-                  className="cursor-pointer group relative flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
+                  className="cursor-pointer group flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
                   style={{ cursor: "pointer" }}
                 >
                   <span className="pointer-events-none">Enter Dashboard</span>
-                  <ArrowRight size={15} className="absolute right-5 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
                 </motion.button>
               </motion.div>
             </motion.div>
@@ -531,9 +533,11 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         </div>
 
         <footer className="w-full px-8 md:px-16 pb-6 pt-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5">
-          <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
-          <p className="text-xs" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
-          <div className="flex items-center gap-6 text-[11px]" style={{ color: "#94a3b8" }}>
+          <div className="flex-1 flex justify-center md:justify-start">
+            <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
+          </div>
+          <p className="text-xs text-center flex-shrink-0" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
+          <div className="flex-1 flex justify-center md:justify-end gap-6 text-[11px]" style={{ color: "#94a3b8" }}>
             <button onClick={() => setActiveModal('privacy')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Privacy</button>
             <button onClick={() => setActiveModal('terms')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Terms</button>
             <button onClick={() => setActiveModal('contact')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Contact Us</button>
@@ -3279,7 +3283,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
   return (
     <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-4xl">
       <div>
-        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>Publish</p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Create New Event</h1>
       </div>
 
@@ -4055,7 +4058,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
          <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
            <div>
              <p className="text-sm font-medium text-white" style={{ fontFamily: FB }}>Privacy Policy</p>
-             <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>Read the Spotlight Club Dashboard Privacy Policy.</p>
            </div>
            <button onClick={() => setShowPrivacyModal(true)} className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>View Policy</button>
          </div>
@@ -4063,7 +4065,6 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(240,61,78,0.05)", border: "1px solid rgba(240,61,78,0.1)" }}>
           <div>
             <p className="text-sm font-medium text-[#F03D4E]" style={{ fontFamily: FB }}>Sign Out</p>
-            <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>End your current session.</p>
           </div>
           <button onClick={onLogout} className="px-6 py-2.5 bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(240,61,78,0.2)", fontFamily: FB }}>Sign Out</button>
         </div>
@@ -4291,6 +4292,16 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const [reminderDismissed, setReminderDismissed] = useState(() => {
+    return sessionStorage.getItem("spotlight_reminder_dismissed") === "true";
+  });
+
+  const isProfileIncomplete = !!currentClub && (
+    !currentClub.upiId ||
+    !currentClub.logoUrl ||
+    currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3"
+  );
+
   const renderProfileSection = () => (
     <div className="p-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
       <div className="flex items-center gap-2.5 mb-3 px-1">
@@ -4464,7 +4475,8 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
       <aside className="hidden xl:flex w-56 flex-shrink-0 flex-col h-screen"
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
-        <div className="px-6 pt-6 pb-5 flex-shrink-0">
+        <div className="px-6 pt-6 pb-5 flex-shrink-0 flex items-center gap-2.5">
+          <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
           <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
         </div>
         <div className="px-4 mb-5 flex-shrink-0">
@@ -4506,9 +4518,68 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           <button onClick={() => setIsMobileMenuOpen(true)} className="text-white hover:text-[#F03D4E] transition-colors p-1">
             <Menu size={20} />
           </button>
-          <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
+            <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+          </div>
           <div className="w-8" />
         </header>
+
+        <AnimatePresence>
+          {!reminderDismissed && activeTab !== "settings" && isProfileIncomplete && (
+            <motion.div
+              initial={{ opacity: 0, y: -15, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -15, height: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="mx-6 mt-4 overflow-hidden flex-shrink-0"
+            >
+              <div
+                className="p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                style={{
+                  background: "rgba(240,61,78,0.04)",
+                  border: "1px solid rgba(240,61,78,0.12)",
+                  backdropFilter: "blur(20px)"
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#F03D4E]/10 rounded-xl text-[#F03D4E] flex-shrink-0">
+                    <AlertTriangle size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>Complete Your Club Profile</h4>
+                    <p className="text-xs text-[#94a3b8]" style={{ fontFamily: FM }}>
+                      Your profile is incomplete (missing custom logo or UPI ID). Set them up to customize your page and accept registrations.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setReminderDismissed(true);
+                      sessionStorage.setItem("spotlight_reminder_dismissed", "true");
+                    }}
+                    className="px-4 py-2 hover:bg-white/5 text-[#94a3b8] hover:text-white text-xs font-semibold rounded-xl transition-all duration-300"
+                    style={{ fontFamily: FB }}
+                  >
+                    Do It Later
+                  </button>
+                  <button
+                    onClick={() => {
+                      setReminderDismissed(true);
+                      sessionStorage.setItem("spotlight_reminder_dismissed", "true");
+                      setActiveTab("settings");
+                    }}
+                    className="px-4 py-2 bg-[#F03D4E] hover:bg-[#d83544] text-white text-xs font-semibold rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(240,61,78,0.2)]"
+                    style={{ fontFamily: FB }}
+                  >
+                    Complete Now
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
           <AnimatePresence mode="wait">
@@ -4586,7 +4657,10 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               style={{ background: "rgba(5,5,5,0.98)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
             >
               <div className="px-6 pt-6 pb-5 flex items-center justify-between flex-shrink-0">
-                <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+                <div className="flex items-center gap-2.5">
+                  <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
+                  <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+                </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white transition-colors p-1">
                   <X size={18} />
                 </button>
