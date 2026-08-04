@@ -5,6 +5,7 @@ import '../core/api_service.dart';
 import '../core/user_provider.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../core/smooth_route.dart';
 import 'club_events_screen.dart';
 
@@ -132,14 +133,20 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.groups_outlined,
-                                      size: 56, color: Colors.grey[300]),
-                                  const SizedBox(height: 16),
-                                  Text('No clubs yet',
+                                  SizedBox(
+                                    width: 220,
+                                    height: 150,
+                                    child: SvgPicture.asset(
+                                      'assets/svg/empty_clubs.svg',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text('No Clubs Yet',
                                       style: GoogleFonts.inter(
                                           color: Colors.grey,
                                           fontSize: 16,
-                                          fontWeight: FontWeight.w500)),
+                                          fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 8),
                                   Text(
                                       'Register for events to see clubs here',

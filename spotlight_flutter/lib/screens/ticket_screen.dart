@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'ticket_details_screen.dart';
 import 'event_details_screen.dart';
 import '../core/smooth_route.dart';
@@ -195,19 +196,37 @@ class _TicketScreenState extends State<TicketScreen> {
 
     final list = _selectedTab == 0 ? _upcoming : _past;
     if (list.isEmpty) {
+      final svgPath = _selectedTab == 0
+          ? 'assets/svg/empty_upcoming.svg'
+          : 'assets/svg/empty_past.svg';
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.confirmation_number_outlined,
-                size: 56, color: Colors.grey[300]),
-            const SizedBox(height: 16),
+            SizedBox(
+              width: 220,
+              height: 150,
+              child: SvgPicture.asset(
+                svgPath,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
-              _selectedTab == 0 ? 'No upcoming events' : 'No past events',
+              _selectedTab == 0 ? 'No Upcoming Events' : 'No Past Events',
               style: GoogleFonts.inter(
                   color: Colors.grey,
                   fontSize: 16,
-                  fontWeight: FontWeight.w500),
+                  fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _selectedTab == 0
+                  ? 'Your registered upcoming event passes will show up here'
+                  : 'Events you attended previously will appear here',
+              style: GoogleFonts.inter(
+                  color: Colors.grey[400], fontSize: 13),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -235,18 +254,28 @@ class _TicketScreenState extends State<TicketScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bookmark_border, size: 56, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text('No saved events yet',
+            SizedBox(
+              width: 220,
+              height: 150,
+              child: SvgPicture.asset(
+                'assets/svg/empty_saved.svg',
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text('No Saved Events Yet',
                 style: GoogleFonts.inter(
                     color: Colors.grey,
                     fontSize: 16,
-                    fontWeight: FontWeight.w500)),
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            Text('Tap the bookmark icon on any event to save it',
-                style: GoogleFonts.inter(
-                    color: Colors.grey[400], fontSize: 13),
-                textAlign: TextAlign.center),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Text('Tap the bookmark icon on any event to save it to your list',
+                  style: GoogleFonts.inter(
+                      color: Colors.grey[400], fontSize: 13, height: 1.4),
+                  textAlign: TextAlign.center),
+            ),
           ],
         ),
       );

@@ -6,6 +6,7 @@ import '../core/events_provider.dart';
 import '../core/smooth_route.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'club_events_screen.dart';
 
 class ClubsScreen extends StatefulWidget {
@@ -198,14 +199,21 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.groups_outlined, size: 56, color: Colors.grey[400]),
-                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: 220,
+                                      height: 150,
+                                      child: SvgPicture.asset(
+                                        'assets/svg/empty_clubs.svg',
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
                                     Text(
                                       _searchQuery.isEmpty ? 'No clubs registered yet' : 'No clubs matching "$_searchQuery"',
                                       style: GoogleFonts.inter(
                                         color: Colors.grey,
                                         fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],

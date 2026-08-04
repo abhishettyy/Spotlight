@@ -15,6 +15,7 @@ import 'package:spotlight_flutter/models/models.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/custom_image.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -402,8 +403,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('😭', style: TextStyle(fontSize: 54)),
-                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: 170,
+                              height: 110,
+                              child: SvgPicture.asset(
+                                'assets/svg/empty_events.svg',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
                             Text(
                               'No upcoming or live events',
                               style: GoogleFonts.inter(
@@ -447,8 +455,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('😭', style: TextStyle(fontSize: 54)),
-                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: 170,
+                              height: 110,
+                              child: SvgPicture.asset(
+                                'assets/svg/empty_events.svg',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
                             Text(
                               _searchQuery.isNotEmpty
                                   ? 'No events match "$_searchQuery"'
@@ -494,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 60),
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -562,10 +577,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   if (allClubs.isEmpty) {
                     return SizedBox(
-                      height: 90,
+                      height: 140,
                       child: Center(
-                        child: Text('No clubs available',
-                            style: GoogleFonts.inter(color: subTextColor)),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 160,
+                              height: 90,
+                              child: SvgPicture.asset(
+                                'assets/svg/empty_clubs.svg',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text('No clubs available',
+                                style: GoogleFonts.inter(color: subTextColor, fontSize: 13, fontWeight: FontWeight.w500)),
+                          ],
+                        ),
                       ),
                     );
                   }

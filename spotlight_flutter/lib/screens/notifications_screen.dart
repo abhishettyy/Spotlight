@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../core/notifications_provider.dart';
 import '../core/notification_prefs_provider.dart';
 import '../core/custom_toast.dart';
@@ -254,21 +255,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF4F4F6),
-                shape: BoxShape.circle,
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  'https://cdni.iconscout.com/illustration/premium/thumb/no-notification-4085813-3385479.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Text('🔕', style: TextStyle(fontSize: 54)),
-                  ),
-                ),
+            SizedBox(
+              width: 210,
+              height: 150,
+              child: SvgPicture.asset(
+                'assets/svg/empty_notifications.svg',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 24),
