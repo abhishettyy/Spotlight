@@ -2038,7 +2038,7 @@ function EventsPage({
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => {
-                      const headers = ["Name", "Email", "USN", "Branch", "Year", "Semester", "Contact", "Type", "Team Name", "Status"];
+                      const headers = ["Name", "Email", "USN", "Branch", "Year", "Semester", "Contact", "Type", "Team Name"];
                       const rows = combinedAttendanceList.map(s => {
                         const attendee = s.attendee || {};
                         const team = s.team || null;
@@ -2053,8 +2053,7 @@ function EventsPage({
                           attendee.sem ? `Sem ${attendee.sem}` : '',
                           phoneFormatted,
                           team ? 'TEAM' : 'SOLO',
-                          team?.name ?? '-',
-                          (s.status ?? 'CHECKED_IN').toUpperCase()
+                          team?.name ?? '-'
                         ];
                       });
                       const csvContent = [headers, ...rows]
