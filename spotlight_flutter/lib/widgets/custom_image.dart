@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class CustomImage extends StatelessWidget {
   final String? url;
   final BoxFit fit;
+  final Alignment alignment;
   final double? width;
   final double? height;
   final Widget Function(BuildContext, Object, StackTrace?)? errorBuilder;
@@ -12,6 +13,7 @@ class CustomImage extends StatelessWidget {
     super.key,
     required this.url,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.width,
     this.height,
     this.errorBuilder,
@@ -48,6 +50,7 @@ class CustomImage extends StatelessWidget {
         return Image.memory(
           base64Decode(base64String),
           fit: fit,
+          alignment: alignment,
           width: width,
           height: height,
           errorBuilder: errorBuilder ?? (_, __, ___) => buildPlaceholder(width: width, height: height),
@@ -60,6 +63,7 @@ class CustomImage extends StatelessWidget {
     return Image.network(
       cleanUrl,
       fit: fit,
+      alignment: alignment,
       width: width,
       height: height,
       errorBuilder: errorBuilder ?? (_, __, ___) => buildPlaceholder(width: width, height: height),

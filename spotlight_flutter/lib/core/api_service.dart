@@ -620,4 +620,28 @@ class ApiService {
       throw AppException(formatExceptionMessage(e, 'Failed to fetch public stats.'));
     }
   }
+
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/change-password'),
+        headers: headers,
+        body: json.encode({
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) return true;
+
+      final data = json.decode(response.body);
+      throw AppException(data['error'] ?? 'Failed to update password.');
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Failed to update password.'));
+    }
+  }
 }

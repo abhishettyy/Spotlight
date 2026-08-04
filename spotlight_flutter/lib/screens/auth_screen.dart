@@ -50,6 +50,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -59,6 +60,67 @@ class _AuthScreenState extends State<AuthScreen> {
   final _semController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _isLoading = false;
+  AutovalidateMode _autoValidateMode = AutovalidateMode.disabled;
+
+  bool get _isEmailValid {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return false;
+    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
+  }
+
+  bool get _isPasswordValid {
+    return _passwordController.text.trim().isNotEmpty;
+  }
+
+  bool get _isNameValid {
+    return _nameController.text.trim().isNotEmpty;
+  }
+
+  bool get _isUsnValid {
+    final usn = _usnController.text.trim().toUpperCase();
+    return usn.startsWith('1MS') && usn.length >= 5;
+  }
+
+  bool get _isBranchValid {
+    return _branchController.text.trim().isNotEmpty;
+  }
+
+  bool get _isYearValid {
+    final y = int.tryParse(_yearController.text.trim());
+    return y != null && y >= 1 && y <= 4;
+  }
+
+  bool get _isSemValid {
+    final s = int.tryParse(_semController.text.trim());
+    if (s == null) return false;
+    final y = int.tryParse(_yearController.text.trim());
+    if (y != null && y >= 1 && y <= 4) {
+      final minSem = y * 2 - 1;
+      final maxSem = y * 2;
+      return s >= minSem && s <= maxSem;
+    }
+    return s >= 1 && s <= 8;
+  }
+
+  bool get _isPhoneValid {
+    final phone = _phoneController.text.trim();
+    return RegExp(r'^\d{10}$').hasMatch(phone);
+  }
+
+  bool get _isFormValid {
+    if (isLogin) {
+      return _isEmailValid && _isPasswordValid;
+    } else {
+      return _isNameValid &&
+          _isEmailValid &&
+          _isPasswordValid &&
+          _isUsnValid &&
+          _isBranchValid &&
+          _isYearValid &&
+          _isSemValid &&
+          _isPhoneValid;
+    }
+  }
 
   Future<void> _handleAuthentication({String? token, String? userId, String? email, String? name}) async {
     setState(() => _isLoading = true);
@@ -119,6 +181,23 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _switchTab(bool targetLogin) {
+    if (isLogin == targetLogin) return;
+    setState(() {
+      isLogin = targetLogin;
+      _autoValidateMode = AutovalidateMode.disabled;
+      _nameController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      _usnController.clear();
+      _branchController.clear();
+      _yearController.clear();
+      _semController.clear();
+      _phoneController.clear();
+    });
+    _formKey.currentState?.reset();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -165,7 +244,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => isLogin = true),
+                        onTap: () => _switchTab(true),
                         child: Container(
                           decoration: BoxDecoration(
                             color: isLogin ? cs.primary : Colors.transparent,
@@ -185,7 +264,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => isLogin = false),
+                        onTap: () => _switchTab(false),
                         child: Container(
                           decoration: BoxDecoration(
                             color: !isLogin ? cs.primary : Colors.transparent,
@@ -208,105 +287,196 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 32),
 
-              if (isLogin) ...[
-                _buildTextField(
-                  controller: _emailController,
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _passwordController,
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  obscureText: obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: subTextColor,
-                    ),
-                    onPressed: () =>
-                        setState(() => obscurePassword = !obscurePassword),
-                  ),
-                ),
-              ] else ...[
-                _buildTextField(
-                  controller: _nameController,
-                  labelText: 'Full Name',
-                  hintText: 'Enter your full name',
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _emailController,
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _passwordController,
-                  labelText: 'Password',
-                  hintText: 'Create a password',
-                  obscureText: obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: subTextColor,
-                    ),
-                    onPressed: () =>
-                        setState(() => obscurePassword = !obscurePassword),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _usnController,
-                  labelText: 'USN',
-                  hintText: 'Enter your USN',
-                  helperText: 'Note: USN cannot be edited once set',
-                ),
-                const SizedBox(height: 20),
-                Row(
+              Form(
+                key: _formKey,
+                autovalidateMode: _autoValidateMode,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _branchController,
-                        labelText: 'Branch',
-                        hintText: 'Branch',
+                    if (isLogin) ...[
+                      _buildTextField(
+                        controller: _emailController,
+                        labelText: 'Email',
+                        hintText: 'Enter your email',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid email';
+                            return null;
+                          }
+                          if (!_isEmailValid) return 'Invalid email';
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _yearController,
-                        labelText: 'Year',
-                        hintText: 'Year',
-                        keyboardType: TextInputType.number,
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: _passwordController,
+                        labelText: 'Password',
+                        hintText: 'Enter your password',
+                        obscureText: obscurePassword,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid password';
+                            return null;
+                          }
+                          return null;
+                        },
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: subTextColor,
+                          ),
+                          onPressed: () =>
+                              setState(() => obscurePassword = !obscurePassword),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _semController,
-                        labelText: 'Sem',
-                        hintText: 'Sem',
-                        keyboardType: TextInputType.number,
+                    ] else ...[
+                      _buildTextField(
+                        controller: _nameController,
+                        labelText: 'Full Name',
+                        hintText: 'Enter your full name',
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid name';
+                            return null;
+                          }
+                          return null;
+                        },
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: _emailController,
+                        labelText: 'Email',
+                        hintText: 'Enter your email',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid email';
+                            return null;
+                          }
+                          if (!_isEmailValid) return 'Invalid email';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: _passwordController,
+                        labelText: 'Password',
+                        hintText: 'Create a password',
+                        obscureText: obscurePassword,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid password';
+                            return null;
+                          }
+                          return null;
+                        },
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: subTextColor,
+                          ),
+                          onPressed: () =>
+                              setState(() => obscurePassword = !obscurePassword),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: _usnController,
+                        labelText: 'USN',
+                        hintText: 'Enter valid USN',
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [UpperCaseTextFormatter()],
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid USN';
+                            return null;
+                          }
+                          if (!_isUsnValid) return 'Invalid USN';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _branchController,
+                              labelText: 'Branch',
+                              hintText: 'Branch',
+                              textCapitalization: TextCapitalization.characters,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid branch';
+                                  return null;
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _yearController,
+                              labelText: 'Year',
+                              hintText: '1-4',
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid year';
+                                  return null;
+                                }
+                                if (!_isYearValid) return 'Invalid year';
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _semController,
+                              labelText: 'Sem',
+                              hintText: '1-8',
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid semester';
+                                  return null;
+                                }
+                                if (!_isSemValid) return 'Invalid semester';
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: _phoneController,
+                        labelText: 'Phone Number',
+                        hintText: '10-digit number',
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid phone number';
+                            return null;
+                          }
+                          if (!_isPhoneValid) return 'Invalid phone number';
+                          return null;
+                        },
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _phoneController,
-                  labelText: 'Phone Number',
-                  hintText: 'Enter your phone number',
-                  keyboardType: TextInputType.phone,
-                ),
-              ],
+              ),
               const SizedBox(height: 40),
 
               SizedBox(
@@ -314,33 +484,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : () async {
-                    
-                    if (isLogin) {
-                      if (_emailController.text.trim().isEmpty ||
-                          _passwordController.text.trim().isEmpty) {
-                        showSpotlightToast(
-                          context,
-                          'Please fill in all fields.',
-                          isError: true,
-                        );
-                        return;
-                      }
-                    } else {
-                      if (_nameController.text.trim().isEmpty ||
-                          _emailController.text.trim().isEmpty ||
-                          _passwordController.text.trim().isEmpty ||
-                          _usnController.text.trim().isEmpty ||
-                          _branchController.text.trim().isEmpty ||
-                          _yearController.text.trim().isEmpty ||
-                          _semController.text.trim().isEmpty ||
-                          _phoneController.text.trim().isEmpty) {
-                        showSpotlightToast(
-                          context,
-                          'Please fill in all fields.',
-                          isError: true,
-                        );
-                        return;
-                      }
+                    setState(() => _autoValidateMode = AutovalidateMode.always);
+                    if (!_formKey.currentState!.validate()) {
+                      return;
                     }
 
                     setState(() => _isLoading = true);
@@ -405,6 +551,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
+                    disabledBackgroundColor: cs.primary.withOpacity(0.6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -416,10 +563,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         isLogin ? 'Sign In' : 'Create Account',
                         style: GoogleFonts.inter(
                           fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                 ),
               ),
 
@@ -644,6 +791,9 @@ class _AuthScreenState extends State<AuthScreen> {
     String? helperText,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    FormFieldValidator<String>? validator,
     Widget? suffixIcon,
   }) {
     final theme = Theme.of(context);
@@ -665,16 +815,28 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          textCapitalization: textCapitalization,
+          validator: validator,
           style: GoogleFonts.inter(color: cs.onBackground, fontSize: 15),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: GoogleFonts.inter(color: subTextColor.withOpacity(0.6), fontSize: 15),
             helperText: helperText,
             helperStyle: GoogleFonts.inter(color: Colors.amber[800], fontSize: 11, fontWeight: FontWeight.w500),
+            errorStyle: GoogleFonts.inter(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w500),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
             filled: true,
             fillColor: cs.surface,
             border: OutlineInputBorder(
@@ -752,6 +914,16 @@ class _JumpingDotsLoaderState extends State<JumpingDotsLoader> with SingleTicker
           }),
         );
       },
+    );
+  }
+}
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }

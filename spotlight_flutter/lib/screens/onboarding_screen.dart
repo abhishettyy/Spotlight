@@ -106,10 +106,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     controller: _usnController,
                     style: GoogleFonts.inter(color: cs.onBackground),
                     textCapitalization: TextCapitalization.characters,
-                    decoration: _buildInputDecoration('e.g. 1RI22CS000'),
+                    decoration: _buildInputDecoration('e.g. 1MS21CS001'),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'USN is required';
-                      if (v.length < 5) return 'Enter a valid USN';
+                      if (v == null || v.trim().isEmpty) return 'USN is required';
+                      final u = v.trim().toUpperCase();
+                      if (!u.startsWith('1MS')) return 'USN must start with 1MS (e.g. 1MS21CS001)';
                       return null;
                     },
                   ),

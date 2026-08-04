@@ -575,7 +575,7 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
 
     if (eventId && registration.eventId !== eventId) {
       return res.status(400).json({
-        error: `This ticket is registered for a different event ("${registration.event.name}"), not this event.`,
+        error: "This ticket doesn't belong to this event.",
       });
     }
 

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../core/notifications_provider.dart';
 import 'home_screen.dart';
-import 'notifications_screen.dart';
+import 'clubs_screen.dart';
 import 'ticket_screen.dart';
 import 'profile_screen.dart';
 
@@ -20,7 +20,7 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const TicketScreen(),
-    const NotificationsScreen(),
+    const ClubsScreen(),
     const ProfileScreen(),
   ];
 
@@ -73,16 +73,7 @@ class _MainLayoutState extends State<MainLayout> {
                 children: [
                   _buildNavItem(0, Icons.home_rounded, 'Home'),
                   _buildNavItem(1, Icons.local_activity_outlined, 'Events'),
-                  Consumer<NotificationsProvider>(
-                    builder: (context, notifProvider, _) => _buildNavItem(
-                      2,
-                      Icons.notifications_none_rounded,
-                      'Alerts',
-                      badge: notifProvider.unreadCount > 0
-                          ? notifProvider.unreadCount
-                          : null,
-                    ),
-                  ),
+                  _buildNavItem(2, Icons.groups_outlined, 'Clubs'),
                   _buildNavItem(3, Icons.person_outline_rounded, 'Profile'),
                 ],
               ),

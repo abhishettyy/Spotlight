@@ -76,10 +76,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
     final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
-    return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _handleRefresh,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh,
           color: primaryColor,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -126,8 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Row(
-                      children: [
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -191,39 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              SmoothRoute(builder: (_) => const ProfileScreen()),
-                            );
-                          },
-                          child: Consumer<UserProvider>(
-                            builder: (context, userProvider, child) {
-                              final name = userProvider.currentUser?.name ?? '';
-                              final initials = name.trim().isEmpty
-                                  ? '?'
-                                  : name.trim().split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase();
-                              return Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: primaryColor,
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(initials,
-                                    style: GoogleFonts.inter(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold)),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -428,10 +396,32 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
                   if (provider.events.isEmpty) {
-                    return const SizedBox(
-                      height: 280,
+                    return SizedBox(
+                      height: 240,
                       child: Center(
-                        child: Text('No events found'),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('😭', style: TextStyle(fontSize: 54)),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No upcoming or live events',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Check back later for exciting campus events!',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: subTextColor,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }
@@ -452,13 +442,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   if (filteredEvents.isEmpty) {
                     return SizedBox(
-                      height: 280,
+                      height: 240,
                       child: Center(
-                        child: Text(
-                          _searchQuery.isNotEmpty
-                              ? 'No results for "$_searchQuery"'
-                              : 'No events in this category',
-                          style: GoogleFonts.inter(color: subTextColor),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('😭', style: TextStyle(fontSize: 54)),
+                            const SizedBox(height: 12),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'No events match "$_searchQuery"'
+                                  : 'No upcoming events in this category',
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Try clearing your search or switching categories',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: subTextColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -549,11 +558,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   }
-                  if (clubsProvider.clubs.isEmpty) {
+                  final allClubs = clubsProvider.clubs;
+
+                  if (allClubs.isEmpty) {
                     return SizedBox(
                       height: 90,
                       child: Center(
-                        child: Text('No clubs yet',
+                        child: Text('No clubs available',
                             style: GoogleFonts.inter(color: subTextColor)),
                       ),
                     );
@@ -562,19 +573,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Row(
-                      children: clubsProvider.clubs.map((club) {
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            SmoothRoute(
-                              builder: (_) => ClubEventsScreen(
-                                clubId: club.id,
-                                clubName: club.name,
-                                clubLogoUrl: club.logoUrl,
-                              ),
-                            ),
-                          ),
-                          child: Container(
+                      children: allClubs.map((club) {
+                        return Container(
                           margin: const EdgeInsets.only(right: 20),
                           width: 80,
                           child: Column(
@@ -619,7 +619,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ],
                           ),
-                        ),
                         );
                       }).toList(),
                     ),
@@ -632,6 +631,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         ),
       ),
+    ),
     );
   }
 

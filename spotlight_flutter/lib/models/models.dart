@@ -138,6 +138,7 @@ class EventModel {
   final int? minTeamSize;
   final String? clubId;
   final String? clubName;
+  final String? clubLogoUrl;
   final int registrationCount;
   final DateTime? registrationDeadline;
   final DateTime? eventDate;
@@ -200,6 +201,7 @@ class EventModel {
     this.upiId,
     this.clubId,
     this.clubName,
+    this.clubLogoUrl,
     required this.registrationCount,
     this.registrationLimit,
     this.registrationDeadline,
@@ -231,6 +233,7 @@ class EventModel {
       upiId: json['upiId'] ?? json['upi_id'] ?? club?['upiId'] ?? club?['upi_id'],
       clubId: club?['id'],
       clubName: club?['name'],
+      clubLogoUrl: club?['logo_url'] ?? club?['logoUrl'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationLimit: json['registrationLimit'] ?? json['registration_limit'],
       registrationDeadline: json['registration_deadline'] != null

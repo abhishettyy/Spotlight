@@ -12,6 +12,7 @@ import 'auth_screen.dart';
 import 'ticket_screen.dart';
 import 'registered_clubs_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'about_us_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -289,7 +290,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           validator: (v) {
                             if (!hasUsnSet) {
                               if (v == null || v.trim().isEmpty) return 'USN is required';
-                              if (v.trim().length < 5) return 'Enter a valid USN';
+                              final u = v.trim().toUpperCase();
+                              if (!u.startsWith('1MS')) return 'USN must start with 1MS (e.g. 1MS21CS001)';
                             }
                             return null;
                           },
@@ -312,7 +314,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 controller: yearController,
                                 style: GoogleFonts.inter(color: cs.onBackground),
                                 keyboardType: TextInputType.number,
-                                decoration: fieldDecoration('Year', hint: 'e.g. 2'),
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
+                                decoration: fieldDecoration('Year', hint: '1-4'),
+                                validator: (v) {
+                                  if (v != null && v.trim().isNotEmpty) {
+                                    final val = int.tryParse(v.trim());
+                                    if (val == null || val < 1 || val > 4) return 'Year must be 1-4';
+                                  }
+                                  return null;
+                                },
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -321,7 +331,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 controller: semController,
                                 style: GoogleFonts.inter(color: cs.onBackground),
                                 keyboardType: TextInputType.number,
-                                decoration: fieldDecoration('Semester', hint: 'e.g. 4'),
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
+                                decoration: fieldDecoration('Semester', hint: '1-8'),
+                                validator: (v) {
+                                  if (v != null && v.trim().isNotEmpty) {
+                                    final val = int.tryParse(v.trim());
+                                    if (val == null || val < 1 || val > 8) return 'Sem must be 1-8';
+                                  }
+                                  return null;
+                                },
                               ),
                             ),
                           ],
@@ -332,10 +350,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           controller: phoneController,
                           style: GoogleFonts.inter(color: cs.onBackground),
                           keyboardType: TextInputType.phone,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                           decoration: fieldDecoration('Phone Number', hint: '10-digit number'),
                           validator: (v) {
-                            if (v != null && v.isNotEmpty && v.length != 10) {
-                              return 'Must be 10 digits';
+                            if (v != null && v.trim().isNotEmpty) {
+                              if (!RegExp(r'^\d{10}$').hasMatch(v.trim())) {
+                                return 'Must be 10 digits';
+                              }
                             }
                             return null;
                           },
@@ -596,6 +617,290 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return result == true;
   }
 
+  void _showUpdatePasswordModal() {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    bool obscureOld = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    bool isSaving = false;
+    String? errorText;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final theme = Theme.of(context);
+            final cs = theme.colorScheme;
+            final isDark = theme.brightness == Brightness.dark;
+            final sheetBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+            final fieldBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+            final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+
+            return Container(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: sheetBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Update Password',
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: cs.onBackground,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Enter your old password and verify new password to save changes.',
+                      style: GoogleFonts.inter(fontSize: 13, color: subText),
+                    ),
+                    const SizedBox(height: 24),
+
+                    if (errorText != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                errorText!,
+                                style: GoogleFonts.inter(color: Colors.red, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    Text(
+                      'OLD PASSWORD',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                        color: subText,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: oldPasswordController,
+                      obscureText: obscureOld,
+                      style: GoogleFonts.inter(color: cs.onBackground),
+                      decoration: InputDecoration(
+                        hintText: 'Enter old password',
+                        hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
+                        filled: true,
+                        fillColor: fieldBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscureOld ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: subText,
+                          ),
+                          onPressed: () => setModalState(() => obscureOld = !obscureOld),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text(
+                      'NEW PASSWORD',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                        color: subText,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: newPasswordController,
+                      obscureText: obscureNew,
+                      style: GoogleFonts.inter(color: cs.onBackground),
+                      decoration: InputDecoration(
+                        hintText: 'Enter new password',
+                        hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
+                        filled: true,
+                        fillColor: fieldBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscureNew ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: subText,
+                          ),
+                          onPressed: () => setModalState(() => obscureNew = !obscureNew),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text(
+                      'CONFIRM NEW PASSWORD',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                        color: subText,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: confirmPasswordController,
+                      obscureText: obscureConfirm,
+                      style: GoogleFonts.inter(color: cs.onBackground),
+                      decoration: InputDecoration(
+                        hintText: 'Confirm new password',
+                        hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
+                        filled: true,
+                        fillColor: fieldBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: subText,
+                          ),
+                          onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                final oldP = oldPasswordController.text.trim();
+                                final newP = newPasswordController.text.trim();
+                                final confirmP = confirmPasswordController.text.trim();
+
+                                if (oldP.isEmpty) {
+                                  setModalState(() => errorText = 'Please enter your old password.');
+                                  return;
+                                }
+                                if (newP.isEmpty) {
+                                  setModalState(() => errorText = 'Please enter your new password.');
+                                  return;
+                                }
+                                if (newP.length < 4) {
+                                  setModalState(() => errorText = 'New password must be at least 4 characters.');
+                                  return;
+                                }
+                                if (newP != confirmP) {
+                                  setModalState(() => errorText = 'New passwords do not match.');
+                                  return;
+                                }
+
+                                setModalState(() {
+                                  isSaving = true;
+                                  errorText = null;
+                                });
+
+                                try {
+                                  await ApiService().changePassword(
+                                    oldPassword: oldP,
+                                    newPassword: newP,
+                                  );
+
+                                  if (mounted) {
+                                    Navigator.pop(modalContext);
+                                    showSpotlightToast(
+                                      context,
+                                      'Password updated successfully!',
+                                      icon: Icons.check_circle_rounded,
+                                    );
+                                  }
+                                } catch (e) {
+                                  setModalState(() {
+                                    isSaving = false;
+                                    errorText = '$e'.replaceAll('AppException: ', '');
+                                  });
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: cs.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : Text(
+                                'Save Changes',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -800,6 +1105,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context.read<ThemeProvider>().toggleDarkMode()),
               _buildListTile(
                 context,
+                Icons.lock_outline_rounded,
+                'Update Password',
+                tileColor: tileColor,
+                onTap: _showUpdatePasswordModal,
+              ),
+              _buildListTile(
+                context,
                 Icons.star_outline_rounded,
                 'Rate Us',
                 tileColor: tileColor,
@@ -807,7 +1119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              Text('SUPPORT',
+              Text('SUPPORT & ABOUT US',
                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -820,6 +1132,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'Help Center',
                 tileColor: tileColor,
                 onTap: _contactSupport,
+              ),
+              _buildListTile(
+                context,
+                Icons.info_outline_rounded,
+                'About Us',
+                tileColor: tileColor,
+                onTap: () => Navigator.push(
+                  context,
+                  SmoothRoute(builder: (_) => const AboutUsScreen()),
+                ),
               ),
               _buildListTile(
                 context,

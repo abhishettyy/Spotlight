@@ -41,12 +41,10 @@ class ClubEventsScreen extends StatelessWidget {
     final eventsProvider = Provider.of<EventsProvider>(context);
 
     final clubEvents = eventsProvider.events.where((e) {
-      final isThisClub = e.clubId == clubId;
+      final isThisClub = e.clubId == clubId ||
+          (e.clubName != null && e.clubName!.toLowerCase() == clubName.toLowerCase());
       if (!isThisClub) return false;
-      if (e.date == null) return true;
-      final parsed = DateTime.tryParse(e.date!);
-      if (parsed == null) return true;
-      return !parsed.isBefore(DateTime(now.year, now.month, now.day));
+      return e.isUpcoming;
     }).toList()
       ..sort((a, b) {
         final da = a.date != null ? DateTime.tryParse(a.date!) : null;

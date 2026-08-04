@@ -198,3 +198,45 @@
     cursor: not-allowed !important;
   }
 }
+
+#qr-reader-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #000000 !important;
+}
+
+#qr-reader-canvas video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  border-radius: 0.75rem !important;
+}
+
+#qr-reader-canvas img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+@keyframes scanlaser {
+  0% {
+    top: 10%;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 88%;
+    opacity: 0.3;
+  }
+}
+
+.animate-scanlaser {
+  animation: scanlaser 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+}

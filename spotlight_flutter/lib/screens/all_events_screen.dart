@@ -21,6 +21,7 @@ class AllEventsScreen extends StatefulWidget {
 class _AllEventsScreenState extends State<AllEventsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  String _selectedFormatFilter = 'All'; // 'All', 'Solo', 'Team'
 
   @override
   void dispose() {
@@ -34,9 +35,12 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
@@ -70,6 +74,15 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                   hintText: 'Search events...',
                   hintStyle: GoogleFonts.inter(color: subText),
                   prefixIcon: Icon(Icons.search, color: subText),
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: subText, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                        )
+                      : null,
                   filled: true,
                   fillColor:
                       isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
@@ -83,6 +96,48 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                   ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: ['All', 'Solo', 'Team'].map((filter) {
+                  final isSelected = _selectedFormatFilter == filter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(
+                        filter,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                        ),
+                      ),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        setState(() {
+                          _selectedFormatFilter = filter;
+                        });
+                      },
+                      selectedColor: cs.primary,
+                      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected
+                              ? cs.primary
+                              : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+                        ),
+                      ),
+                      showCheckmark: false,
+                    ),
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 16),
@@ -120,15 +175,29 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                         e.title.toLowerCase().contains(_query) ||
                         e.venue.toLowerCase().contains(_query) ||
                         e.category.toLowerCase().contains(_query);
-                    return isUpcoming && matchesQuery;
+
+                    final isTeamEvent = (e.eventType ?? '').toLowerCase() == 'team' ||
+                        (e.minTeamSize != null && e.minTeamSize! > 1) ||
+                        (e.teamSizeLimit != null && e.teamSizeLimit! > 1);
+
+                    bool matchesFormat = true;
+                    if (_selectedFormatFilter == 'Solo') {
+                      matchesFormat = !isTeamEvent;
+                    } else if (_selectedFormatFilter == 'Team') {
+                      matchesFormat = isTeamEvent;
+                    }
+
+                    return isUpcoming && matchesQuery && matchesFormat;
                   }).toList();
 
                   if (events.isEmpty) {
                     return Center(
                       child: Text(
-                        _query.isEmpty
-                            ? 'No upcoming events'
-                            : 'No results for "$_query"',
+                        _query.isNotEmpty
+                            ? 'No results for "$_query"'
+                            : _selectedFormatFilter != 'All'
+                                ? 'No $_selectedFormatFilter events found'
+                                : 'No upcoming events',
                         style:
                             GoogleFonts.inter(color: subText, fontSize: 15),
                       ),
@@ -152,6 +221,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -193,10 +263,13 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        SmoothRoute(builder: (_) => EventDetailsScreen(eventId: event.id)),
-      ),
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        Navigator.push(
+          context,
+          SmoothRoute(builder: (_) => EventDetailsScreen(eventId: event.id)),
+        );
+      },
       child: Container(
         height: 280,
         decoration: BoxDecoration(

@@ -244,22 +244,55 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildEmpty(BuildContext context) {
-    final subText = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFFA0A0A0)
-        : Colors.grey[400]!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.notifications_none_rounded,
-              size: 56, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text('No notifications yet',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF4F4F6),
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  'https://cdni.iconscout.com/illustration/premium/thumb/no-notification-4085813-3385479.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('🔕', style: TextStyle(fontSize: 54)),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Notifications Yet',
               style: GoogleFonts.inter(
-                  color: subText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500)),
-        ],
+                color: textColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You\'re all caught up! We\'ll alert you here when new events, approvals, or updates arrive.',
+              style: GoogleFonts.inter(
+                color: subText,
+                fontSize: 13,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

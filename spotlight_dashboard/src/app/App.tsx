@@ -857,8 +857,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: "rgba(240,61,78,0.1)", border: "1px solid rgba(240,61,78,0.2)" }}>
               <Key size={24} className="text-[#F03D4E]" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2 text-center" style={{ fontFamily: FC }}>Authorization Required</h2>
-            <p className="text-xs text-[#888] text-center" style={{ fontFamily: FB }}>Enter the one-time authorization key provided by Spotlight admins to unlock club registration.</p>
+            <h2 className="text-2xl font-bold text-white text-center" style={{ fontFamily: FC }}>Authorization Required</h2>
           </div>
 
           <form noValidate onSubmit={handleVerifyKey} className="space-y-6">
@@ -866,7 +865,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
               <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Authorization Key</label>
               <input
                 type="text"
-                placeholder="e.g. SPOTLIGHT-A7X9-K2M4"
+                placeholder="SPOTLIGHT-XXXX-XXXX"
                 autoFocus
                 className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all uppercase tracking-widest"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FM }}
@@ -895,6 +894,18 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
               )}
             </motion.button>
           </form>
+
+          <div className="mt-8 pt-6 border-t border-white/[0.08] text-center space-y-2">
+            <p className="text-xs text-white/70 leading-relaxed font-normal" style={{ fontFamily: FB }}>
+              Need an authorization key? Mail us at{" "}
+              <a href="mailto:spotlightapp.help@gmail.com" className="text-[#10B981] font-medium hover:text-[#34d399] transition-colors underline underline-offset-2">
+                spotlightapp.help@gmail.com
+              </a>
+            </p>
+            <p className="text-xs text-white/60 leading-relaxed font-normal max-w-sm mx-auto" style={{ fontFamily: FB }}>
+              Requests must be submitted using an official club mail ID or student mail ID. Personal email requests will not be processed.
+            </p>
+          </div>
 
           <p className="text-center text-[11px] text-[#555] mt-6" style={{ fontFamily: FM }}>Already have an account?{" "}
             <button onClick={() => { setError(null); setRegistrationKey(""); onTabChange("login"); }} className="text-white/50 hover:text-white transition-colors underline underline-offset-2">Sign In</button>
@@ -1150,7 +1161,18 @@ function TicketScannerModal({
         html5Qrcode = new Html5Qrcode(elementId);
         await html5Qrcode.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 200, height: 200 } },
+          {
+            fps: 25,
+            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              const qrboxSize = Math.floor(minEdge * 0.85);
+              return { width: Math.max(qrboxSize, 180), height: Math.max(qrboxSize, 180) };
+            },
+            aspectRatio: 1.0,
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            }
+          } as any,
           async (decodedText) => {
             if (decodedText) {
               if (html5Qrcode && html5Qrcode.isScanning) {
@@ -1264,18 +1286,31 @@ function TicketScannerModal({
             </p>
           </div>
         ) : !scanResult ? (
-          <div className="flex flex-col lg:flex-row gap-5">
+          <div className="flex flex-col lg:flex-row gap-6 items-center lg:items-start">
             
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex flex-col items-center mx-auto lg:mx-0">
               <div
-                className="relative rounded-xl overflow-hidden bg-black border border-white/10"
-                style={{ width: 280, height: 240 }}
+                className="relative rounded-2xl overflow-hidden bg-black border border-white/10 shadow-xl"
+                style={{ width: 280, height: 280 }}
               >
                 <div id="qr-reader-canvas" className="w-full h-full" />
+
+                {/* Professional Viewfinder Overlay */}
+                <div className="absolute inset-0 pointer-events-none z-10 p-4">
+                  {/* Subtle Laser Scanline */}
+                  <div className="absolute inset-x-4 h-[1.5px] bg-gradient-to-r from-transparent via-[#F03D4E] to-transparent shadow-[0_0_8px_#F03D4E] animate-scanlaser pointer-events-none opacity-80" />
+
+                  {/* Elegant Corner Guides */}
+                  <div className="absolute top-4 left-4 w-5 h-5 border-t border-l border-white/40 rounded-tl" />
+                  <div className="absolute top-4 right-4 w-5 h-5 border-t border-r border-white/40 rounded-tr" />
+                  <div className="absolute bottom-4 left-4 w-5 h-5 border-b border-l border-white/40 rounded-bl" />
+                  <div className="absolute bottom-4 right-4 w-5 h-5 border-b border-r border-white/40 rounded-br" />
+                </div>
+
                 {loading && (
-                  <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-3 z-20">
+                  <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20">
                     <div className="w-7 h-7 border-2 border-[#F03D4E] border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xs text-white/80" style={{ fontFamily: FB }}>Verifying...</p>
+                    <p className="text-xs text-white/80 font-medium" style={{ fontFamily: FB }}>Verifying Ticket...</p>
                   </div>
                 )}
               </div>
@@ -1285,7 +1320,7 @@ function TicketScannerModal({
             </div>
 
             {/* Manual Entry */}
-            <div className="flex-1 flex flex-col justify-center gap-4">
+            <div className="flex-1 flex flex-col justify-center gap-4 w-full text-center lg:text-left">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-white/60 uppercase tracking-wider" style={{ fontFamily: FM }}>
                   Or enter Ticket ID or Team Passkey
@@ -1316,8 +1351,11 @@ function TicketScannerModal({
                 </button>
               </div>
               {scanError && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-[#F03D4E] font-medium" style={{ fontFamily: FB }}>
-                  ⚠️ {scanError}
+                <div className="p-3.5 rounded-xl bg-[#F03D4E]/10 border border-[#F03D4E]/20 flex items-start gap-2.5 text-left">
+                  <AlertTriangle size={16} className="text-[#F03D4E] shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#ff949d] font-medium leading-relaxed" style={{ fontFamily: FB }}>
+                    {scanError}
+                  </p>
                 </div>
               )}
             </div>
@@ -4125,13 +4163,24 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Authorization Key</label>
             <input 
               type="text" 
-              placeholder="e.g. SPOTLIGHT-XXXX-XXXX" 
+              placeholder="SPOTLIGHT-XXXX-XXXX" 
               required
               className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all uppercase tracking-wider font-mono placeholder:normal-case placeholder:font-sans" 
               style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,61,78,0.3)" }} 
               value={formData.registrationKey} 
               onChange={e => setFormData(p => ({ ...p, registrationKey: e.target.value.toUpperCase() }))}
             />
+            <div className="mt-2.5 space-y-1.5 text-left">
+              <p className="text-xs text-white/70 leading-relaxed font-normal" style={{ fontFamily: FB }}>
+                To request a key, email{" "}
+                <a href="mailto:spotlightapp.help@gmail.com" className="text-[#10B981] font-medium hover:text-[#34d399] transition-colors underline underline-offset-2">
+                  spotlightapp.help@gmail.com
+                </a>
+              </p>
+              <p className="text-xs text-white/60 leading-relaxed font-normal" style={{ fontFamily: FB }}>
+                Requests must be submitted using an official club mail ID or student mail ID. Personal email requests will not be processed.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-1.5">

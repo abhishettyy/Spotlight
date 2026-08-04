@@ -29,6 +29,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool? _isRegistered;
   TicketModel? _pendingPaymentTicket;
   Timer? _deadlineTimer;
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
 
   @override
   void initState() {
@@ -42,6 +43,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   void dispose() {
     _deadlineTimer?.cancel();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -180,7 +182,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final cardBg = isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!;
     final textPrimary = isDark ? Colors.white : Colors.black;
     final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
-    final footerBg = isDark ? const Color(0xFF181515) : Colors.white;
+    final footerBg = isDark ? const Color(0xFF0A0A0A) : Colors.white;
 
     final eventsProvider = Provider.of<EventsProvider>(context);
     final event = eventsProvider.events.firstWhere(
@@ -243,142 +245,244 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       btnBg = cs.primary;
       btnTextColor = Colors.white;
       btnLabel = 'Register Now';
-    }
-
-    return Scaffold(
+    }    return Scaffold(
       backgroundColor: pageBg,
-      body: Stack(
-        children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return AnimatedBuilder(
+            animation: _sheetController,
+            builder: (context, _) {
+              final currentSize = _sheetController.isAttached ? _sheetController.size : 0.58;
+              final posterHeight = constraints.maxHeight * (1.0 - currentSize);
 
-          Positioned(
-            top: 0, left: 0, right: 0,
-            height: MediaQuery.of(context).size.height * 0.48,
-            child: ShaderMask(
-              shaderCallback: (rect) {
-                return const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black, Colors.transparent],
-                  stops: [0.65, 1.0], 
-                ).createShader(rect);
-              },
-              blendMode: BlendMode.dstIn,
-              child: CustomImage(
-                url: imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: Colors.grey[800]),
-              ),
-            ),
-          ),
-
-          Positioned.fill(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 16,
-                bottom: 120,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              return Stack(
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.28),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-                    decoration: BoxDecoration(
-                      color: pageBg,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  // 1. Background Poster dynamically ending exactly where the slide bar starts
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: posterHeight,
+                    child: GestureDetector(
+                      onTap: () {
+                        final target = currentSize < 0.25 ? 0.58 : 0.08;
+                        _sheetController.animateTo(
+                          target,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        color: isDark ? const Color(0xFF0A0A0A) : Colors.black,
+                        child: CustomImage(
+                          url: imageUrl,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
+                        ),
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                _glassPill(event.category, isDark: isDark),
-                                if (event.isLive) ...[
-                                  const SizedBox(width: 8),
-                                  _liveTag(),
-                                ],
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+
+                  // 2. Draggable Content Sheet with top capsule drag handle bar
+                  DraggableScrollableSheet(
+                    controller: _sheetController,
+                    initialChildSize: 0.58,
+                    minChildSize: 0.08,
+                    maxChildSize: 0.88,
+                    snap: true,
+                    snapSizes: const [0.08, 0.58, 0.88],
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: pageBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 24,
+                      offset: const Offset(0, -8),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Centered Capsule Drag Handle Bar
+                      GestureDetector(
+                        onTap: () {
+                          final target = _sheetController.size < 0.25 ? 0.58 : 0.05;
+                          _sheetController.animateTo(
+                            target,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          color: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Center(
+                            child: Container(
+                              width: 52,
+                              height: 5,
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
-                                borderRadius: BorderRadius.circular(14),
+                                color: isDark ? Colors.white.withOpacity(0.6) : Colors.grey[400],
+                                borderRadius: BorderRadius.circular(3),
                               ),
-                              child: Text(
-                                price,
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : cs.primary,
-                                ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              _glassPill(event.category, isDark: isDark),
+                              if (event.isLive) ...[
+                                const SizedBox(width: 8),
+                                _liveTag(),
+                              ],
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Text(
+                              price,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : cs.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: GoogleFonts.inter(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Venue: $venue',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              color: textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (event.clubName != null && event.clubName!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Hosted by: ${event.clubName}',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: cs.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: GoogleFonts.inter(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: textPrimary,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
+                          if (event.registrationDeadline != null) ...[
                             const SizedBox(height: 6),
-                            Text(
-                              'Venue: $venue',
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  size: 13,
+                                  color: Colors.yellow[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: Colors.yellow[600],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.calendar_today_outlined,
+                                size: 20,
                                 color: textSecondary,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            if (event.clubName != null && event.clubName!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                'Hosted by: ${event.clubName}',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                            if (event.registrationDeadline != null) ...[
-                              const SizedBox(height: 6),
-                              Row(
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.access_time_rounded,
-                                    size: 13,
-                                    color: Colors.yellow[600],
-                                  ),
-                                  const SizedBox(width: 4),
                                   Text(
-                                    'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                                    'Date & Time',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatDateTimeRange(event.startDate, event.effectiveEndDate),
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
-                                      color: Colors.yellow[600],
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
+                                      color: textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 28),
-
+                      ),
+                      if ((event.eventType ?? '').toLowerCase() == 'team') ...[
+                        const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -397,7 +501,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
-                                  Icons.calendar_today_outlined,
+                                  Icons.groups_outlined,
                                   size: 20,
                                   color: textSecondary,
                                 ),
@@ -408,7 +512,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Date & Time',
+                                      'Team Format',
                                       style: GoogleFonts.inter(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -417,7 +521,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _formatDateTimeRange(event.startDate, event.effectiveEndDate),
+                                      'Min ${event.minTeamSize ?? 2} · Max ${event.teamSizeLimit ?? 'No limit'} members per team',
                                       style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
@@ -430,85 +534,31 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ],
                           ),
                         ),
-                        if ((event.eventType ?? '').toLowerCase() == 'team') ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: cardBg,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.groups_rounded,
-                                    size: 20,
-                                    color: cs.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Team Format',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Min ${event.minTeamSize ?? 2} · Max ${event.teamSizeLimit ?? 'No limit'} members per team',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          color: textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 32),
-
-                        Text(
-                          'About this event',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          description,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            color: textSecondary,
-                            height: 1.6,
-                          ),
-                        ),
                       ],
-                    ),
+                      const SizedBox(height: 28),
+
+                      Text(
+                        'About this event',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        description,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: textSecondary,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
 
           Positioned(
@@ -533,23 +583,30 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ),
           ),
         ],
-      ),
+      );
+    },
+  );
+},
+),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          14,
+          24,
+          MediaQuery.of(context).padding.bottom + 12,
+        ),
         decoration: BoxDecoration(
           color: footerBg,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withOpacity(0.12),
               offset: const Offset(0, -4),
               blurRadius: 16,
             )
           ],
         ),
-        child: SafeArea(
-          child: Row(
+        child: Row(
             children: [
-
               Consumer<SavedEventsProvider>(
                 builder: (context, savedProvider, _) {
                   final isSaved = savedProvider.isSaved(widget.eventId);
@@ -650,9 +707,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
   Widget _circleBtn(IconData icon, VoidCallback onTap) => GestureDetector(
         onTap: onTap,

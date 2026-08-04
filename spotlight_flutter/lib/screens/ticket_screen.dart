@@ -659,10 +659,10 @@ class _TicketScreenState extends State<TicketScreen> {
             content: Text(
               isPaymentPending
                   ? 'Payment pending. Please complete your payment.'
-                  : 'Your registration is pending approval by the organizers.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  : 'Your registration is pending organizer approval.',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
             ),
-            backgroundColor: isPaymentPending ? const Color(0xFFEAB308) : const Color(0xFF38BDF8),
+            backgroundColor: const Color(0xFFF59E0B),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
