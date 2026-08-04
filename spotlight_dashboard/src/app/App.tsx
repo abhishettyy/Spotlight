@@ -4549,7 +4549,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                   <div>
                     <h4 className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>Complete Your Club Profile</h4>
                     <p className="text-xs text-[#94a3b8]" style={{ fontFamily: FM }}>
-                      Your profile is incomplete (missing custom logo or UPI ID). Set them up to customize your page and accept registrations.
+                      Your profile is incomplete: logo or UPI ID is missing. Please add them to customize your page.
                     </p>
                   </div>
                 </div>
