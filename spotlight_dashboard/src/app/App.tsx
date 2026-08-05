@@ -294,10 +294,6 @@ function useSpotlightData() {
 
     load();
 
-    const intervalId = setInterval(() => {
-      refreshEvents();
-    }, 5000);
-
     const handleClubCreated = async () => {
       console.log("[SpotlightData] spotlight:club_created event received. Refreshing profile & events...");
       const freshProf = await refreshProfile();
@@ -310,7 +306,6 @@ function useSpotlightData() {
 
     return () => {
       window.removeEventListener('spotlight:club_created', handleClubCreated);
-      clearInterval(intervalId);
     };
   }, [isSignedIn, userId, user]);
 
@@ -3031,8 +3026,7 @@ function EventsPage({
               const pendingTeamIds = new Set(pendingFromState.filter(r => r.team?.id).map(r => r.team!.id));
               const pendingSolo = pendingFromState.filter(r => !r.team?.id).length;
               const calculatedPending = pendingSolo + pendingTeamIds.size;
-              const hasLoadedRegsForEvent = allRegistrations.some(r => r.eventId === ev.id);
-              const pendingApprovals = hasLoadedRegsForEvent ? calculatedPending : (ev.pendingCount ?? 0);
+              const pendingApprovals = allRegistrations.length > 0 ? calculatedPending : (ev.pendingCount ?? 0);
               return (
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
