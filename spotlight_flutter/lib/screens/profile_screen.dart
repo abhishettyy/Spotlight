@@ -1097,12 +1097,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   trailingText: context.watch<NotificationPrefsProvider>().enabled ? 'On' : 'Off',
                   tileColor: tileColor,
                   onTap: () => context.read<NotificationPrefsProvider>().toggle()),
-              _buildListTile(context, Icons.dark_mode_outlined, 'Dark Mode',
-                  trailingText:
-                      context.watch<ThemeProvider>().isDarkMode ? 'On' : 'Off',
-                  tileColor: tileColor,
-                  onTap: () =>
-                      context.read<ThemeProvider>().toggleDarkMode()),
+              _buildListTile(
+                context,
+                Icons.dark_mode_outlined,
+                'Dark Mode',
+                trailingText: 'On',
+                tileColor: tileColor,
+                onTap: () {
+                  showSpotlightToast(
+                    context,
+                    'Light mode coming soon',
+                    icon: Icons.wb_sunny_rounded,
+                  );
+                },
+              ),
               _buildListTile(
                 context,
                 Icons.lock_outline_rounded,

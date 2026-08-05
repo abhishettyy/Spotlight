@@ -1136,9 +1136,46 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   );
 }
 
-const checkScanStatus = (_eventDateStr?: string | null) => {
-  
-  return { enabled: true, reason: "Scanner Active" };
+const checkScanStatus = (eventDateStr?: string | null) => {
+  if (!eventDateStr) {
+    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
+  }
+
+  const rawDate = new Date(eventDateStr);
+  if (isNaN(rawDate.getTime())) {
+    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
+  }
+
+  const now = new Date();
+
+  // If time is 00:00 (date only), default event start to 09:00 AM
+  const eventStart = new Date(rawDate);
+  if (eventStart.getHours() === 0 && eventStart.getMinutes() === 0) {
+    eventStart.setHours(9, 0, 0, 0);
+  }
+
+  // 7:00 AM on the morning of event date
+  const windowStart = new Date(
+    eventStart.getFullYear(),
+    eventStart.getMonth(),
+    eventStart.getDate(),
+    7, 0, 0, 0
+  );
+
+  // 2 hours after event start time
+  const windowEnd = new Date(eventStart.getTime() + 2 * 60 * 60 * 1000);
+
+  if (now < windowStart) {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const dateFormatted = `${monthNames[eventStart.getMonth()]} ${eventStart.getDate()}`;
+    return { enabled: false, reason: `Opens ${dateFormatted} at 7:00 AM`, isUpcoming: true };
+  }
+
+  if (now > windowEnd) {
+    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
+  }
+
+  return { enabled: true, reason: "Scanner Active", isUpcoming: false };
 };
 
 function TicketScannerModal({
@@ -2113,7 +2150,7 @@ function EventsPage({
                       >
                         <Camera size={14} /> Scan Ticket QR
                         {!scanInfo.enabled && (
-                          <span className="text-[10px] text-amber-400 font-mono">({scanInfo.reason})</span>
+                          <span className={`text-[10px] font-mono ${scanInfo.isUpcoming ? 'text-emerald-400 font-semibold' : 'text-amber-400/80'}`}>{scanInfo.reason}</span>
                         )}
                       </button>
                     );
@@ -2281,7 +2318,7 @@ function EventsPage({
                             </div>
                             <p className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>No attendees scanned yet</p>
                             <p className="text-xs text-[#888] max-w-sm" style={{ fontFamily: FB }}>
-                              Students must present their ticket QR code at the event. Click <span className="text-[#F03D4E] font-semibold">"Scan Ticket QR"</span> above to start scanning and marking attendance.
+                              Click <span className="text-[#F03D4E] font-semibold">"Scan Ticket QR"</span> above to start scanning.
                             </p>
                           </div>
                         </td>
