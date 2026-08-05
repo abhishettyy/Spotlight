@@ -106,6 +106,7 @@ interface ClubEvent {
   venue: string;
   capacity: number;
   type: string;
+  eventType?: string | null;
   club: string;
   club_id: string | null;
   status: "upcoming" | "previous" | "live";
@@ -115,6 +116,7 @@ interface ClubEvent {
   registrationDeadline?: string | null;
   pendingCount?: number;
   teamSizeLimit?: number | null;
+  minTeamSize?: number | null;
 }
 
 interface Registration {
@@ -1520,8 +1522,8 @@ function EventsPage({
   const [showApprovals, setShowApprovals] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "" });
-  const [editOriginal, setEditOriginal] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "" });
+  const [editForm, setEditForm] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "", minTeamSize: "1", teamSizeLimit: "" });
+  const [editOriginal, setEditOriginal] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "", minTeamSize: "1", teamSizeLimit: "" });
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [showEditPasswordModal, setShowEditPasswordModal] = useState(false);
   const [editPassword, setEditPassword] = useState("");
@@ -2482,9 +2484,32 @@ function EventsPage({
                 <span className="text-[11px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
-              <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: "#f9fafb", fontFamily: FB }}>
+              <div className="flex flex-wrap items-center gap-4 mt-3 text-xs" style={{ color: "#f9fafb", fontFamily: FB }}>
                  <span className="flex items-center gap-1.5"><Calendar size={12} />{formatEventHeaderDate(activeEvent.eventDate || activeEvent.date, activeEvent.eventEndDate)}</span>
                  <span className="flex items-center gap-1.5"><MapPin size={12} />{activeEvent.venue}</span>
+                 {(() => {
+                   const isTeam = activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team';
+                   if (!isTeam) {
+                     return (
+                       <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20" style={{ fontFamily: FM }}>
+                         <Users size={12} />Solo
+                       </span>
+                     );
+                   }
+                   const max = activeEvent.teamSizeLimit;
+                   return (
+                     <>
+                       <span className="flex items-center gap-1.5 text-purple-400 font-medium bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20" style={{ fontFamily: FM }}>
+                         <Users size={12} />Team
+                       </span>
+                       {max ? (
+                         <span className="flex items-center gap-1.5 text-purple-300 font-medium bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20" style={{ fontFamily: FM }}>
+                           Size: {max}
+                         </span>
+                       ) : null}
+                     </>
+                   );
+                 })()}
               </div>
             </div>
 
@@ -2539,6 +2564,8 @@ function EventsPage({
                      deadline: formatLocalDateStr(activeEvent.registrationDeadline),
                      venue: activeEvent.venue || "",
                      capacity: activeEvent.capacity ? String(activeEvent.capacity) : "",
+                     minTeamSize: activeEvent.minTeamSize ? String(activeEvent.minTeamSize) : "1",
+                     teamSizeLimit: activeEvent.teamSizeLimit ? String(activeEvent.teamSizeLimit) : "",
                    });
                    setEditOriginal({
                      date: startDateVal,
@@ -2546,6 +2573,8 @@ function EventsPage({
                      deadline: formatLocalDateStr(activeEvent.registrationDeadline),
                      venue: activeEvent.venue || "",
                      capacity: activeEvent.capacity ? String(activeEvent.capacity) : "",
+                     minTeamSize: activeEvent.minTeamSize ? String(activeEvent.minTeamSize) : "1",
+                     teamSizeLimit: activeEvent.teamSizeLimit ? String(activeEvent.teamSizeLimit) : "",
                    });
                    setEditErrors({});
                    setEditPassword("");
@@ -2707,12 +2736,61 @@ function EventsPage({
                         <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); setEditErrors(er => ({...er, capacity: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
                         {editErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.capacity}</p>}
                       </div>
+
+                      {activeEvent && (activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team') && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Min Team Size</label>
+                            <input
+                              type="number"
+                              placeholder="1"
+                              min={1}
+                              max={editForm.teamSizeLimit ? parseInt(editForm.teamSizeLimit) : undefined}
+                              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                              style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }}
+                              value={editForm.minTeamSize}
+                              onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }}
+                              onChange={e => {
+                                const v = e.target.value;
+                                setEditForm(p => ({ ...p, minTeamSize: v }));
+                                setEditErrors(er => ({ ...er, minTeamSize: "", teamSizeLimit: "" }));
+                              }}
+                              onFocus={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
+                              onBlur={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}
+                            />
+                            {editErrors.minTeamSize && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.minTeamSize}</p>}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 4"
+                              min={editForm.minTeamSize ? parseInt(editForm.minTeamSize) : 1}
+                              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                              style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }}
+                              value={editForm.teamSizeLimit}
+                              onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }}
+                              onChange={e => {
+                                const v = e.target.value;
+                                setEditForm(p => ({ ...p, teamSizeLimit: v }));
+                                setEditErrors(er => ({ ...er, teamSizeLimit: "", minTeamSize: "", capacity: "" }));
+                              }}
+                              onFocus={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
+                              onBlur={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}
+                            />
+                            {editErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.teamSizeLimit}</p>}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <button
                       onClick={() => {
                         const now = new Date();
                         const errs: Record<string, string> = {};
+                        const isTeam = activeEvent && (activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team');
+
                         if (!editForm.date) errs.date = "Event start date is required.";
                         else if (editForm.date !== editOriginal.date && new Date(editForm.date) <= now) errs.date = "Event start date must be in the future.";
                         if (!editForm.endDate) errs.endDate = "Event end date is required.";
@@ -2721,10 +2799,26 @@ function EventsPage({
                         else if (editForm.deadline !== editOriginal.deadline && new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
                         else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event start date.";
                         if (!editForm.venue.trim()) errs.venue = "Venue is required.";
+                        
+                        if (isTeam) {
+                          if (!editForm.minTeamSize || parseInt(editForm.minTeamSize) < 1) {
+                            errs.minTeamSize = "Minimum team size must be at least 1.";
+                          } else if (editForm.teamSizeLimit && parseInt(editForm.minTeamSize) > parseInt(editForm.teamSizeLimit)) {
+                            errs.minTeamSize = `Min team size cannot exceed max team size (${editForm.teamSizeLimit}).`;
+                          }
+
+                          if (!editForm.teamSizeLimit) {
+                            errs.teamSizeLimit = "Max team size is required.";
+                          } else if (parseInt(editForm.teamSizeLimit) < parseInt(editForm.minTeamSize || "1")) {
+                            errs.teamSizeLimit = `Max team size must be at least ${editForm.minTeamSize || "1"}.`;
+                          }
+                        }
+
                         if (!editForm.capacity) errs.capacity = "Venue capacity is required.";
-                        else if ((activeEvent?.type ?? '').toLowerCase() === 'team' && activeEvent?.teamSizeLimit && parseInt(editForm.capacity) < activeEvent.teamSizeLimit) {
-                          errs.capacity = `Venue capacity cannot be less than max team size (${activeEvent.teamSizeLimit}).`;
+                        else if (isTeam && editForm.teamSizeLimit && parseInt(editForm.capacity) < parseInt(editForm.teamSizeLimit)) {
+                          errs.capacity = `Venue capacity cannot be less than max team size (${editForm.teamSizeLimit}).`;
                         } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Venue capacity must be at least 1.";
+                        
                         if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
 
                         setEditErrors({});
@@ -2737,7 +2831,9 @@ function EventsPage({
                         editForm.endDate === editOriginal.endDate &&
                         editForm.deadline === editOriginal.deadline &&
                         editForm.venue.trim() === editOriginal.venue.trim() &&
-                        editForm.capacity === editOriginal.capacity
+                        editForm.capacity === editOriginal.capacity &&
+                        editForm.minTeamSize === editOriginal.minTeamSize &&
+                        editForm.teamSizeLimit === editOriginal.teamSizeLimit
                       )}
                       className="w-full mt-6 py-3.5 rounded-xl bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg"
                       style={{ fontFamily: FB }}
@@ -2778,12 +2874,15 @@ function EventsPage({
                                 try {
                                   const token = await getToken();
                                   if (token && activeEvent) {
+                                    const isTeam = activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team';
                                     await updateEvent(activeEvent.id, {
                                       eventDate: editForm.date || undefined,
                                       eventEndDate: editForm.endDate || undefined,
                                       registrationDeadline: editForm.deadline || undefined,
                                       venue: editForm.venue || undefined,
                                       registrationLimit: editForm.capacity ? parseInt(editForm.capacity) : undefined,
+                                      teamSizeLimit: isTeam && editForm.teamSizeLimit ? parseInt(editForm.teamSizeLimit) : undefined,
+                                      minTeamSize: isTeam && editForm.minTeamSize ? parseInt(editForm.minTeamSize) : undefined,
                                       password: editPassword,
                                     }, token);
                                     await refreshEvents();
@@ -2830,11 +2929,15 @@ function EventsPage({
                           try {
                             const token = await getToken();
                             if (token && activeEvent) {
+                              const isTeam = activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team';
                               await updateEvent(activeEvent.id, {
                                 eventDate: editForm.date || undefined,
+                                eventEndDate: editForm.endDate || undefined,
                                 registrationDeadline: editForm.deadline || undefined,
                                 venue: editForm.venue || undefined,
                                 registrationLimit: editForm.capacity ? parseInt(editForm.capacity) : undefined,
+                                teamSizeLimit: isTeam && editForm.teamSizeLimit ? parseInt(editForm.teamSizeLimit) : undefined,
+                                minTeamSize: isTeam && editForm.minTeamSize ? parseInt(editForm.minTeamSize) : undefined,
                                 password: editPassword,
                               }, token);
                               await refreshEvents();

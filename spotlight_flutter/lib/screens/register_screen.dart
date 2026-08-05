@@ -81,19 +81,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String? registrationId;
       String? referenceCode;
 
-      final newPhone = _phoneController.text.trim();
-      if (newPhone.isNotEmpty) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final currentUser = userProvider.currentUser;
-        if (currentUser != null && currentUser.phone != newPhone) {
-          apiService.editProfile(userId: currentUser.id, phone: newPhone).then((updatedUser) {
-            if (updatedUser != null) {
-              userProvider.setCurrentUser(updatedUser);
-            }
-          }).catchError((_) {});
-        }
-      }
-
       if (_selectedType == RegistrationType.solo) {
         final regId = await apiService.registerSolo(
           eventId: widget.eventId,
@@ -379,9 +366,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
-                      hint: 'Enter 10 digit phone number',
-                      keyboardType: TextInputType.phone,
-                      validator: (v) => (v == null || v.trim().length != 10) ? 'Enter valid 10 digit phone number' : null,
+                      hint: 'Phone number from profile',
+                      enabled: false,
                     ),
                   ] else if (_selectedType == RegistrationType.createTeam) ...[
                     _buildTextField(
@@ -401,9 +387,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
-                      hint: 'Enter 10 digit phone number',
-                      keyboardType: TextInputType.phone,
-                      validator: (v) => (v == null || v.trim().length != 10) ? 'Enter valid 10 digit phone number' : null,
+                      hint: 'Phone number from profile',
+                      enabled: false,
                     ),
                     const SizedBox(height: 16),
                     Container(
@@ -441,9 +426,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
-                      hint: 'Enter 10 digit phone number',
-                      keyboardType: TextInputType.phone,
-                      validator: (v) => (v == null || v.trim().length != 10) ? 'Enter valid 10 digit phone number' : null,
+                      hint: 'Phone number from profile',
+                      enabled: false,
                     ),
                   ],
 

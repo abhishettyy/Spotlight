@@ -174,7 +174,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
         ...(venue !== undefined ? { venue } : {}),
         ...(registrationLimit !== undefined ? { registrationLimit: parseInt(registrationLimit) } : {}),
         ...(teamSizeLimit !== undefined ? { teamSizeLimit: parseInt(teamSizeLimit) } : {}),
-        ...(minTeamSize !== undefined ? { minTeamSize: Math.max(2, parseInt(minTeamSize)) } : {}),
+        ...(minTeamSize !== undefined ? { minTeamSize: Math.max(1, parseInt(minTeamSize)) } : {}),
         bannerUrl: finalBannerUrl,
       },
       include: { club: true },

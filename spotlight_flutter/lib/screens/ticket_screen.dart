@@ -610,7 +610,23 @@ class _TicketScreenState extends State<TicketScreen> {
 
     String dateStr = 'TBD';
     String timeStr = '';
-    if (event?.date != null) {
+    final st = event?.startDate;
+    final end = event?.eventEndDate;
+
+    if (st != null) {
+      dateStr = DateFormat('MMM d, yyyy').format(st);
+      final startTimeStr = DateFormat('h:mm a').format(st);
+      if (end != null) {
+        final endTimeStr = DateFormat('h:mm a').format(end);
+        if (st.year == end.year && st.month == end.month && st.day == end.day) {
+          timeStr = '$startTimeStr - $endTimeStr';
+        } else {
+          timeStr = '$startTimeStr → ${DateFormat('MMM d, h:mm a').format(end)}';
+        }
+      } else {
+        timeStr = startTimeStr;
+      }
+    } else if (event?.date != null) {
       final dt = DateTime.tryParse(event!.date!);
       if (dt != null) {
         dateStr = DateFormat('MMM d, yyyy').format(dt);
@@ -663,6 +679,8 @@ class _TicketScreenState extends State<TicketScreen> {
               'title': title,
               'venue': venue,
               'date': event?.date ?? '',
+              'eventDate': event?.eventDate?.toIso8601String() ?? event?.startDate?.toIso8601String(),
+              'eventEndDate': event?.eventEndDate?.toIso8601String(),
               'qr_code_string': (ticket.team != null && ticket.team!.passkey.isNotEmpty)
                   ? ticket.team!.passkey
                   : ticket.id,

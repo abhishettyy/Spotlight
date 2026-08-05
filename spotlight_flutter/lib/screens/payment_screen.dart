@@ -168,10 +168,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final displayCode = widget.referenceCode.length > 6
-        ? 'REG-${widget.referenceCode.substring(0, 6).toUpperCase()}'
-        : widget.referenceCode.toUpperCase();
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Payment', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -218,77 +214,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outlineVariant),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('1. Copy Payment Details', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: cs.primary)),
-                      const SizedBox(height: 16),
-                      if (widget.upiId != null && widget.upiId!.isNotEmpty) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                if (widget.upiId != null && widget.upiId!.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outlineVariant),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('UPI ID', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
-                                const SizedBox(height: 4),
-                                Text(widget.upiId!, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.copy_rounded, size: 20),
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(text: widget.upiId!));
-                                showSpotlightToast(
-                                  context,
-                                  'UPI ID copied to clipboard!',
-                                  icon: Icons.copy_rounded,
-                                );
-                              },
-                            ),
+                            Text('UPI ID', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 4),
+                            Text(widget.upiId!, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
                           ],
                         ),
-                        const Divider(height: 24),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, size: 20),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: widget.upiId!));
+                            showSpotlightToast(
+                              context,
+                              'UPI ID copied to clipboard!',
+                              icon: Icons.copy_rounded,
+                            );
+                          },
+                        ),
                       ],
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Payment Reference / Remarks', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
-                              const SizedBox(height: 4),
-                              Text(displayCode, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: cs.secondary)),
-                            ],
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.copy_rounded, size: 20),
-                            onPressed: () {
-                              Clipboard.setData(ClipboardData(text: displayCode));
-                              showSpotlightToast(
-                                context,
-                                'Reference Code copied!',
-                                icon: Icons.copy_rounded,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '⚠️ IMPORTANT: You must paste this Reference Code into the remarks/note field of your UPI app when making payment.',
-                        style: GoogleFonts.inter(fontSize: 11, color: Colors.red[400], fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  Text(
+                    '⚠️ Make sure you enter a valid Transaction ID. If incorrect, your registration request will not be approved.',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: const Color(0xFFF03D4E),
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 Center(
                   child: Column(

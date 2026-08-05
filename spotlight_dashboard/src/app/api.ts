@@ -183,6 +183,8 @@ export async function updateEvent(eventId: string, data: {
   registrationDeadline?: string;
   venue?: string;
   registrationLimit?: number;
+  teamSizeLimit?: number;
+  minTeamSize?: number;
   bannerUrl?: string;
   password?: string;
 }, token?: string) {

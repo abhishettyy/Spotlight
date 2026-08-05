@@ -18,16 +18,41 @@ class TicketDetailsScreen extends StatelessWidget {
 
     final title = ticket['title'] ?? 'No Title';
     final dateStr = ticket['date'] ?? '';
-    DateTime? dateTime;
-    try {
-      dateTime = DateTime.parse(dateStr);
-    } catch (_) {}
+    final eventDateRaw = ticket['eventDate'] ?? ticket['event_date'];
+    final eventEndDateRaw = ticket['eventEndDate'] ?? ticket['event_end_date'];
 
-    final formattedDate = dateTime != null
-        ? DateFormat('dd MMM, yyyy').format(dateTime)
-        : (dateStr.isNotEmpty ? dateStr : 'TBD');
-    final formattedTime =
-        dateTime != null ? DateFormat('h:mm a').format(dateTime) : '';
+    DateTime? startDate;
+    DateTime? endDate;
+
+    if (eventDateRaw != null && eventDateRaw.toString().isNotEmpty) {
+      startDate = DateTime.tryParse(eventDateRaw.toString())?.toLocal();
+    } else if (dateStr.isNotEmpty) {
+      startDate = DateTime.tryParse(dateStr)?.toLocal();
+    }
+
+    if (eventEndDateRaw != null && eventEndDateRaw.toString().isNotEmpty) {
+      endDate = DateTime.tryParse(eventEndDateRaw.toString())?.toLocal();
+    }
+
+    String formattedDate = 'TBD';
+    String formattedTime = '';
+
+    if (startDate != null) {
+      formattedDate = DateFormat('dd MMM, yyyy').format(startDate);
+      final startTimeStr = DateFormat('h:mm a').format(startDate);
+      if (endDate != null) {
+        final endTimeStr = DateFormat('h:mm a').format(endDate);
+        if (startDate.year == endDate.year && startDate.month == endDate.month && startDate.day == endDate.day) {
+          formattedTime = '$startTimeStr - $endTimeStr';
+        } else {
+          formattedTime = '$startTimeStr → ${DateFormat('MMM d, h:mm a').format(endDate)}';
+        }
+      } else {
+        formattedTime = startTimeStr;
+      }
+    } else if (dateStr.isNotEmpty) {
+      formattedDate = dateStr;
+    }
 
     final venue = ticket['venue'] ?? 'No Venue';
     final qrCodeString = ticket['qr_code_string'] ?? 'unknown';
@@ -75,15 +100,15 @@ class TicketDetailsScreen extends StatelessWidget {
                                 color: cs.onBackground),
                             textAlign: TextAlign.center),
                         const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
                             _infoChip(
                                 context, Icons.calendar_today_outlined, formattedDate),
-                            if (formattedTime.isNotEmpty) ...[
-                              const SizedBox(width: 8),
+                            if (formattedTime.isNotEmpty)
                               _infoChip(context, Icons.access_time, formattedTime),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 8),
