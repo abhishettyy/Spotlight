@@ -621,14 +621,19 @@ class _TicketScreenState extends State<TicketScreen> {
     }
 
     final isFreeEvent = (event?.price ?? 0) == 0;
-    final minRequired = event?.minTeamSize ?? 2;
+    final isPaidEvent = !isFreeEvent;
+    final isLeader = ticket.team == null || (ticket.team!.leaderId.isNotEmpty ? ticket.team!.leaderId == _currentUserId : ticket.team!.members.any((m) => m.isLeader && m.id == _currentUserId));
+    final isPaymentPending = isPaidEvent && !ticket.hasPaid && isLeader && ticket.status.toUpperCase() != 'CONFIRMED' && ticket.status.toUpperCase() != 'APPROVED';
+    final isViewTicketDisabled = ticket.status.toUpperCase() == 'REJECTED' || isPaymentPending;
+
+    final minRequired = event?.minTeamSize ?? 1;
     final joinedCount = ticket.team?.members.where((m) => m.status.toUpperCase() != 'REJECTED').length ?? 1;
     final confirmedCount = ticket.team?.members.where((m) => m.status.toUpperCase() == 'CONFIRMED' || m.status.toUpperCase() == 'APPROVED').length ?? (ticket.isConfirmed ? 1 : 0);
     final effectiveCount = isFreeEvent ? joinedCount : confirmedCount;
     final isTeamIncomplete = (ticket.team != null) && (effectiveCount < minRequired);
 
     void openTicket() {
-      if (ticket.status.toUpperCase() == 'REJECTED') {
+      if (isViewTicketDisabled) {
         return; 
       }
 
@@ -678,17 +683,11 @@ class _TicketScreenState extends State<TicketScreen> {
           ),
         );
       } else {
-        final isPaid = (event?.price ?? 0) > 0;
-        final hasTeamPasskey = ticket.team != null && ticket.team!.passkey.trim().isNotEmpty;
-        final isPaymentPending = isPaid && !ticket.hasPaid && !hasTeamPasskey;
-
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isPaymentPending
-                  ? 'Payment pending. Please complete your payment.'
-                  : 'Your registration is pending organizer approval.',
+              'Your registration is pending organizer approval.',
               style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
             ),
             backgroundColor: const Color(0xFFF59E0B),
@@ -931,7 +930,7 @@ class _TicketScreenState extends State<TicketScreen> {
                       else
                         const SizedBox(),
                       ElevatedButton(
-                        onPressed: ticket.status.toUpperCase() == 'REJECTED' ? null : openTicket,
+                        onPressed: isViewTicketDisabled ? null : openTicket,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: cs.primary,
                           disabledBackgroundColor: isDark
@@ -940,7 +939,7 @@ class _TicketScreenState extends State<TicketScreen> {
                           disabledForegroundColor: isDark
                               ? Colors.white38
                               : Colors.grey.shade400,
-                          elevation: (ticket.isConfirmed && ticket.status.toUpperCase() != 'REJECTED') ? 2 : 0,
+                          elevation: (ticket.isConfirmed && !isViewTicketDisabled) ? 2 : 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(

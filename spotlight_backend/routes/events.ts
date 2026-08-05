@@ -97,7 +97,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         venue: venue || "TBD",
         eventType: eventType || "Solo",
         teamSizeLimit: eventType === "Team" && teamSizeLimit ? parseInt(teamSizeLimit) : null,
-        minTeamSize: eventType === "Team" && minTeamSize ? Math.max(2, parseInt(minTeamSize)) : (eventType === "Team" ? 2 : null),
+        minTeamSize: eventType === "Team" && minTeamSize !== undefined && minTeamSize !== null ? Math.max(1, parseInt(minTeamSize)) : (eventType === "Team" ? 1 : null),
         fee: parsedFee,
         registrationLimit: registrationLimit ? Math.max(2, parseInt(registrationLimit)) : 100,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),

@@ -85,6 +85,23 @@ class AboutUsScreen extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: accentRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: accentRed.withOpacity(0.2)),
+                      ),
+                      child: Text(
+                        'Version 1.0.0',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.5,
+                          color: accentRed,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -227,6 +244,17 @@ class AboutUsScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  'Spotlight v1.0.0',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: subTextColor.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),

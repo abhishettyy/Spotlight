@@ -15,7 +15,7 @@ class AppException implements Exception {
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.43:5000/api',
+    defaultValue: 'http://10.144.78.122:5000/api',
   );
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {

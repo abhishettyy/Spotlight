@@ -207,7 +207,12 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       where: { eventId: eventId, passkey: passkey.trim().toUpperCase() },
       include: { event: true }
     });
-    if (!team) return res.status(404).json({ error: 'Invalid passkey or passkey not yet generated.' });
+    if (!team || !team.passkey) return res.status(404).json({ error: 'Invalid passkey.' });
+
+    const leaderReg = await prisma.registration.findFirst({
+      where: { teamId: team.id, userId: team.leaderId, status: { in: ['PENDING', 'CONFIRMED'] } }
+    });
+    if (!leaderReg) return res.status(404).json({ error: 'Invalid passkey.' });
 
     if (team.event?.registrationDeadline && new Date() > new Date(team.event.registrationDeadline)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
@@ -449,6 +454,11 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
             paymentProofUrl: null,
             checkedInAt: null,
           } as any,
+        });
+
+        await prisma.team.update({
+          where: { id: registration.teamId },
+          data: { passkey: null }
         });
 
         for (const url of proofUrls) {

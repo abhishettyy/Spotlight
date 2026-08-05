@@ -1144,17 +1144,26 @@ function TicketScannerModal({
   getToken,
   onClose,
   onScanSuccess,
+  scannerKey,
 }: {
   activeEvent: any;
   getToken: () => Promise<string | null>;
   onClose: () => void;
   onScanSuccess?: (ticket: any) => void;
+  scannerKey?: number;
 }) {
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
   const [alreadyCheckedIn, setAlreadyCheckedIn] = useState<string | null>(null);
+
+  useEffect(() => {
+    setScanResult(null);
+    setScanError(null);
+    setManualCode("");
+    setAlreadyCheckedIn(null);
+  }, [scannerKey]);
 
   useEffect(() => {
     let html5Qrcode: Html5Qrcode | null = null;
@@ -1528,6 +1537,7 @@ function EventsPage({
   const [showBannerPassword, setShowBannerPassword] = useState(false);
   const [showFullBannerModal, setShowFullBannerModal] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
+  const [scannerKey, setScannerKey] = useState(0);
   const [scannedAttendees, setScannedAttendees] = useState<any[]>([]);
 
   useEffect(() => {
@@ -1758,6 +1768,7 @@ function EventsPage({
                       <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
@@ -1779,6 +1790,7 @@ function EventsPage({
                                 </div>
                               </td>
                               <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                              <td className="p-4 text-xs font-mono text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
                               <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
                               <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
                               <td className="p-4 text-xs text-[#888] max-w-[180px]">
@@ -1864,6 +1876,7 @@ function EventsPage({
                       <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
@@ -1884,6 +1897,7 @@ function EventsPage({
                               </div>
                             </td>
                             <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
                             <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
                             <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
                             <td className="p-4 text-xs text-[#888] max-w-[180px]">
@@ -1930,6 +1944,7 @@ function EventsPage({
                       <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
                         <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
@@ -1950,6 +1965,7 @@ function EventsPage({
                               </div>
                             </td>
                             <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
                             <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
                             <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
                             <td className="p-4 text-xs text-[#888] max-w-[180px]">
@@ -2079,12 +2095,17 @@ function EventsPage({
                     return (
                       <button
                         disabled={!scanInfo.enabled}
-                        onClick={() => scanInfo.enabled && setShowScannerModal(true)}
+                        onClick={() => {
+                          if (scanInfo.enabled) {
+                            setShowScannerModal(true);
+                            setScannerKey(k => k + 1);
+                          }
+                        }}
                         title={scanInfo.reason}
                         className={`text-xs px-4 py-2 rounded-lg border transition-all font-semibold flex items-center gap-2 ${
                           scanInfo.enabled
                             ? "bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/30 cursor-pointer shadow-sm"
-                            : "bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50"
+                            : "bg-[#F03D4E]/10 text-white/30 border-white/5 cursor-not-allowed opacity-50"
                         }`}
                         style={{ fontFamily: FB }}
                       >
@@ -2103,6 +2124,7 @@ function EventsPage({
                 <TicketScannerModal
                   activeEvent={activeEvent}
                   getToken={getToken}
+                  scannerKey={scannerKey}
                   onClose={() => setShowScannerModal(false)}
                   onScanSuccess={async (scannedTicket) => {
                     await refreshEvents();
@@ -3117,7 +3139,7 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
 function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; clubUpiId?: string | null; refreshProfile?: () => Promise<any> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
-    eventType: "Solo", minTeamSize: "2", teamSizeLimit: "",
+    eventType: "Solo", minTeamSize: "1", teamSizeLimit: "",
     bannerFile: null as File | null, qrFile: null as File | null
   });
   const [submitting, setSubmitting] = useState(false);
@@ -3200,11 +3222,14 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
     }
     if (formData.eventType === "Team") {
       if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
-      else if (parseInt(formData.minTeamSize) < 2) errors.minTeamSize = "Min team size must be at least 2.";
+      else if (parseInt(formData.minTeamSize) < 1) errors.minTeamSize = "Min team size must be at least 1.";
+      else if (formData.teamSizeLimit && parseInt(formData.minTeamSize) > parseInt(formData.teamSizeLimit)) {
+        errors.minTeamSize = `Min team size cannot exceed max team size (${formData.teamSizeLimit}).`;
+      }
 
       if (!formData.teamSizeLimit) errors.teamSizeLimit = "Max team size is required.";
-      else if (parseInt(formData.teamSizeLimit) < parseInt(formData.minTeamSize || "2")) {
-        errors.teamSizeLimit = `Max team size must be at least ${formData.minTeamSize || "2"}.`;
+      else if (parseInt(formData.teamSizeLimit) < parseInt(formData.minTeamSize || "1")) {
+        errors.teamSizeLimit = `Max team size must be at least ${formData.minTeamSize || "1"}.`;
       }
     }
     if (formData.type === "paid" && formData.useDefaultQr) {
@@ -3265,7 +3290,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
-        minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : 2,
+        minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : 1,
         clubId: resolvedClubId,
         bannerUrl,
         qrUrl,
@@ -3386,7 +3411,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Participation Type</label>
             <div className="relative">
-              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
+              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, minTeamSize: e.target.value === "Team" ? (p.minTeamSize || "1") : "", teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
                 <option value="Solo" style={{ background: "#111" }}>Solo</option>
                 <option value="Team" style={{ background: "#111" }}>Team</option>
               </select>
@@ -3405,8 +3430,9 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
                   <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Min Team Size</label>
                   <input
                     type="number"
-                    placeholder="Min (e.g. 2)"
-                    min={2}
+                    placeholder="Min (e.g. 1)"
+                    min={1}
+                    max={formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined}
                     className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
                     style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }}
                     value={formData.minTeamSize}
@@ -3426,7 +3452,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
                   <input
                     type="number"
                     placeholder="Max (e.g. 4)"
-                    min={parseInt(formData.minTeamSize || '2')}
+                    min={parseInt(formData.minTeamSize || '1')}
                     className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
                     style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }}
                     value={formData.teamSizeLimit}
@@ -3454,10 +3480,10 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
               exit={{ height: 0, opacity: 0, marginTop: 0 }}
               className="overflow-hidden"
             >
-              <div className="p-6 rounded-2xl grid md:grid-cols-2 gap-6" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
+              <div className="p-6 rounded-2xl grid md:grid-cols-2 gap-6" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="space-y-1.5">
                   <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Amount (INR)</label>
-                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.amount ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.amount} onChange={e => { setFormData(p => ({...p, amount: e.target.value})); setFieldErrors(fe => ({...fe, amount: ""})); }} onFocus={e => e.currentTarget.style.borderColor = "rgba(240,61,78,0.4)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${fieldErrors.amount ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"}`, fontFamily: FB }} value={formData.amount} onChange={e => { setFormData(p => ({...p, amount: e.target.value})); setFieldErrors(fe => ({...fe, amount: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.1)"} />
                   {fieldErrors.amount && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.amount}</p>}
                 </div>
 
@@ -3507,7 +3533,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
                     <div className="space-y-2 pt-1">
                       {clubQrUrl && clubUpiId ? (
                         <div className="text-xs text-emerald-400 font-medium px-2 flex items-center gap-1.5" style={{ fontFamily: FB }}>
-                          <CheckCircle size={13} /> Default QR code &amp; UPI ID ({clubUpiId}) configured in Settings.
+                          <CheckCircle size={13} /> Default UPI ID: {clubUpiId}
                         </div>
                       ) : (
                         <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs space-y-1.5" style={{ fontFamily: FB }}>

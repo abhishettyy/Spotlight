@@ -29,8 +29,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool? _isRegistered;
   TicketModel? _pendingPaymentTicket;
   Timer? _deadlineTimer;
-  final DraggableScrollableController _sheetController = DraggableScrollableController();
-
   @override
   void initState() {
     super.initState();
@@ -43,7 +41,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   void dispose() {
     _deadlineTimer?.cancel();
-    _sheetController.dispose();
     super.dispose();
   }
 
@@ -174,6 +171,47 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return {'day': '??', 'month': 'DATE', 'weekday': dateStr, 'year': ''};
   }
 
+  void _openFullPoster(String? url) {
+    if (url == null || url.isEmpty) return;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.92),
+      builder: (dialogContext) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: Stack(
+            children: [
+              Center(
+                child: CustomImage(
+                  url: url,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.of(dialogContext).padding.top + 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(dialogContext),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close, color: Colors.white, size: 22),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -202,7 +240,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
     final title = event.title;
     final description = event.description ?? 'No Description';
-    final date = event.date ?? 'No Date';
     final venue = event.venue;
     final price = event.price > 0 ? 'Paid' : 'Free';
     final imageUrl = event.imageUrl;
@@ -213,8 +250,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final bool isChecking = _isRegistered == null;
     final bool alreadyRegistered = _isRegistered == true;
     final bool hasPendingPayment = _pendingPaymentTicket != null;
-
-    final dateData = _parseDate(event.startDate?.toIso8601String() ?? date);
 
     final bool buttonDisabled = isClosed || alreadyRegistered || isChecking;
 
@@ -246,103 +281,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       btnBg = cs.primary;
       btnTextColor = Colors.white;
       btnLabel = 'Register Now';
-    }    return Scaffold(
+    }    
+    
+    return Scaffold(
       backgroundColor: pageBg,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return AnimatedBuilder(
-            animation: _sheetController,
-            builder: (context, _) {
-              final currentSize = _sheetController.isAttached ? _sheetController.size : 0.58;
-              final posterHeight = constraints.maxHeight * (1.0 - currentSize);
-
-              return Stack(
-                children: [
-                  // 1. Background Poster dynamically ending exactly where the slide bar starts
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: posterHeight,
-                    child: GestureDetector(
-                      onTap: () {
-                        final target = currentSize < 0.25 ? 0.58 : 0.08;
-                        _sheetController.animateTo(
-                          target,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      child: Container(
-                        color: isDark ? const Color(0xFF0A0A0A) : Colors.black,
-                        child: CustomImage(
-                          url: imageUrl,
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
-                        ),
-                      ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Poster
+                GestureDetector(
+                  onTap: () => _openFullPoster(imageUrl),
+                  child: Container(
+                    height: 320,
+                    width: double.infinity,
+                    color: isDark ? const Color(0xFF0A0A0A) : Colors.black,
+                    child: CustomImage(
+                      url: imageUrl,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
                     ),
                   ),
-
-                  // 2. Draggable Content Sheet with top capsule drag handle bar
-                  DraggableScrollableSheet(
-                    controller: _sheetController,
-                    initialChildSize: 0.58,
-                    minChildSize: 0.08,
-                    maxChildSize: 0.88,
-                    snap: true,
-                    snapSizes: const [0.08, 0.58, 0.88],
-            builder: (context, scrollController) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: pageBg,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 24,
-                      offset: const Offset(0, -8),
-                    ),
-                  ],
                 ),
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+
+                // Event Details Container
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Centered Capsule Drag Handle Bar
-                      GestureDetector(
-                        onTap: () {
-                          final target = _sheetController.size < 0.25 ? 0.58 : 0.05;
-                          _sheetController.animateTo(
-                            target,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Center(
-                            child: Container(
-                              width: 52,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withOpacity(0.6) : Colors.grey[400],
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -522,7 +495,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Min ${event.minTeamSize ?? 2} · Max ${event.teamSizeLimit ?? 'No limit'} members per team',
+                                      'Min ${event.minTeamSize ?? 1} · Max ${event.teamSizeLimit ?? 'No limit'} members per team',
                                       style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
@@ -558,8 +531,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ],
                   ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
 
           Positioned(
@@ -584,11 +557,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ),
           ),
         ],
-      );
-    },
-  );
-},
-),
+      ),
       bottomNavigationBar: Container(
         padding: EdgeInsets.fromLTRB(
           24,
