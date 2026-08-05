@@ -1,15 +1,15 @@
 export function sanitizeErrorMessage(err: any, fallback: string = "Something went wrong. Please try again."): string {
   if (!err) return fallback;
-  
+
   let msg = typeof err === 'string' ? err : (err.message || err.error || "");
   if (err.errors && err.errors.length > 0) {
     msg = err.errors[0].longMessage || err.errors[0].message || msg;
   }
-  
+
   if (!msg || typeof msg !== 'string') return fallback;
-  
+
   const lower = msg.toLowerCase();
-  
+
   if (
     lower.includes("network error") ||
     lower.includes("failed to fetch") ||
@@ -21,7 +21,7 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
   ) {
     return "Connection error. Please check your internet connection and try again.";
   }
-  
+
   if (
     lower.includes("no account exists") ||
     lower.includes("no club exists") ||
@@ -35,10 +35,10 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
     return "Invalid email address or password. Please try again.";
   }
   if (
-    lower.includes("form_identifier_exists") || 
-    lower.includes("already_exists") || 
-    lower.includes("email already in use") || 
-    lower.includes("user already exists") || 
+    lower.includes("form_identifier_exists") ||
+    lower.includes("already_exists") ||
+    lower.includes("email already in use") ||
+    lower.includes("user already exists") ||
     lower.includes("club already exists") ||
     lower.includes("is taken") ||
     lower.includes("already taken") ||
@@ -73,12 +73,12 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
   ) {
     return "An unexpected server error occurred. Please try again later.";
   }
-  
+
   const cleanMsg = msg.replace(/^Error:\s*/i, '').replace(/^Exception:\s*/i, '').trim();
   return cleanMsg || fallback;
 }
 
-const BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://10.144.78.122:5000/api';
+const BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const headers: Record<string, string> = {
@@ -126,7 +126,7 @@ export async function syncProfile(
     method: 'POST',
     body: JSON.stringify({ clerkUserId, email, name }),
   }, token);
-  
+
 }
 
 export async function getProfile(userId: string) {
