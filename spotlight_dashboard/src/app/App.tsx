@@ -12,7 +12,6 @@ import {
   useUser,
   useSignIn,
   useSignUp,
-  AuthenticateWithRedirectCallback,
 } from "@clerk/clerk-react";
 import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
@@ -268,22 +267,15 @@ function useSpotlightData() {
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
         console.log("[SpotlightData] load() starting concurrent requests");
 
-        let freshProfile: any = null;
-        try {
-          const syncResult = await syncProfile(userId!, email, name, token);
-          freshProfile = syncResult?.profile;
-          setProfile(freshProfile);
-        } catch (syncErr: any) {
-          console.error("[SpotlightData] syncProfile failed:", syncErr);
-          if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] Backend rejected sync or deleted un-registered Clerk user. Signing out...");
-            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
-            await clerkSignOut({ redirectUrl: targetUrl });
-            return;
-          }
-        }
+        const [syncResult, clubsData] = await Promise.all([
+          syncProfile(userId!, email, name, token),
+          fetchClubs()
+        ]);
 
-        const clubsData = await fetchClubs().catch(() => ({ clubs: [] }));
+        console.log("[SpotlightData] load() concurrent requests finished");
+        let freshProfile = syncResult.profile;
+
+        setProfile(freshProfile);
         setClubs(clubsData.clubs ?? []);
 
         if (freshProfile?.clubId) {
@@ -292,9 +284,13 @@ function useSpotlightData() {
         } else {
           console.log("[SpotlightData] load() profile has no clubId.");
           if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] No club linked to Clerk user. Signing out with redirectUrl...");
-            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
-            await clerkSignOut({ redirectUrl: targetUrl });
+            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing login error...");
+            await clerkSignOut();
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", "auth");
+            url.searchParams.set("authTab", "login");
+            url.searchParams.set("noClub", "1");
+            window.location.href = url.toString();
           }
         }
       } catch (e) {
@@ -5192,9 +5188,9 @@ export default function App() {
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab, error: null as string | null };
     const params = new URLSearchParams(window.location.search);
-    const err = params.get("noClub") ? "No club registered with this email ID. Register the club now!" : null;
-    const v = (params.get("view") as View) || (err ? "auth" : "landing");
+    const v = (params.get("view") as View) || "landing";
     const t = (params.get("authTab") as AuthTab) || "login";
+    const err = params.get("noClub") ? "No club exists with this email address. Please register your club first." : null;
 
     const hasLocalToken = !!localStorage.getItem("spotlight_token");
     if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t, error: err };
@@ -5263,8 +5259,6 @@ export default function App() {
 
   useEffect(() => {
     if (!isClerkLoaded && !isLocalSignedIn) return;
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("noClub") === "1") return;
     if (isSignedIn && (view === "auth" || view === "landing")) {
       updateNavigation("dashboard");
     }
@@ -5315,16 +5309,6 @@ export default function App() {
           <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
           <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#94a3b8", fontFamily: FM }}>Loading</p>
         </div>
-      </div>
-    );
-  }
-
-  if (typeof window !== "undefined" && window.location.pathname.includes("sso-callback")) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4" style={{ background: "rgba(5,5,5,0.98)" }}>
-        <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
-        <p className="text-xs tracking-[0.4em] uppercase text-white/70" style={{ fontFamily: FM }}>Verifying Account...</p>
-        <AuthenticateWithRedirectCallback signUpUrl="/?view=auth&authTab=register" signInUrl="/?view=auth&authTab=login" />
       </div>
     );
   }
