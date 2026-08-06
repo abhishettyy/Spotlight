@@ -132,7 +132,7 @@ interface Registration {
 }
 
 function useSpotlightData() {
-  const { getToken: getClerkToken, userId: clerkUserId, isSignedIn: isClerkSignedIn } = useAuth();
+  const { getToken: getClerkToken, userId: clerkUserId, isSignedIn: isClerkSignedIn, signOut: clerkSignOut } = useAuth();
   const { user } = useUser();
 
   const localToken = localStorage.getItem("spotlight_token");
@@ -284,10 +284,13 @@ function useSpotlightData() {
         } else {
           console.log("[SpotlightData] load() profile has no clubId.");
           if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing register error...");
+            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing login error...");
             await clerkSignOut();
-            setAuthError("No club exists with this email address. Please register your club first.");
-            updateNavigation("auth", "register");
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", "auth");
+            url.searchParams.set("authTab", "login");
+            url.searchParams.set("noClub", "1");
+            window.location.href = url.toString();
           }
         }
       } catch (e) {
@@ -5183,20 +5186,21 @@ export default function App() {
   const { user } = useUser();
 
   const getInitialParams = () => {
-    if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab };
+    if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab, error: null as string | null };
     const params = new URLSearchParams(window.location.search);
     const v = (params.get("view") as View) || "landing";
     const t = (params.get("authTab") as AuthTab) || "login";
+    const err = params.get("noClub") ? "No club exists with this email address. Please register your club first." : null;
 
     const hasLocalToken = !!localStorage.getItem("spotlight_token");
-    if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t };
-    return { view: v, authTab: t };
+    if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t, error: err };
+    return { view: v, authTab: t, error: err };
   };
 
   const initial = getInitialParams();
   const [view,      setView]      = useState<View>(initial.view);
   const [authTab,   setAuthTab]   = useState<AuthTab>(initial.authTab);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(initial.error);
   const [mousePos,  setMousePos]  = useState({ x: -9999, y: -9999 });
 
   const updateNavigation = (newView: View, newAuthTab?: AuthTab) => {
