@@ -5314,7 +5314,9 @@ export default function App() {
 
   if (typeof window !== "undefined" && window.location.pathname.includes("sso-callback")) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
+      <div className="flex h-screen flex-col items-center justify-center gap-4" style={{ background: "rgba(5,5,5,0.98)" }}>
+        <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
+        <p className="text-xs tracking-[0.4em] uppercase text-white/70" style={{ fontFamily: FM }}>Verifying Account...</p>
         <AuthenticateWithRedirectCallback signUpUrl="/?view=auth&authTab=register" signInUrl="/?view=auth&authTab=login" />
       </div>
     );
