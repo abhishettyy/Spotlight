@@ -12,6 +12,7 @@ import {
   useUser,
   useSignIn,
   useSignUp,
+  AuthenticateWithRedirectCallback,
 } from "@clerk/clerk-react";
 import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
@@ -5307,6 +5308,14 @@ export default function App() {
           <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
           <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#94a3b8", fontFamily: FM }}>Loading</p>
         </div>
+      </div>
+    );
+  }
+
+  if (typeof window !== "undefined" && window.location.pathname.includes("sso-callback")) {
+    return (
+      <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
+        <AuthenticateWithRedirectCallback signUpUrl="/?view=auth&authTab=register" signInUrl="/?view=auth&authTab=login" />
       </div>
     );
   }
