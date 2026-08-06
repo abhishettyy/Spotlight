@@ -268,15 +268,22 @@ function useSpotlightData() {
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
         console.log("[SpotlightData] load() starting concurrent requests");
 
-        const [syncResult, clubsData] = await Promise.all([
-          syncProfile(userId!, email, name, token),
-          fetchClubs()
-        ]);
+        let freshProfile: any = null;
+        try {
+          const syncResult = await syncProfile(userId!, email, name, token);
+          freshProfile = syncResult?.profile;
+          setProfile(freshProfile);
+        } catch (syncErr: any) {
+          console.error("[SpotlightData] syncProfile failed:", syncErr);
+          if (!isLocalSignedIn && isClerkSignedIn) {
+            console.log("[SpotlightData] Backend rejected sync or deleted un-registered Clerk user. Signing out...");
+            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
+            await clerkSignOut({ redirectUrl: targetUrl });
+            return;
+          }
+        }
 
-        console.log("[SpotlightData] load() concurrent requests finished");
-        let freshProfile = syncResult.profile;
-
-        setProfile(freshProfile);
+        const clubsData = await fetchClubs().catch(() => ({ clubs: [] }));
         setClubs(clubsData.clubs ?? []);
 
         if (freshProfile?.clubId) {
