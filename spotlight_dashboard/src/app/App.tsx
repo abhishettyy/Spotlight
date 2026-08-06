@@ -284,13 +284,9 @@ function useSpotlightData() {
         } else {
           console.log("[SpotlightData] load() profile has no clubId.");
           if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing login error...");
-            await clerkSignOut();
-            const url = new URL(window.location.href);
-            url.searchParams.set("view", "auth");
-            url.searchParams.set("authTab", "login");
-            url.searchParams.set("noClub", "1");
-            window.location.href = url.toString();
+            console.log("[SpotlightData] No club linked to Clerk user. Signing out with redirectUrl...");
+            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
+            await clerkSignOut({ redirectUrl: targetUrl });
           }
         }
       } catch (e) {
@@ -5188,9 +5184,9 @@ export default function App() {
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab, error: null as string | null };
     const params = new URLSearchParams(window.location.search);
-    const v = (params.get("view") as View) || "landing";
-    const t = (params.get("authTab") as AuthTab) || "login";
     const err = params.get("noClub") ? "No club exists with this email address. Please register your club first." : null;
+    const v = (params.get("view") as View) || (err ? "auth" : "landing");
+    const t = (params.get("authTab") as AuthTab) || "login";
 
     const hasLocalToken = !!localStorage.getItem("spotlight_token");
     if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t, error: err };
