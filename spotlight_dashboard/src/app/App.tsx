@@ -5184,7 +5184,7 @@ export default function App() {
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab, error: null as string | null };
     const params = new URLSearchParams(window.location.search);
-    const err = params.get("noClub") ? "No club exists with this email address. Please register your club first." : null;
+    const err = params.get("noClub") ? "No club registered with this email ID. Register the club now!" : null;
     const v = (params.get("view") as View) || (err ? "auth" : "landing");
     const t = (params.get("authTab") as AuthTab) || "login";
 
@@ -5255,6 +5255,8 @@ export default function App() {
 
   useEffect(() => {
     if (!isClerkLoaded && !isLocalSignedIn) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("noClub") === "1") return;
     if (isSignedIn && (view === "auth" || view === "landing")) {
       updateNavigation("dashboard");
     }
