@@ -282,7 +282,13 @@ function useSpotlightData() {
           console.log("[SpotlightData] load() clubId found, loading dashboard stats for clubId:", freshProfile.clubId);
           await loadDashboardStats(freshProfile.clubId, token);
         } else {
-          console.log("[SpotlightData] load() profile has no clubId, sin kipping stats load.");
+          console.log("[SpotlightData] load() profile has no clubId.");
+          if (!isLocalSignedIn && isClerkSignedIn) {
+            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing register error...");
+            await clerkSignOut();
+            setAuthError("No club exists with this email address. Please register your club first.");
+            updateNavigation("auth", "register");
+          }
         }
       } catch (e) {
         console.error("Failed to load dashboard data:", e);
@@ -649,9 +655,10 @@ function formatAuthError(err: any, defaultMsg: string): string {
   return sanitizeErrorMessage(err, defaultMsg);
 }
 
-function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
+function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
   onLocalSignIn: (token: string, profile: any) => void;
+  initialError?: string | null;
 }) {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
@@ -664,7 +671,11 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn }: {
   const [keyVerified, setKeyVerified] = useState(false);
   const [verifyingKey, setVerifyingKey] = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError || null);
+
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
   const [loading, setLoading] = useState(false);
 
   const [verifying, setVerifying] = useState(false);
@@ -5185,6 +5196,7 @@ export default function App() {
   const initial = getInitialParams();
   const [view,      setView]      = useState<View>(initial.view);
   const [authTab,   setAuthTab]   = useState<AuthTab>(initial.authTab);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [mousePos,  setMousePos]  = useState({ x: -9999, y: -9999 });
 
   const updateNavigation = (newView: View, newAuthTab?: AuthTab) => {
@@ -5317,13 +5329,14 @@ export default function App() {
       {view === "auth"    && (
         <AuthPage 
           tab={authTab} 
-          onTabChange={setAuthTab} 
+          onTabChange={(t) => { setAuthError(null); setAuthTab(t); }} 
           onBack={() => updateNavigation("landing")} 
           onLocalSignIn={(token, profile) => {
             localStorage.setItem("spotlight_token", token);
             localStorage.setItem("spotlight_profile", JSON.stringify(profile));
             setLocalToken(token);
           }}
+          initialError={authError}
         />
       )}
       {(view === "dashboard" || (isClerkLoaded && isSignedIn && view !== "auth" && view !== "landing")) && (
