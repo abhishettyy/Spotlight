@@ -284,13 +284,10 @@ function useSpotlightData() {
         } else {
           console.log("[SpotlightData] load() profile has no clubId.");
           if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing login error...");
-            await clerkSignOut();
-            const url = new URL(window.location.href);
-            url.searchParams.set("view", "auth");
-            url.searchParams.set("authTab", "login");
-            url.searchParams.set("noClub", "1");
-            window.location.href = url.toString();
+            console.log("[SpotlightData] No club linked to Clerk user. Signing out with redirectUrl...");
+            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
+            await clerkSignOut({ redirectUrl: targetUrl });
+            return;
           }
         }
       } catch (e) {
