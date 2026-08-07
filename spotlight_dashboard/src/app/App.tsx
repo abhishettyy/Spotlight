@@ -663,6 +663,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   onLocalSignIn: (token: string, profile: any) => void;
   initialError?: string | null;
 }) {
+  const { signOut: clerkSignOut } = useAuth();
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
 
@@ -673,6 +674,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   const [registrationKey, setRegistrationKey] = useState("");
   const [keyVerified, setKeyVerified] = useState(false);
   const [verifyingKey, setVerifyingKey] = useState(false);
+  const [clubCreatedSuccess, setClubCreatedSuccess] = useState(false);
 
   const [error, setError] = useState<string | null>(initialError || null);
 
@@ -843,7 +845,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
           });
           localStorage.setItem("show_first_time_notice", "true");
           console.log("[CustomSignUp] Database club creation complete:", res);
-          window.dispatchEvent(new CustomEvent('spotlight:club_created'));
+          setClubCreatedSuccess(true);
         } catch (clubErr: any) {
           console.error("[CustomSignUp] Failed to create club in database:", clubErr);
           setError(sanitizeErrorMessage(clubErr, "Failed to create club."));
@@ -857,6 +859,56 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
       setLoading(false);
     }
   };
+
+  if (clubCreatedSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-6"
+        style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(12px)" }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-md p-8 md:p-10 rounded-3xl text-center shadow-2xl relative border border-white/10"
+          style={{ background: "rgba(20,20,20,0.95)", backdropFilter: "blur(24px)" }}
+        >
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)" }}>
+            <CheckCircle size={32} className="text-[#10B981]" />
+          </div>
+
+          <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: FC }}>
+            Club Registered Successfully! 🎉
+          </h2>
+          <p className="text-sm text-[#d1d5db] mb-8 leading-relaxed" style={{ fontFamily: FB }}>
+            Your club <span className="text-white font-semibold">{clubName}</span> has been created. Please sign in with your email and password to access your dashboard.
+          </p>
+
+          <motion.button
+            onClick={async () => {
+              try { await clerkSignOut(); } catch {}
+              setClubCreatedSuccess(false);
+              setVerifying(false);
+              setVerifyingSignIn(false);
+              setKeyVerified(false);
+              setRegistrationKey("");
+              setEmail("");
+              setPassword("");
+              setClubName("");
+              setError(null);
+              onTabChange("login");
+            }}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="w-full py-3.5 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 shadow-lg cursor-pointer"
+            style={{ fontFamily: FB }}
+          >
+            OK, Proceed to Sign In
+          </motion.button>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   if (tab === "register" && !keyVerified) {
     return (
