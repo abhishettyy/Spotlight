@@ -1146,12 +1146,12 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
                     Continue with Google
                   </motion.button>
 
-                  <p className="text-center text-[11px] text-[#888] mt-6" style={{ fontFamily: FB }}>
+                  <p className="text-center text-[13px] text-[#94a3b8] mt-6" style={{ fontFamily: FB }}>
                     Want to register a new club?{" "}
                     <button
                       type="button"
                       onClick={() => { setError(null); onTabChange("register"); }}
-                      className="text-[#F03D4E] hover:text-[#d63545] font-semibold transition-colors underline underline-offset-2 cursor-pointer"
+                      className="text-[11px] text-[#F03D4E] hover:text-[#d63545] font-medium transition-colors underline underline-offset-2 cursor-pointer"
                     >
                       Sign Up
                     </button>
