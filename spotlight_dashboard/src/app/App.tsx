@@ -882,7 +882,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
             Club Registered Successfully! 🎉
           </h2>
           <p className="text-sm text-[#d1d5db] mb-8 leading-relaxed" style={{ fontFamily: FB }}>
-            Your club <span className="text-white font-semibold">{clubName}</span> has been created. Please sign in with your email and password to access your dashboard.
+            Your club <span className="text-white font-semibold">{clubName}</span> has been created. Please sign in to access your dashboard.
           </p>
 
           <motion.button
