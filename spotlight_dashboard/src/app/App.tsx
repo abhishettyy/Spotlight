@@ -1153,7 +1153,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
                       onClick={() => { setError(null); onTabChange("register"); }}
                       className="text-[#F03D4E] hover:text-[#d63545] font-semibold transition-colors underline underline-offset-2 cursor-pointer"
                     >
-                      Register
+                      Sign Up
                     </button>
                   </p>
                 </>
