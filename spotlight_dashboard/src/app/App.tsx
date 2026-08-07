@@ -12,7 +12,6 @@ import {
   useUser,
   useSignIn,
   useSignUp,
-  AuthenticateWithRedirectCallback,
 } from "@clerk/clerk-react";
 import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
@@ -268,22 +267,15 @@ function useSpotlightData() {
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
         console.log("[SpotlightData] load() starting concurrent requests");
 
-        let freshProfile: any = null;
-        try {
-          const syncResult = await syncProfile(userId!, email, name, token);
-          freshProfile = syncResult?.profile;
-          setProfile(freshProfile);
-        } catch (syncErr: any) {
-          console.error("[SpotlightData] syncProfile failed:", syncErr);
-          if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] Backend rejected sync or deleted un-registered Clerk user. Signing out...");
-            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
-            await clerkSignOut({ redirectUrl: targetUrl });
-            return;
-          }
-        }
+        const [syncResult, clubsData] = await Promise.all([
+          syncProfile(userId!, email, name, token),
+          fetchClubs()
+        ]);
 
-        const clubsData = await fetchClubs().catch(() => ({ clubs: [] }));
+        console.log("[SpotlightData] load() concurrent requests finished");
+        let freshProfile = syncResult.profile;
+
+        setProfile(freshProfile);
         setClubs(clubsData.clubs ?? []);
 
         if (freshProfile?.clubId) {
@@ -292,10 +284,13 @@ function useSpotlightData() {
         } else {
           console.log("[SpotlightData] load() profile has no clubId.");
           if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] No club linked to Clerk user. Signing out with redirectUrl...");
-            const targetUrl = window.location.origin + "/?view=auth&authTab=login&noClub=1";
-            await clerkSignOut({ redirectUrl: targetUrl });
-            return;
+            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing login error...");
+            await clerkSignOut();
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", "auth");
+            url.searchParams.set("authTab", "login");
+            url.searchParams.set("noClub", "1");
+            window.location.href = url.toString();
           }
         }
       } catch (e) {
@@ -1146,12 +1141,21 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
                     Continue with Google
                   </motion.button>
 
-                  <p className="text-center text-[13px] text-[#94a3b8] mt-6" style={{ fontFamily: FB }}>
+                  <p className="text-center text-xs text-[#999999] mt-6" style={{ fontFamily: FB }}>
                     Want to register a new club?{" "}
                     <button
                       type="button"
-                      onClick={() => { setError(null); onTabChange("register"); }}
-                      className="text-[11px] text-[#F03D4E] hover:text-[#d63545] font-medium transition-colors underline underline-offset-2 cursor-pointer"
+                      onClick={() => {
+                        setEmail("");
+                        setPassword("");
+                        setClubName("");
+                        setError(null);
+                        setShowPassword(false);
+                        setRegistrationKey("");
+                        setKeyVerified(false);
+                        onTabChange("register");
+                      }}
+                      className="text-[#F03D4E] hover:text-[#d63545] font-semibold transition-colors cursor-pointer underline underline-offset-2"
                     >
                       Sign Up
                     </button>
@@ -5325,19 +5329,6 @@ export default function App() {
           <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
           <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#94a3b8", fontFamily: FM }}>Loading</p>
         </div>
-      </div>
-    );
-  }
-
-  if (typeof window !== "undefined" && window.location.pathname.includes("sso-callback")) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4" style={{ background: "rgba(5,5,5,0.98)" }}>
-        <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
-        <p className="text-xs tracking-[0.4em] uppercase text-white/70" style={{ fontFamily: FM }}>Verifying Account...</p>
-        <AuthenticateWithRedirectCallback 
-          signInUrl="/?view=auth&authTab=login&noClub=1" 
-          signUpUrl="/?view=auth&authTab=login&noClub=1" 
-        />
       </div>
     );
   }

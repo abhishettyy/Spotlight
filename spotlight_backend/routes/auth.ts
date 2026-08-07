@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { clerkClient } from '@clerk/clerk-sdk-node';
 import { prisma } from '../config/db';
 import { signToken, requireAuth } from '../middlewares/auth';
 
@@ -402,23 +401,12 @@ router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<a
       });
 
       if (existingClub) {
+
         profile = await prisma.profile.update({
           where: { id: clerkUserId },
           data: { clubId: existingClub.id },
         });
         console.log(`Auto-linked user ${profile.email} to existing club ID: ${existingClub.id}`);
-      } else {
-        console.log(`[Sync] No club found for email ${email}. Deleting un-registered Clerk user ${clerkUserId}...`);
-        try {
-          await clerkClient.users.deleteUser(clerkUserId);
-          console.log(`[Sync] Successfully deleted un-registered Clerk user ${clerkUserId}.`);
-        } catch (err: any) {
-          console.error(`[Sync] Error deleting Clerk user ${clerkUserId}:`, err);
-        }
-        return res.status(403).json({
-          error: 'NO_CLUB_REGISTERED',
-          message: 'No club exists with this email address. Please register your club first.',
-        });
       }
     }
 
