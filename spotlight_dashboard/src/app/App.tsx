@@ -829,9 +829,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
       });
 
       if (result.status === "complete") {
-        console.log("[CustomSignUp] Clerk signup verified successfully. Activating session & auto-provisioning club...");
-        await setSignUpActive({ session: result.createdSessionId });
-
+        console.log("[CustomSignUp] Clerk signup verified successfully. Creating club in database FIRST...");
         try {
           const res = await createClub({
             name: clubName,
@@ -844,6 +842,9 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
           localStorage.setItem("show_first_time_notice", "true");
           console.log("[CustomSignUp] Database club creation complete:", res);
           window.dispatchEvent(new CustomEvent('spotlight:club_created'));
+
+          console.log("[CustomSignUp] Activating Clerk session...");
+          await setSignUpActive({ session: result.createdSessionId });
         } catch (clubErr: any) {
           console.error("[CustomSignUp] Failed to create club in database:", clubErr);
           setError(sanitizeErrorMessage(clubErr, "Failed to create club."));

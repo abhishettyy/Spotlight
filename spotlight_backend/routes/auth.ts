@@ -404,7 +404,10 @@ router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<a
 
         profile = await prisma.profile.update({
           where: { id: clerkUserId },
-          data: { clubId: existingClub.id },
+          data: { 
+            clubId: existingClub.id,
+            fullName: getPreferredName(profile.fullName, existingClub.name),
+          },
         });
         console.log(`Auto-linked user ${profile.email} to existing club ID: ${existingClub.id}`);
       }
