@@ -320,6 +320,12 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
     });
 
     if (!registration) return res.status(404).json({ error: 'Registration not found.' });
+
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to approve registrations for this event.' });
+    }
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     if (registration.event?.eventDate && new Date(registration.event.eventDate) < todayStart) {
@@ -429,6 +435,12 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
     });
 
     if (!registration) return res.status(404).json({ error: 'Registration not found.' });
+
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to reject registrations for this event.' });
+    }
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     if (registration.event?.eventDate && new Date(registration.event.eventDate) < todayStart) {
@@ -587,6 +599,12 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
       return res.status(400).json({
         error: "This ticket doesn't belong to this event.",
       });
+    }
+
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to scan tickets for this event.' });
     }
 
     if (registration.teamId) {

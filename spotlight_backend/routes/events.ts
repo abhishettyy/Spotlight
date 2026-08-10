@@ -131,6 +131,9 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
       return res.status(404).json({ error: 'Event not found.' });
     }
 
+    if (!profile || !profile.clubId || profile.clubId !== existingEvent.clubId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to modify this event.' });
+    }
     const club = existingEvent.club || (profile?.clubId ? await prisma.club.findUnique({ where: { id: profile.clubId } }) : null);
     const clubPassword = club?.password || profile?.password;
 
@@ -190,6 +193,14 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
 router.get('/:id/registrations', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    if (!profile || profile.clubId !== event.clubId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to view registrations for this event.' });
+    }
+
     const registrations = await prisma.registration.findMany({
       where: { eventId: id },
       include: { profile: true, team: true, event: true },
@@ -252,6 +263,14 @@ router.put('/:id/deadline', requireAuth, async (req: Request, res: Response): Pr
   try {
     const { id } = req.params;
     const { registrationDeadline } = req.body;
+
+    const userId = req.auth!.userId;
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+    const event = await prisma.event.findUnique({ where: { id: id as string } });
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    if (!profile || profile.clubId !== event.clubId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to update this event.' });
+    }
 
     if (!registrationDeadline) {
       return res.status(400).json({ error: 'Registration deadline is required.' });
