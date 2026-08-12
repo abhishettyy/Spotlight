@@ -5,10 +5,35 @@
     background-color: #050505;
     color: #ffffff;
     font-family: 'Manrope', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+}
+
+/* GPU performance acceleration & smooth transitions */
+* {
+  box-sizing: border-box;
+}
+
+input, button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input::-ms-reveal,
 input::-ms-clear {
   display: none;
+}
+
+/* Hardware accelerated backdrop blur on mobile */
+@media (max-width: 768px) {
+  [style*="backdropFilter"], [style*="backdrop-filter"] {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
 }

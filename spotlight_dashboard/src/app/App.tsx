@@ -445,16 +445,14 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           borderBottom: scrolled ? "1px solid rgba(255,255,255,0.05)" : "1px solid transparent",
         }}
       >
-        <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
-            <span className="text-sm tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 sm:py-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+            <span className="text-xs sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
           </div>
           <button onClick={onEnter}
-            className="text-sm px-5 py-2 rounded-full text-white/85 hover:text-white transition-all duration-400"
-            style={{ border: "1.5px solid rgba(255,255,255,0.2)" }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.5)")}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)")}
+            className="text-xs sm:text-sm px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-white/85 hover:text-white transition-all duration-400 cursor-pointer active:scale-95"
+            style={{ border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.03)" }}
           >Sign In</button>
         </div>
       </nav>
@@ -484,71 +482,91 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col justify-between z-10 relative">
+      <div className="flex-1 flex flex-col justify-between z-10 relative h-[100dvh] max-h-[100dvh]">
         
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-8 pt-24 pb-6 w-full max-w-5xl mx-auto">
-          <section className="flex-1 flex flex-col items-center justify-center text-center py-6 w-full">
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-8 pt-14 sm:pt-28 pb-3 sm:pb-8 w-full max-w-4xl mx-auto my-auto">
+          <section className="flex-1 flex flex-col items-center justify-center text-center py-2 sm:py-4 w-full my-auto">
             <motion.div
-              initial={{ opacity: 0, y: 70 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center"
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center w-full my-auto"
             >
-              <motion.p
-                initial={{ opacity: 0, letterSpacing: "0.2em" }}
-                animate={{ opacity: 1, letterSpacing: "clamp(0.18em, 1.5vw, 0.55em)" }}
-                transition={{ duration: 2, delay: 0.2 }}
-                className="text-[11px] uppercase text-center mb-5 md:mb-6 tracking-[0.3em]"
-                style={{ color: "#f9fafb", fontFamily: FM }}
-              >Event Management Platform</motion.p>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, delay: 0.1 }}
+                className="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] tracking-[0.2em] uppercase bg-white/5 border border-white/10 text-white/70 mb-3 sm:mb-6"
+                style={{ fontFamily: FM }}
+              >
+                Event Management Platform
+              </motion.div>
 
               <motion.h1
-                initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
+                initial={{ opacity: 0, filter: "blur(12px)", scale: 0.95 }}
                 animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-                transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-                className="leading-none text-white select-none text-center w-full flex items-center justify-center mx-auto" style={{
-                fontFamily: F_LOGO, fontWeight: 600,
-                fontSize: "clamp(2rem, 10vw, 12rem)",
-                letterSpacing: "-0.02em",
-                textShadow: "0 0 100px rgba(255,255,255,0.15)",
-                marginTop: "0px",
-                marginBottom: "0.8rem"
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="leading-tight text-white select-none text-center w-full tracking-[0.04em] md:tracking-[-0.02em] text-3xl sm:text-5xl md:text-7xl lg:text-9xl font-semibold mb-2 sm:mb-5" style={{
+                fontFamily: F_LOGO,
+                textShadow: "0 0 80px rgba(255,255,255,0.12)",
               }}>SPOTLIGHT</motion.h1>
 
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ delay: 0.7, duration: 1.2 }}
-                className="text-lg md:text-2xl max-w-xl mx-auto text-center"
-                style={{ color: "#f9fafb", lineHeight: 1.65, fontFamily: FB, marginTop: "0px" }}
+                transition={{ delay: 0.5, duration: 1 }}
+                className="text-xs sm:text-base md:text-xl max-w-md sm:max-w-lg mx-auto text-center px-3 leading-relaxed mt-1"
+                style={{ color: "#d1d5db", fontFamily: FB }}
               >
-                The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.72)" }}>Event Management Hub.</span>
+                The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.85)" }}>Event Management Hub.</span>
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col sm:flex-row gap-4 items-center mt-6"
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-4 sm:mt-8 w-full sm:w-auto"
               >
                 <motion.button
-                  whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(240,61,78,0.25)" }}
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(240,61,78,0.35)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onEnter}
-                  className="cursor-pointer group flex items-center justify-center px-12 py-4 text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-500"
-                  style={{ cursor: "pointer" }}
+                  className="cursor-pointer group inline-flex items-center justify-center px-8 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(240,61,78,0.25)] active:scale-95"
                 >
-                  <span className="pointer-events-none">Enter Dashboard</span>
+                  <span>Enter Dashboard</span>
                 </motion.button>
+              </motion.div>
+
+              {/* Ultra-Sleek Mobile Platform Stats Bar */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1, duration: 0.8 }}
+                className="flex items-center justify-around w-full max-w-xs sm:max-w-md mx-auto mt-5 sm:mt-12 p-2.5 sm:p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md xl:hidden"
+              >
+                <div className="text-center px-2">
+                  <p className="text-xs sm:text-sm font-bold text-white" style={{ fontFamily: FB }}>{stats.liveEvents}</p>
+                  <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-white/50 mt-0.5" style={{ fontFamily: FM }}>Live</p>
+                </div>
+                <div className="w-px h-5 bg-white/10" />
+                <div className="text-center px-2">
+                  <p className="text-xs sm:text-sm font-bold text-white" style={{ fontFamily: FB }}>{stats.registrations.toLocaleString()}+</p>
+                  <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-white/50 mt-0.5" style={{ fontFamily: FM }}>Registrations</p>
+                </div>
+                <div className="w-px h-5 bg-white/10" />
+                <div className="text-center px-2">
+                  <p className="text-xs sm:text-sm font-bold text-white" style={{ fontFamily: FB }}>{stats.clubs}</p>
+                  <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-white/50 mt-0.5" style={{ fontFamily: FM }}>Clubs</p>
+                </div>
               </motion.div>
             </motion.div>
           </section>
         </div>
 
-        <footer className="w-full px-8 md:px-16 pb-6 pt-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5">
+        <footer className="w-full px-4 md:px-16 pb-4 sm:pb-6 pt-3 sm:pt-4 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 border-t border-white/5 flex-shrink-0">
           <div className="flex-1 flex justify-center md:justify-start">
-            <span className="text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
+            <span className="text-xs sm:text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
           </div>
-          <p className="text-xs text-center flex-shrink-0" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
-          <div className="flex-1 flex justify-center md:justify-end gap-6 text-[11px]" style={{ color: "#94a3b8" }}>
+          <p className="text-[10px] sm:text-xs text-center flex-shrink-0" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
+          <div className="flex-1 flex justify-center md:justify-end gap-5 text-[10px] sm:text-[11px]" style={{ color: "#94a3b8" }}>
             <button onClick={() => setActiveModal('privacy')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Privacy</button>
             <button onClick={() => setActiveModal('terms')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Terms</button>
             <button onClick={() => setActiveModal('contact')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Contact Us</button>
@@ -1767,18 +1785,26 @@ function EventsPage({
 
     return (
       <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-6xl">
-        <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
-          className="flex items-center gap-2 text-sm transition-all duration-300"
-          style={{ color: "#d1d5db", fontFamily: FB }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
-        ><ChevronLeft size={14} /> Back to Events</button>
+        {(showParticipants || showTeams || showApprovals) ? (
+          <button onClick={() => { setShowParticipants(false); setShowTeams(false); setShowApprovals(false); }}
+            className="flex items-center gap-2 text-sm transition-all duration-300 cursor-pointer"
+            style={{ color: "#d1d5db", fontFamily: FB }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
+          ><ChevronLeft size={14} /> Return to Event</button>
+        ) : (
+          <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
+            className="flex items-center gap-2 text-sm transition-all duration-300 cursor-pointer"
+            style={{ color: "#d1d5db", fontFamily: FB }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
+          ><ChevronLeft size={14} /> Back to Events</button>
+        )}
 
         {showTeams ? (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
-              <button onClick={() => setShowTeams(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1820,7 +1846,6 @@ function EventsPage({
                 <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Registration Approval</h1>
                 <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>{pending.length} pending · {approved.length} approved · {rejected.length} rejected</p>
               </div>
-              <button onClick={() => setShowApprovals(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all self-start sm:self-auto" style={{ fontFamily: FB }}>Return to Event</button>
             </div>
 
             {isEventFinished && (
@@ -2120,9 +2145,9 @@ function EventsPage({
             <div className="mt-4 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
                 <div>
-                  <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees (Attendance List)</h1>
+                  <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
                   <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>
-                    Scanned Attendees: <span className="text-[#10b981] font-bold">{combinedAttendanceList.length} checked-in</span> ({registrations.length} total registered)
+                    <span className="text-[#10b981] font-bold">{combinedAttendanceList.length} checked-in</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -2190,7 +2215,6 @@ function EventsPage({
                       </button>
                     );
                   })()}
-                  <button onClick={() => setShowParticipants(false)} className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#f3f4f6] hover:text-white transition-all" style={{ fontFamily: FB }}>Return to Event</button>
                 </div>
               </div>
 
@@ -4503,7 +4527,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
   );
 
   const renderProfileSection = () => (
-    <div className="p-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+    <div className="p-4 pb-6 mt-auto flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
       <div className="flex items-center gap-2.5 mb-3 px-1">
         {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
           <img
@@ -4528,15 +4552,15 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           </div>
         )}
         <div className="overflow-hidden">
-          <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.75)", fontFamily: FB }}>{name}</p>
+          <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.85)", fontFamily: FB }}>{name}</p>
           <p className="text-[11px]" style={{ color: "#f3f4f6", fontFamily: FM }}>Admin</p>
         </div>
       </div>
       <button onClick={onSignOut}
-        className="w-full py-2 text-xs rounded-lg transition-all duration-300"
-        style={{ color: "#f3f4f6", border: "1px solid rgba(255,255,255,0.03)", fontFamily: FB }}
-        onMouseEnter={e => { e.currentTarget.style.color = "#cccccc"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-        onMouseLeave={e => { e.currentTarget.style.color = "#bbbbbb"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.03)"; }}
+        className="w-full py-2.5 text-xs rounded-xl transition-all duration-300 font-semibold cursor-pointer active:scale-98"
+        style={{ color: "#ffffff", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+        onMouseEnter={e => { e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
+        onMouseLeave={e => { e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
       >Sign Out</button>
     </div>
   );
@@ -4676,8 +4700,14 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
       >
         <div className="px-6 pt-6 pb-5 flex-shrink-0 flex items-center gap-2.5">
-          <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
-          <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+          {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
+            <img src={currentClub.logoUrl} alt={name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain flex-shrink-0" />
+          )}
+          <span className="text-[13px] tracking-[0.22em] font-semibold truncate max-w-[150px]" title={name} style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.9)" }}>
+            {name ? name.toUpperCase() : 'SPOTLIGHT'}
+          </span>
         </div>
         <div className="px-4 mb-5 flex-shrink-0">
           <motion.button
@@ -4710,17 +4740,23 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
         {renderProfileSection()}
       </aside>
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden">
         
-        <header className="xl:hidden flex items-center justify-between px-6 py-4 flex-shrink-0"
-          style={{ background: "rgba(5,5,5,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
+        <header className="xl:hidden flex items-center justify-between px-4 sm:px-6 py-3.5 flex-shrink-0"
+          style={{ background: "rgba(5,5,5,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(16px)" }}
         >
-          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white hover:text-[#F03D4E] transition-colors p-1">
-            <Menu size={20} />
+          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white hover:text-[#F03D4E] transition-colors p-1.5 rounded-lg active:bg-white/10">
+            <Menu size={22} />
           </button>
-          <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
-            <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+          <div className="flex items-center gap-2">
+            {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
+              <img src={currentClub.logoUrl} alt={name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
+            )}
+            <span className="text-xs sm:text-[13px] tracking-[0.18em] font-semibold truncate max-w-[180px]" title={name} style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.9)" }}>
+              {name ? name.toUpperCase() : 'SPOTLIGHT'}
+            </span>
           </div>
           <div className="w-8" />
         </header>
@@ -4781,7 +4817,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           )}
         </AnimatePresence>
 
-        <main className="flex-1 overflow-y-auto relative" style={{ background: "transparent" }}>
+        <main className="flex-1 overflow-y-auto relative pb-28 xl:pb-8" style={{ background: "transparent" }}>
           <AnimatePresence mode="wait">
             {activeTab === "create" && (
               <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
@@ -4853,32 +4889,38 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col h-screen xl:hidden"
+              className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col h-[100dvh] max-h-[100dvh] xl:hidden"
               style={{ background: "rgba(5,5,5,0.98)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
             >
-              <div className="px-6 pt-6 pb-5 flex items-center justify-between flex-shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain" />
-                  <span className="text-[13px] tracking-[0.32em] font-semibold" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.82)" }}>SPOTLIGHT</span>
+              <div className="px-5 pt-5 pb-4 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
+                    <img src={currentClub.logoUrl} alt={name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
+                  )}
+                  <span className="text-xs tracking-[0.18em] font-semibold truncate max-w-[150px]" title={name} style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.9)" }}>
+                    {name ? name.toUpperCase() : 'SPOTLIGHT'}
+                  </span>
                 </div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white transition-colors p-1">
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white transition-colors p-1.5 rounded-lg active:bg-white/10">
                   <X size={18} />
                 </button>
               </div>
-              <div className="px-4 mb-5 flex-shrink-0">
+              <div className="px-4 mb-4 flex-shrink-0">
                 <motion.button
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   onClick={() => { setActiveTab("create"); setIsMobileMenuOpen(false); }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(240,61,78,0.25)]"
                   style={{ fontFamily: FB }}
                 ><Plus size={14} /> Create Event</motion.button>
               </div>
-              <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+              <nav className="flex-1 px-3 space-y-1 overflow-y-auto min-h-0">
                 {DASH_NAV.map(({ id, icon: Icon, label }) => {
                   const active = id === activeTab;
                   return (
                     <button key={id} onClick={() => { setActiveTab(id); setIsMobileMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-300"
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-300"
                       style={{
                         background: active ? "rgba(255,255,255,0.065)" : "transparent",
                         color:      active ? "#fff" : "#999999",
@@ -4887,7 +4929,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                       }}
                       onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#dddddd"; }}
                       onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#999999"; }}
-                    ><Icon size={14} />{label}</button>
+                    ><Icon size={16} />{label}</button>
                   );
                 })}
               </nav>
@@ -4993,25 +5035,25 @@ function OverviewPage({
   }
 
   return (
-    <div className="p-5 md:p-8 lg:p-10 space-y-8 md:space-y-10 max-w-7xl">
+    <div className="p-4 sm:p-6 md:p-8 lg:p-10 space-y-6 sm:space-y-8 md:space-y-10 max-w-7xl pb-28 md:pb-12">
       
       <motion.div
         initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-        className="relative p-6 md:p-8 rounded-2xl overflow-hidden"
+        className="relative p-5 sm:p-7 md:p-8 rounded-2xl overflow-hidden"
         style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.06)" }}
       >
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(255,255,255,0.03) 0%, transparent 60%)" }} />
         <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.06), transparent 55%)" }} />
-        <p className="text-[11px] tracking-[0.5em] uppercase mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard</p>
-        <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>
+        <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-2 sm:mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>
           Welcome Back, {name}
         </h1>
-        <p className="mt-1.5 text-sm" style={{ color: "#94a3b8", fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
+        <p className="mt-1 text-xs sm:text-sm" style={{ color: "#94a3b8", fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
       </motion.div>
 
       {/* KPI Cards — live data */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {[
           { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').length} active`,  delay: 0    },
           { label: "Total Registrations",   value: totalRegistrations, suffix: "",  sub: "Across all events",                                                   delay: 0.08 },
@@ -5125,10 +5167,10 @@ function OverviewPage({
       </div>
 
       {/* Quick Actions + Live Activity Feed */}
-      <div className="grid md:grid-cols-3 gap-6 pb-10">
-        <div className="md:col-span-2">
-          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM, marginBottom: "18px" }}>Quick Actions</p>
-          <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
+        <div className="lg:col-span-2">
+          <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-3 sm:mb-5" style={{ color: "#f3f4f6", fontFamily: FM }}>Quick Actions</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((qa, i) => (
               <motion.button key={qa.label} onClick={() => onNavigate(qa.id)}
                 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }}
@@ -5286,6 +5328,7 @@ export default function App() {
   }, [isSignedIn, view, isClerkLoaded]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024 || window.matchMedia("(hover: none)").matches) return;
     const fn = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
     window.addEventListener("mousemove", fn);
     return () => window.removeEventListener("mousemove", fn);
@@ -5339,7 +5382,7 @@ export default function App() {
       style={{ fontFamily: FB }}
     >
       {/* Cursor flashlight */}
-      <div className="pointer-events-none fixed inset-0 z-50" style={{
+      <div className="pointer-events-none fixed inset-0 z-50 hidden lg:block" style={{
         background: `radial-gradient(720px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.038), transparent 50%)`,
       }} />
 
