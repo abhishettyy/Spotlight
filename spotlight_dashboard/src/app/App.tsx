@@ -436,12 +436,13 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   const scrolled = scrollY > 40;
 
   return (
-    <div id="ls" className="h-screen w-screen overflow-hidden flex flex-col relative bg-background">
+    <div id="ls" className="h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden flex flex-col relative bg-background touch-pan-y overscroll-none">
 
-      <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-700"
+      <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-500"
         style={{
-          background:   scrolled ? "rgba(5,5,5,0.92)" : "transparent",
-          backdropFilter: scrolled ? "blur(24px)" : "none",
+          background:   scrolled ? "rgba(5,5,5,0.92)" : "rgba(5,5,5,0.2)",
+          backdropFilter: scrolled ? "blur(20px)" : "blur(8px)",
+          WebkitBackdropFilter: scrolled ? "blur(20px)" : "blur(8px)",
           borderBottom: scrolled ? "1px solid rgba(255,255,255,0.05)" : "1px solid transparent",
         }}
       >
@@ -482,7 +483,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col justify-between z-10 relative h-[100dvh] max-h-[100dvh]">
+      <div className="flex-1 flex flex-col justify-between z-10 relative min-h-full h-full">
         
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-8 pt-14 sm:pt-28 pb-3 sm:pb-8 w-full max-w-4xl mx-auto my-auto">
           <section className="flex-1 flex flex-col items-center justify-center text-center py-2 sm:py-4 w-full my-auto">
@@ -5343,6 +5344,7 @@ export default function App() {
 
   const goAuth    = (tab: AuthTab = "login") => { updateNavigation("auth", tab); };
   const doSignOut = async () => {
+    document.body.style.overflow = "";
     localStorage.removeItem("spotlight_token");
     localStorage.removeItem("spotlight_profile");
     setLocalToken(null);

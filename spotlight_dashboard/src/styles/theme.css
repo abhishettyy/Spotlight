@@ -1,5 +1,13 @@
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  html, body {
+    background-color: #050505 !important;
+    background: #050505 !important;
+    color: #ffffff !important;
+  }
+}
+
 :root {
   color-scheme: dark;
   --font-size: 16.5px;
