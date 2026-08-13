@@ -2763,7 +2763,6 @@ function EventsPage({
                 </div>
                 <div>
                   <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Manage Attendees</h3>
-                  <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Roster database & CSV exports</p>
                 </div>
               </div>
 
