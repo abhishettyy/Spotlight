@@ -5259,11 +5259,23 @@ export default function App() {
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab, error: null as string | null };
     const params = new URLSearchParams(window.location.search);
-    const v = (params.get("view") as View) || "landing";
-    const t = (params.get("authTab") as AuthTab) || "login";
-    const err = params.get("noClub") ? "No club exists with this email address. Please register your club first." : null;
+    const path = window.location.pathname;
 
+    let v = (params.get("view") as View);
+    let t = (params.get("authTab") as AuthTab) || "login";
+
+    const isSsoCallback = path.includes("sso-callback");
+    if (isSsoCallback) {
+      if (!v) v = "auth";
+      if (!params.get("authTab")) t = "login";
+    }
+
+    if (!v) v = "landing";
     const hasLocalToken = !!localStorage.getItem("spotlight_token");
+    const err = (params.get("noClub") || (isSsoCallback && !hasLocalToken))
+      ? "No club exists with this mail id"
+      : null;
+
     if (hasLocalToken && v !== "auth") return { view: "dashboard" as View, authTab: t, error: err };
     return { view: v, authTab: t, error: err };
   };
@@ -5273,6 +5285,22 @@ export default function App() {
   const [authTab,   setAuthTab]   = useState<AuthTab>(initial.authTab);
   const [authError, setAuthError] = useState<string | null>(initial.error);
   const [mousePos,  setMousePos]  = useState({ x: -9999, y: -9999 });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.pathname.includes("sso-callback")) {
+      const params = new URLSearchParams(window.location.search);
+      const hasLocalToken = !!localStorage.getItem("spotlight_token");
+      if (!hasLocalToken && !authError) {
+        setAuthError("No club exists with this mail id");
+      }
+      if (!params.get("view") || !params.get("authTab")) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", "auth");
+        url.searchParams.set("authTab", "login");
+        window.history.replaceState({ view: "auth", authTab: "login" }, "", url.toString());
+      }
+    }
+  }, []);
 
   const updateNavigation = (newView: View, newAuthTab?: AuthTab) => {
     setView(newView);
