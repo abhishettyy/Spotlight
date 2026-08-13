@@ -683,6 +683,22 @@ function formatAuthError(err: any, defaultMsg: string): string {
   return sanitizeErrorMessage(err, defaultMsg);
 }
 
+function validatePasswordStrength(pass: string): { valid: boolean; message: string | null } {
+  const missing: string[] = [];
+  if (pass.length < 8) missing.push("at least 8 characters");
+  if (!/[A-Z]/.test(pass)) missing.push("at least one uppercase letter");
+  if (!/[0-9]/.test(pass)) missing.push("at least one number");
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass)) missing.push("at least one special character");
+
+  if (missing.length > 0) {
+    return {
+      valid: false,
+      message: `Password must contain ${missing.join(", ")}.`
+    };
+  }
+  return { valid: true, message: null };
+}
+
 function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
   onLocalSignIn: (token: string, profile: any) => void;
@@ -817,6 +833,12 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     }
     if (!email.includes("@") || !email.includes(".")) {
       setError("Please enter a valid email address.");
+      return;
+    }
+
+    const pwdCheck = validatePasswordStrength(password);
+    if (!pwdCheck.valid) {
+      setError(pwdCheck.message);
       return;
     }
 
@@ -4346,6 +4368,11 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.password || !formData.registrationKey.trim()) {
       setError("Club Name, Contact Email, Mobile Login Password, and Authorization Key are required.");
+      return;
+    }
+    const pwdCheck = validatePasswordStrength(formData.password);
+    if (!pwdCheck.valid) {
+      setError(pwdCheck.message);
       return;
     }
     setSubmitting(true);
