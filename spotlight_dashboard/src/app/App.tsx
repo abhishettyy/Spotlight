@@ -425,27 +425,24 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
     }).catch(e => console.error("Failed to fetch public stats", e));
   }, []);
 
-  useEffect(() => {
-    const el = document.getElementById("ls");
-    if (!el) return;
-    let ticking = false;
-    const fn = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setScrollY(el.scrollTop);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    el.addEventListener("scroll", fn, { passive: true });
-    return () => el.removeEventListener("scroll", fn);
-  }, []);
+  const [scrolled, setScrolled] = useState(false);
 
-  const scrolled = scrollY > 40;
+  useEffect(() => {
+    const sentinel = document.getElementById("top-sentinel");
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setScrolled(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div id="ls" className="h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden flex flex-col relative bg-background touch-pan-y overscroll-none">
+      <div id="top-sentinel" className="absolute top-0 left-0 w-full h-10 pointer-events-none z-0" />
 
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-500"
         style={{
@@ -1727,8 +1724,10 @@ function EventsPage({
   const handleApprove = async (id: string, e: React.MouseEvent) => {
     if (isEventFinished) return;
     try {
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
+      const docW = document.documentElement.clientWidth || 1000;
+      const docH = document.documentElement.clientHeight || 800;
+      const x = e.clientX / docW;
+      const y = e.clientY / docH;
       confetti({
         particleCount: 18,
         spread: 45,
