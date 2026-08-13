@@ -428,7 +428,16 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   useEffect(() => {
     const el = document.getElementById("ls");
     if (!el) return;
-    const fn = () => setScrollY(el.scrollTop);
+    let ticking = false;
+    const fn = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setScrollY(el.scrollTop);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     el.addEventListener("scroll", fn, { passive: true });
     return () => el.removeEventListener("scroll", fn);
   }, []);
@@ -5330,14 +5339,22 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === "undefined" || window.innerWidth < 1024 || window.matchMedia("(hover: none)").matches) return;
-    const fn = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", fn);
+    let ticking = false;
+    const fn = (e: MouseEvent) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setMousePos({ x: e.clientX, y: e.clientY });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("mousemove", fn, { passive: true });
     return () => window.removeEventListener("mousemove", fn);
   }, []);
 
   useEffect(() => {
-
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
     document.body.style.overflow = (view === "dashboard" && isMobile) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [view]);
