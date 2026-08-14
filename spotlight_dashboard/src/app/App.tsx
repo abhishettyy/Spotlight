@@ -195,9 +195,7 @@ function useSpotlightData() {
 
   const loadDashboardStats = async (clubId: string, token: string) => {
     try {
-      console.log("[SpotlightData] loadDashboardStats called for clubId:", clubId);
       const stats = await fetchClubDashboardStats(clubId, token);
-      console.log("[SpotlightData] loadDashboardStats response stats:", stats);
       setTotalEvents(stats.totalEvents);
       setTotalRegistrations(stats.totalRegistrations);
       setPendingCount(stats.pendingCount);
@@ -209,33 +207,25 @@ function useSpotlightData() {
         token
       ).then(regs => {
         setAllRegistrations(regs);
-      }).catch(err => console.error("Background fetch for all registrations failed:", err));
+      }).catch(() => {});
     } catch (e) {
-      console.error("Failed to load dashboard stats from PostgreSQL:", e);
     }
   };
 
   const refreshEvents = async () => {
     try {
       const token = await getToken();
-      if (!token) {
-        console.warn("[SpotlightData] refreshEvents returning early because token is null");
-        return;
-      }
+      if (!token) return;
 
       let freshProfile = profile;
       if (!isLocalSignedIn) {
-
         const email = user?.primaryEmailAddress?.emailAddress ?? '';
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
-        console.log("[SpotlightData] refreshEvents syncing profile for email:", email);
         const syncResult = await syncProfile(userId!, email, name, token);
         freshProfile = syncResult.profile;
-        console.log("[SpotlightData] refreshEvents syncResult profile:", freshProfile);
         setProfile(freshProfile);
       }
 
-      console.log("[SpotlightData] refreshEvents fetching clubs...");
       const clubsData = await fetchClubs();
       setClubs(clubsData.clubs ?? []);
 
@@ -244,7 +234,6 @@ function useSpotlightData() {
         await loadDashboardStats(clubId, token);
       }
     } catch (e) {
-      console.error("Failed to refresh events:", e);
     }
   };
 
@@ -258,33 +247,21 @@ function useSpotlightData() {
       const syncResult = await syncProfile(userId, email, name, token);
       const freshProfile = syncResult.profile;
       setProfile(freshProfile);
-      console.log("[SpotlightData] refreshProfile → clubId:", freshProfile?.clubId);
       return freshProfile;
     } catch (e) {
-      console.error("[SpotlightData] refreshProfile error:", e);
       return profile;
     }
   };
 
   useEffect(() => {
-    console.log("[SpotlightData] useEffect triggered. isSignedIn:", isSignedIn, "userId:", userId, "userLoaded:", !!user || isLocalSignedIn);
-    if (!isSignedIn || !userId || (!isLocalSignedIn && !user)) {
-      console.log("[SpotlightData] useEffect returning early because: ", { isSignedIn, userId, userLoaded: !!user || isLocalSignedIn });
-      return;
-    }
+    if (!isSignedIn || !userId || (!isLocalSignedIn && !user)) return;
 
     async function load() {
       try {
-        console.log("[SpotlightData] load() started");
         const token = await getToken();
-        console.log("[SpotlightData] load() token obtained:", !!token);
-        if (!token) {
-          console.warn("[SpotlightData] load() returned early because token is null/undefined");
-          return;
-        }
+        if (!token) return;
 
         if (isLocalSignedIn) {
-
           setProfile(localProfile);
           const clubsData = await fetchClubs();
           setClubs(clubsData.clubs ?? []);
@@ -297,26 +274,20 @@ function useSpotlightData() {
 
         const email = user?.primaryEmailAddress?.emailAddress ?? '';
         const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
-        console.log("[SpotlightData] load() starting concurrent requests");
 
         const [syncResult, clubsData] = await Promise.all([
           syncProfile(userId!, email, name, token),
           fetchClubs()
         ]);
 
-        console.log("[SpotlightData] load() concurrent requests finished");
         let freshProfile = syncResult.profile;
-
         setProfile(freshProfile);
         setClubs(clubsData.clubs ?? []);
 
         if (freshProfile?.clubId) {
-          console.log("[SpotlightData] load() clubId found, loading dashboard stats for clubId:", freshProfile.clubId);
           await loadDashboardStats(freshProfile.clubId, token);
         } else {
-          console.log("[SpotlightData] load() profile has no clubId.");
           if (!isLocalSignedIn && isClerkSignedIn) {
-            console.log("[SpotlightData] No club linked to Clerk user. Signing out and showing login error...");
             await clerkSignOut();
             const url = new URL(window.location.href);
             url.searchParams.set("view", "auth");
@@ -326,9 +297,7 @@ function useSpotlightData() {
           }
         }
       } catch (e) {
-        console.error("Failed to load dashboard data:", e);
       } finally {
-        console.log("[SpotlightData] load() finished, setting loading to false");
         setLoading(false);
       }
     }
@@ -336,7 +305,6 @@ function useSpotlightData() {
     load();
 
     const handleClubCreated = async () => {
-      console.log("[SpotlightData] spotlight:club_created event received. Refreshing profile & events...");
       const freshProf = await refreshProfile();
       if (freshProf?.clubId) {
         const token = await getToken();
@@ -908,7 +876,6 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
       });
 
       if (result.status === "complete") {
-        console.log("[CustomSignUp] Clerk signup verified successfully. Creating club in database FIRST...");
         try {
           const res = await createClub({
             name: clubName,
@@ -919,13 +886,9 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
             registrationKey: registrationKey.trim(),
           });
           localStorage.setItem("show_first_time_notice", "true");
-          console.log("[CustomSignUp] Database club creation complete:", res);
           window.dispatchEvent(new CustomEvent('spotlight:club_created'));
-
-          console.log("[CustomSignUp] Activating Clerk session...");
           await setSignUpActive({ session: result.createdSessionId });
         } catch (clubErr: any) {
-          console.error("[CustomSignUp] Failed to create club in database:", clubErr);
           setError(sanitizeErrorMessage(clubErr, "Failed to create club."));
         }
       } else {
@@ -3186,7 +3149,7 @@ function EventsPage({
                     {ev.registrationDeadline && (
                       <span className="flex items-center gap-1.5 text-xs text-[#f59e0b]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        Deadline: {(() => { const d = new Date(ev.registrationDeadline); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}
+                        Deadline: {formatDateTime12H(ev.registrationDeadline)}
                       </span>
                     )}
                   </div>
@@ -3243,7 +3206,7 @@ function EventsPage({
                     {ev.registrationDeadline && (
                       <span className="flex items-center gap-1.5 text-xs text-[#94a3b8]/70">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        Deadline: {(() => { const d = new Date(ev.registrationDeadline); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}
+                        Deadline: {formatDateTime12H(ev.registrationDeadline)}
                       </span>
                     )}
                   </div>
@@ -3509,7 +3472,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
 
       let resolvedClubId = clubId;
       if (!resolvedClubId || resolvedClubId.trim() === '') {
-        console.warn("[CreateEvent] clubId is empty at submit time — re-syncing profile to resolve it.");
         const freshProfile = refreshProfile ? await refreshProfile() : null;
         resolvedClubId = freshProfile?.clubId ?? '';
         if (!resolvedClubId) {
@@ -3517,7 +3479,6 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
           setSubmitting(false);
           return;
         }
-        console.log("[CreateEvent] Resolved clubId from refreshed profile:", resolvedClubId);
       }
 
       let bannerUrl: string | undefined = undefined;
@@ -4635,7 +4596,6 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     setShowTeams(sTeams);
 
     if (tab === "create" && !profile?.clubId) {
-      console.log("[Dashboard] Navigating to create tab with no clubId — triggering refreshProfile.");
       refreshProfile();
     }
 
@@ -5201,7 +5161,7 @@ function OverviewPage({
                 {ev.registrationDeadline && (
                   <div className="flex items-center gap-1 mb-4" style={{ color: "#f59e0b" }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span className="text-[11px]" style={{ fontFamily: 'inherit' }}>Deadline: {(() => { const d = new Date(ev.registrationDeadline!); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</span>
+                    <span className="text-[11px]" style={{ fontFamily: 'inherit' }}>Deadline: {formatDateTime12H(ev.registrationDeadline)}</span>
                   </div>
                 )}
                 <div>
