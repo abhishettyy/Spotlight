@@ -343,19 +343,6 @@ class _TicketScreenState extends State<TicketScreen> {
         height: 280,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          image: imageUrl != null && imageUrl.isNotEmpty
-              ? DecorationImage(
-                  image: NetworkImage(imageUrl),
-                  fit: BoxFit.cover,
-                )
-              : null,
-          gradient: imageUrl == null || imageUrl.isEmpty
-              ? const LinearGradient(
-                  colors: [Color(0xFF1E1E24), Color(0xFF0F0F12), Color(0xFF141419)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
           boxShadow: isDark
               ? [
                   BoxShadow(
@@ -366,14 +353,9 @@ class _TicketScreenState extends State<TicketScreen> {
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
         ),
