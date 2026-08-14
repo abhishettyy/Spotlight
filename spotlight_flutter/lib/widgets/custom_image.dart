@@ -42,13 +42,18 @@ class CustomImage extends StatelessWidget {
       return errorBuilder?.call(context, 'Empty URL', null) ?? buildPlaceholder(width: width, height: height);
     }
 
-    final cleanUrl = url!.trim();
+    String cleanUrl = url!.trim();
+
+    if (cleanUrl.startsWith('/')) {
+      cleanUrl = 'https://spotlight-production-74d4.up.railway.app$cleanUrl';
+    }
 
     if (cleanUrl.startsWith('data:image/')) {
       try {
-        final base64String = cleanUrl.split(',').last;
+        final rawBase64 = cleanUrl.contains(',') ? cleanUrl.split(',').last : cleanUrl;
+        final sanitized = rawBase64.replaceAll(RegExp(r'\s+'), '');
         return Image.memory(
-          base64Decode(base64String),
+          base64Decode(sanitized),
           fit: fit,
           alignment: alignment,
           width: width,
