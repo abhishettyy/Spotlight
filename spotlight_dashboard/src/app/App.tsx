@@ -83,7 +83,7 @@ const formatEventHeaderDate = (eventDateStr?: string | null, endDateStr?: string
   if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth() && start.getDate() === end.getDate()) {
     return `${formatDate(start)} · ${formatTime(start)} - ${formatTime(end)}`;
   } else {
-    return `${formatDate(start)} (${formatTime(start)}) → ${formatDate(end)} (${formatTime(end)})`;
+    return `${formatDate(start)} · ${formatTime(start)} → ${formatDate(end)} · ${formatTime(end)}`;
   }
 };
 
@@ -3104,21 +3104,10 @@ function EventsPage({
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  className="p-6 rounded-2xl cursor-pointer group"
-                  style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", transition: "all 0.3s ease" }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget;
-                    el.style.background = "rgba(255,255,255,0.03)";
-                    el.style.borderColor = "rgba(255,255,255,0.1)";
-                    el.style.transform = "translateY(-4px)";
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget;
-                    el.style.background = "rgba(255,255,255,0.015)";
-                    el.style.borderColor = "rgba(255,255,255,0.05)";
-                    el.style.transform = "none";
-                  }}
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="p-6 rounded-2xl cursor-pointer group hover:bg-white/[0.03] hover:border-white/10 transition-colors duration-300"
+                  style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -5124,24 +5113,11 @@ function OverviewPage({
             {clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').map((ev, i) => (
               <motion.div key={ev.id}
                 initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-shrink-0 w-[340px] p-6 rounded-3xl cursor-pointer snap-start"
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", transition: "all 0.45s ease" }}
+                whileHover={{ y: -6 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="flex-shrink-0 w-[340px] p-6 rounded-3xl cursor-pointer snap-start hover:bg-white/[0.04] hover:border-white/15 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-colors duration-300"
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
                 onClick={() => onNavigate("events", ev.id)}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.background  = "rgba(255,255,255,0.04)";
-                  el.style.borderColor = "rgba(255,255,255,0.13)";
-                  el.style.transform   = "translateY(-6px)";
-                  el.style.boxShadow   = "0 28px 70px rgba(0,0,0,0.55)";
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.background  = "rgba(255,255,255,0.018)";
-                  el.style.borderColor = "rgba(255,255,255,0.05)";
-                  el.style.transform   = "none";
-                  el.style.boxShadow   = "none";
-                }}
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className="flex items-center gap-2">
