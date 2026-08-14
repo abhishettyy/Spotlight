@@ -4,6 +4,12 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./app/App.tsx";
 import "./styles/index.css";
 
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.info = () => {};
+}
+
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
