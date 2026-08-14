@@ -129,6 +129,20 @@ function LiveTag({ size = "normal" }: { size?: "normal" | "large" }) {
   );
 }
 
+function getEventStatus(event?: { eventDate?: string | null; date?: string | null; eventEndDate?: string | null; status?: string } | null): "upcoming" | "live" | "previous" {
+  if (!event) return "previous";
+  const startStr = event.eventDate || event.date;
+  const start = parseLocalDate(startStr);
+  if (!start) return (event.status as any) || "upcoming";
+
+  const now = new Date();
+  const end = parseLocalDate(event.eventEndDate) || new Date(start.getTime() + 3 * 60 * 60 * 1000);
+
+  if (now < start) return "upcoming";
+  if (now >= start && now <= end) return "live";
+  return "previous";
+}
+
 interface ClubEvent {
   id: string;
   title: string;
@@ -1675,12 +1689,12 @@ function EventsPage({
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
   const isEventFinished = activeEvent 
-    ? (activeEvent.status === "previous" || (() => {
-        if (!activeEvent.date) return false;
+    ? (getEventStatus(activeEvent) === "previous" || (() => {
+        if (!activeEvent.date && !activeEvent.eventDate) return false;
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const d = new Date(activeEvent.date + 'T23:59:59');
-        return d < todayStart;
+        const start = parseLocalDate(activeEvent.eventDate || activeEvent.date);
+        return start ? start < todayStart : false;
       })())
     : false;
   const pending = registrations.filter(r => r.status?.toLowerCase() === "pending");
@@ -2500,11 +2514,11 @@ function EventsPage({
                         id="banner-update-input"
                         className="hidden"
                         onChange={handleBannerChange}
-                        disabled={bannerUploading || activeEvent.status === "previous"}
+                        disabled={bannerUploading || getEventStatus(activeEvent) === "previous"}
                       />
                       <label
                         htmlFor="banner-update-input"
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${activeEvent.status === "previous" ? "opacity-40 pointer-events-none" : "cursor-pointer bg-white/5 hover:bg-white/10 text-white"}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${getEventStatus(activeEvent) === "previous" ? "opacity-40 pointer-events-none" : "cursor-pointer bg-white/5 hover:bg-white/10 text-white"}`}
                         style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}
                       >
                         {bannerUploading ? (
@@ -2594,11 +2608,11 @@ function EventsPage({
 
             <div>
               <div className="flex items-center gap-3 mb-2">
-                {activeEvent.status === "live" ? (
+                {getEventStatus(activeEvent) === "live" ? (
                   <LiveTag size="large" />
                 ) : (
                   <span className="text-[11px] tracking-[0.3em] uppercase px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#aaa]" style={{ fontFamily: FM }}>
-                    Upcoming
+                    {getEventStatus(activeEvent) === "previous" ? "Ended" : "Upcoming"}
                   </span>
                 )}
                 <span className="text-[11px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
@@ -2655,9 +2669,9 @@ function EventsPage({
                  )}
                </div>
                <motion.button
-                 whileHover={activeEvent.status === "previous" ? undefined : { scale: 1.02 }}
-                 whileTap={activeEvent.status === "previous" ? undefined : { scale: 0.97 }}
-                 disabled={activeEvent.status === "previous"}
+                 whileHover={getEventStatus(activeEvent) === "previous" ? undefined : { scale: 1.02 }}
+                 whileTap={getEventStatus(activeEvent) === "previous" ? undefined : { scale: 0.97 }}
+                 disabled={getEventStatus(activeEvent) === "previous"}
                  onClick={() => {
                    const formatLocalDateStr = (dStr?: string | null) => {
                      if (!dStr) return "";
@@ -2698,9 +2712,9 @@ function EventsPage({
                    setShowEditPasswordModal(false);
                    setShowEditModal(true);
                  }}
-                 className={`flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300 ${activeEvent.status === "previous" ? "opacity-40 cursor-not-allowed" : ""}`}
+                 className={`flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300 ${getEventStatus(activeEvent) === "previous" ? "opacity-40 cursor-not-allowed" : ""}`}
                  onMouseEnter={e => {
-                   if (activeEvent.status === "previous") return;
+                   if (getEventStatus(activeEvent) === "previous") return;
                    e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.3)";
                  }}
                  onMouseLeave={e => {
@@ -3092,7 +3106,7 @@ function EventsPage({
         <div>
           <h2 className="text-lg font-medium text-white mb-5" style={{ fontFamily: FB }}>Upcoming Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").map((ev, i) => {
+            {EVENTS.filter(e => { const st = getEventStatus(e); return st === "upcoming" || st === "live"; }).map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
               const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
               const pendingFromState = allRegistrations.filter(r => r.eventId === ev.id && r.status?.toLowerCase() === 'pending');
@@ -3100,6 +3114,7 @@ function EventsPage({
               const pendingSolo = pendingFromState.filter(r => !r.team?.id).length;
               const calculatedPending = pendingSolo + pendingTeamIds.size;
               const pendingApprovals = allRegistrations.length > 0 ? calculatedPending : (ev.pendingCount ?? 0);
+              const statusVal = getEventStatus(ev);
               return (
                 <motion.div key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
@@ -3120,7 +3135,7 @@ function EventsPage({
                           {pendingApprovals > 9 ? '9+' : pendingApprovals} pending
                         </span>
                       )}
-                      {ev.status === "live" ? (
+                      {statusVal === "live" ? (
                         <LiveTag />
                       ) : (
                         <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
@@ -3159,7 +3174,7 @@ function EventsPage({
               );
             })}
 
-            {EVENTS.filter(e => e.status === "upcoming" || e.status === "live").length === 0 && (
+            {EVENTS.filter(e => { const st = getEventStatus(e); return st === "upcoming" || st === "live"; }).length === 0 && (
               <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
                 No upcoming events yet.
               </div>
@@ -3172,7 +3187,7 @@ function EventsPage({
             <h2 className="text-base font-medium text-white/50" style={{ fontFamily: FB }}>Past Events</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {EVENTS.filter(e => e.status === "previous").map((ev, i) => {
+            {EVENTS.filter(e => getEventStatus(e) === "previous").map((ev, i) => {
               const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
               const fill = ev.capacity > 0 ? (regCount / ev.capacity) * 100 : 0;
               return (
@@ -3215,7 +3230,7 @@ function EventsPage({
                 </motion.div>
               );
             })}
-            {EVENTS.filter(e => e.status === "previous").length === 0 && (
+            {EVENTS.filter(e => getEventStatus(e) === "previous").length === 0 && (
               <div className="col-span-3 p-6 rounded-2xl text-center text-xs text-[#444]" style={{ fontFamily: FB }}>No past events.</div>
             )}
           </div>
@@ -5055,7 +5070,7 @@ function OverviewPage({
       {/* KPI Cards — live data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {[
-          { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').length} active`,  delay: 0    },
+          { label: "Total Events",          value: totalEvents,        suffix: "",  sub: `${clubEvents.filter(e => { const st = getEventStatus(e); return st === 'upcoming' || st === 'live'; }).length} active`,  delay: 0    },
           { label: "Total Registrations",   value: totalRegistrations, suffix: "",  sub: "Across all events",                                                   delay: 0.08 },
           { label: "Pending Approvals",     value: pendingCount,       suffix: "",  sub: "Awaiting your review",                                                delay: 0.16 },
         ].map(k => (
@@ -5104,13 +5119,13 @@ function OverviewPage({
           </button>
         </div>
 
-        {clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').length === 0 ? (
+        {clubEvents.filter(e => { const st = getEventStatus(e); return st === 'upcoming' || st === 'live'; }).length === 0 ? (
           <div className="p-8 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
             No upcoming events yet. <button onClick={() => onNavigate("create")} className="text-[#F03D4E] hover:underline">Create one →</button>
           </div>
         ) : (
           <div className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10" style={{ scrollbarWidth: "none" }}>
-            {clubEvents.filter(e => e.status === 'upcoming' || e.status === 'live').map((ev, i) => (
+            {clubEvents.filter(e => { const st = getEventStatus(e); return st === 'upcoming' || st === 'live'; }).map((ev, i) => (
               <motion.div key={ev.id}
                 initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }}
                 whileHover={{ y: -6 }}
@@ -5123,7 +5138,7 @@ function OverviewPage({
                   <div className="flex items-center gap-2">
                     <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                   </div>
-                  {ev.status === 'live' ? (
+                  {getEventStatus(ev) === 'live' ? (
                     <LiveTag />
                   ) : (
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
