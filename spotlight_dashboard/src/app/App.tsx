@@ -24,29 +24,61 @@ const FB = "'Manrope', sans-serif";
 type View = "landing" | "auth" | "dashboard";
 type AuthTab = "login" | "register";
 
-const formatEventHeaderDate = (eventDateStr?: string | null, endDateStr?: string | null) => {
-  if (!eventDateStr) return "TBD";
-  const start = new Date(eventDateStr);
-  if (isNaN(start.getTime())) return eventDateStr;
-
-  let end: Date;
-  if (endDateStr) {
-    const parsedEnd = new Date(endDateStr);
-    end = !isNaN(parsedEnd.getTime())
-      ? parsedEnd
-      : new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
-  } else {
-    end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
+function parseLocalDate(dateStr?: string | null): Date | null {
+  if (!dateStr) return null;
+  const matches = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (matches) {
+    const [, year, month, day, hour, min, sec] = matches;
+    return new Date(
+      parseInt(year, 10),
+      parseInt(month, 10) - 1,
+      parseInt(day, 10),
+      hour ? parseInt(hour, 10) : 0,
+      min ? parseInt(min, 10) : 0,
+      sec ? parseInt(sec, 10) : 0
+    );
   }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDateTime12H(dateStr?: string | null, includeTime: boolean = true): string {
+  const d = parseLocalDate(dateStr);
+  if (!d) return "TBD";
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthStr = months[d.getMonth()];
+  const dayNum = d.getDate();
+  const yearNum = d.getFullYear();
+  const dateFormatted = `${monthStr} ${dayNum}, ${yearNum}`;
+
+  if (!includeTime) return dateFormatted;
+
+  let h = d.getHours() % 12;
+  if (h === 0) h = 12;
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
+  return `${dateFormatted} · ${h}:${m} ${ampm}`;
+}
+
+const formatEventHeaderDate = (eventDateStr?: string | null, endDateStr?: string | null) => {
+  const start = parseLocalDate(eventDateStr);
+  if (!start) return "TBD";
 
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const formatDate = (d: Date) => `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   const formatTime = (d: Date) => {
-    const h = d.getHours() % 12 === 0 ? 12 : d.getHours() % 12;
+    let h = d.getHours() % 12;
+    if (h === 0) h = 12;
     const m = String(d.getMinutes()).padStart(2, '0');
     const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
     return `${h}:${m} ${ampm}`;
   };
+
+  const end = parseLocalDate(endDateStr);
+  if (!end) {
+    return `${formatDate(start)} · ${formatTime(start)}`;
+  }
 
   if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth() && start.getDate() === end.getDate()) {
     return `${formatDate(start)} · ${formatTime(start)} - ${formatTime(end)}`;
@@ -1223,26 +1255,24 @@ const checkScanStatus = (eventDateStr?: string | null) => {
     return { enabled: false, reason: "Scan disabled", isUpcoming: false };
   }
 
-  const rawDate = new Date(eventDateStr);
-  if (isNaN(rawDate.getTime())) {
+  const eventStart = parseLocalDate(eventDateStr);
+  if (!eventStart) {
     return { enabled: false, reason: "Scan disabled", isUpcoming: false };
   }
 
   const now = new Date();
 
-  // If time is 00:00 (date only), default event start to 09:00 AM
-  const eventStart = new Date(rawDate);
-  if (eventStart.getHours() === 0 && eventStart.getMinutes() === 0) {
-    eventStart.setHours(9, 0, 0, 0);
-  }
-
   // 7:00 AM on the morning of event date
-  const windowStart = new Date(
+  const morningStart = new Date(
     eventStart.getFullYear(),
     eventStart.getMonth(),
     eventStart.getDate(),
     7, 0, 0, 0
   );
+  // If event starts earlier than 7 AM (e.g. Midnight 00:00), windowStart opens 2 hours before start
+  const windowStart = eventStart < morningStart 
+    ? new Date(eventStart.getTime() - 2 * 60 * 60 * 1000)
+    : morningStart;
 
   // 2 hours after event start time
   const windowEnd = new Date(eventStart.getTime() + 2 * 60 * 60 * 1000);
@@ -1954,7 +1984,7 @@ function EventsPage({
                                   )
                                 )}
                               </td>
-                              <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                              <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
                               <td className="p-4 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                   <button
@@ -2050,7 +2080,7 @@ function EventsPage({
                                 <span className="truncate block" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
                               )}
                             </td>
-                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
                             <td className="p-4 text-center">
                               <span className="text-[11px] text-green-500 uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Approved</span>
                             </td>
@@ -2657,7 +2687,7 @@ function EventsPage({
                <div>
                  {activeEvent.registrationDeadline && (
                    <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>
-                     Registration Deadline: <span className="text-white/80 font-medium">{new Date(activeEvent.registrationDeadline).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}</span>
+                     Registration Deadline: <span className="text-white/80 font-medium">{formatDateTime12H(activeEvent.registrationDeadline)}</span>
                    </p>
                  )}
                </div>
@@ -2668,8 +2698,8 @@ function EventsPage({
                  onClick={() => {
                    const formatLocalDateStr = (dStr?: string | null) => {
                      if (!dStr) return "";
-                     const d = new Date(dStr);
-                     if (isNaN(d.getTime())) return "";
+                     const d = parseLocalDate(dStr);
+                     if (!d) return "";
                      const year = d.getFullYear();
                      const month = String(d.getMonth() + 1).padStart(2, '0');
                      const day = String(d.getDate()).padStart(2, '0');
@@ -2679,11 +2709,7 @@ function EventsPage({
                    };
 
                    const startDateVal = formatLocalDateStr(activeEvent.eventDate || activeEvent.date);
-                   let defaultEndDateVal = formatLocalDateStr(activeEvent.eventEndDate);
-                   if (!defaultEndDateVal && startDateVal) {
-                     const datePart = startDateVal.split('T')[0];
-                     defaultEndDateVal = `${datePart}T23:59`;
-                   }
+                   const defaultEndDateVal = formatLocalDateStr(activeEvent.eventEndDate);
 
                    setEditForm({
                      date: startDateVal,
@@ -2828,13 +2854,8 @@ function EventsPage({
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Start Date &amp; Time</label>
                         <GlassDatePicker value={editForm.date} onChange={v => {
-                          let newEnd = editForm.endDate;
-                          if (v && (!editForm.endDate || editForm.endDate.split('T')[0] === editForm.date.split('T')[0])) {
-                            const datePart = v.split('T')[0];
-                            newEnd = `${datePart}T23:59`;
-                          }
-                          setEditForm(p => ({...p, date: v, endDate: newEnd}));
-                          setEditErrors(e => ({...e, date: "", endDate: ""}));
+                          setEditForm(p => ({...p, date: v}));
+                          setEditErrors(e => ({...e, date: ""}));
                         }} />
                         {editErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.date}</p>}
                       </div>
@@ -3574,13 +3595,8 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Start Date &amp; Time</label>
             <GlassDatePicker value={formData.date} onChange={v => {
-              let defaultEnd = formData.endDate;
-              if (v && (!formData.endDate || (formData.date && formData.endDate.split('T')[0] === formData.date.split('T')[0]))) {
-                const datePart = v.split('T')[0];
-                defaultEnd = `${datePart}T23:59`;
-              }
-              setFormData(p => ({...p, date: v, endDate: defaultEnd}));
-              setFieldErrors(fe => ({...fe, date: "", endDate: ""}));
+              setFormData(p => ({...p, date: v}));
+              setFieldErrors(fe => ({...fe, date: ""}));
             }} />
             {fieldErrors.date && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{fieldErrors.date}</p>}
           </div>
