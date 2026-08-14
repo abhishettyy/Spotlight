@@ -4716,7 +4716,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           ) : (
             <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain flex-shrink-0" />
           )}
-          <span className="text-[13px] tracking-[0.22em] font-semibold truncate max-w-[150px]" title={name} style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.9)" }}>
+          <span className="text-[13px] tracking-[0.16em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
             {name ? name.toUpperCase() : 'SPOTLIGHT'}
           </span>
         </div>
@@ -4765,7 +4765,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
             ) : (
               <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
             )}
-            <span className="text-xs sm:text-[13px] tracking-[0.18em] font-semibold truncate max-w-[180px]" title={name} style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.9)" }}>
+            <span className="text-xs sm:text-[13px] tracking-[0.14em] font-bold truncate max-w-[180px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
               {name ? name.toUpperCase() : 'SPOTLIGHT'}
             </span>
           </div>
@@ -4910,7 +4910,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                   ) : (
                     <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
                   )}
-                  <span className="text-xs tracking-[0.18em] font-semibold truncate max-w-[150px]" title={name} style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.9)" }}>
+                  <span className="text-xs tracking-[0.14em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
                     {name ? name.toUpperCase() : 'SPOTLIGHT'}
                   </span>
                 </div>
