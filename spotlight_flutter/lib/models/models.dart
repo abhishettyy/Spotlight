@@ -154,7 +154,7 @@ class EventModel {
     if (eventEndDate != null) return eventEndDate;
     final st = startDate;
     if (st == null) return null;
-    return DateTime(st.year, st.month, st.day, 23, 59, 59, 999);
+    return st.add(const Duration(hours: 3));
   }
 
   bool get isLive {
@@ -327,7 +327,7 @@ class TicketEventInfo {
     if (eventEndDate != null) return eventEndDate;
     final st = startDate;
     if (st == null) return null;
-    return DateTime(st.year, st.month, st.day, 23, 59, 59, 999);
+    return st.add(const Duration(hours: 3));
   }
 
   bool get isLive {
