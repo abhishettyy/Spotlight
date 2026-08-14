@@ -36,10 +36,11 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         minTeamSize: e.minTeamSize ?? null,
         registration_deadline: e.registrationDeadline ? e.registrationDeadline.toISOString() : null,
         registration_limit: e.registrationLimit,
-        club: e.club ? { id: e.club.id, name: e.club.name, upiId: (e as any).upiId ?? e.club.upiId } : null,
+        club: e.club ? { id: e.club.id, name: e.club.name, logoUrl: e.club.logoUrl, logo_url: e.club.logoUrl, upiId: (e as any).upiId ?? e.club.upiId } : null,
         upiId: (e as any).upiId ?? e.club?.upiId ?? null,
         qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
         bannerUrl: e.bannerUrl ?? null,
+        clubLogoUrl: e.club?.logoUrl ?? null,
         registrationCount: e._count?.registrations ?? 0,
       };
     });

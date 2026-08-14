@@ -221,7 +221,7 @@ class EventModel {
       id: json['id'],
       title: json['title'] ?? 'No Title',
       venue: json['venue'] ?? 'No Venue',
-      imageUrl: json['image_url'] ?? json['imageUrl'],
+      imageUrl: json['bannerUrl'] ?? json['banner_url'] ?? json['image_url'] ?? json['imageUrl'],
       category: categoryStr,
       price: (json['price'] ?? 0).toDouble(),
       description: json['description'],
@@ -233,7 +233,7 @@ class EventModel {
       upiId: json['upiId'] ?? json['upi_id'] ?? club?['upiId'] ?? club?['upi_id'],
       clubId: club?['id'],
       clubName: club?['name'],
-      clubLogoUrl: club?['logo_url'] ?? club?['logoUrl'],
+      clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'] ?? club?['logo'] ?? json['clubLogoUrl'] ?? json['club_logo_url'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationLimit: json['registrationLimit'] ?? json['registration_limit'],
       registrationDeadline: json['registration_deadline'] != null
