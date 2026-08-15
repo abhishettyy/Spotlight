@@ -1422,9 +1422,6 @@ function TicketScannerModal({
                 Scan Next Ticket
               </button>
             </div>
-            <p className="text-xs text-[#888] text-center" style={{ fontFamily: FB }}>
-              This team/attendee is already marked as present. No duplicate entry was created.
-            </p>
           </div>
         ) : !scanResult ? (
           <div className="flex flex-col lg:flex-row gap-6 items-center lg:items-start">

@@ -149,21 +149,58 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (provider.errorMessage.isNotEmpty) {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final textColor = isDark ? Colors.white : Colors.black87;
+                    final subTextColor = isDark ? Colors.white60 : Colors.black54;
+                    final primaryColor = Theme.of(context).colorScheme.primary;
+
                     return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.wifi_off_rounded,
-                              size: 48, color: Colors.grey[400]),
-                          const SizedBox(height: 12),
-                          Text('Could not load events',
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.wifi_off_rounded,
+                              size: 48,
+                              color: subTextColor.withOpacity(0.6),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Unable to load events',
                               style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              provider.errorMessage.toLowerCase().contains('socketexception') ||
+                                      provider.errorMessage.toLowerCase().contains('connection') ||
+                                      provider.errorMessage.toLowerCase().contains('timeout') ||
+                                      provider.errorMessage.toLowerCase().contains('clientexception')
+                                  ? 'Please check your internet connection and try again.'
+                                  : 'Something went wrong. Please try again later.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: subTextColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
                               onPressed: provider.loadEvents,
-                              child: const Text('Retry')),
-                        ],
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }
