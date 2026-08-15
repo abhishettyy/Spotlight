@@ -98,6 +98,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
       if (authProvider.isAuthenticated) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.loadFromCache();
         final apiService = ApiService();
 
         try {

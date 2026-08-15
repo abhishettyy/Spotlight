@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserModel {
   final String id;
@@ -53,7 +55,7 @@ class UserModel {
 
   bool get isProfileIncomplete {
     if (clubId != null && clubId!.isNotEmpty) {
-      return false; 
+      return false;
     }
     return usn == null || usn!.isEmpty ||
         branch == null || branch!.isEmpty ||
@@ -62,12 +64,52 @@ class UserModel {
 }
 
 class UserProvider with ChangeNotifier {
+  static const String _cacheKey = 'cached_user_profile_json';
   UserModel? _currentUser;
 
   UserModel? get currentUser => _currentUser;
 
+  UserProvider() {
+    loadFromCache();
+  }
+
+  Future<void> loadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_cacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final Map<String, dynamic> decoded = json.decode(cachedJson);
+        _currentUser = UserModel.fromJson(decoded);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading cached user profile: $e');
+    }
+  }
+
+  Future<void> _saveToCache(UserModel? user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (user != null) {
+        final encoded = json.encode(user.toJson());
+        await prefs.setString(_cacheKey, encoded);
+      } else {
+        await prefs.remove(_cacheKey);
+      }
+    } catch (e) {
+      debugPrint('Error caching user profile: $e');
+    }
+  }
+
   void setCurrentUser(UserModel? user) {
     _currentUser = user;
+    _saveToCache(user);
+    notifyListeners();
+  }
+
+  Future<void> clearUser() async {
+    _currentUser = null;
+    await _saveToCache(null);
     notifyListeners();
   }
 }

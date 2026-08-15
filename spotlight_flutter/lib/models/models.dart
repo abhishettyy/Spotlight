@@ -297,6 +297,12 @@ class ClubModel {
       logoUrl: json['logoUrl'] ?? json['logo_url'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'logoUrl': logoUrl,
+  };
 }
 
 class TicketEventInfo {

@@ -7,6 +7,8 @@ import 'clubs_screen.dart';
 import 'ticket_screen.dart';
 import 'profile_screen.dart';
 
+import '../widgets/offline_banner.dart';
+
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
 
@@ -30,6 +32,12 @@ class _MainLayoutState extends State<MainLayout> {
       body: Stack(
         children: [
           _screens[_currentIndex],
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: OfflineBanner(),
+          ),
           Positioned(
             bottom: 24,
             left: 24,
