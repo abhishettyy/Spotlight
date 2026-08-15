@@ -70,7 +70,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         try {
           Provider.of<SavedEventsProvider>(context, listen: false).load();
           Provider.of<EventsProvider>(context, listen: false).loadEvents();
-          Provider.of<NotificationsProvider>(context, listen: false).fetchNotifications();
+          Provider.of<NotificationsProvider>(context, listen: false).load();
         } catch (_) {}
 
         showSpotlightToast(

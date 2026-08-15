@@ -8,10 +8,10 @@ class SavedEventsProvider with ChangeNotifier {
   List<String> get savedEventIds => List.unmodifiable(_savedEventIds);
 
   SavedEventsProvider() {
-    _load();
+    load();
   }
 
-  Future<void> _load() async {
+  Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _savedEventIds = prefs.getStringList(_key) ?? [];
     notifyListeners();

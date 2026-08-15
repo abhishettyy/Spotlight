@@ -225,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           try {
             Provider.of<SavedEventsProvider>(context, listen: false).load();
             Provider.of<EventsProvider>(context, listen: false).loadEvents();
-            Provider.of<NotificationsProvider>(context, listen: false).fetchNotifications();
+            Provider.of<NotificationsProvider>(context, listen: false).load();
           } catch (_) {}
 
           showSpotlightToast(
