@@ -642,232 +642,251 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final fieldBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
             final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
-            return Container(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: sheetBg,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 38,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
+            return AutofillGroup(
+              child: Container(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 24,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
+                decoration: BoxDecoration(
+                  color: sheetBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white24 : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Update Password',
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: cs.onBackground,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Enter your old password and verify new password to save changes.',
-                      style: GoogleFonts.inter(fontSize: 13, color: subText),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
-                    if (errorText != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                errorText!,
-                                style: GoogleFonts.inter(color: Colors.red, fontSize: 13),
-                              ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: cs.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                          ],
+                            child: Icon(Icons.lock_reset_rounded, color: cs.primary, size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Change Password',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.onBackground,
+                                ),
+                              ),
+                              Text(
+                                'Update your account password',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: subText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      if (errorText != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            errorText!,
+                            style: GoogleFonts.inter(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      Text(
+                        'OLD PASSWORD',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                          color: subText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: oldPasswordController,
+                        obscureText: obscureOld,
+                        autofillHints: const [AutofillHints.password],
+                        style: GoogleFonts.inter(color: cs.onBackground),
+                        decoration: InputDecoration(
+                          hintText: 'Enter old password',
+                          hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
+                          filled: true,
+                          fillColor: fieldBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureOld ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              color: subText,
+                            ),
+                            onPressed: () => setModalState(() => obscureOld = !obscureOld),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                       ),
                       const SizedBox(height: 16),
-                    ],
 
-                    Text(
-                      'OLD PASSWORD',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
-                        color: subText,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: oldPasswordController,
-                      obscureText: obscureOld,
-                      style: GoogleFonts.inter(color: cs.onBackground),
-                      decoration: InputDecoration(
-                        hintText: 'Enter old password',
-                        hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
-                        filled: true,
-                        fillColor: fieldBg,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
+                      Text(
+                        'NEW PASSWORD',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                          color: subText,
                         ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            obscureOld ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: subText,
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: newPasswordController,
+                        obscureText: obscureNew,
+                        autofillHints: const [AutofillHints.newPassword],
+                        style: GoogleFonts.inter(color: cs.onBackground),
+                        decoration: InputDecoration(
+                          hintText: 'Enter new password',
+                          hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
+                          filled: true,
+                          fillColor: fieldBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
                           ),
-                          onPressed: () => setModalState(() => obscureOld = !obscureOld),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Text(
-                      'NEW PASSWORD',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
-                        color: subText,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: newPasswordController,
-                      obscureText: obscureNew,
-                      style: GoogleFonts.inter(color: cs.onBackground),
-                      decoration: InputDecoration(
-                        hintText: 'Enter new password',
-                        hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
-                        filled: true,
-                        fillColor: fieldBg,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            obscureNew ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: subText,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureNew ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              color: subText,
+                            ),
+                            onPressed: () => setModalState(() => obscureNew = !obscureNew),
                           ),
-                          onPressed: () => setModalState(() => obscureNew = !obscureNew),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    Text(
-                      'CONFIRM NEW PASSWORD',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
-                        color: subText,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: confirmPasswordController,
-                      obscureText: obscureConfirm,
-                      style: GoogleFonts.inter(color: cs.onBackground),
-                      decoration: InputDecoration(
-                        hintText: 'Confirm new password',
-                        hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
-                        filled: true,
-                        fillColor: fieldBg,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
+                      Text(
+                        'CONFIRM NEW PASSWORD',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                          color: subText,
                         ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: subText,
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirm,
+                        autofillHints: const [AutofillHints.newPassword],
+                        style: GoogleFonts.inter(color: cs.onBackground),
+                        decoration: InputDecoration(
+                          hintText: 'Confirm new password',
+                          hintStyle: GoogleFonts.inter(color: subText.withOpacity(0.6)),
+                          filled: true,
+                          fillColor: fieldBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
                           ),
-                          onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              color: subText,
+                            ),
+                            onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                    ),
-                    const SizedBox(height: 28),
+                      const SizedBox(height: 28),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: isSaving
-                            ? null
-                            : () async {
-                                final oldP = oldPasswordController.text.trim();
-                                final newP = newPasswordController.text.trim();
-                                final confirmP = confirmPasswordController.text.trim();
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: isSaving
+                              ? null
+                              : () async {
+                                  final oldP = oldPasswordController.text.trim();
+                                  final newP = newPasswordController.text.trim();
+                                  final confirmP = confirmPasswordController.text.trim();
 
-                                if (oldP.isEmpty) {
-                                  setModalState(() => errorText = 'Please enter your old password.');
-                                  return;
-                                }
-                                if (newP.isEmpty) {
-                                  setModalState(() => errorText = 'Please enter your new password.');
-                                  return;
-                                }
-                                if (newP.length < 4) {
-                                  setModalState(() => errorText = 'New password must be at least 4 characters.');
-                                  return;
-                                }
-                                if (newP != confirmP) {
-                                  setModalState(() => errorText = 'New passwords do not match.');
-                                  return;
-                                }
-
-                                setModalState(() {
-                                  isSaving = true;
-                                  errorText = null;
-                                });
-
-                                try {
-                                  await ApiService().changePassword(
-                                    oldPassword: oldP,
-                                    newPassword: newP,
-                                  );
-
-                                  if (mounted) {
-                                    Navigator.pop(modalContext);
-                                    showSpotlightToast(
-                                      context,
-                                      'Password updated successfully!',
-                                      icon: Icons.check_circle_rounded,
-                                    );
+                                  if (oldP.isEmpty) {
+                                    setModalState(() => errorText = 'Please enter your old password.');
+                                    return;
                                   }
-                                } catch (e) {
+                                  if (newP.isEmpty) {
+                                    setModalState(() => errorText = 'Please enter your new password.');
+                                    return;
+                                  }
+                                  if (newP.length < 4) {
+                                    setModalState(() => errorText = 'New password must be at least 4 characters.');
+                                    return;
+                                  }
+                                  if (newP != confirmP) {
+                                    setModalState(() => errorText = 'New passwords do not match.');
+                                    return;
+                                  }
+
                                   setModalState(() {
-                                    isSaving = false;
-                                    errorText = '$e'.replaceAll('AppException: ', '');
+                                    isSaving = true;
+                                    errorText = null;
                                   });
-                                }
-                              },
+
+                                  try {
+                                    await ApiService().changePassword(
+                                      oldPassword: oldP,
+                                      newPassword: newP,
+                                    );
+
+                                    TextInput.finishAutofillContext();
+
+                                    if (mounted) {
+                                      Navigator.pop(modalContext);
+                                      showSpotlightToast(
+                                        context,
+                                        'Password updated successfully!',
+                                        icon: Icons.check_circle_rounded,
+                                      );
+                                    }
+                                  } catch (e) {
+                                    setModalState(() {
+                                      isSaving = false;
+                                      errorText = '$e'.replaceAll('AppException: ', '');
+                                    });
+                                  }
+                                },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: cs.primary,
                           shape: RoundedRectangleBorder(
@@ -894,7 +913,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-            );
+            ),
+          );
           },
         );
       },

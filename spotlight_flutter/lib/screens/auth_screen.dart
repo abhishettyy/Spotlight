@@ -287,33 +287,36 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 32),
 
-              Form(
-                key: _formKey,
-                autovalidateMode: _autoValidateMode,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isLogin) ...[
-                      _buildTextField(
-                        controller: _emailController,
-                        labelText: 'Email',
-                        hintText: 'Enter your email',
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid email';
+              AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  autovalidateMode: _autoValidateMode,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isLogin) ...[
+                        _buildTextField(
+                          controller: _emailController,
+                          labelText: 'Email',
+                          hintText: 'Enter your email',
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email, AutofillHints.username],
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              if (_autoValidateMode == AutovalidateMode.always) return 'Invalid email';
+                              return null;
+                            }
+                            if (!_isEmailValid) return 'Invalid email';
                             return null;
-                          }
-                          if (!_isEmailValid) return 'Invalid email';
-                          return null;
-                        },
-                      ),
+                          },
+                        ),
                       const SizedBox(height: 20),
                       _buildTextField(
                         controller: _passwordController,
                         labelText: 'Password',
                         hintText: 'Enter your password',
                         obscureText: obscurePassword,
+                        autofillHints: const [AutofillHints.password],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
                             if (_autoValidateMode == AutovalidateMode.always) return 'Invalid password';
@@ -337,6 +340,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         controller: _nameController,
                         labelText: 'Full Name',
                         hintText: 'Enter your full name',
+                        autofillHints: const [AutofillHints.name],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
                             if (_autoValidateMode == AutovalidateMode.always) return 'Invalid name';
@@ -351,6 +355,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         labelText: 'Email',
                         hintText: 'Enter your email',
                         keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email, AutofillHints.newUsername],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
                             if (_autoValidateMode == AutovalidateMode.always) return 'Invalid email';
@@ -366,6 +371,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         labelText: 'Password',
                         hintText: 'Create a password',
                         obscureText: obscurePassword,
+                        autofillHints: const [AutofillHints.newPassword],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
                             if (_autoValidateMode == AutovalidateMode.always) return 'Invalid password';
@@ -463,6 +469,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         labelText: 'Phone Number',
                         hintText: '10-digit number',
                         keyboardType: TextInputType.phone,
+                        autofillHints: const [AutofillHints.telephoneNumber],
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
@@ -477,7 +484,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
+            ),
+            const SizedBox(height: 40),
 
               SizedBox(
                 width: double.infinity,
@@ -516,7 +524,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       }
 
                       if (user != null) {
-
+                        TextInput.finishAutofillContext();
                         await authProvider.tryAutoLogin();
                         userProvider.setCurrentUser(user);
                         await eventsProvider.refreshEvents();
@@ -798,6 +806,7 @@ class _AuthScreenState extends State<AuthScreen> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     FormFieldValidator<String>? validator,
     Widget? suffixIcon,
+    Iterable<String>? autofillHints,
   }) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
@@ -825,6 +834,7 @@ class _AuthScreenState extends State<AuthScreen> {
           inputFormatters: inputFormatters,
           textCapitalization: textCapitalization,
           validator: validator,
+          autofillHints: autofillHints,
           style: GoogleFonts.inter(color: cs.onBackground, fontSize: 15),
           decoration: InputDecoration(
             hintText: hintText,
