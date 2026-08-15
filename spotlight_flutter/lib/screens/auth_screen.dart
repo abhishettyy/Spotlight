@@ -393,10 +393,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         inputFormatters: [UpperCaseTextFormatter()],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid USN';
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid';
                             return null;
                           }
-                          if (!_isUsnValid) return 'Invalid USN';
+                          if (!_isUsnValid) return 'Invalid';
                           return null;
                         },
                       ),
@@ -412,7 +412,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               textCapitalization: TextCapitalization.characters,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid branch';
+                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid';
                                   return null;
                                 }
                                 return null;
@@ -429,10 +429,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid year';
+                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid';
                                   return null;
                                 }
-                                if (!_isYearValid) return 'Invalid year';
+                                if (!_isYearValid) return 'Invalid';
                                 return null;
                               },
                             ),
@@ -447,10 +447,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid semester';
+                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid';
                                   return null;
                                 }
-                                if (!_isSemValid) return 'Invalid semester';
+                                if (!_isSemValid) return 'Invalid';
                                 return null;
                               },
                             ),
@@ -466,10 +466,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid phone number';
+                            if (_autoValidateMode == AutovalidateMode.always) return 'Invalid';
                             return null;
                           }
-                          if (!_isPhoneValid) return 'Invalid phone number';
+                          if (!_isPhoneValid) return 'Invalid';
                           return null;
                         },
                       ),
