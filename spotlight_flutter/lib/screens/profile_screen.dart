@@ -1017,7 +1017,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildStatCard(
                         context,
                         Icons.workspace_premium_outlined,
-                        _statsLoading ? '—' : '$_eventsCount',
+                        _statsLoading ? '0' : '$_eventsCount',
                         'Events',
                         onTap: () => Navigator.push(
                           context,
@@ -1043,7 +1043,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildStatCard(
                         context,
                         Icons.people_outline,
-                        _statsLoading ? '—' : '$_clubsCount',
+                        _statsLoading ? '0' : '$_clubsCount',
                         'Clubs',
                         onTap: () => Navigator.push(
                           context,
