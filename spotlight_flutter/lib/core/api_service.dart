@@ -281,6 +281,7 @@ class ApiService {
         } else if (data is Map && data.containsKey('tickets')) {
           raw = data['tickets'] as List<dynamic>;
         }
+        await prefs.setString('cached_user_tickets_json', json.encode(raw));
         return raw
             .map((t) => TicketModel.fromJson(t as Map<String, dynamic>))
             .toList();
@@ -288,6 +289,16 @@ class ApiService {
         throw AppException('Failed to load tickets: ${response.statusCode}');
       }
     } catch (e) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedJson = prefs.getString('cached_user_tickets_json');
+        if (cachedJson != null && cachedJson.isNotEmpty) {
+          final List<dynamic> raw = json.decode(cachedJson);
+          return raw
+              .map((t) => TicketModel.fromJson(t as Map<String, dynamic>))
+              .toList();
+        }
+      } catch (_) {}
       throw AppException(formatExceptionMessage(e, 'Failed to fetch tickets.'));
     }
   }

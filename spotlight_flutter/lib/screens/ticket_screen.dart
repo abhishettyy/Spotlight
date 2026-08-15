@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,26 +39,50 @@ class _TicketScreenState extends State<TicketScreen> {
   }
 
   Future<void> _loadTickets() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
     try {
       final prefs = await SharedPreferences.getInstance();
       _currentUserId = prefs.getString('userId') ?? '';
+      final cachedJson = prefs.getString('cached_user_tickets_json');
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> raw = json.decode(cachedJson);
+        final cachedTickets = raw.map((t) => TicketModel.fromJson(t as Map<String, dynamic>)).toList();
+        if (mounted && _tickets.isEmpty) {
+          setState(() {
+            _tickets = cachedTickets;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (_) {}
+
+    if (_tickets.isEmpty) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
+
+    try {
       final tickets = await ApiService().fetchUserTickets();
       if (mounted) {
         setState(() {
           _tickets = tickets;
           _isLoading = false;
+          _error = null;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
+        if (_tickets.isEmpty) {
+          setState(() {
+            _error = e.toString();
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }

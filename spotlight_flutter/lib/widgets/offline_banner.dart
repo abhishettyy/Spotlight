@@ -53,35 +53,18 @@ class _OfflineBannerState extends State<OfflineBanner> {
       bottom: false,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E24),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.amber.withOpacity(0.4), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: const Center(
+          child: Text(
+            'You are offline, connect to internet',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.amber,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.wifi_off_rounded, color: Colors.amber, size: 18),
-            SizedBox(width: 8),
-            Text(
-              'You are offline, connect to internet',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
