@@ -570,6 +570,41 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
+              const SizedBox(height: 16),
+
+              Center(
+                child: Text.rich(
+                  TextSpan(
+                    text: isLogin ? 'By signing in, you agree to our ' : 'By registering, you agree to our ',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: subTextColor.withOpacity(0.8),
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Terms & Privacy Policy',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: cs.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PrivacyPolicyScreen(),
+                              ),
+                            );
+                          },
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
               if (isLogin) ...[
                 const SizedBox(height: 40),
 
@@ -631,40 +666,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   title: 'Instant event notifications',
                   subtitle: 'Stay updated with dynamic reminders and slot alerts.',
                   isDark: isDark,
-                ),
-                const SizedBox(height: 48),
-
-                Center(
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'By signing in you agree to our ',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: subTextColor.withOpacity(0.55),
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Terms & Privacy Policy',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : Colors.black87,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const PrivacyPolicyScreen(),
-                                ),
-                              );
-                            },
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
                 ),
                 const SizedBox(height: 24),
               ],

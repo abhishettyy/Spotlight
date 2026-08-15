@@ -119,6 +119,7 @@ class ApiService {
   Future<List<ClubModel>> fetchClubs() async {
     try {
       final headers = await _getHeaders();
+      final prefs = await SharedPreferences.getInstance();
       final response = await http.get(
         Uri.parse('$baseUrl/clubs'),
         headers: headers,
@@ -132,11 +133,20 @@ class ApiService {
         } else if (data is Map && data.containsKey('clubs')) {
           clubsJson = data['clubs'] as List<dynamic>;
         }
+        await prefs.setString('cached_clubs_json', json.encode(clubsJson));
         return clubsJson.map((e) => ClubModel.fromJson(e as Map<String, dynamic>)).toList();
       } else {
         throw AppException('Failed to load clubs: ${response.statusCode}');
       }
     } catch (e) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedJson = prefs.getString('cached_clubs_json');
+        if (cachedJson != null && cachedJson.isNotEmpty) {
+          final List<dynamic> raw = json.decode(cachedJson);
+          return raw.map((e) => ClubModel.fromJson(e as Map<String, dynamic>)).toList();
+        }
+      } catch (_) {}
       throw AppException(formatExceptionMessage(e, 'Failed to fetch clubs.'));
     }
   }

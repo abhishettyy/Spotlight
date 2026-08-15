@@ -300,8 +300,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Text('Could not load notifications',
               style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-          ElevatedButton(
-              onPressed: provider.load, child: const Text('Retry')),
+          provider.isLoading
+              ? SizedBox(
+                  height: 36,
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                )
+              : ElevatedButton(
+                  onPressed: provider.load,
+                  child: const Text('Retry'),
+                ),
         ],
       ),
     );

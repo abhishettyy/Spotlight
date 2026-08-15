@@ -189,16 +189,30 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: provider.loadEvents,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              child: const Text('Retry'),
-                            ),
+                            provider.isLoading
+                                ? SizedBox(
+                                    height: 36,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : ElevatedButton(
+                                    onPressed: provider.loadEvents,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                    child: const Text('Retry'),
+                                  ),
                           ],
                         ),
                       ),

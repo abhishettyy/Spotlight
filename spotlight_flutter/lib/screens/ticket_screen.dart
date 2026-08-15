@@ -203,10 +203,24 @@ class _TicketScreenState extends State<TicketScreen> {
                 style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadTickets,
-              child: const Text('Retry'),
-            ),
+            _isLoading
+                ? SizedBox(
+                    height: 36,
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: _loadTickets,
+                    child: const Text('Retry'),
+                  ),
           ],
         ),
       ),

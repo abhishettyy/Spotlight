@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/api_service.dart';
 import '../core/events_provider.dart';
+import '../core/clubs_provider.dart';
 import '../core/smooth_route.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
@@ -36,10 +37,20 @@ class _ClubsScreenState extends State<ClubsScreen> {
   }
 
   Future<void> _loadClubs() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    final cachedProviderClubs = Provider.of<ClubsProvider>(context, listen: false).clubs;
+    if (cachedProviderClubs.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _allClubs = List.from(cachedProviderClubs);
+          _isLoading = false;
+        });
+      }
+    } else {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final clubs = await ApiService().fetchClubs();
@@ -64,12 +75,13 @@ class _ClubsScreenState extends State<ClubsScreen> {
         setState(() {
           _allClubs = clubs;
           _isLoading = false;
+          _error = null;
         });
       }
     } catch (e) {
       final events = Provider.of<EventsProvider>(context, listen: false).events;
-      final seen = <String>{};
-      final fallbackClubs = <ClubModel>[];
+      final seen = _allClubs.map((c) => c.id).toSet();
+      final fallbackClubs = List<ClubModel>.from(_allClubs);
 
       for (final e in events) {
         final clubId = e.clubId ?? e.clubName;
@@ -187,10 +199,24 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                   style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 const SizedBox(height: 8),
-                                ElevatedButton(
-                                  onPressed: _loadClubs,
-                                  child: const Text('Retry'),
-                                ),
+                                _isLoading
+                                    ? SizedBox(
+                                        height: 36,
+                                        child: Center(
+                                          child: SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : ElevatedButton(
+                                        onPressed: _loadClubs,
+                                        child: const Text('Retry'),
+                                      ),
                               ],
                             ),
                           )
