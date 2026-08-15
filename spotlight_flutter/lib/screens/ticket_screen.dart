@@ -421,7 +421,7 @@ class _TicketScreenState extends State<TicketScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${event.category.toUpperCase()}${event.clubName != null && event.clubName!.isNotEmpty ? ' • ${event.clubName!.toUpperCase()}' : ''}',
+                      '${event.category.toUpperCase()}${event.clubName != null && event.clubName!.isNotEmpty ? ' • ${event.clubName}' : ''}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -740,7 +740,7 @@ class _TicketScreenState extends State<TicketScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (clubName.isNotEmpty)
-                    Text(clubName.toUpperCase(),
+                    Text(clubName,
                         style: GoogleFonts.inter(
                             color: subText,
                             fontSize: 11,

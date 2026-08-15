@@ -87,7 +87,7 @@ class EventCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event.club?.name.toUpperCase() ?? 'CLUB',
+                    event.club?.name ?? 'Club',
                     style: GoogleFonts.inter(
                       color: Colors.white70,
                       fontWeight: FontWeight.w700,
