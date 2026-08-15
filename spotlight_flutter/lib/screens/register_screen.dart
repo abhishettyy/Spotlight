@@ -6,6 +6,9 @@ import '../core/api_service.dart';
 import '../core/user_provider.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
+import '../core/saved_events_provider.dart';
+import '../core/events_provider.dart';
+import '../core/notifications_provider.dart';
 import 'payment_screen.dart';
 
 enum RegistrationType { solo, createTeam, joinTeam }
@@ -219,6 +222,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           );
         } else {
+          try {
+            Provider.of<SavedEventsProvider>(context, listen: false).load();
+            Provider.of<EventsProvider>(context, listen: false).loadEvents();
+            Provider.of<NotificationsProvider>(context, listen: false).fetchNotifications();
+          } catch (_) {}
+
           showSpotlightToast(
             context,
             'Registration submitted successfully!',

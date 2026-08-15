@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../core/api_service.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
+import '../core/saved_events_provider.dart';
+import '../core/events_provider.dart';
+import '../core/notifications_provider.dart';
 import '../widgets/custom_image.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -63,6 +67,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final generatedPasskey = resData['passkey'] as String?;
 
       if (mounted) {
+        try {
+          Provider.of<SavedEventsProvider>(context, listen: false).load();
+          Provider.of<EventsProvider>(context, listen: false).loadEvents();
+          Provider.of<NotificationsProvider>(context, listen: false).fetchNotifications();
+        } catch (_) {}
+
         showSpotlightToast(
           context,
           'Registration & Payment submitted successfully!',
@@ -328,29 +338,36 @@ class PaymentPendingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
-            const SizedBox(height: 24),
-            Text('Payment Pending', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                'Your payment details have been submitted. It will be verified by the organizers shortly.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey, height: 1.5),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      },
+      child: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+              const SizedBox(height: 24),
+              Text('Payment Pending', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Your payment details have been submitted. It will be verified by the organizers shortly.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 16, color: Colors.grey, height: 1.5),
+                ),
               ),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-              child: const Text('Back to Home'),
-            ),
-          ],
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                child: const Text('Back to Home'),
+              ),
+            ],
+          ),
         ),
       ),
     );
