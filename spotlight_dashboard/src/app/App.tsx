@@ -4,7 +4,7 @@ import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
   ChevronRight, Eye, EyeOff, LayoutDashboard,
   CheckCircle, Zap, Shield, ChevronLeft, ChevronDown, Check, Upload,
-  X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle, Image as ImageIcon, Camera, QrCode
+  X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle, Image as ImageIcon, Camera, QrCode, RotateCcw
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
@@ -1329,7 +1329,7 @@ function TicketScannerModal({
       }
     };
 
-    if (!scanResult && !alreadyCheckedIn) {
+    if (!scanResult && !alreadyCheckedIn && !scanError) {
       const timer = setTimeout(startScanner, 150);
       return () => {
         clearTimeout(timer);
@@ -1338,7 +1338,7 @@ function TicketScannerModal({
         }
       };
     }
-  }, [scanResult, alreadyCheckedIn]);
+  }, [scanResult, alreadyCheckedIn, scanError]);
 
   const handleProcessTicket = async (ticketId: string) => {
     if (!ticketId.trim()) return;
@@ -1492,11 +1492,21 @@ function TicketScannerModal({
                 </button>
               </div>
               {scanError && (
-                <div className="p-3.5 rounded-xl bg-[#F03D4E]/10 border border-[#F03D4E]/20 flex items-start gap-2.5 text-left">
-                  <AlertTriangle size={16} className="text-[#F03D4E] shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#ff949d] font-medium leading-relaxed" style={{ fontFamily: FB }}>
-                    {scanError}
-                  </p>
+                <div className="p-3.5 rounded-xl bg-[#F03D4E]/10 border border-[#F03D4E]/20 flex items-center justify-between gap-3 text-left">
+                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                    <AlertTriangle size={16} className="text-[#F03D4E] shrink-0 mt-0.5" />
+                    <p className="text-xs text-[#ff949d] font-medium leading-relaxed" style={{ fontFamily: FB }}>
+                      {scanError}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setScanError(null); setManualCode(""); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F03D4E] text-white text-xs font-semibold hover:bg-[#d63545] transition-all cursor-pointer flex-shrink-0 shadow-sm"
+                    style={{ fontFamily: FB }}
+                  >
+                    <RotateCcw size={12} />
+                    Try Again
+                  </button>
                 </div>
               )}
             </div>
