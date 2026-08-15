@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/auth_provider.dart';
@@ -17,7 +18,16 @@ import 'core/clubs_provider.dart';
 import 'core/notification_prefs_provider.dart';
 import 'screens/onboarding_screen.dart';
 
+class SpotlightHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 void main() {
+  HttpOverrides.global = SpotlightHttpOverrides();
   runApp(const SpotlightApp());
 }
 

@@ -5,8 +5,9 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
     return base64Str; 
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || 'https://flmxldwdbqbyrokmglus.supabase.co';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const rawSupabaseUrl = process.env.SUPABASE_URL || 'https://flmxldwdbqbyrokmglus.supabase.co';
+  const supabaseUrl = rawSupabaseUrl.replace(/[\r\n\s]+/g, '').trim();
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ? process.env.SUPABASE_SERVICE_ROLE_KEY.replace(/[\r\n\s]+/g, '').trim() : undefined;
 
   if (!supabaseKey) {
     console.warn('[Storage] Warning: SUPABASE_SERVICE_ROLE_KEY is not defined in .env. Image upload will fallback to original value.');
@@ -65,8 +66,9 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
 export async function deleteImage(publicUrl: string): Promise<boolean> {
   if (!publicUrl) return false;
 
-  const supabaseUrl = process.env.SUPABASE_URL || 'https://flmxldwdbqbyrokmglus.supabase.co';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const rawSupabaseUrl = process.env.SUPABASE_URL || 'https://flmxldwdbqbyrokmglus.supabase.co';
+  const supabaseUrl = rawSupabaseUrl.replace(/[\r\n\s]+/g, '').trim();
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ? process.env.SUPABASE_SERVICE_ROLE_KEY.replace(/[\r\n\s]+/g, '').trim() : undefined;
 
   if (!supabaseKey) {
     console.warn('[Storage] Warning: SUPABASE_SERVICE_ROLE_KEY is not defined. Cannot delete image.');
