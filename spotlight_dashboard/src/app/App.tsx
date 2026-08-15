@@ -4721,7 +4721,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
             <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain flex-shrink-0" />
           )}
           <span className="text-[13px] tracking-[0.16em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
-            {name ? name.toUpperCase() : 'SPOTLIGHT'}
+            {name || 'SPOTLIGHT'}
           </span>
         </div>
         <div className="px-4 mb-5 flex-shrink-0">
@@ -4770,7 +4770,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
             )}
             <span className="text-xs sm:text-[13px] tracking-[0.14em] font-bold truncate max-w-[180px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
-              {name ? name.toUpperCase() : 'SPOTLIGHT'}
+              {name || 'SPOTLIGHT'}
             </span>
           </div>
           <div className="w-8" />
@@ -4915,7 +4915,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                     <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
                   )}
                   <span className="text-xs tracking-[0.14em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
-                    {name ? name.toUpperCase() : 'SPOTLIGHT'}
+                    {name || 'SPOTLIGHT'}
                   </span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white transition-colors p-1.5 rounded-lg active:bg-white/10">
