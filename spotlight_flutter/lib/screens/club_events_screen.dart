@@ -21,11 +21,11 @@ class ClubEventsScreen extends StatelessWidget {
   });
 
   String _formatDeadline(DateTime deadline) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final h = deadline.hour.toString().padLeft(2, '0');
-    final m = deadline.minute.toString().padLeft(2, '0');
-    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year}  $h:$m';
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hourInt = deadline.hour % 12 == 0 ? 12 : deadline.hour % 12;
+    final amPm = deadline.hour >= 12 ? 'PM' : 'AM';
+    final minStr = deadline.minute.toString().padLeft(2, '0');
+    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year} · $hourInt:$minStr $amPm';
   }
 
   @override

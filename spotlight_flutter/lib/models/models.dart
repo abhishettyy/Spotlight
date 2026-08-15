@@ -16,6 +16,23 @@ class Club {
   }
 }
 
+DateTime? parseLocalDate(dynamic raw) {
+  if (raw == null) return null;
+  final str = raw.toString().trim();
+  if (str.isEmpty) return null;
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?').firstMatch(str);
+  if (match != null) {
+    final year = int.parse(match.group(1)!);
+    final month = int.parse(match.group(2)!);
+    final day = int.parse(match.group(3)!);
+    final hour = match.group(4) != null ? int.parse(match.group(4)!) : 0;
+    final minute = match.group(5) != null ? int.parse(match.group(5)!) : 0;
+    final second = match.group(6) != null ? int.parse(match.group(6)!) : 0;
+    return DateTime(year, month, day, hour, minute, second);
+  }
+  return DateTime.tryParse(str);
+}
+
 class Event {
   final String id;
   final String clubId;
@@ -52,12 +69,8 @@ class Event {
       eventType: json['event_type'],
       fee: json['fee'] ?? 0,
       registrationLimit: json['registration_limit'],
-      registrationDeadline: json['registration_deadline'] != null
-          ? DateTime.parse(json['registration_deadline'])
-          : null,
-      eventDate: json['event_date'] != null
-          ? DateTime.parse(json['event_date'])
-          : null,
+      registrationDeadline: parseLocalDate(json['registration_deadline'] ?? json['registrationDeadline']),
+      eventDate: parseLocalDate(json['event_date'] ?? json['eventDate'] ?? json['date']),
       qrUrl: json['qr_url'],
       club: json['clubs'] != null ? Club.fromJson(json['clubs']) : null,
     );
@@ -236,23 +249,9 @@ class EventModel {
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'] ?? club?['logo'] ?? json['clubLogoUrl'] ?? json['club_logo_url'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationLimit: json['registrationLimit'] ?? json['registration_limit'],
-      registrationDeadline: json['registration_deadline'] != null
-          ? DateTime.tryParse(json['registration_deadline'].toString())?.toLocal()
-          : json['registrationDeadline'] != null
-              ? DateTime.tryParse(json['registrationDeadline'].toString())?.toLocal()
-              : null,
-      eventDate: json['eventDate'] != null
-          ? DateTime.tryParse(json['eventDate'].toString())?.toLocal()
-          : json['event_date'] != null
-              ? DateTime.tryParse(json['event_date'].toString())?.toLocal()
-              : json['date'] != null
-                  ? DateTime.tryParse(json['date'].toString())?.toLocal()
-                  : null,
-      eventEndDate: json['eventEndDate'] != null
-          ? DateTime.tryParse(json['eventEndDate'].toString())?.toLocal()
-          : json['event_end_date'] != null
-              ? DateTime.tryParse(json['event_end_date'].toString())?.toLocal()
-              : null,
+      registrationDeadline: parseLocalDate(json['registration_deadline'] ?? json['registrationDeadline']),
+      eventDate: parseLocalDate(json['eventDate'] ?? json['event_date'] ?? json['date']),
+      eventEndDate: parseLocalDate(json['eventEndDate'] ?? json['event_end_date']),
     );
   }
 

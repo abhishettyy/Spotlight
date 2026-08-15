@@ -487,7 +487,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              'Deadline: ${DateFormat('MMM d, yyyy HH:mm').format(event.registrationDeadline!)}',
+                              'Deadline: ${DateFormat('MMM d, yyyy · h:mm a').format(event.registrationDeadline!)}',
                               style: GoogleFonts.inter(
                                 fontSize: 10,
                                 color: const Color(0xFFF59E0B),
