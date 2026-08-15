@@ -312,23 +312,11 @@ class _TicketScreenState extends State<TicketScreen> {
 
     String day = '01';
     String month = 'JAN';
-    if (event.date != null) {
-      final parsed = DateTime.tryParse(event.date!);
-      if (parsed != null) {
-        day = parsed.day.toString().padLeft(2, '0');
-        final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        month = months[parsed.month - 1];
-      } else {
-        final parts = event.date!.split('-');
-        if (parts.length == 3) {
-          day = parts[2].padLeft(2, '0');
-          final mIndex = int.tryParse(parts[1]);
-          if (mIndex != null && mIndex >= 1 && mIndex <= 12) {
-            final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-            month = months[mIndex - 1];
-          }
-        }
-      }
+    final st = event.startDate;
+    if (st != null) {
+      day = st.day.toString().padLeft(2, '0');
+      final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      month = months[st.month - 1];
     }
 
     final imageUrl = event.imageUrl;

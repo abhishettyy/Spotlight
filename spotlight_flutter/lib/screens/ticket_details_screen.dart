@@ -25,13 +25,13 @@ class TicketDetailsScreen extends StatelessWidget {
     DateTime? endDate;
 
     if (eventDateRaw != null && eventDateRaw.toString().isNotEmpty) {
-      startDate = DateTime.tryParse(eventDateRaw.toString())?.toLocal();
+      startDate = parseLocalDate(eventDateRaw);
     } else if (dateStr.isNotEmpty) {
-      startDate = DateTime.tryParse(dateStr)?.toLocal();
+      startDate = parseLocalDate(dateStr);
     }
 
     if (eventEndDateRaw != null && eventEndDateRaw.toString().isNotEmpty) {
-      endDate = DateTime.tryParse(eventEndDateRaw.toString())?.toLocal();
+      endDate = parseLocalDate(eventEndDateRaw);
     }
 
     String formattedDate = 'TBD';

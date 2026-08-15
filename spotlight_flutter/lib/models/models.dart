@@ -384,17 +384,9 @@ class TicketEventInfo {
       clubId: club?['id'],
       clubName: club?['name'],
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'],
-      imageUrl: json['image_url'] ?? json['imageUrl'],
-      eventDate: json['eventDate'] != null
-          ? DateTime.tryParse(json['eventDate'].toString())?.toLocal()
-          : json['event_date'] != null
-              ? DateTime.tryParse(json['event_date'].toString())?.toLocal()
-              : null,
-      eventEndDate: json['eventEndDate'] != null
-          ? DateTime.tryParse(json['eventEndDate'].toString())?.toLocal()
-          : json['event_end_date'] != null
-              ? DateTime.tryParse(json['event_end_date'].toString())?.toLocal()
-              : null,
+      imageUrl: json['bannerUrl'] ?? json['banner_url'] ?? json['image_url'] ?? json['imageUrl'],
+      eventDate: parseLocalDate(json['eventDate'] ?? json['event_date'] ?? json['date']),
+      eventEndDate: parseLocalDate(json['eventEndDate'] ?? json['event_end_date']),
     );
   }
 }
