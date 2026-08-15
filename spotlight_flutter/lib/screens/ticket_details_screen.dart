@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
+import '../models/models.dart';
 
 class TicketDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> ticket;
