@@ -570,40 +570,42 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              if (!isLogin) ...[
+                const SizedBox(height: 16),
 
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    text: isLogin ? 'By signing in, you agree to our ' : 'By registering, you agree to our ',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: subTextColor.withOpacity(0.8),
-                    ),
-                    children: [
-                      TextSpan(
-                        text: 'Terms & Privacy Policy',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: cs.primary,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const PrivacyPolicyScreen(),
-                              ),
-                            );
-                          },
+                Center(
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'By creating an account, you agree to our ',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: subTextColor.withOpacity(0.8),
                       ),
-                    ],
+                      children: [
+                        TextSpan(
+                          text: 'Terms & Privacy Policy',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: cs.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const PrivacyPolicyScreen(),
+                                ),
+                              );
+                            },
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ),
+              ],
 
               if (isLogin) ...[
                 const SizedBox(height: 40),
