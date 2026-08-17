@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "name": "spotlight-privacy-policy",
+  "cleanUrls": true,
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
