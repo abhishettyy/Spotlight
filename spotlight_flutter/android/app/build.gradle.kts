@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.spotlight.android"
+    namespace = "com.spotlight.connect"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.spotlight.android"
+        applicationId = "com.spotlight.connect"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
