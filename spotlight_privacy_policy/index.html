@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Spotlight</title>
+    <title>Privacy Policy - Spotlight Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0d0e12;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --card-border: rgba(255, 255, 255, 0.08);
+            --bg-color: #0b0c10;
+            --card-bg: rgba(255, 255, 255, 0.035);
+            --card-border: rgba(255, 255, 255, 0.09);
             --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.15);
+            --primary-glow: rgba(99, 102, 241, 0.16);
             --accent: #10b981;
             --text-main: #f3f4f6;
             --text-sub: #9ca3af;
+            --code-bg: rgba(255, 255, 255, 0.06);
         }
 
         * {
@@ -29,8 +30,8 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            line-height: 1.6;
-            padding: 40px 20px;
+            line-height: 1.7;
+            padding: 48px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -38,12 +39,12 @@
         }
 
         .container {
-            max-width: 760px;
+            max-width: 820px;
             width: 100%;
         }
 
         header {
-            margin-bottom: 36px;
+            margin-bottom: 40px;
             text-align: left;
         }
 
@@ -52,87 +53,89 @@
             align-items: center;
             gap: 10px;
             background: var(--primary-glow);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            padding: 6px 14px;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            padding: 6px 16px;
             border-radius: 20px;
-            color: #818cf8;
+            color: #a5b4fc;
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         h1 {
-            font-size: 32px;
+            font-size: 34px;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.6px;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, #ffffff 0%, #9ca3af 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .last-updated {
-            font-size: 13px;
+            font-size: 13.5px;
             color: var(--text-sub);
         }
 
         .intro {
-            font-size: 15px;
-            color: #d1d5db;
-            margin-bottom: 32px;
+            font-size: 15.5px;
+            color: #d4d4d8;
+            margin-bottom: 36px;
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            padding: 20px;
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 18px;
+            backdrop-filter: blur(12px);
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            padding: 24px;
+            padding: 28px;
             border-radius: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.25s ease;
         }
 
         .card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.16);
         }
 
         .card-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
+            gap: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
             border-bottom: 1px solid var(--card-border);
         }
 
         .icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            min-width: 38px;
+            height: 38px;
+            border-radius: 12px;
             background: var(--primary-glow);
+            border: 1px solid rgba(99, 102, 241, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #818cf8;
-            font-weight: bold;
-            font-size: 16px;
+            color: #a5b4fc;
+            font-weight: 700;
+            font-size: 15px;
         }
 
         h2 {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 700;
             color: #ffffff;
+            letter-spacing: -0.3px;
         }
 
         p {
-            font-size: 14px;
+            font-size: 14.5px;
             color: var(--text-sub);
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         p:last-child {
@@ -140,60 +143,79 @@
         }
 
         .sub-section {
-            margin-top: 14px;
+            margin-top: 18px;
+            padding-left: 4px;
         }
 
         .sub-title {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
-            color: #e5e7eb;
-            margin-bottom: 4px;
+            color: #f4f4f5;
+            margin-bottom: 6px;
         }
 
         ul {
             list-style: none;
             padding-left: 0;
+            margin-top: 10px;
+            margin-bottom: 14px;
         }
 
         li {
-            font-size: 14px;
+            font-size: 14.5px;
             color: var(--text-sub);
             position: relative;
-            padding-left: 18px;
-            margin-bottom: 8px;
+            padding-left: 22px;
+            margin-bottom: 10px;
         }
 
         li::before {
             content: "•";
-            color: var(--primary);
+            color: #818cf8;
             font-weight: bold;
+            font-size: 18px;
             position: absolute;
-            left: 0;
+            left: 4px;
+            top: -2px;
+        }
+
+        li strong {
+            color: #e4e4e7;
+        }
+
+        .highlight-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-top: 14px;
+            font-size: 14px;
+            color: #c7d2fe;
         }
 
         .contact-box {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 12px;
-            background: rgba(16, 185, 129, 0.1);
+            gap: 12px;
+            margin-top: 16px;
+            background: rgba(16, 185, 129, 0.08);
             border: 1px solid rgba(16, 185, 129, 0.25);
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 16px 20px;
+            border-radius: 14px;
         }
 
         .contact-box a {
             color: var(--accent);
             text-decoration: none;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
         }
 
         footer {
             text-align: center;
-            margin-top: 40px;
-            font-size: 13px;
-            color: #6b7280;
+            margin-top: 48px;
+            font-size: 13.5px;
+            color: #71717a;
         }
     </style>
 </head>
@@ -201,98 +223,199 @@
     <div class="container">
         <header>
             <div class="logo-badge">✨ Spotlight Campus Platform</div>
-            <h1>Privacy Policy</h1>
-            <div class="last-updated">Last Updated: July 26, 2026</div>
+            <h1>Comprehensive Privacy Policy</h1>
+            <div class="last-updated">Effective Date & Last Updated: August 18, 2026</div>
         </header>
 
         <div class="intro">
-            Spotlight respects your privacy. This policy explains what information we collect, how it is used, and how data is handled across the Spotlight mobile application and club management platform.
+            Welcome to <strong>Spotlight</strong>. We are committed to protecting your privacy and ensuring transparency regarding how student data, event participation details, and digital ticket passes are handled across our mobile application and campus management platform. This Privacy Policy details our data collection practices, security protocols, user rights, and legal compliance.
         </div>
 
+        <!-- 1. ABOUT SPOTLIGHT -->
         <div class="card">
             <div class="card-header">
                 <div class="icon">1</div>
-                <h2>About Spotlight</h2>
+                <h2>About Spotlight & Platform Architecture</h2>
             </div>
-            <p>Spotlight is a college event discovery and registration platform. Events are created and managed by authorized college clubs through the Spotlight Club Dashboard. General users use the mobile app to search, browse, and register for campus events.</p>
+            <p><strong>Spotlight</strong> is a specialized college event discovery, ticketing, and student engagement platform. The ecosystem comprises:</p>
+            <ul>
+                <li><strong>Spotlight Mobile App:</strong> Used by students to browse campus events, bookmark upcoming deadlines, register individually or in teams, and access digital entry ticket passes containing QR verification codes.</li>
+                <li><strong>Spotlight Club Dashboard:</strong> Used by authorized college student clubs and event organizers to create event listings, review registrations, verify payment transaction proofs, and validate student entry tickets.</li>
+            </ul>
         </div>
 
+        <!-- 2. INFORMATION WE COLLECT -->
         <div class="card">
             <div class="card-header">
                 <div class="icon">2</div>
                 <h2>Information We Collect</h2>
             </div>
+            <p>To provide event ticketing, eligibility verification, and communication services, Spotlight collects the following categories of data:</p>
+
             <div class="sub-section">
-                <div class="sub-title">Account & Profile Data</div>
-                <p>Full name, email address, phone number, and academic details (USN/Roll number, Branch, Year, and Semester). Password hashes are securely stored if registered manually.</p>
+                <div class="sub-title">A. Personal Identification & Academic Profile Data</div>
+                <p>When you create an account or update your profile, we collect:</p>
+                <ul>
+                    <li><strong>Full Name:</strong> Used for event ticketing and club attendance logs.</li>
+                    <li><strong>Email Address:</strong> Primary contact identifier for account authentication, password resets, and ticket notifications.</li>
+                    <li><strong>Phone Number:</strong> Used by event organizers for urgent event communications and team coordination.</li>
+                    <li><strong>University Seat Number (USN) / Roll Number:</strong> Unique student identifier used to confirm student status and prevent duplicate registrations.</li>
+                    <li><strong>Academic Information:</strong> Branch/Department, Academic Year (1-4), and Semester (1-8) to verify event eligibility requirements.</li>
+                    <li><strong>Authentication Data:</strong> Securely hashed passwords for manual account authentication.</li>
+                </ul>
             </div>
+
             <div class="sub-section">
-                <div class="sub-title">Event Registrations & Teams</div>
-                <p>Metadata showing which events you join, generated team passkeys, and team member relationships.</p>
+                <div class="sub-title">B. Event Registrations, Teams & Saved Favorites</div>
+                <ul>
+                    <li><strong>Participation Records:</strong> Records of events you register for, ticket status (Confirmed, Pending, Rejected), and digital QR ticket pass keys.</li>
+                    <li><strong>Team Membership Data:</strong> Team names, leader/member relationships, and generated team passkeys.</li>
+                    <li><strong>Bookmarks:</strong> List of event IDs saved to your personal bookmarks for deadline tracking.</li>
+                </ul>
             </div>
+
             <div class="sub-section">
-                <div class="sub-title">Payment & Verification Screenshots</div>
-                <p>For paid events, we collect your entered UPI Transaction ID (UTR) and image uploads of payment proof screenshots for verification.</p>
+                <div class="sub-title">C. Payment Verification Artifacts</div>
+                <p>For paid events, Spotlight facilitates direct registration verification by collecting:</p>
+                <ul>
+                    <li><strong>UPI Transaction Reference (UTR):</strong> The 12-digit transaction reference number entered during payment confirmation.</li>
+                    <li><strong>Payment Proof Screenshots:</strong> Image files uploaded by the user to prove registration payment completion to the organizing club.</li>
+                </ul>
+            </div>
+
+            <div class="sub-section">
+                <div class="sub-title">D. Technical & Device Information</div>
+                <p>Automatically collected log data includes IP addresses, device hardware model, operating system version, and app version logs to diagnose technical errors and ensure network stability.</p>
             </div>
         </div>
 
+        <!-- 3. HOW WE USE DATA -->
         <div class="card">
             <div class="card-header">
                 <div class="icon">3</div>
-                <h2>How We Use Data</h2>
+                <h2>How We Use Collected Information</h2>
             </div>
-            <p>We process your information to create your account, process registrations, confirm payments, send internal notifications, combat spam/abuse, and verify academic eligibility for student events.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="icon">4</div>
-                <h2>Information Shared With Clubs</h2>
-            </div>
-            <p>When you register for an event, your profile data (Name, USN, Phone, Email), team details, and proof of payment are shared directly with the authorized club organizing that specific event via their Club Dashboard so organizers can verify your entry.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="icon">5</div>
-                <h2>Device Permissions</h2>
-            </div>
+            <p>We process your data strictly for legitimate operational purposes:</p>
             <ul>
-                <li><strong>Camera & Photo Library:</strong> To select and upload screenshots of payment proofs during event registration.</li>
-                <li><strong>Clipboard Access:</strong> To copy club UPI IDs and registration passkeys to your clipboard.</li>
-                <li><strong>External App Launch:</strong> To open external UPI payment apps (Google Pay, PhonePe, Paytm) and web links.</li>
+                <li><strong>Account Authentication & Access:</strong> Managing secure sign-in and session verification.</li>
+                <li><strong>Event Ticket Issuance:</strong> Generating digital QR passes and managing event entry validation.</li>
+                <li><strong>Academic & Payment Verification:</strong> Allowing club organizers to verify student eligibility and payment proofs.</li>
+                <li><strong>Notification Alerts:</strong> Sending real-time push and email notifications regarding ticket approvals, registration updates, or schedule changes.</li>
+                <li><strong>Platform Security & Abuse Prevention:</strong> Preventing fraudulent ticket creation, unauthorized access, or duplicate registrations.</li>
             </ul>
         </div>
 
+        <!-- 4. INFORMATION SHARING & DISCLOSURE -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">4</div>
+                <h2>Data Sharing & Disclosure Policies</h2>
+            </div>
+            <p>Spotlight respects student privacy and <strong>does not sell, rent, or monetize your personal information</strong> to third-party advertisers or data brokers.</p>
+
+            <div class="sub-section">
+                <div class="sub-title">Sharing With Event Organizers (College Clubs)</div>
+                <p>When you register for a specific event, your profile data (Name, USN, Phone, Email, Branch, Year) and payment proof details are shared directly with the authorized organizing club via their secure Club Dashboard for attendance verification and event management.</p>
+            </div>
+
+            <div class="sub-section">
+                <div class="sub-title">Infrastructure & Cloud Service Providers</div>
+                <p>We rely on trusted cloud infrastructure providers (e.g., Supabase Storage for secure image hosting, cloud database servers) operating under strict data security standards.</p>
+            </div>
+
+            <div class="sub-section">
+                <div class="sub-title">Legal & Security Disclosures</div>
+                <p>We may disclose user information if required by applicable law, college administration regulations, or legal processes to protect student safety and platform security.</p>
+            </div>
+        </div>
+
+        <!-- 5. DEVICE PERMISSIONS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">5</div>
+                <h2>Device Permissions Breakdown</h2>
+            </div>
+            <p>The Spotlight mobile application requests specific device permissions to enable core features:</p>
+            <ul>
+                <li><strong>Camera & Photo Gallery:</strong> Required to select and upload payment proof screenshots during event registration.</li>
+                <li><strong>Storage Access:</strong> Required to cache digital ticket QR passes and event banners locally for offline access.</li>
+                <li><strong>Clipboard Access:</strong> Enables one-tap copying of club UPI payment IDs and team registration passkeys.</li>
+                <li><strong>External App Launcher:</strong> Allows opening external payment apps (Google Pay, PhonePe, Paytm) and external links.</li>
+            </ul>
+        </div>
+
+        <!-- 6. DATA SECURITY & ENCRYPTION -->
         <div class="card">
             <div class="card-header">
                 <div class="icon">6</div>
-                <h2>Data Security & Retention</h2>
+                <h2>Data Security & Encryption Protocols</h2>
             </div>
-            <p>We use secure JWT authentication and encrypted HTTPS endpoints. We retain account and event registration data while your account remains active as required for college event verification and record-keeping.</p>
+            <p>We implement robust technical and organizational measures to safeguard your information:</p>
+            <ul>
+                <li><strong>Encryption in Transit:</strong> All data transmitted between the mobile app, backend servers, and databases is encrypted using industry-standard HTTPS / TLS 1.3 encryption.</li>
+                <li><strong>Secure Token Authentication:</strong> User sessions are managed using encrypted JWT tokens and secure password hashing algorithms.</li>
+                <li><strong>Storage Access Rules:</strong> Uploaded payment proof images and event banners are stored in secure cloud buckets configured with strict row-level access permissions.</li>
+            </ul>
         </div>
 
-        <div class="card" id="delete-account">
-            <div class="card-header">
-                <div class="icon">7</div>
-                <h2>Account & Data Deletion Request</h2>
-            </div>
-            <p>Spotlight users have full right to request account and data deletion at any time. To request deletion of your account and associated profile data, send an email to <a href="mailto:spotlightapp.help@gmail.com" style="color: var(--accent); font-weight: 600;">spotlightapp.help@gmail.com</a> with the subject line <strong>"Account Deletion Request"</strong> along with your registered email and USN. Upon verification, your account and associated data will be permanently deleted within 7 business days.</p>
-        </div>
-
+        <!-- 7. DATA RETENTION POLICY -->
         <div class="card">
             <div class="card-header">
-                <div class="icon">8</div>
-                <h2>Contact Us</h2>
+                <div class="icon">7</div>
+                <h2>Data Retention Policy</h2>
             </div>
-            <p>If you have any questions regarding this Privacy Policy or need assistance, contact our support team:</p>
+            <p>We retain your personal information for as long as your Spotlight account remains active to provide ongoing access to your event tickets, registration history, and profile data.</p>
+            <p>Event participation records and payment verification logs may be retained for audit and record-keeping purposes by college event committees as required for institutional event verification.</p>
+        </div>
+
+        <!-- 8. ACCOUNT & DATA DELETION REQUEST -->
+        <div class="card" id="delete-account">
+            <div class="card-header">
+                <div class="icon">8</div>
+                <h2>Account & Data Deletion Policy</h2>
+            </div>
+            <p>Spotlight respects your right to control your data. Users have the right to request permanent account deactivation and data deletion at any time.</p>
+
+            <div class="highlight-box">
+                <strong>How to Request Account & Data Deletion:</strong><br>
+                Send an email to our support team at <a href="mailto:spotlightapp.help@gmail.com" style="color: #a5b4fc; font-weight: 600;">spotlightapp.help@gmail.com</a> with the subject line <strong>"Account Deletion Request"</strong>. Please include your registered email address and University Seat Number (USN).
+            </div>
+
+            <p style="margin-top: 14px;">Upon identity verification, your account, stored profile data, saved bookmarks, and associated personal records will be permanently removed from our active databases within <strong>7 business days</strong>.</p>
+        </div>
+
+        <!-- 9. CHILDREN'S & STUDENT PRIVACY -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">9</div>
+                <h2>Children's & Student Privacy</h2>
+            </div>
+            <p>Spotlight is designed primarily for college students and higher-education institution members (aged 13 and above). We do not knowingly collect personal information from children under the age of 13. If we become aware that a child under 13 has provided personal data without parental consent, we take immediate steps to delete such information.</p>
+        </div>
+
+        <!-- 10. CHANGES TO THIS PRIVACY POLICY -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">10</div>
+                <h2>Updates & Policy Changes</h2>
+            </div>
+            <p>We may update this Privacy Policy periodically to reflect platform updates, feature additions, or regulatory changes. Any modifications will be posted on this page with an updated "Last Updated" date. Continued use of Spotlight following policy updates signifies your acceptance of the revised terms.</p>
+        </div>
+
+        <!-- 11. CONTACT & SUPPORT INFORMATION -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">11</div>
+                <h2>Contact & Support Information</h2>
+            </div>
+            <p>If you have any questions, privacy concerns, or feedback regarding this Privacy Policy, please contact our support team:</p>
             <div class="contact-box">
-                ✉️ <a href="mailto:spotlightapp.help@gmail.com">spotlightapp.help@gmail.com</a>
+                ✉️ Support Email: <a href="mailto:spotlightapp.help@gmail.com">spotlightapp.help@gmail.com</a>
             </div>
         </div>
 
         <footer>
-            &copy; 2026 Spotlight Platform. All rights reserved.
+            &copy; 2026 Spotlight Platform. All rights reserved. | Official Campus Event & Ticketing System
         </footer>
     </div>
 </body>
