@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Spotlight Platform</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -57,9 +59,28 @@
             padding: 6px 16px;
             border-radius: 20px;
             color: #a5b4fc;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 600;
             margin-bottom: 18px;
+        }
+
+        .brand-logo-img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .brand-inline-logo {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            vertical-align: sub;
+            margin-right: 4px;
+            object-fit: cover;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.25);
         }
 
         h1 {
@@ -222,13 +243,16 @@
 <body>
     <div class="container">
         <header>
-            <div class="logo-badge">✨ Spotlight Campus Platform</div>
+            <div class="logo-badge">
+                <img src="logo.png" alt="Spotlight Logo" class="brand-logo-img">
+                Spotlight Campus Platform
+            </div>
             <h1>Comprehensive Privacy Policy</h1>
             <div class="last-updated">Effective Date & Last Updated: August 18, 2026</div>
         </header>
 
         <div class="intro">
-            Welcome to <strong>Spotlight</strong>. We are committed to protecting your privacy and ensuring transparency regarding how student data, event participation details, and digital ticket passes are handled across our mobile application and campus management platform. This Privacy Policy details our data collection practices, security protocols, user rights, and legal compliance.
+            Welcome to <strong><img src="logo.png" alt="Spotlight Logo" class="brand-inline-logo">Spotlight</strong>. We are committed to protecting your privacy and ensuring transparency regarding how student data, event participation details, and digital ticket passes are handled across our mobile application and campus management platform. This Privacy Policy details our data collection practices, security protocols, user rights, and legal compliance.
         </div>
 
         <!-- 1. ABOUT SPOTLIGHT -->
@@ -237,7 +261,7 @@
                 <div class="icon">1</div>
                 <h2>About Spotlight & Platform Architecture</h2>
             </div>
-            <p><strong>Spotlight</strong> is a specialized college event discovery, ticketing, and student engagement platform. The ecosystem comprises:</p>
+            <p><strong><img src="logo.png" alt="Spotlight Logo" class="brand-inline-logo">Spotlight</strong> is a specialized college event discovery, ticketing, and student engagement platform. The ecosystem comprises:</p>
             <ul>
                 <li><strong>Spotlight Mobile App:</strong> Used by students to browse campus events, bookmark upcoming deadlines, register individually or in teams, and access digital entry ticket passes containing QR verification codes.</li>
                 <li><strong>Spotlight Club Dashboard:</strong> Used by authorized college student clubs and event organizers to create event listings, review registrations, verify payment transaction proofs, and validate student entry tickets.</li>
