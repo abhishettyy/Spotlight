@@ -538,7 +538,7 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
                 className="text-xs sm:text-base md:text-xl max-w-md sm:max-w-lg mx-auto text-center px-3 leading-relaxed mt-1"
                 style={{ color: "#d1d5db", fontFamily: FB }}
               >
-                The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.85)" }}>Event Management Hub.</span>
+                The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.85)" }}>Event Management Hub</span>
               </motion.p>
 
               <motion.div
