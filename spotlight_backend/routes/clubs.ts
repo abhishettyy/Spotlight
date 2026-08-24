@@ -403,6 +403,16 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
       },
     });
 
+    if (name || email) {
+      await prisma.profile.updateMany({
+        where: { clubId: id },
+        data: {
+          ...(name && { fullName: name }),
+          ...(email && { email }),
+        },
+      });
+    }
+
     return res.status(200).json({ club: updatedClub });
   } catch (error: any) {
     console.error('Update club error:', error);
