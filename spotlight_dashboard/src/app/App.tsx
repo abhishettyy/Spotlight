@@ -13,7 +13,7 @@ import {
   useSignIn,
   useSignUp,
 } from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, verifyTicketQR } from "./api";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, checkClubEmail, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
 
 const FC = "'Playfair Display', serif";
@@ -859,6 +859,8 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     setLoading(true);
     setError(null);
     try {
+      await checkClubEmail(email.trim());
+
       await signUp.create({
         emailAddress: email,
         password: password,
@@ -868,7 +870,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setVerifying(true);
     } catch (err: any) {
-      setError(formatAuthError(err, "Failed to initiate sign up."));
+      setError(sanitizeErrorMessage(err, "Failed to initiate sign up."));
     } finally {
       setLoading(false);
     }

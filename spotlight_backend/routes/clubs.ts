@@ -78,6 +78,34 @@ router.post('/verify-key', async (req: Request, res: Response): Promise<any> => 
   }
 });
 
+router.post('/check-email', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    const existingProfile = await prisma.profile.findUnique({ where: { email: cleanEmail } });
+    if (existingProfile) {
+      if (existingProfile.clubId === null && existingProfile.password !== null) {
+        return res.status(400).json({ exists: true, error: 'This email address is already registered to a student account.' });
+      }
+      return res.status(400).json({ exists: true, error: 'This email address is already registered.' });
+    }
+
+    const existingClub = await prisma.club.findUnique({ where: { email: cleanEmail } });
+    if (existingClub) {
+      return res.status(400).json({ exists: true, error: 'This email address is already registered to a club.' });
+    }
+
+    return res.status(200).json({ exists: false, message: 'Email is available.' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/verify-admin-secret', async (req: Request, res: Response): Promise<any> => {
   try {
     const { secret } = req.body;

@@ -38,6 +38,7 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
     lower.includes("form_identifier_exists") ||
     lower.includes("already_exists") ||
     lower.includes("email already in use") ||
+    lower.includes("already registered") ||
     lower.includes("user already exists") ||
     lower.includes("club already exists") ||
     lower.includes("is taken") ||
@@ -78,7 +79,11 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
   return cleanMsg || fallback;
 }
 
-const BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+let rawBase = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+if (!rawBase.endsWith('/api')) {
+  rawBase += '/api';
+}
+const BASE_URL = rawBase;
 
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const headers: Record<string, string> = {
@@ -202,6 +207,13 @@ export async function verifyRegistrationKey(key: string) {
   return request('/clubs/verify-key', {
     method: 'POST',
     body: JSON.stringify({ key }),
+  });
+}
+
+export async function checkClubEmail(email: string) {
+  return request('/clubs/check-email', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
   });
 }
 

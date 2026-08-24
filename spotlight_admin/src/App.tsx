@@ -29,7 +29,11 @@ interface RegistrationKeyRecord {
   usedAt?: string | null;
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+let rawAdminBase = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+if (!rawAdminBase.endsWith('/api')) {
+  rawAdminBase += '/api';
+}
+const API_BASE = rawAdminBase;
 
 export default function App() {
   const [adminPasscode, setAdminPasscode] = useState('');
