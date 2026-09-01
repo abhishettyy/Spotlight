@@ -1,11 +1,14 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/db';
 import { signToken, requireAuth } from '../middlewares/auth';
 
 const router = Router();
 const SALT_ROUNDS = 10;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '614014299614-n10khe2om4g50ehpqb6h82tdtumkh5ot.apps.googleusercontent.com';
+const googleOAuthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 function isBcryptHash(value: string): boolean {
   return value.startsWith('$2b$') || value.startsWith('$2a$');
@@ -189,6 +192,140 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
   } catch (error: any) {
     console.error('Club Login Error:', error);
     return res.status(500).json({ error: 'Login failed: ' + error.message });
+  }
+});
+
+router.post('/google', async (req: Request, res: Response): Promise<any> => {
+  const { credential, access_token, registrationKey, clubName } = req.body;
+
+  if (!credential && !access_token) {
+    return res.status(400).json({ error: 'Google credential or access token is required.' });
+  }
+
+  try {
+    let payload: any = null;
+    if (credential) {
+      try {
+        const ticket = await googleOAuthClient.verifyIdToken({
+          idToken: credential,
+          audience: GOOGLE_CLIENT_ID,
+        });
+        payload = ticket.getPayload();
+      } catch (verifyErr) {
+        const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
+        if (tokenInfoRes.ok) {
+          payload = await tokenInfoRes.json();
+        }
+      }
+    }
+
+    if (!payload && req.body.access_token) {
+      const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${req.body.access_token}` },
+      });
+      if (userResponse.ok) {
+        const userInfo = await userResponse.json() as any;
+        payload = {
+          email: userInfo.email,
+          name: userInfo.name,
+          given_name: userInfo.given_name,
+          picture: userInfo.picture,
+          sub: userInfo.sub,
+        };
+      }
+    }
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Invalid Google credential or missing email address.' });
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    const name = payload.name || payload.given_name || clubName || 'Spotlight User';
+    const googleUserId = `google_${payload.sub || crypto.createHash('md5').update(email).digest('hex')}`;
+
+    let club = await prisma.club.findUnique({ where: { email } });
+    let profile = await prisma.profile.findFirst({ where: { email } });
+
+    if (!club && registrationKey) {
+      const cleanKey = registrationKey.trim().toUpperCase();
+      const keyRecord = await prisma.registrationKey.findFirst({
+        where: { code: cleanKey, isUsed: false },
+      });
+
+      if (!keyRecord) {
+        return res.status(400).json({ error: 'Invalid or expired registration key.' });
+      }
+
+      club = await prisma.$transaction(async (tx) => {
+        const createdClub = await tx.club.create({
+          data: {
+            name: clubName?.trim() || name,
+            email: email,
+            logoUrl: payload.picture || null,
+          }
+        });
+
+        const createdProfile = await tx.profile.upsert({
+          where: { id: googleUserId },
+          update: {
+            fullName: name,
+            email: email,
+            clubId: createdClub.id,
+          },
+          create: {
+            id: googleUserId,
+            fullName: name,
+            email: email,
+            clubId: createdClub.id,
+          }
+        });
+
+        await tx.registrationKey.update({
+          where: { id: keyRecord.id },
+          data: {
+            isUsed: true,
+            usedByClubId: createdClub.id,
+            usedAt: new Date(),
+          }
+        });
+
+        profile = createdProfile;
+        return createdClub;
+      });
+    }
+
+    if (!club) {
+      return res.status(404).json({ error: 'No club exists with this email address. Please register your club first.' });
+    }
+
+    if (!profile) {
+      profile = await prisma.profile.create({
+        data: {
+          id: googleUserId,
+          fullName: name,
+          email: email,
+          clubId: club.id,
+        }
+      });
+    } else if (profile.clubId !== club.id) {
+      profile = await prisma.profile.update({
+        where: { id: profile.id },
+        data: { clubId: club.id }
+      });
+    }
+
+    const token = signToken(profile.id);
+    const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
+    return res.status(200).json({
+      message: 'Google login successful',
+      profile: safeProfile,
+      club,
+      token
+    });
+  } catch (error: any) {
+    console.error('Google Auth Error:', error);
+    return res.status(500).json({ error: 'Google authentication failed: ' + error.message });
   }
 });
 

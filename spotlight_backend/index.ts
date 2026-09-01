@@ -4,8 +4,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import { ClerkExpressWithAuth, StrictAuthProp } from '@clerk/clerk-sdk-node';
-
 import authRouter from './routes/auth';
 import profilesRouter from './routes/profiles';
 import eventsRouter from './routes/events';
@@ -15,7 +13,11 @@ import notificationsRouter from './routes/notifications';
 
 declare global {
   namespace Express {
-    interface Request extends StrictAuthProp {}
+    interface Request {
+      auth?: {
+        userId: string;
+      };
+    }
   }
 }
 
@@ -27,7 +29,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(ClerkExpressWithAuth() as any);
 
 app.use((req, res, next) => {
   console.log(`[HTTP] ${req.method} ${req.path}`);

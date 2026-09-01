@@ -217,6 +217,13 @@ export async function checkClubEmail(email: string) {
   });
 }
 
+export async function googleAuth(authPayload: { credential?: string; access_token?: string; registrationKey?: string; clubName?: string }) {
+  return request('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify(authPayload),
+  });
+}
+
 export async function createClub(data: {
   name: string;
   email: string;

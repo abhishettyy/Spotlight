@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '../config/db';
-import { requireAuth, requireOptionalAuth } from '../middlewares/auth';
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { requireAuth, requireOptionalAuth, signToken } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 
 const router = Router();
@@ -201,27 +201,9 @@ router.post('/', requireOptionalAuth, async (req: Request, res: Response): Promi
     }
 
     let userId = (req as any).auth?.userId;
-    if (!userId && req.body.clerkUserId) {
-      const targetClerkId = req.body.clerkUserId;
-      if (targetClerkId.startsWith('user_')) {
-        try {
-          const clerkUser = await clerkClient.users.getUser(targetClerkId);
-          const matchesEmail = clerkUser.emailAddresses.some(
-            e => e.emailAddress.toLowerCase() === email.toLowerCase()
-          );
-          if (!matchesEmail) {
-            return res.status(403).json({ error: 'Forbidden: Email mismatch with Clerk user ID.' });
-          }
-          userId = targetClerkId;
-        } catch (err) {
-          return res.status(401).json({ error: 'Unauthorized: Clerk verification failed.' });
-        }
-      } else {
-        return res.status(401).json({ error: 'Unauthorized: Google token required for social users.' });
-      }
+    if (!userId) {
+      userId = `user_${crypto.randomBytes(6).toString('hex')}`;
     }
-
-    if (!userId) return res.status(401).json({ error: 'Unauthorized. No user ID provided.' });
 
     let profile = await prisma.profile.findUnique({ where: { id: userId } });
     if (!profile) {

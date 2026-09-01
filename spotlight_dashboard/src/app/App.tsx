@@ -7,13 +7,8 @@ import {
   X, Key, Copy, Settings, LogOut, Mail, Menu, AlertTriangle, Image as ImageIcon, Camera, QrCode, RotateCcw
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
-import {
-  useAuth,
-  useUser,
-  useSignIn,
-  useSignUp,
-} from "@clerk/clerk-react";
-import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, checkClubEmail, verifyTicketQR } from "./api";
+import { useGoogleLogin } from "@react-oauth/google";
+import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, checkClubEmail, googleAuth, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
 
 const FC = "'Playfair Display', serif";
@@ -178,26 +173,19 @@ interface Registration {
 }
 
 function useSpotlightData() {
-  const { getToken: getClerkToken, userId: clerkUserId, isSignedIn: isClerkSignedIn, signOut: clerkSignOut } = useAuth();
-  const { user } = useUser();
-
   const localToken = localStorage.getItem("spotlight_token");
   const localProfileRaw = localStorage.getItem("spotlight_profile");
   const localProfile = localProfileRaw ? JSON.parse(localProfileRaw) : null;
   const isLocalSignedIn = !!localToken && !!localProfile;
 
-  const isSignedIn = isClerkSignedIn || isLocalSignedIn;
-  const userId = isLocalSignedIn ? localProfile.id : clerkUserId;
+  const isSignedIn = isLocalSignedIn;
+  const userId = localProfile?.id;
 
-  const getToken = async () => {
-    if (isLocalSignedIn) {
-      return localToken;
-    }
-    return getClerkToken();
-  };
+  const getToken = async () => localToken;
 
   const [clubs, setClubs]                   = useState<any[]>([]);
   const [profile, setProfile]               = useState<any>(localProfile);
+  const user = profile;
   const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading]               = useState(true);
 
@@ -300,15 +288,6 @@ function useSpotlightData() {
 
         if (freshProfile?.clubId) {
           await loadDashboardStats(freshProfile.clubId, token);
-        } else {
-          if (!isLocalSignedIn && isClerkSignedIn) {
-            await clerkSignOut();
-            const url = new URL(window.location.href);
-            url.searchParams.set("view", "auth");
-            url.searchParams.set("authTab", "login");
-            url.searchParams.set("noClub", "1");
-            window.location.href = url.toString();
-          }
         }
       } catch (e) {
       } finally {
@@ -718,9 +697,6 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   onLocalSignIn: (token: string, profile: any) => void;
   initialError?: string | null;
 }) {
-  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
-  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [clubName, setClubName] = useState("");
@@ -735,10 +711,6 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     if (initialError) setError(initialError);
   }, [initialError]);
   const [loading, setLoading] = useState(false);
-
-  const [verifying, setVerifying] = useState(false);
-  const [verifyingSignIn, setVerifyingSignIn] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -760,28 +732,29 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    try {
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
       setError(null);
-      if (tab === "login") {
-        if (!isSignInLoaded || !signIn) return;
-        await signIn.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
+      try {
+        const res = await googleAuth({
+          access_token: tokenResponse.access_token,
+          registrationKey: keyVerified ? registrationKey : undefined,
+          clubName: clubName || undefined,
         });
-      } else {
-        if (!isSignUpLoaded || !signUp) return;
-        await signUp.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
+        if (res && res.token && res.profile) {
+          onLocalSignIn(res.token, res.profile);
+        } else {
+          setError("Google authentication failed.");
+        }
+      } catch (err: any) {
+        setError(sanitizeErrorMessage(err, "Google authentication failed. Please try again."));
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(formatAuthError(err, "Google Redirect Auth failed. Please try again."));
-    }
-  };
+    },
+    onError: () => setError("Google sign-in failed. Please try again."),
+  });
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -810,37 +783,8 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     }
   };
 
-  const handleVerifySignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isSignInLoaded || !signIn) return;
-    if (!verificationCode) {
-      setError("Please enter the verification code.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await signIn.attemptFirstFactor({
-        strategy: "email_code",
-        code: verificationCode,
-      });
-
-      if (result.status === "complete") {
-        await setSignInActive({ session: result.createdSessionId });
-      } else {
-        setError("Verification not complete.");
-      }
-    } catch (err: any) {
-      setError(formatAuthError(err, "Verification code is incorrect."));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSignUpLoaded || !signUp) return;
     if (!clubName.trim() || !email.trim() || !password.trim()) {
       setError("Please fill in Club Name, Email ID, and Password.");
       return;
@@ -861,57 +805,20 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     try {
       await checkClubEmail(email.trim());
 
-      await signUp.create({
-        emailAddress: email,
-        password: password,
-        firstName: clubName,
+      await createClub({
+        name: clubName.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        registrationKey: registrationKey.trim(),
+        clerkUserId: "",
       });
 
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setVerifying(true);
-    } catch (err: any) {
-      setError(sanitizeErrorMessage(err, "Failed to initiate sign up."));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isSignUpLoaded || !signUp) return;
-    if (!verificationCode) {
-      setError("Please enter the verification code.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: verificationCode,
-      });
-
-      if (result.status === "complete") {
-        try {
-          const res = await createClub({
-            name: clubName,
-            email: email,
-            password: password, 
-            clerkUserId: result.createdUserId!,
-            logoUrl: "",
-            registrationKey: registrationKey.trim(),
-          });
-          localStorage.setItem("show_first_time_notice", "true");
-          window.dispatchEvent(new CustomEvent('spotlight:club_created'));
-          await setSignUpActive({ session: result.createdSessionId });
-        } catch (clubErr: any) {
-          setError(sanitizeErrorMessage(clubErr, "Failed to create club."));
-        }
-      } else {
-        setError("Verification not complete.");
+      const loginData = await clubLogin(email.trim(), password.trim());
+      if (loginData && loginData.token && loginData.profile) {
+        onLocalSignIn(loginData.token, loginData.profile);
       }
     } catch (err: any) {
-      setError(formatAuthError(err, "Verification code is incorrect."));
+      setError(sanitizeErrorMessage(err, "Failed to register club."));
     } finally {
       setLoading(false);
     }
@@ -994,65 +901,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     );
   }
 
-  if (verifying || verifyingSignIn) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
-        className="fixed inset-0 z-20 flex items-center justify-center p-6"
-        style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(10px)" }}
-      >
-        <button onClick={() => { setVerifying(false); setVerifyingSignIn(false); setError(null); setVerificationCode(""); }}
-          className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
-          style={{ color: "#d1d5db", fontFamily: FB }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
-        ><ChevronLeft size={14} /> Back</button>
 
-        <div className="w-full max-w-md p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
-              {verifyingSignIn ? "Verify Sign In" : "Verify Email"}
-            </h2>
-            <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>We sent a 6-digit verification code to <span className="text-white font-medium">{email}</span>. Please enter it below.</p>
-          </div>
-
-          <form noValidate onSubmit={verifyingSignIn ? handleVerifySignIn : handleVerify} className="space-y-6">
-            <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Verification Code</label>
-              <input 
-                type="text" 
-                placeholder="e.g. 123456" 
-                required
-                maxLength={6}
-                className="w-full rounded-xl px-4 py-3 text-center text-lg font-semibold tracking-[0.25em] text-white outline-none transition-all focus:border-white/30" 
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FM }} 
-                value={verificationCode} 
-                onChange={e => setVerificationCode(e.target.value)}
-              />
-            </div>
-
-            {error && (
-              <p className="text-xs text-[#F03D4E] text-center font-medium" style={{ fontFamily: FB }}>{error}</p>
-            )}
-
-            <motion.button 
-              type="submit"
-              disabled={loading}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
-              style={{ fontFamily: FB }}
-            >
-              {loading ? (
-                <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : (
-                <>Continue <ArrowRight size={14} /></>
-              )}
-            </motion.button>
-          </form>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
@@ -1177,49 +1026,48 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
                 </motion.button>
               </form>
 
+              <div className="flex items-center gap-4 my-6">
+                <div className="h-[1px] bg-white/10 flex-1" />
+                <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
+                <div className="h-[1px] bg-white/10 flex-1" />
+              </div>
+
+              <motion.button
+                type="button"
+                onClick={() => loginWithGoogle()}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
+                style={{ fontFamily: FB }}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
+                  <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
+                  <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
+                  <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
+                </svg>
+                Continue with Google
+              </motion.button>
+
               {tab === "login" && (
-                <>
-                  <div className="flex items-center gap-4 my-6">
-                    <div className="h-[1px] bg-white/10 flex-1" />
-                    <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
-                    <div className="h-[1px] bg-white/10 flex-1" />
-                  </div>
-
-                  <motion.button
-                    onClick={handleGoogleAuth}
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
-                    style={{ fontFamily: FB }}
+                <p className="text-center text-xs text-[#999999] mt-6" style={{ fontFamily: FB }}>
+                  Want to register a new club?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail("");
+                      setPassword("");
+                      setClubName("");
+                      setError(null);
+                      setShowPassword(false);
+                      setRegistrationKey("");
+                      setKeyVerified(false);
+                      onTabChange("register");
+                    }}
+                    className="text-[#F03D4E] hover:text-[#d63545] font-semibold transition-colors cursor-pointer underline underline-offset-2"
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
-                      <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
-                      <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
-                      <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
-                    </svg>
-                    Continue with Google
-                  </motion.button>
-
-                  <p className="text-center text-xs text-[#999999] mt-6" style={{ fontFamily: FB }}>
-                    Want to register a new club?{" "}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEmail("");
-                        setPassword("");
-                        setClubName("");
-                        setError(null);
-                        setShowPassword(false);
-                        setRegistrationKey("");
-                        setKeyVerified(false);
-                        onTabChange("register");
-                      }}
-                      className="text-[#F03D4E] hover:text-[#d63545] font-semibold transition-colors cursor-pointer underline underline-offset-2"
-                    >
-                      Sign Up
-                    </button>
-                  </p>
-                </>
+                    Sign Up
+                  </button>
+                </p>
               )}
             </motion.div>
           </AnimatePresence>
@@ -3809,7 +3657,7 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
 }
 
 function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: any; profile: any; getToken: () => Promise<string | null>; onUpdate: () => void; onLogout: () => void }) {
-  const { user } = useUser();
+  const user = profile;
   const isSocialLogin = false; 
 
   const [formData, setFormData] = useState({
@@ -4336,23 +4184,10 @@ interface ClubOnboardingPageProps {
 }
 
 function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
-  const { getToken, userId } = useAuth();
-  const { user } = useUser();
+  const token = localStorage.getItem("spotlight_token");
   const [formData, setFormData] = useState({ name: "", email: "", logoUrl: "", password: "", registrationKey: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      const email = user.primaryEmailAddress?.emailAddress ?? "";
-      const name = user.fullName ?? user.firstName ?? "";
-      setFormData(prev => ({
-        ...prev,
-        email: prev.email || email,
-        name: prev.name || name
-      }));
-    }
-  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -4368,12 +4203,11 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
       const res = await createClub({
         name: formData.name,
         email: formData.email,
         logoUrl: formData.logoUrl || "",
-        clerkUserId: userId!,
+        clerkUserId: "",
         password: formData.password,
         registrationKey: formData.registrationKey.trim().toUpperCase(),
       }, token ?? undefined);
@@ -5253,11 +5087,9 @@ function OverviewPage({
 }
 
 export default function App() {
-  const { isSignedIn: isClerkSignedIn, isLoaded: isClerkLoaded, signOut: clerkSignOut } = useAuth();
   const [localToken, setLocalToken] = useState<string | null>(() => localStorage.getItem("spotlight_token"));
   const isLocalSignedIn = !!localToken;
-  const isSignedIn = isClerkSignedIn || isLocalSignedIn;
-  const { user } = useUser();
+  const isSignedIn = isLocalSignedIn;
 
   const getInitialParams = () => {
     if (typeof window === "undefined") return { view: "landing" as View, authTab: "login" as AuthTab, error: null as string | null };
@@ -5360,11 +5192,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!isClerkLoaded && !isLocalSignedIn) return;
     if (isSignedIn && (view === "auth" || view === "landing")) {
       updateNavigation("dashboard");
     }
-  }, [isSignedIn, view, isClerkLoaded]);
+  }, [isSignedIn, view]);
 
   useEffect(() => {
     if (typeof window === "undefined" || window.innerWidth < 1024 || window.matchMedia("(hover: none)").matches) return;
@@ -5394,36 +5225,20 @@ export default function App() {
     localStorage.removeItem("spotlight_token");
     localStorage.removeItem("spotlight_profile");
     setLocalToken(null);
-    if (isClerkSignedIn) {
-      await clerkSignOut();
-    }
     const url = new URL(window.location.href);
     url.search = "";
     window.history.pushState({ view: "landing" }, "", url.toString());
     setView("landing");
   };
 
-  const userEmail = isLocalSignedIn
-    ? (() => {
-        try {
-          const profileRaw = localStorage.getItem("spotlight_profile");
-          return profileRaw ? JSON.parse(profileRaw).email : "";
-        } catch {
-          return "";
-        }
-      })()
-    : (user?.primaryEmailAddress?.emailAddress ?? "");
-
-  if (!isClerkLoaded && !isLocalSignedIn) {
-    return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
-          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#94a3b8", fontFamily: FM }}>Loading</p>
-        </div>
-      </div>
-    );
-  }
+  const userEmail = (() => {
+    try {
+      const profileRaw = localStorage.getItem("spotlight_profile");
+      return profileRaw ? JSON.parse(profileRaw).email : "";
+    } catch {
+      return "";
+    }
+  })();
 
   return (
     <div className="min-h-screen bg-background text-foreground"
@@ -5455,7 +5270,7 @@ export default function App() {
           initialError={authError}
         />
       )}
-      {(view === "dashboard" || (isClerkLoaded && isSignedIn && view !== "auth" && view !== "landing")) && (
+      {(view === "dashboard" || (isSignedIn && view !== "auth" && view !== "landing")) && (
       <motion.div key="dash" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="dashboard-root"
         >
