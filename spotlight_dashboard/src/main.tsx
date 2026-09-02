@@ -10,7 +10,7 @@ if (import.meta.env.PROD) {
   console.info = () => {};
 }
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "614014299614-n10khe2om4g50ehpqb6h82tdtumkh5ot.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
