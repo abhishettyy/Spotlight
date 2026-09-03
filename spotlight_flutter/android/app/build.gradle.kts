@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.spotlight.connect"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -48,6 +48,12 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            keepDebugSymbols.add("**/*.so")
         }
     }
 }
