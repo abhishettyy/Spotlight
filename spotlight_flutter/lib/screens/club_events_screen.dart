@@ -35,7 +35,7 @@ class ClubEventsScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
     final now = DateTime.now();
 
     final eventsProvider = Provider.of<EventsProvider>(context);
@@ -227,9 +227,7 @@ class _EventCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey[200]!,
-          ),
+          border: isDark ? null : Border.all(color: Colors.grey[200]!),
           boxShadow: isDark
               ? null
               : [
@@ -318,14 +316,22 @@ class _EventCard extends StatelessWidget {
                         Icon(Icons.calendar_today_outlined,
                             size: 11, color: subTextColor),
                         const SizedBox(width: 4),
-                        Text(
-                          event.date != null
-                              ? '$day $month'
-                              : 'TBA',
-                          style: GoogleFonts.inter(
-                              fontSize: 11, color: subTextColor),
+                        Expanded(
+                          child: Text(
+                            event.date != null
+                                ? '$day $month'
+                                : 'TBA',
+                            style: GoogleFonts.inter(
+                                fontSize: 11, color: subTextColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
                         Icon(Icons.location_on_outlined,
                             size: 11, color: subTextColor),
                         const SizedBox(width: 4),
@@ -334,6 +340,7 @@ class _EventCard extends StatelessWidget {
                             event.venue,
                             style: GoogleFonts.inter(
                                 fontSize: 11, color: subTextColor),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),

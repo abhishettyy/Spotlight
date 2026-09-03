@@ -174,7 +174,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
   Widget _buildClubTile(ClubModel club) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF141416) : Colors.white;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     return InkWell(
@@ -216,10 +216,9 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100],
                 shape: BoxShape.circle,
-                border: Border.all(
-                    color: isDark ? Colors.white12 : Colors.grey[200]!),
+                border: isDark ? null : Border.all(color: Colors.grey[200]!),
               ),
               child: (club.logoUrl != null &&
                       club.logoUrl!.isNotEmpty)

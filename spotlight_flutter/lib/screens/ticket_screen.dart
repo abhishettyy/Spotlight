@@ -98,7 +98,7 @@ class _TicketScreenState extends State<TicketScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
-    final toggleBg = isDark ? const Color(0xFF1E1E1E) : Colors.grey[200]!;
+    final toggleBg = isDark ? const Color(0xFF121214) : Colors.grey[200]!;
 
     final upcomingCount = _upcoming.length;
     final pastCount = _past.length;
@@ -390,6 +390,12 @@ class _TicketScreenState extends State<TicketScreen> {
           borderRadius: BorderRadius.circular(28),
           child: Stack(
             children: [
+              Positioned.fill(
+                child: CustomImage(
+                  url: imageUrl,
+                  fit: BoxFit.cover,
+                ),
+              ),
 
               Positioned.fill(
                 child: Container(
@@ -574,15 +580,12 @@ class _TicketScreenState extends State<TicketScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF1E1E1E),
-                Color(0xFF0F0F0F),
+                Color(0xFF141416),
+                Color(0xFF0C0C0E),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.06),
-              width: 1.0,
-            ),
+            border: null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.35),
@@ -743,8 +746,6 @@ class _TicketScreenState extends State<TicketScreen> {
                         width: double.infinity,
                         height: 140,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Container(color: Colors.grey[800]),
                       ),
                     ),
                   ),
@@ -799,24 +800,34 @@ class _TicketScreenState extends State<TicketScreen> {
                   Row(children: [
                     Icon(Icons.calendar_today_outlined,
                         color: subText, size: 13),
-                    const SizedBox(width: 4),
-                    Text(dateStr,
-                        style:
-                            GoogleFonts.inter(color: subText, fontSize: 12)),
-                    if (timeStr.isNotEmpty) ...[
-                      const SizedBox(width: 12),
-                      Icon(Icons.access_time, color: subText, size: 13),
-                      const SizedBox(width: 4),
-                      Text(timeStr,
-                          style: GoogleFonts.inter(
-                              color: subText, fontSize: 12)),
-                    ],
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(dateStr,
+                          style:
+                              GoogleFonts.inter(color: subText, fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ),
                   ]),
-                  const SizedBox(height: 4),
+                  if (timeStr.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Row(children: [
+                      Icon(Icons.access_time, color: subText, size: 13),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(timeStr,
+                            style: GoogleFonts.inter(
+                                color: subText, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                    ]),
+                  ],
+                  const SizedBox(height: 5),
                   Row(children: [
                     Icon(Icons.location_on_outlined,
                         color: subText, size: 13),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(venue,
                           style: GoogleFonts.inter(color: subText, fontSize: 12),
@@ -829,11 +840,9 @@ class _TicketScreenState extends State<TicketScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
+                        color: isDark ? const Color(0xFF16161A) : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-                        ),
+                        border: isDark ? null : Border.all(color: Colors.black.withOpacity(0.05)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -894,7 +903,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                   ),
                                   duration: const Duration(seconds: 2),
                                   behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF1E1E1E),
+                                  backgroundColor: const Color(0xFF16161A),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                               );

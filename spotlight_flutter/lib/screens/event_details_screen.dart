@@ -217,11 +217,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final pageBg = isDark ? const Color(0xFF0F0E0E) : const Color(0xFFF9F9F9);
+    final pageBg = isDark ? Colors.black : const Color(0xFFF9F9F9);
     final cardBg = isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!;
     final textPrimary = isDark ? Colors.white : Colors.black;
     final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
-    final footerBg = isDark ? const Color(0xFF0A0A0A) : Colors.white;
+    final footerBg = isDark ? Colors.black : Colors.white;
 
     final eventsProvider = Provider.of<EventsProvider>(context);
     final event = eventsProvider.events.firstWhere(

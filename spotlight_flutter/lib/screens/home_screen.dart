@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final primaryColor = theme.colorScheme.primary;
     final textColor = isDark ? Colors.white : Colors.black;
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -218,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
+                    fillColor: isDark ? const Color(0xFF141416) : Colors.grey[100],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -259,15 +259,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: isActive
                                     ? primaryColor
                                     : (isDark
-                                        ? const Color(0xFF1E1E1E)
+                                        ? const Color(0xFF141416)
                                         : Colors.white),
                                 borderRadius: BorderRadius.circular(24),
-                                border: isActive
+                                border: isActive || isDark
                                     ? null
-                                    : Border.all(
-                                        color: isDark
-                                            ? Colors.white12
-                                            : Colors.grey[300]!),
+                                    : Border.all(color: Colors.grey[300]!),
                                 boxShadow: isActive || isDark
                                     ? null
                                     : [
@@ -637,13 +634,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: 64,
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? const Color(0xFF1E1E1E)
+                                      ? const Color(0xFF1E1E22)
                                       : Colors.grey[100],
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: isDark
-                                          ? Colors.white12
-                                          : Colors.grey[200]!),
+                                  border: isDark
+                                      ? null
+                                      : Border.all(color: Colors.grey[200]!),
                                 ),
                                 child: (club.logoUrl != null &&
                                         club.logoUrl!.isNotEmpty)

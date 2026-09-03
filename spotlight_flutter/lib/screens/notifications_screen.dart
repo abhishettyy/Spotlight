@@ -63,7 +63,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF1E1E1E)
+                                    ? const Color(0xFF1E1E22)
                                     : Colors.grey[100],
                                 shape: BoxShape.circle,
                               ),
@@ -326,10 +326,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildCard(BuildContext context, NotificationModel n) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF141416) : Colors.white;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
     final timeText = isDark ? const Color(0xFF808080) : Colors.grey[400]!;
-    final borderColor = isDark ? Colors.white12 : Colors.grey[200]!;
+    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
 
     final timeAgo = _formatTime(n.createdAt);
 
@@ -338,7 +338,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        border: isDark ? null : Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),

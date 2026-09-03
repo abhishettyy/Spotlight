@@ -476,7 +476,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              backgroundColor: isDark ? const Color(0xFF141416) : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Row(
                 children: [
@@ -638,8 +638,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final theme = Theme.of(context);
             final cs = theme.colorScheme;
             final isDark = theme.brightness == Brightness.dark;
-            final sheetBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-            final fieldBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+            final sheetBg = isDark ? const Color(0xFF141416) : Colors.white;
+            final fieldBg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
             final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
             return AutofillGroup(
@@ -926,7 +926,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final surfaceColor = isDark ? const Color(0xFF141416) : Colors.white;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
     final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
 
@@ -992,7 +992,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                                  color: isDark ? const Color(0xFF1A1A1E) : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: isDark ? null : Border.all(color: Colors.grey.shade300, width: 1),
                                   boxShadow: isDark ? null : [
@@ -1237,12 +1237,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          height: 128,
+          constraints: const BoxConstraints(maxHeight: 128),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: isDark ? Colors.white12 : Colors.grey.shade200),
+            color: isDark ? const Color(0xFF141416) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: isDark ? null : Border.all(color: Colors.grey.shade200),
             boxShadow: isDark
                 ? null
                 : [
@@ -1254,25 +1254,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
           ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                  color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100],
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: cs.primary, size: 20),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(count,
                   style: GoogleFonts.inter(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: cs.onBackground)),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(label,
                   style: GoogleFonts.inter(
                       fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       color: isDark
                           ? const Color(0xFFA0A0A0)
                           : Colors.grey[500])),

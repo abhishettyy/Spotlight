@@ -8,7 +8,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     Widget buildSubSection({required String title, required String body}) {
@@ -40,7 +40,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
+      backgroundColor: isDark ? Colors.black : const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Text(
           'Privacy Policy',

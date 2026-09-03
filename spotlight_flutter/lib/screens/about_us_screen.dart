@@ -31,7 +31,7 @@ class AboutUsScreen extends StatelessWidget {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = isDark ? const Color(0xFF0F0F12) : const Color(0xFFF8F9FA);
+    final bgColor = isDark ? Colors.black : const Color(0xFFF8F9FA);
     final cardColor = isDark ? const Color(0xFF18181B) : Colors.white;
     final textColor = isDark ? const Color(0xFFFAFAFA) : const Color(0xFF18181B);
     final subTextColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A);

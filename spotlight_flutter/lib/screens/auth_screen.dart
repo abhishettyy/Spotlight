@@ -237,7 +237,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 height: 54,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
+                  color: isDark ? const Color(0xFF141416) : Colors.grey[200],
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: Row(

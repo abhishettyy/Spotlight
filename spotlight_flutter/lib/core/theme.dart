@@ -37,8 +37,8 @@ class SpotlightTheme {
   static const Color pureWhite    = Color(0xFFFFFFFF);
   static const Color deepBlack    = Color(0xFF000000);
   static const Color subtleGray   = Color(0xFFF5F5F5);
-  static const Color darkGray     = Color(0xFF1E1E1E);
-  static const Color darkBg       = Color(0xFF121212);
+  static const Color darkGray     = Color(0xFF141416);
+  static const Color darkBg       = Color(0xFF000000);
   static const Color lightGray    = Color(0xFFA0A0A0);
   static const Color crimsonRed   = Color(0xFFE63946); 
 
@@ -146,7 +146,7 @@ class SpotlightTheme {
         displayColor: pureWhite,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: darkGray,
+        backgroundColor: deepBlack,
         elevation: 0,
         iconTheme: const IconThemeData(color: pureWhite),
         titleTextStyle: GoogleFonts.inter(

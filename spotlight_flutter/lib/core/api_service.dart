@@ -15,8 +15,28 @@ class AppException implements Exception {
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://spotlight-production-74d4.up.railway.app/api',
+    defaultValue: 'https://spotlight-backend-x0q7.onrender.com/api',
   );
+
+  static Future<http.Response> _get(String path, {Map<String, String>? headers}) {
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return http.get(Uri.parse('$baseUrl$cleanPath'), headers: headers);
+  }
+
+  static Future<http.Response> _post(String path, {Map<String, String>? headers, Object? body}) {
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return http.post(Uri.parse('$baseUrl$cleanPath'), headers: headers, body: body);
+  }
+
+  static Future<http.Response> _put(String path, {Map<String, String>? headers, Object? body}) {
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return http.put(Uri.parse('$baseUrl$cleanPath'), headers: headers, body: body);
+  }
+
+  static Future<http.Response> _delete(String path, {Map<String, String>? headers}) {
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return http.delete(Uri.parse('$baseUrl$cleanPath'), headers: headers);
+  }
 
   static String formatExceptionMessage(dynamic error, String defaultMsg) {
     if (error == null) return defaultMsg;
@@ -94,8 +114,8 @@ class ApiService {
   Future<List<EventModel>> fetchEvents() async {
     try {
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/events'),
+      final response = await _get(
+        '/events',
         headers: headers,
       );
 
@@ -120,8 +140,8 @@ class ApiService {
     try {
       final headers = await _getHeaders();
       final prefs = await SharedPreferences.getInstance();
-      final response = await http.get(
-        Uri.parse('$baseUrl/clubs'),
+      final response = await _get(
+        '/clubs',
         headers: headers,
       );
 
@@ -161,8 +181,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId') ?? '';
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+      final response = await _post(
+        '/register',
         headers: headers,
         body: json.encode({
           'eventId': eventId,
@@ -193,8 +213,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId') ?? '';
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/teams/create'),
+      final response = await _post(
+        '/teams/create',
         headers: headers,
         body: json.encode({
           'eventId': eventId,
@@ -227,8 +247,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId') ?? '';
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/teams/join'),
+      final response = await _post(
+        '/teams/join',
         headers: headers,
         body: json.encode({
           'eventId': eventId,
@@ -253,8 +273,8 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('$baseUrl/registrations/$registrationId/payment'),
+      final response = await _put(
+        '/registrations/$registrationId/payment',
         headers: headers,
         body: json.encode({
           if (base64Image != null) 'paymentProof': base64Image,
@@ -278,8 +298,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId') ?? '';
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/user/tickets?userId=$userId'),
+      final response = await _get(
+        '/user/tickets?userId=$userId',
         headers: headers,
       );
 
@@ -319,8 +339,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId') ?? '';
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/notifications?userId=$userId'),
+      final response = await _get(
+        '/notifications?userId=$userId',
         headers: headers,
       );
 
@@ -347,8 +367,8 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId') ?? '';
 
-      await http.put(
-        Uri.parse('$baseUrl/notifications/read'),
+      await _put(
+        '/notifications/read',
         headers: headers,
         body: json.encode({'userId': userId}),
       );
@@ -358,8 +378,8 @@ class ApiService {
   Future<void> markSingleNotificationRead(String id) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('$baseUrl/notifications/$id/read'),
+      final response = await _put(
+        '/notifications/$id/read',
         headers: headers,
       );
       if (response.statusCode != 200) {
@@ -375,8 +395,8 @@ class ApiService {
   Future<void> deleteNotification(String id) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$baseUrl/notifications/$id'),
+      final response = await _delete(
+        '/notifications/$id',
         headers: headers,
       );
       if (response.statusCode != 200) {
@@ -400,8 +420,8 @@ class ApiService {
     String? sem,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/signup'),
+      final response = await _post(
+        '/auth/signup',
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
@@ -434,8 +454,8 @@ class ApiService {
     required String password,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+      final response = await _post(
+        '/auth/login',
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
@@ -459,8 +479,8 @@ class ApiService {
 
   Future<Map<String, int>> fetchProfileStats(String userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/profiles/$userId/stats'),
+      final response = await _get(
+        '/profiles/$userId/stats',
         headers: {'Content-Type': 'application/json'},
       );
       if (response.statusCode == 200) {
@@ -478,8 +498,8 @@ class ApiService {
 
   Future<UserModel?> getProfile(String userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/profiles/$userId'),
+      final response = await _get(
+        '/profiles/$userId',
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -505,8 +525,8 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/sync'),
+      final response = await _post(
+        '/auth/sync',
         headers: headers,
         body: json.encode({
           'clerkUserId': clerkUserId,
@@ -540,8 +560,8 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('$baseUrl/profiles/update'),
+      final response = await _put(
+        '/profiles/update',
         headers: headers,
         body: json.encode({
           'clerkUserId': clerkUserId,
@@ -569,8 +589,8 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/verify-password'),
+      final response = await _post(
+        '/auth/verify-password',
         headers: headers,
         body: json.encode({
           'userId': userId,
@@ -598,8 +618,8 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('$baseUrl/profiles/edit'),
+      final response = await _put(
+        '/profiles/edit',
         headers: headers,
         body: json.encode({
           'userId': userId,
@@ -627,8 +647,8 @@ class ApiService {
   Future<Map<String, dynamic>> fetchPublicStats() async {
     try {
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/public/stats'),
+      final response = await _get(
+        '/public/stats',
         headers: headers,
       );
 
@@ -648,8 +668,8 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/change-password'),
+      final response = await _post(
+        '/auth/change-password',
         headers: headers,
         body: json.encode({
           'oldPassword': oldPassword,

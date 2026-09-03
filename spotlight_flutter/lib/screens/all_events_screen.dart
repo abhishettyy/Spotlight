@@ -9,6 +9,7 @@ import '../models/models.dart';
 import 'event_details_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/custom_image.dart';
 
 class AllEventsScreen extends StatefulWidget {
@@ -85,7 +86,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                       : null,
                   filled: true,
                   fillColor:
-                      isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
+                      isDark ? const Color(0xFF141416) : Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -107,34 +108,33 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                   final isSelected = _selectedFormatFilter == filter;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(
-                        filter,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected
-                              ? Colors.white
-                              : (isDark ? Colors.grey[300] : Colors.grey[800]),
-                        ),
-                      ),
-                      selected: isSelected,
-                      onSelected: (_) {
+                    child: GestureDetector(
+                      onTap: () {
                         setState(() {
                           _selectedFormatFilter = filter;
                         });
                       },
-                      selectedColor: cs.primary,
-                      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 9),
+                        decoration: BoxDecoration(
                           color: isSelected
                               ? cs.primary
-                              : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+                              : (isDark ? const Color(0xFF141416) : Colors.grey[200]),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          filter,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                          ),
                         ),
                       ),
-                      showCheckmark: false,
                     ),
                   );
                 }).toList(),
@@ -243,14 +243,46 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
 
                   if (events.isEmpty) {
                     return Center(
-                      child: Text(
-                        _query.isNotEmpty
-                            ? 'No results for "$_query"'
-                            : _selectedFormatFilter != 'All'
-                                ? 'No $_selectedFormatFilter events found'
-                                : 'No upcoming events',
-                        style:
-                            GoogleFonts.inter(color: subText, fontSize: 15),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 170,
+                              height: 110,
+                              child: SvgPicture.asset(
+                                'assets/svg/empty_events.svg',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _query.isNotEmpty
+                                  ? 'No events match "$_query"'
+                                  : _selectedFormatFilter != 'All'
+                                      ? 'No $_selectedFormatFilter events found'
+                                      : 'No upcoming events',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: cs.onBackground,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _query.isNotEmpty
+                                  ? 'Try searching with a different keyword or format'
+                                  : 'Check back later for exciting campus events!',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: subText,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }

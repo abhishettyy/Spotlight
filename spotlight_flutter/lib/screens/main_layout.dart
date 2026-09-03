@@ -28,6 +28,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Scaffold(
       body: Stack(
         children: [
@@ -39,7 +40,7 @@ class _MainLayoutState extends State<MainLayout> {
             child: OfflineBanner(),
           ),
           Positioned(
-            bottom: 24,
+            bottom: bottomInset > 0 ? (bottomInset + 16) : 36,
             left: 24,
             right: 24,
             child: Container(

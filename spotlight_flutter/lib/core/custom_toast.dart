@@ -15,7 +15,7 @@ void showSpotlightToast(
 
   final bgColor = isError
       ? const Color(0xFFC62828)
-      : (isDark ? const Color(0xFF242222) : const Color(0xFF1E1E1E));
+      : (isDark ? const Color(0xFF141416) : const Color(0xFF1E1E1E));
 
   final accentColor = isError ? Colors.white : cs.primary;
 

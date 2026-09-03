@@ -173,8 +173,12 @@ class _ClubsScreenState extends State<ClubsScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
+                    fillColor: isDark ? const Color(0xFF141416) : Colors.grey[100],
                     border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
@@ -277,7 +281,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                        color: isDark ? const Color(0xFF141416) : Colors.white,
                                         borderRadius: BorderRadius.circular(16),
                                         border: isDark
                                             ? null
@@ -299,11 +303,11 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                             width: 52,
                                             height: 52,
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                                              color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100],
                                               shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: isDark ? Colors.white12 : Colors.grey[200]!,
-                                              ),
+                                              border: isDark
+                                                  ? null
+                                                  : Border.all(color: Colors.grey[200]!),
                                             ),
                                             child: hasLogo
                                                 ? ClipOval(
