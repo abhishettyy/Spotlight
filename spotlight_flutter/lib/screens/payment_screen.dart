@@ -84,6 +84,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             context: context,
             barrierDismissible: false,
             builder: (dialogContext) => AlertDialog(
+              backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF141416) : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: const Text('Team Passkey Unlocked!'),
               content: Column(
@@ -177,6 +178,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -195,7 +197,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: cs.surfaceVariant,
+                    color: isDark ? const Color(0xFF141416) : cs.surfaceVariant,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -228,7 +230,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      border: Border.all(color: cs.outlineVariant),
+                      color: isDark ? const Color(0xFF141416) : Colors.grey[100]!,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -298,11 +300,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _utrController,
+                  style: GoogleFonts.inter(color: cs.onBackground),
                   decoration: InputDecoration(
                     hintText: 'Enter Transaction ID',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
+                    fillColor: isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!,
                   ),
                 ),
                 const SizedBox(height: 32),

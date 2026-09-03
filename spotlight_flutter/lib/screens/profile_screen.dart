@@ -30,7 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _statsLoading = true;
 
   Future<void> _launchPlayStore() async {
-    final appId = 'com.example.spotlight_flutter'; 
+    const appId = 'com.spotlight.connect'; 
     final url = Uri.parse('market://details?id=$appId');
     final webUrl = Uri.parse('https://play.google.com/store/apps/details?id=$appId');
 
@@ -151,8 +151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (sheetContext) {
         final cs = Theme.of(sheetContext).colorScheme;
         final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        final sheetBg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
-        final fieldBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+        final sheetBg = isDark ? const Color(0xFF141416) : Colors.white;
+        final fieldBg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
         final labelColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
         InputDecoration fieldDecoration(String label, {String? hint, String? helperText}) {
@@ -471,7 +471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        final fieldBg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+        final fieldBg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
 
         return StatefulBuilder(
           builder: (context, setDialogState) {

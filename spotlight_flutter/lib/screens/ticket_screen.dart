@@ -275,7 +275,7 @@ class _TicketScreenState extends State<TicketScreen> {
     return RefreshIndicator(
       onRefresh: _loadTickets,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
         itemCount: list.length,
         separatorBuilder: (_, __) => const SizedBox(height: 20),
         itemBuilder: (context, index) => _buildTicketCard(list[index]),
@@ -337,7 +337,7 @@ class _TicketScreenState extends State<TicketScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
       itemCount: savedEvents.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (context, index) =>

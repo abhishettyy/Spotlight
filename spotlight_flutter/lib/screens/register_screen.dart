@@ -180,6 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               context: context,
               barrierDismissible: false,
               builder: (dialogContext) => AlertDialog(
+                backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF141416) : Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 title: const Text('Team Created!'),
                 content: const Column(
@@ -253,9 +254,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final warningBg = isDark ? const Color(0xFF161414) : Colors.red[50]!;
-    final warningText = isDark ? const Color(0xFFA09B9B) : Colors.grey[700]!;
-    final warningBorder = isDark ? Colors.white.withOpacity(0.05) : Colors.red[100]!;
+    final warningBg = isDark ? const Color(0xFF141416) : Colors.red[50]!;
+    final warningText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
 
     return Scaffold(
       appBar: AppBar(
@@ -274,85 +274,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
 
                   if (widget.eventType == 'Team') ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedType = RegistrationType.createTeam;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: _selectedType == RegistrationType.createTeam
-                                    ? Theme.of(context).colorScheme.primary
-                                    : (isDark ? const Color(0xFF1E1C1C) : Colors.grey[200]!),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                  bottomLeft: Radius.circular(12),
-                                ),
-                                border: Border.all(
+                    Container(
+                      height: 54,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF141416) : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedType = RegistrationType.createTeam;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                decoration: BoxDecoration(
                                   color: _selectedType == RegistrationType.createTeam
-                                      ? Theme.of(context).colorScheme.primary
-                                      : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08)),
+                                      ? cs.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
-                              ),
-                              child: Center(
+                                alignment: Alignment.center,
                                 child: Text(
                                   'Create Team',
                                   style: GoogleFonts.inter(
-                                    fontSize: 15,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: _selectedType == RegistrationType.createTeam
                                         ? Colors.white
-                                        : (isDark ? Colors.white70 : Colors.black87),
+                                        : (isDark ? Colors.grey[400] : Colors.grey[700]),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedType = RegistrationType.joinTeam;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: _selectedType == RegistrationType.joinTeam
-                                    ? Theme.of(context).colorScheme.primary
-                                    : (isDark ? const Color(0xFF1E1C1C) : Colors.grey[200]!),
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(12),
-                                  bottomRight: Radius.circular(12),
-                                ),
-                                border: Border.all(
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedType = RegistrationType.joinTeam;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                decoration: BoxDecoration(
                                   color: _selectedType == RegistrationType.joinTeam
-                                      ? Theme.of(context).colorScheme.primary
-                                      : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08)),
+                                      ? cs.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
-                              ),
-                              child: Center(
+                                alignment: Alignment.center,
                                 child: Text(
                                   'Join Team',
                                   style: GoogleFonts.inter(
-                                    fontSize: 15,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: _selectedType == RegistrationType.joinTeam
                                         ? Colors.white
-                                        : (isDark ? Colors.white70 : Colors.black87),
+                                        : (isDark ? Colors.grey[400] : Colors.grey[700]),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 32),
                   ],
@@ -405,7 +395,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: BoxDecoration(
                         color: warningBg,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: warningBorder),
+                        border: isDark ? null : Border.all(color: Colors.red[100]!),
                       ),
                       child: Row(
                         children: [
@@ -506,8 +496,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         filled: true,
         fillColor: enabled
-            ? (isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!)
-            : (isDark ? const Color(0xFF141212) : Colors.grey[200]!),
+            ? (isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!)
+            : (isDark ? const Color(0xFF141416) : Colors.grey[200]!),
       ),
     );
   }

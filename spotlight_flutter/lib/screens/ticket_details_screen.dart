@@ -143,9 +143,9 @@ class TicketDetailsScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!,
+                                color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isDark ? Colors.white12 : Colors.grey[300]!),
+                                border: isDark ? null : Border.all(color: Colors.grey[300]!),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -175,9 +175,9 @@ class TicketDetailsScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[50]!,
+                              color: isDark ? const Color(0xFF1E1E22) : Colors.grey[50]!,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: isDark ? Colors.white12 : Colors.grey[200]!),
+                              border: isDark ? null : Border.all(color: Colors.grey[200]!),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,7 +345,7 @@ class TicketDetailsScreen extends StatelessWidget {
 
   Widget _infoChip(BuildContext context, IconData icon, String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+    final bg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
     final textColor = isDark ? Colors.white70 : Colors.grey[700]!;
 
     return Container(

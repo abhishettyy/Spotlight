@@ -250,7 +250,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                 ),
                               )
                             : ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(24, 0, 24, 110),
+                                padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
                                 itemCount: filteredClubs.length,
                                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemBuilder: (context, i) {

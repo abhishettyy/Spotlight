@@ -77,10 +77,8 @@ class ClubEventsScreen extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],
-                      border: Border.all(
-                        color: isDark ? Colors.white12 : Colors.grey[200]!,
-                      ),
+                      color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100],
+                      border: isDark ? null : Border.all(color: Colors.grey[200]!),
                     ),
                     child: (clubLogoUrl != null && clubLogoUrl!.isNotEmpty)
                         ? ClipOval(
@@ -379,7 +377,7 @@ class _EventCard extends StatelessWidget {
   }
 
   Widget _placeholder(bool isDark) => Container(
-        color: isDark ? const Color(0xFF2A2A2A) : Colors.grey[200],
+        color: isDark ? const Color(0xFF141416) : Colors.grey[200],
         child: Center(
           child: Icon(Icons.image_outlined,
               color: isDark ? Colors.white24 : Colors.grey[400], size: 28),

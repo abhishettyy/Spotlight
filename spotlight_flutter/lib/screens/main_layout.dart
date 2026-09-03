@@ -28,7 +28,17 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final mq = MediaQuery.of(context);
+    final sysBottom = mq.viewPadding.bottom > mq.padding.bottom
+        ? mq.viewPadding.bottom
+        : mq.padding.bottom;
+
+    // Android 3-button navigation bar height is ~48-56dp.
+    // When reported, float 16dp above it.
+    // When unreported (or on 3-button devices with 0 insets), use 68.0
+    // so the navbar is lifted 50% up and never collides with system buttons.
+    final double navBottom = sysBottom >= 48 ? (sysBottom + 16) : 68.0;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -40,7 +50,7 @@ class _MainLayoutState extends State<MainLayout> {
             child: OfflineBanner(),
           ),
           Positioned(
-            bottom: bottomInset > 0 ? (bottomInset + 16) : 36,
+            bottom: navBottom,
             left: 24,
             right: 24,
             child: Container(

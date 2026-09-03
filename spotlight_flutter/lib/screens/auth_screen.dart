@@ -621,11 +621,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1A1A1A) : Colors.grey[50],
+                    color: isDark ? const Color(0xFF141416) : Colors.grey[50],
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey[200]!,
-                    ),
+                    border: isDark ? null : Border.all(color: Colors.grey[200]!),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
