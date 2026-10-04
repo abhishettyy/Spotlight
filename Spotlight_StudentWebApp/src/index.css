@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* ─── Spotlight Design System ───────────────────────────────────────────────
+   Ported from spotlight_flutter/lib/core/theme.dart
+   Primary: #E63946 (Crimson Red)
+   Dark BG: #000000 / #141416
+   Light BG: #F8F9FA
+   Font: Inter (Google Fonts)
+────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --color-crimson:    #E63946;
+  --color-crimson-hover: #cc2f3c;
+  --color-crimson-dim: rgba(230, 57, 70, 0.12);
+
+  --color-bg-light:   #F8F9FA;
+  --color-surface-light: #FFFFFF;
+  --color-border-light: rgba(0,0,0,0.08);
+  --color-text-light: #000000;
+  --color-subtext-light: #6B7280;
+
+  --color-bg-dark:    #000000;
+  --color-surface-dark: #141416;
+  --color-surface2-dark: #1C1C1E;
+  --color-border-dark: transparent;
+  --color-text-dark:  #FFFFFF;
+  --color-subtext-dark: #A0A0A0;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Theme-aware tokens (light mode defaults) */
+  --bg:      var(--color-bg-light);
+  --surface: var(--color-surface-light);
+  --border:  var(--color-border-light);
+  --text:    var(--color-text-light);
+  --subtext: var(--color-subtext-light);
+}
+
+.dark {
+  --bg:      var(--color-bg-dark);
+  --surface: var(--color-surface-dark);
+  --border:  var(--color-border-dark);
+  --text:    var(--color-text-dark);
+  --subtext: var(--color-subtext-dark);
+}
+
+/* ─── Reset & Base ────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100dvh;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+
+/* ─── Selection ───────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(230, 57, 70, 0.25);
+  color: var(--text);
+}
+
+/* ─── Utility classes ─────────────────────────────────────────────────────── */
+.spotlight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.spotlight-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+.dark .spotlight-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.btn-primary {
+  background: var(--color-crimson);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  font-family: var(--font-sans);
+}
+
+.btn-primary:hover { background: var(--color-crimson-hover); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: var(--font-sans);
+}
+
+.input-field {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 15px;
+  color: var(--text);
+  width: 100%;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: var(--color-crimson);
+}
+
+.input-field::placeholder {
+  color: var(--subtext);
+}
+
+/* ─── Badge ───────────────────────────────────────────────────────────────── */
+.badge-live {
+  background: rgba(230, 57, 70, 0.15);
+  color: var(--color-crimson);
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-upcoming {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dark .badge-upcoming {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.badge-past {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    rgba(255,255,255,0.05) 50%,
+    var(--border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sheet-slide-up {
+  animation: sheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (min-width: 1024px) {
+  .event-detail-bottom-bar {
+    left: 220px !important;
+  }
+}
+

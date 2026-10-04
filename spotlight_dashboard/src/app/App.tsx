@@ -1077,41 +1077,29 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   );
 }
 
-const checkScanStatus = (eventDateStr?: string | null) => {
+const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: string | null) => {
   if (!eventDateStr) {
-    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
+    return { enabled: true, reason: "Scanner Active", isUpcoming: false };
   }
 
   const eventStart = parseLocalDate(eventDateStr);
   if (!eventStart) {
-    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
+    return { enabled: true, reason: "Scanner Active", isUpcoming: false };
   }
 
   const now = new Date();
+  const eventEnd = eventEndDateStr ? parseLocalDate(eventEndDateStr) : null;
+  const effectiveEnd = eventEnd ?? new Date(eventStart.getTime() + 6 * 60 * 60 * 1000);
 
-  // 7:00 AM on the morning of event date
-  const morningStart = new Date(
-    eventStart.getFullYear(),
-    eventStart.getMonth(),
-    eventStart.getDate(),
-    7, 0, 0, 0
-  );
-  // If event starts earlier than 7 AM (e.g. Midnight 00:00), windowStart opens 2 hours before start
-  const windowStart = eventStart < morningStart 
-    ? new Date(eventStart.getTime() - 2 * 60 * 60 * 1000)
-    : morningStart;
-
-  // 2 hours after event start time
-  const windowEnd = new Date(eventStart.getTime() + 2 * 60 * 60 * 1000);
-
-  if (now < windowStart) {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const dateFormatted = `${monthNames[eventStart.getMonth()]} ${eventStart.getDate()}`;
-    return { enabled: false, reason: `Opens ${dateFormatted} at 7:00 AM`, isUpcoming: true };
+  // If event has ended completely (past the effective end + 12 hours grace period)
+  if (now > new Date(effectiveEnd.getTime() + 12 * 60 * 60 * 1000)) {
+    return { enabled: true, reason: "Event Concluded", isUpcoming: false };
   }
 
-  if (now > windowEnd) {
-    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
+  if (now < eventStart) {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const dateFormatted = `${monthNames[eventStart.getMonth()]} ${eventStart.getDate()}`;
+    return { enabled: true, reason: `Upcoming (${dateFormatted})`, isUpcoming: true };
   }
 
   return { enabled: true, reason: "Scanner Active", isUpcoming: false };
@@ -2121,6 +2109,23 @@ function EventsPage({
                   onClose={() => setShowScannerModal(false)}
                   onScanSuccess={async (scannedTicket) => {
                     await refreshEvents();
+                    try {
+                      const token = await getToken();
+                      if (token && activeEvent?.id) {
+                        const data = await fetchEventRegistrations(activeEvent.id, token);
+                        const regs = (data.registrations ?? []).map((r: any) => ({
+                          ...r,
+                          eventId: activeEvent.id,
+                          eventTitle: activeEvent?.title ?? '',
+                        }));
+                        onRegistrationsChange(prev => {
+                          const otherEventsRegs = prev.filter(r => r.eventId !== activeEvent.id);
+                          return [...otherEventsRegs, ...regs];
+                        });
+                      }
+                    } catch (err) {
+                      console.error("Failed to refresh registrations on scan:", err);
+                    }
                     setScannedAttendees(prev => {
                       let newEntries: any[] = [];
                       if (scannedTicket.team && Array.isArray(scannedTicket.team.members) && scannedTicket.team.members.length > 0) {
