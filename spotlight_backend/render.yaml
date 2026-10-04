@@ -10,15 +10,13 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
-      - key: DIRECT_URL
-        sync: false
       - key: JWT_SECRET
         sync: false
-      - key: CLERK_SECRET_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: ADMIN_SECRET
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
-      - key: ADMIN_SECRET
+      - key: GODADDY_UPLOAD_URL
+        sync: false
+      - key: UPLOAD_SECRET
         sync: false

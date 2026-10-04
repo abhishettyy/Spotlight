@@ -13,19 +13,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="shortcut icon" type="image/png" href="/favicon.png" />
-    <title>Spotlight | Event Management Platform</title>
+    <title>Spotlight-RIT | Ramaiah Institute of Technology</title>
 
     <!-- Preconnect to server origins proactively for faster font & asset loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" />
 
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('spotlight_theme');
+          var theme = saved || 'dark';
+          document.documentElement.classList.remove('dark', 'light');
+          document.documentElement.classList.add(theme);
+        } catch (e) {}
+      })();
+    </script>
+
     <style>
       html, body {
         margin: 0;
         padding: 0;
-        background-color: #050505 !important;
-        color: #ffffff !important;
       }
       #root {
         min-height: 100%;

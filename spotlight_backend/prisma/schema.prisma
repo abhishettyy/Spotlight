@@ -1,33 +1,36 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "mysql"
 }
 
 model Profile {
   id            String         @id
   fullName      String         @map("full_name")
-  email         String         @unique
+  email         String         @unique(map: "email")
   password      String?
-  usn           String?        @unique
+  usn           String?        @unique(map: "usn")
   branch        String?
   phone         String?
   year          Int?
   sem           Int?
   clubId        String?        @map("club_id")
-  club          Club?          @relation(fields: [clubId], references: [id])
+  club          Club?          @relation(fields: [clubId], references: [id], map: "fk_profile_club")
   registrations Registration[]
+
+  @@index([clubId], map: "fk_profile_club")
 }
 
 model Club {
   id               String            @id @default(uuid())
   name             String
-  email            String            @unique
-  logoUrl          String?           @map("logo_url")
+  email            String            @unique(map: "email")
+  logoUrl          String?           @map("logo_url") @db.Text
   password         String?
-  qrUrl            String?           @map("qr_url")
+  qrUrl            String?           @map("qr_url") @db.Text
   upiId            String?           @map("upi_id")
   events           Event[]
   admins           Profile[]
@@ -38,33 +41,37 @@ model Event {
   id                   String         @id @default(uuid())
   clubId               String         @map("club_id")
   name                 String
-  description          String
+  description          String         @db.Text
   eventType            String         @map("event_type")
   fee                  Float          @default(0)
   registrationLimit    Int            @map("registration_limit")
   registrationDeadline DateTime       @map("registration_deadline")
   eventDate            DateTime       @map("event_date")
-  qrUrl                String?        @map("qr_url")
-  bannerUrl            String?        @map("banner_url")
+  qrUrl                String?        @map("qr_url") @db.Text
+  bannerUrl            String?        @map("banner_url") @db.Text
   venue                String?
   teamSizeLimit        Int?           @map("team_size_limit")
   minTeamSize          Int?           @map("min_team_size")
   eventEndDate         DateTime?      @map("event_end_date")
   upiId                String?        @map("upi_id")
-  club                 Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  club                 Club           @relation(fields: [clubId], references: [id], onDelete: Cascade, map: "fk_event_club")
   notifications        Notification[]
   registrations        Registration[]
   teams                Team[]
+
+  @@index([clubId], map: "fk_event_club")
 }
 
 model Team {
   id            String         @id @default(uuid())
   eventId       String         @map("event_id")
   teamName      String         @map("team_name")
-  passkey       String?        @unique
+  passkey       String?        @unique(map: "passkey")
   leaderId      String         @map("leader_id")
   registrations Registration[]
-  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade, map: "fk_team_event")
+
+  @@index([eventId], map: "fk_team_event")
 }
 
 model Registration {
@@ -72,14 +79,18 @@ model Registration {
   eventId         String             @map("event_id")
   userId          String             @map("user_id")
   teamId          String?            @map("team_id")
-  paymentProofUrl String?            @map("payment_proof_url")
+  paymentProofUrl String?            @map("payment_proof_url") @db.Text
   status          RegistrationStatus @default(PENDING)
-  createdAt       DateTime           @default(now())
+  createdAt       DateTime           @default(now()) @map("created_at")
   transactionId   String?            @map("transaction_id")
   checkedInAt     DateTime?          @map("checked_in_at")
-  event           Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  team            Team?              @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  profile         Profile            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event           Event              @relation(fields: [eventId], references: [id], onDelete: Cascade, map: "fk_registration_event")
+  profile         Profile            @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_registration_profile")
+  team            Team?              @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "fk_registration_team")
+
+  @@index([eventId], map: "fk_registration_event")
+  @@index([userId], map: "fk_registration_profile")
+  @@index([teamId], map: "fk_registration_team")
 }
 
 model Notification {
@@ -87,21 +98,25 @@ model Notification {
   userId    String   @map("user_id")
   type      String
   title     String
-  body      String
+  body      String   @db.Text
   isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   eventId   String?  @map("event_id")
-  event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade, map: "fk_notification_event")
+
+  @@index([eventId], map: "fk_notification_event")
 }
 
 model RegistrationKey {
   id           String    @id @default(uuid())
-  code         String    @unique
+  code         String    @unique(map: "code")
   isUsed       Boolean   @default(false) @map("is_used")
   usedByClubId String?   @map("used_by_club_id")
   createdAt    DateTime  @default(now()) @map("created_at")
   usedAt       DateTime? @map("used_at")
-  usedByClub   Club?     @relation(fields: [usedByClubId], references: [id])
+  usedByClub   Club?     @relation(fields: [usedByClubId], references: [id], map: "fk_registrationkey_club")
+
+  @@index([usedByClubId], map: "fk_registrationkey_club")
 }
 
 enum RegistrationStatus {

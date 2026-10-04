@@ -79,7 +79,10 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
   return cleanMsg || fallback;
 }
 
-let rawBase = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+let rawBase = String((import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api')
+  .replace(/\s+/g, '')
+  .trim()
+  .replace(/\/+$/, '');
 if (!rawBase.endsWith('/api')) {
   rawBase += '/api';
 }
@@ -88,6 +91,7 @@ const BASE_URL = rawBase;
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
     ...(options.headers as Record<string, string> || {}),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -254,7 +258,7 @@ export async function updateClub(clubId: string, data: {
 
 export async function fetchEventRegistrations(eventId: string, token?: string) {
   return request(`/events/${eventId}/registrations`, {}, token);
-}
+} 
 
 export async function approveRegistration(registrationId: string, token?: string) {
   return request(`/registrations/${registrationId}/approve`, {

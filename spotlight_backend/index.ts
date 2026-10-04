@@ -37,16 +37,23 @@ app.use((req, res, next) => {
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
-app.get('/', (req: Request, res: Response): any => {
+app.get(['/', '/api', '/api/health', '/health'], (req: Request, res: Response): any => {
   return res.status(200).json({ status: 'success', message: 'Spotlight API Server is live!' });
 });
 
-app.use('/api/auth', authRouter);
-app.use('/api/profiles', profilesRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/clubs', clubsRouter);
-app.use('/api', registrationsRouter); 
-app.use('/api/notifications', notificationsRouter);
+// Support both /api/... and direct /... (resilient to Passenger/Apache prefix stripping)
+const mountRoutes = (basePath: string) => {
+  const prefix = basePath ? `/${basePath.replace(/^\/+|\/+$/g, '')}` : '';
+  app.use(`${prefix}/auth`, authRouter);
+  app.use(`${prefix}/profiles`, profilesRouter);
+  app.use(`${prefix}/events`, eventsRouter);
+  app.use(`${prefix}/clubs`, clubsRouter);
+  app.use(`${prefix}/notifications`, notificationsRouter);
+  app.use(prefix || '/', registrationsRouter);
+};
+
+mountRoutes('api');
+mountRoutes('');
 
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {
