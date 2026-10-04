@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowRight, Calendar, Users, CreditCard, Plus, MapPin,
@@ -10,6 +11,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import { useGoogleLogin } from "@react-oauth/google";
 import { syncProfile, fetchEvents, fetchClubs, fetchEventRegistrations, approveRegistration, rejectRegistration, createEvent, fetchAllRegistrationsForEvents, createClub, fetchClubDashboardStats, updateClub, fetchPublicStats, clubLogin, changePassword, updateEventDeadline, updateEvent, sanitizeErrorMessage, verifyRegistrationKey, checkClubEmail, googleAuth, verifyTicketQR } from "./api";
 import confetti from "canvas-confetti";
+import { useTheme, ThemeToggle } from "./theme";
 
 const FC = "'Playfair Display', serif";
 const F_LOGO = "'Cinzel', serif";
@@ -396,6 +398,7 @@ function AuthInput({ label, type, placeholder, value, onChange }: {
 }
 
 function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister: () => void }) {
+  const { theme, isDark } = useTheme();
   const [scrollY, setScrollY] = useState(0);
   const [stats, setStats] = useState({
     liveEvents: 0,
@@ -434,26 +437,33 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
   }, []);
 
   return (
-    <div id="ls" className="h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden flex flex-col relative bg-background touch-pan-y overscroll-none">
+    <div id="ls" className="h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden flex flex-col relative bg-background touch-pan-y overscroll-none transition-colors duration-300">
       <div id="top-sentinel" className="absolute top-0 left-0 w-full h-10 pointer-events-none z-0" />
 
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-500"
         style={{
-          background:   scrolled ? "rgba(5,5,5,0.92)" : "rgba(5,5,5,0.2)",
+          background:   scrolled ? (isDark ? "rgba(5,5,5,0.92)" : "rgba(240,242,246,0.92)") : (isDark ? "rgba(5,5,5,0.2)" : "rgba(240,242,246,0.65)"),
           backdropFilter: scrolled ? "blur(20px)" : "blur(8px)",
           WebkitBackdropFilter: scrolled ? "blur(20px)" : "blur(8px)",
-          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.05)" : "1px solid transparent",
+          borderBottom: scrolled ? (isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)") : "1px solid transparent",
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 sm:py-5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
-            <span className="text-xs sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] font-semibold text-white" style={{ fontFamily: F_LOGO }}>SPOTLIGHT</span>
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <img src="/rit-emblem.png" alt="Ramaiah Emblem" className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] font-semibold whitespace-nowrap transition-colors" style={{ fontFamily: F_LOGO, color: isDark ? "#ffffff" : "#1e1b26" }}>SPOTLIGHT-RIT</span>
           </div>
-          <button onClick={onEnter}
-            className="text-xs sm:text-sm px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-white/85 hover:text-white transition-all duration-400 cursor-pointer active:scale-95"
-            style={{ border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.03)" }}
-          >Sign In</button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            <button onClick={onEnter}
+              className="text-xs sm:text-sm px-4 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all duration-400 cursor-pointer active:scale-95 font-medium"
+              style={{
+                border: isDark ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(0,0,0,0.12)",
+                background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.05)",
+                color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26",
+              }}
+            >Sign In</button>
+          </div>
         </div>
       </nav>
 
@@ -462,114 +472,86 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
           position: "absolute", top: "-10%", left: "50%",
           transform: "translateX(-50%)",
           width: "700px", height: "900px",
-          background: "conic-gradient(from 174deg at 50% 0%, transparent 0deg, rgba(255,255,255,0.035) 6deg, transparent 12deg)",
+          background: isDark
+            ? "conic-gradient(from 174deg at 50% 0%, transparent 0deg, rgba(255,255,255,0.035) 6deg, transparent 12deg)"
+            : "conic-gradient(from 174deg at 50% 0%, transparent 0deg, rgba(222,63,15,0.04) 6deg, transparent 18deg)",
           filter: "blur(40px)",
           animation: "beamSweep 10s ease-in-out infinite",
         }} />
-        {[
-          { label: `● ${stats.liveEvents} LIVE EVENTS`, delay: 0, x: "left-[8%] top-[15%]", y: [0, -14, 0], d: 5.5 },
-          { label: `${stats.registrations.toLocaleString()}+ REGISTRATIONS`, delay: 1.5, x: "right-[9%] top-[32%]", y: [0, 12, 0], d: 7 },
-          { label: `● ${stats.clubs} ACTIVE CLUBS`, delay: 0.7, x: "left-[5%] top-[48%]", y: [0, 15, 0], d: 6.2 },
-          { label: `${stats.totalEvents} EVENTS HOSTED`, delay: 2.2, x: "right-[8%] top-[65%]", y: [0, -10, 0], d: 6.8 },
-          { label: `${stats.totalStudents.toLocaleString()}+ REGISTERED STUDENTS`, delay: 1.1, x: "left-[8%] top-[82%]", y: [0, 12, 0], d: 7.5 },
-        ].map(chip => (
-          <motion.div key={chip.label}
-            animate={{ y: chip.y }}
-            transition={{ duration: chip.d, repeat: Infinity, ease: "easeInOut", delay: chip.delay }}
-            className={`absolute ${chip.x} px-3 py-1.5 rounded-full text-[11px] hidden xl:flex items-center gap-2`}
-            style={{ border: "1.5px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.015)", color: "#f9fafb", fontFamily: FM, backdropFilter: "blur(12px)" }}
-          >{chip.label}</motion.div>
-        ))}
       </div>
 
       <div className="flex-1 flex flex-col justify-between z-10 relative min-h-full h-full">
         
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-8 pt-14 sm:pt-28 pb-3 sm:pb-8 w-full max-w-4xl mx-auto my-auto">
-          <section className="flex-1 flex flex-col items-center justify-center text-center py-2 sm:py-4 w-full my-auto">
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-8 lg:px-12 w-full max-w-7xl mx-auto pt-16 sm:pt-20 pb-4">
+          <section className="flex-1 flex flex-col items-center justify-center text-center w-full">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col items-center w-full my-auto"
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, delay: 0.1 }}
-                className="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] tracking-[0.2em] uppercase bg-white/5 border border-white/10 text-white/70 mb-3 sm:mb-6"
-                style={{ fontFamily: FM }}
-              >
-                Event Management Platform
-              </motion.div>
-
               <motion.h1
                 initial={{ opacity: 0, filter: "blur(12px)", scale: 0.95 }}
                 animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
                 transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                className="leading-tight text-white select-none text-center w-full tracking-[0.04em] md:tracking-[-0.02em] text-3xl sm:text-5xl md:text-7xl lg:text-9xl font-semibold mb-2 sm:mb-5" style={{
-                fontFamily: F_LOGO,
-                textShadow: "0 0 80px rgba(255,255,255,0.12)",
-              }}>SPOTLIGHT</motion.h1>
+                className="leading-none select-none text-center w-full tracking-[0.03em] sm:tracking-[0.05em] md:tracking-[0.07em] lg:tracking-[0.08em] text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[6.5rem] font-semibold mb-2 sm:mb-4 whitespace-nowrap transition-colors"
+                style={{
+                  fontFamily: F_LOGO,
+                  color: isDark ? "#ffffff" : "#1e1b26",
+                  textShadow: isDark ? "0 0 80px rgba(255,255,255,0.12)" : "none",
+                }}
+              >
+                SPOTLIGHT-RIT
+              </motion.h1>
 
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 1 }}
-                className="text-xs sm:text-base md:text-xl max-w-md sm:max-w-lg mx-auto text-center px-3 leading-relaxed mt-1"
-                style={{ color: "#d1d5db", fontFamily: FB }}
+                className="max-w-full sm:max-w-3xl mx-auto text-center px-4 mt-3 sm:mt-4 flex flex-col items-center gap-2 sm:gap-2.5"
               >
-                The Complete Campus{" "}<span style={{ color: "rgba(255,255,255,0.85)" }}>Event Management Hub</span>
-              </motion.p>
+                <p
+                  className="text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed transition-colors"
+                  style={{ color: isDark ? "#d1d5db" : "#4b5563", fontFamily: FB }}
+                >
+                  The Complete Campus{" "}<span style={{ color: isDark ? "rgba(255,255,255,0.85)" : "#1e1b26" }}>Event Management Hub</span>
+                </p>
+                <p
+                  className="text-xs sm:text-sm md:text-base font-medium tracking-wide transition-colors"
+                  style={{ color: isDark ? "rgba(255,255,255,0.65)" : "#F03D4E", fontFamily: FB }}
+                >
+                  Ramaiah Institute of Technology, Bangalore
+                </p>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-4 sm:mt-8 w-full sm:w-auto"
+                className="mt-6 sm:mt-8 w-full sm:w-auto"
               >
                 <motion.button
-                  whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(240,61,78,0.35)" }}
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(240,61,78,0.4)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onEnter}
-                  className="cursor-pointer group inline-flex items-center justify-center px-8 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold text-white bg-[#F03D4E] rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(240,61,78,0.25)] active:scale-95"
+                  className="cursor-pointer group inline-flex items-center justify-center px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-white bg-[#F03D4E] hover:bg-[#d83544] rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(240,61,78,0.3)] active:scale-95"
                 >
                   <span>Enter Dashboard</span>
                 </motion.button>
-              </motion.div>
-
-              {/* Ultra-Sleek Mobile Platform Stats Bar */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="flex items-center justify-around w-full max-w-xs sm:max-w-md mx-auto mt-5 sm:mt-12 p-2.5 sm:p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md xl:hidden"
-              >
-                <div className="text-center px-2">
-                  <p className="text-xs sm:text-sm font-bold text-white" style={{ fontFamily: FB }}>{stats.liveEvents}</p>
-                  <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-white/50 mt-0.5" style={{ fontFamily: FM }}>Live</p>
-                </div>
-                <div className="w-px h-5 bg-white/10" />
-                <div className="text-center px-2">
-                  <p className="text-xs sm:text-sm font-bold text-white" style={{ fontFamily: FB }}>{stats.registrations.toLocaleString()}+</p>
-                  <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-white/50 mt-0.5" style={{ fontFamily: FM }}>Registrations</p>
-                </div>
-                <div className="w-px h-5 bg-white/10" />
-                <div className="text-center px-2">
-                  <p className="text-xs sm:text-sm font-bold text-white" style={{ fontFamily: FB }}>{stats.clubs}</p>
-                  <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-white/50 mt-0.5" style={{ fontFamily: FM }}>Clubs</p>
-                </div>
               </motion.div>
             </motion.div>
           </section>
         </div>
 
-        <footer className="w-full px-4 md:px-16 pb-4 sm:pb-6 pt-3 sm:pt-4 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 border-t border-white/5 flex-shrink-0">
+        <footer className={`w-full px-4 md:px-16 pb-4 sm:pb-6 pt-3 sm:pt-4 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 border-t flex-shrink-0 transition-colors ${
+          isDark ? "border-white/5" : "border-slate-300/60 bg-[#f0f2f6]"
+        }`}>
           <div className="flex-1 flex justify-center md:justify-start">
-            <span className="text-xs sm:text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: "rgba(255,255,255,0.4)" }}>SPOTLIGHT</span>
+            <span className="text-xs sm:text-sm tracking-[0.35em]" style={{ fontFamily: F_LOGO, color: isDark ? "rgba(255,255,255,0.4)" : "#64748b" }}>SPOTLIGHT-RIT</span>
           </div>
-          <p className="text-[10px] sm:text-xs text-center flex-shrink-0" style={{ color: "#94a3b8", fontFamily: FM }}>© 2026 Spotlight. All rights reserved.</p>
-          <div className="flex-1 flex justify-center md:justify-end gap-5 text-[10px] sm:text-[11px]" style={{ color: "#94a3b8" }}>
-            <button onClick={() => setActiveModal('privacy')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Privacy</button>
-            <button onClick={() => setActiveModal('terms')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Terms</button>
-            <button onClick={() => setActiveModal('contact')} className="hover:text-white transition-colors duration-300 hover:underline underline-offset-4 decoration-white/60" style={{ fontFamily: FB }}>Contact Us</button>
+          <p className="text-[10px] sm:text-xs text-center flex-shrink-0" style={{ color: isDark ? "#94a3b8" : "#64748b", fontFamily: FM }}>© 2026 Spotlight-RIT. Ramaiah Institute of Technology. All rights reserved.</p>
+          <div className="flex-1 flex justify-center md:justify-end gap-5 text-[10px] sm:text-[11px]" style={{ color: isDark ? "#94a3b8" : "#64748b" }}>
+            <button onClick={() => setActiveModal('privacy')} className={`transition-colors duration-300 hover:underline underline-offset-4 ${isDark ? "hover:text-white" : "hover:text-black"}`} style={{ fontFamily: FB }}>Privacy</button>
+            <button onClick={() => setActiveModal('terms')} className={`transition-colors duration-300 hover:underline underline-offset-4 ${isDark ? "hover:text-white" : "hover:text-black"}`} style={{ fontFamily: FB }}>Terms</button>
+            <button onClick={() => setActiveModal('contact')} className={`transition-colors duration-300 hover:underline underline-offset-4 ${isDark ? "hover:text-white" : "hover:text-black"}`} style={{ fontFamily: FB }}>Contact Us</button>
           </div>
         </footer>
       </div>
@@ -577,44 +559,57 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
       <AnimatePresence>
         {activeModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-6">
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto flex flex-col" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="w-full max-w-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto flex flex-col shadow-2xl transition-colors"
+              style={{
+                background: isDark ? "#0a0a0a" : "#f0f2f6",
+                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
+                color: isDark ? "#ffffff" : "#1e1b26"
+              }}
+            >
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-white" style={{ fontFamily: FC }}>
+                  <h3 className="text-lg font-semibold" style={{ fontFamily: FC, color: isDark ? "#ffffff" : "#1e1b26" }}>
                     {activeModal === 'privacy' && 'Dashboard Privacy Policy'}
                     {activeModal === 'terms' && 'Dashboard Terms of Service'}
                     {activeModal === 'contact' && 'Contact Us'}
                   </h3>
-                  <p className="text-xs text-[#999] mt-1" style={{ fontFamily: FB }}>
+                  <p className="text-xs mt-1" style={{ fontFamily: FB, color: isDark ? "#999" : "#64748b" }}>
                     {activeModal === 'contact' ? 'Reach out to Spotlight Support' : 'Last Updated: July 26, 2026'}
                   </p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                <button onClick={() => setActiveModal(null)}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                    isDark ? "bg-white/5 hover:bg-white/10 text-white/60 hover:text-white" : "bg-black/5 hover:bg-black/10 text-slate-600 hover:text-slate-900"
+                  }`}
+                >
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-[#ccc] leading-relaxed border-t border-b border-white/5 py-6 text-left" style={{ fontFamily: FB }}>
+              <div className={`flex-1 overflow-y-auto pr-2 space-y-6 text-sm leading-relaxed border-t border-b py-6 text-left ${
+                isDark ? "text-[#ccc] border-white/5" : "text-slate-600 border-slate-200"
+              }`} style={{ fontFamily: FB }}>
                 {activeModal === 'privacy' && (
                   <>
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Information We Collect From Clubs</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Information We Collect From Clubs</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Participant Information Available to Clubs</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Participant Information Available to Clubs</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Handling Participant Information</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">Clubs must process participant data strictly to organize and conduct the event. You must not sell or share participant data with third parties, use it for unrelated spam/marketing, or store downloaded lists insecurely.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Handling Participant Information</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">Clubs must process participant data strictly to organize and conduct the event. You must not sell or share participant data with third parties, use it for unrelated spam/marketing, or store downloaded lists insecurely.</p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Third-Party Services</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">We rely on secure authentication services, Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Third-Party Services</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">We rely on secure authentication services, Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
                     </div>
                   </>
                 )}
@@ -622,18 +617,18 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
                 {activeModal === 'terms' && (
                   <>
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">About the Spotlight Club Dashboard</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">About the Spotlight Club Dashboard</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Club Authentication</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">We provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Club Authentication</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">We provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Participant Data Compliance</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed">Clubs must handle participant registrations responsibly. Downloading participant data for third-party commercial use or unauthorized solicitation is strictly prohibited.</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Participant Data Compliance</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed">Clubs must handle participant registrations responsibly. Downloading participant data for third-party commercial use or unauthorized solicitation is strictly prohibited.</p>
                     </div>
                   </>
                 )}
@@ -641,27 +636,27 @@ function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRegister:
                 {activeModal === 'contact' && (
                   <>
                     <div>
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Reach Out For Support</h4>
-                      <p className="text-xs text-[#bbbbbb] leading-relaxed mb-4">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support directly at:</p>
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Reach Out For Support</h4>
+                      <p className="text-xs text-slate-600 dark:text-[#bbbbbb] leading-relaxed mb-4">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support directly at:</p>
                       <a 
                         href="mailto:spotlightapp.help@gmail.com" 
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold transition-all"
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold transition-all"
                       >
                         <Mail size={16} />
                         <span>spotlightapp.help@gmail.com</span>
                       </a>
                     </div>
 
-                    <div className="pt-4 border-t border-white/5">
-                      <h4 className="text-white font-semibold text-sm mb-1.5">Response Guidelines</h4>
-                      <p className="text-xs text-[#888] leading-relaxed">Our support team reviews requests within 24-48 hours. Please include your registered Club Name and Email Address in your message.</p>
+                    <div className="pt-4 border-t border-slate-200 dark:border-white/5">
+                      <h4 className="text-[#1e1b26] dark:text-white font-semibold text-sm mb-1.5">Response Guidelines</h4>
+                      <p className="text-xs text-slate-500 dark:text-[#888] leading-relaxed">Our support team reviews requests within 24-48 hours. Please include your registered Club Name and Email Address in your message.</p>
                     </div>
                   </>
                 )}
               </div>
 
               <div className="flex justify-end mt-6">
-                <button onClick={() => setActiveModal(null)} className="px-6 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all font-semibold" style={{ fontFamily: FB }}>Close</button>
+                <button onClick={() => setActiveModal(null)} className="px-6 py-2.5 text-xs text-slate-700 dark:text-white bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl transition-all font-semibold cursor-pointer border border-slate-300/80 dark:border-transparent" style={{ fontFamily: FB }}>Close</button>
               </div>
             </motion.div>
           </motion.div>
@@ -697,6 +692,7 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   onLocalSignIn: (token: string, profile: any) => void;
   initialError?: string | null;
 }) {
+  const { isDark } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [clubName, setClubName] = useState("");
@@ -829,21 +825,30 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
         className="fixed inset-0 z-20 flex items-center justify-center p-6"
-        style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(10px)" }}
+        style={{ background: isDark ? "rgba(5,5,5,0.97)" : "#ffffff", backdropFilter: "blur(10px)" }}
       >
         <button onClick={onBack}
           className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
-          style={{ color: "#999", fontFamily: FB }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#eee")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#999")}
+          style={{ color: isDark ? "#999" : "#1e1b26", fontFamily: FB }}
+          onMouseEnter={e => (e.currentTarget.style.color = isDark ? "#eee" : "#F03D4E")}
+          onMouseLeave={e => (e.currentTarget.style.color = isDark ? "#999" : "#1e1b26")}
         ><ChevronLeft size={14} /> Back</button>
 
-        <div className="w-full max-w-md p-8 md:p-10 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
+        <div className="absolute top-8 right-8">
+          <ThemeToggle />
+        </div>
+
+        <div className="w-full max-w-md p-8 md:p-10 rounded-3xl" style={{
+          background: isDark ? "rgba(255,255,255,0.015)" : "#f0f2f6",
+          border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)",
+          boxShadow: isDark ? "none" : "0 20px 40px -15px rgba(0,0,0,0.06)",
+          backdropFilter: "blur(24px)"
+        }}>
           <div className="flex flex-col items-center mb-8">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: "rgba(240,61,78,0.1)", border: "1px solid rgba(240,61,78,0.2)" }}>
               <Key size={24} className="text-[#F03D4E]" />
             </div>
-            <h2 className="text-2xl font-bold text-white text-center" style={{ fontFamily: FC }}>Authorization Required</h2>
+            <h2 className="text-2xl font-bold text-center" style={{ fontFamily: FC, color: isDark ? "#ffffff" : "#1e1b26" }}>Authorization Required</h2>
           </div>
 
           <form noValidate onSubmit={handleVerifyKey} className="space-y-6">
@@ -853,11 +858,16 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
                 type="text"
                 placeholder="SPOTLIGHT-XXXX-XXXX"
                 autoFocus
-                className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all uppercase tracking-widest"
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FM }}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all uppercase tracking-widest"
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee",
+                  border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)",
+                  color: isDark ? "#ffffff" : "#1e1b26",
+                  fontFamily: FM
+                }}
                 value={registrationKey}
                 onChange={e => { setRegistrationKey(e.target.value); if (error) setError(null); }}
-                onFocus={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)")}
+                onFocus={e => (e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.3)" : "#F03D4E")}
                 onBlur={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
               />
             </div>
@@ -907,18 +917,25 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
       className="fixed inset-0 z-20 flex items-center justify-center p-6"
-      style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(10px)" }}
+      style={{ background: isDark ? "rgba(5,5,5,0.97)" : "#f0f2f6", backdropFilter: "blur(10px)" }}
     >
       <button onClick={onBack}
         className="absolute top-8 left-8 flex items-center gap-2 text-sm transition-all duration-300"
-        style={{ color: "#d1d5db", fontFamily: FB }}
-        onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
-        onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
+        style={{ color: isDark ? "#d1d5db" : "#1e1b26", fontFamily: FB }}
+        onMouseEnter={e => (e.currentTarget.style.color = isDark ? "#eeeeee" : "#F03D4E")}
+        onMouseLeave={e => (e.currentTarget.style.color = isDark ? "#999999" : "#1e1b26")}
       ><ChevronLeft size={14} /> Back</button>
+
+      <div className="absolute top-8 right-8">
+        <ThemeToggle />
+      </div>
 
       <div className="flex flex-col items-center gap-6 w-full max-w-md">
 
-        <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{
+          background: isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.05)",
+          border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)"
+        }}>
           {(["login", "register"] as AuthTab[]).map(t => (
             <button key={t} onClick={() => { setEmail(""); setPassword(""); setClubName(""); setError(null); setShowPassword(false); setRegistrationKey(""); setKeyVerified(false); onTabChange(t); }}
               className="relative flex-1 py-2.5 text-sm font-medium transition-colors duration-300 cursor-pointer"
@@ -927,18 +944,27 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
               {tab === t && (
                 <motion.div
                   layoutId="activeAuthTabPill"
-                  className="absolute inset-0 bg-white rounded-lg"
+                  className={`absolute inset-0 rounded-lg ${isDark ? "bg-white shadow-sm" : "bg-white shadow-sm border border-black/5"}`}
                   transition={{ type: "spring", stiffness: 220, damping: 24 }}
                 />
               )}
-              <span className={`relative z-10 transition-colors duration-300 ${tab === t ? "text-black font-semibold" : "text-[#aaaaaa]"}`}>
+              <span className={`relative z-10 transition-colors duration-300 font-semibold ${
+                tab === t
+                  ? (isDark ? "text-black" : "text-[#1e1b26]")
+                  : (isDark ? "text-[#aaaaaa]" : "text-slate-500 hover:text-slate-900")
+              }`}>
                 {t === "login" ? "Sign In" : "Sign Up"}
               </span>
             </button>
           ))}
         </div>
 
-        <div className="w-full p-8 md:p-10 rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}>
+        <div className="w-full p-8 md:p-10 rounded-3xl overflow-hidden" style={{
+          background: isDark ? "rgba(255,255,255,0.015)" : "#f0f2f6",
+          border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)",
+          boxShadow: isDark ? "none" : "0 20px 40px -15px rgba(0,0,0,0.06)",
+          backdropFilter: "blur(24px)"
+        }}>
           <AnimatePresence mode="popLayout">
             <motion.div
               key={tab}
@@ -948,10 +974,10 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
               transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: FC, color: isDark ? "#ffffff" : "#1e1b26" }}>
                   {tab === "login" ? "Sign In to Club" : "Register Your Club"}
                 </h2>
-                <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>
+                <p className="text-xs" style={{ fontFamily: FB, color: isDark ? "#d1d5db" : "#64748b" }}>
                   {tab === "login" ? "Access your club dashboard" : "Welcome! Please fill in the details to get started."}
                 </p>
               </div>
@@ -1000,7 +1026,9 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
                     <button 
                       type="button" 
                       onClick={() => setShowPassword(!showPassword)} 
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/65 hover:text-white transition-colors"
+                      className="password-toggle-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-white/65 dark:hover:text-white transition-colors bg-transparent border-0 outline-none p-1 cursor-pointer flex items-center justify-center"
+                      style={{ background: "transparent", backgroundColor: "transparent", border: "none", boxShadow: "none" }}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -1027,23 +1055,27 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
               </form>
 
               <div className="flex items-center gap-4 my-6">
-                <div className="h-[1px] bg-white/10 flex-1" />
-                <span className="text-[11px] text-white/55 uppercase tracking-widest" style={{ fontFamily: FM }}>or</span>
-                <div className="h-[1px] bg-white/10 flex-1" />
+                <div className={`h-[1px] flex-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
+                <span className={`text-[11px] uppercase tracking-widest ${isDark ? "text-white/55" : "text-[#64748b]"}`} style={{ fontFamily: FM }}>or</span>
+                <div className={`h-[1px] flex-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
               </div>
 
               <motion.button
                 type="button"
                 onClick={() => loginWithGoogle()}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                className="cursor-pointer w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all duration-300"
+                className={`cursor-pointer w-full flex items-center justify-center gap-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                  isDark
+                    ? "bg-white/5 border border-white/10 hover:bg-white/10 text-white"
+                    : "bg-white/70 border border-slate-300 hover:bg-black/5 text-[#1e1b26] shadow-sm"
+                }`}
                 style={{ fontFamily: FB }}
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.66 1.39 7.56l3.92 3.04C6.26 7.55 8.91 5.04 12 5.04z" />
-                  <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57v2.96h3.87c2.26-2.08 3.56-5.14 3.56-8.68z" />
-                  <path fill="#FBBC05" d="M5.31 10.6C5.07 11.3 4.94 12.04 4.94 12.8s.13 1.5.37 2.2l-3.92 3.04C.48 16.29 0 14.61 0 12.8s.48-3.49 1.39-5.24l3.92 3.04z" />
-                  <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.87-2.96c-1.08.72-2.48 1.16-4.09 1.16-3.09 0-5.74-2.51-6.69-5.56l-3.92 3.04C3.37 20.34 7.35 23 12 23z" />
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
                 Continue with Google
               </motion.button>
@@ -1224,19 +1256,19 @@ function TicketScannerModal({
       className="rounded-2xl border border-[#F03D4E]/20 bg-[#F03D4E]/[0.03] overflow-hidden"
     >
       
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-white/[0.06]">
         <div className="flex items-center gap-2.5">
           <Camera size={16} className="text-[#F03D4E]" />
-          <span className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>
+          <span className="text-sm font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FB }}>
             Scan Ticket QR
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>
             Live
           </span>
         </div>
         <button
           onClick={onClose}
-          className="text-white/40 hover:text-white transition-colors cursor-pointer p-1 rounded-lg hover:bg-white/10"
+          className="text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
         >
           <X size={16} />
         </button>
@@ -1248,7 +1280,7 @@ function TicketScannerModal({
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
                     <path d="M12 8v4"/>
@@ -1256,17 +1288,17 @@ function TicketScannerModal({
                   </svg>
                 </div>
                 <div>
-                  <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-amber-400" style={{ fontFamily: FM }}>
+                  <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-amber-600 dark:text-amber-400" style={{ fontFamily: FM }}>
                     ALREADY CHECKED IN
                   </span>
-                  <p className="text-sm font-semibold text-white mt-0.5" style={{ fontFamily: FB }}>
+                  <p className="text-sm font-semibold text-[#1e1b26] dark:text-white mt-0.5" style={{ fontFamily: FB }}>
                     {alreadyCheckedIn}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => { setAlreadyCheckedIn(null); setScanError(null); setManualCode(""); }}
-                className="text-xs px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer font-semibold"
+                className="text-xs px-3.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white transition-all cursor-pointer font-semibold border border-slate-300 dark:border-transparent"
                 style={{ fontFamily: FB }}
               >
                 Scan Next Ticket
@@ -1302,7 +1334,7 @@ function TicketScannerModal({
                   </div>
                 )}
               </div>
-              <p className="text-[11px] text-white/30 mt-2 text-center" style={{ fontFamily: FB }}>
+              <p className="text-[11px] text-slate-500 dark:text-white/30 mt-2 text-center" style={{ fontFamily: FB }}>
                 Point camera at attendee's QR code
               </p>
             </div>
@@ -1310,10 +1342,10 @@ function TicketScannerModal({
             {/* Manual Entry */}
             <div className="flex-1 flex flex-col justify-center gap-4 w-full text-center lg:text-left">
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-white/60 uppercase tracking-wider" style={{ fontFamily: FM }}>
+                <p className="text-xs font-semibold text-slate-700 dark:text-white/60 uppercase tracking-wider" style={{ fontFamily: FM }}>
                   Or enter Ticket ID or Team Passkey
                 </p>
-                <p className="text-[11px] text-white/30" style={{ fontFamily: FB }}>
+                <p className="text-[11px] text-slate-500 dark:text-white/30" style={{ fontFamily: FB }}>
                   Enter Ticket ID or Team Passkey manually if camera cannot scan
                 </p>
               </div>
@@ -1326,13 +1358,13 @@ function TicketScannerModal({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleProcessTicket(manualCode);
                   }}
-                  className="flex-1 rounded-xl px-4 py-2.5 text-xs text-white bg-white/5 border border-white/10 outline-none focus:border-[#F03D4E]/50 transition-all"
+                  className="flex-1 rounded-xl px-4 py-2.5 text-xs text-[#1e1b26] dark:text-white bg-[#e4e7ee] dark:bg-white/5 border border-slate-300 dark:border-white/10 outline-none focus:border-[#F03D4E]/50 transition-all"
                   style={{ fontFamily: FB }}
                 />
                 <button
                   onClick={() => handleProcessTicket(manualCode)}
                   disabled={loading || !manualCode.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-[#F03D4E] text-white text-xs font-semibold hover:bg-[#d63545] transition-all disabled:opacity-40 cursor-pointer flex-shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-[#F03D4E] text-white text-xs font-semibold hover:bg-[#d63545] transition-all disabled:opacity-40 cursor-pointer flex-shrink-0 shadow-sm"
                   style={{ fontFamily: FB }}
                 >
                   Verify
@@ -1342,7 +1374,7 @@ function TicketScannerModal({
                 <div className="p-3.5 rounded-xl bg-[#F03D4E]/10 border border-[#F03D4E]/20 flex items-center justify-between gap-3 text-left">
                   <div className="flex items-start gap-2.5 flex-1 min-w-0">
                     <AlertTriangle size={16} className="text-[#F03D4E] shrink-0 mt-0.5" />
-                    <p className="text-xs text-[#ff949d] font-medium leading-relaxed" style={{ fontFamily: FB }}>
+                    <p className="text-xs text-red-600 dark:text-[#ff949d] font-medium leading-relaxed" style={{ fontFamily: FB }}>
                       {scanError}
                     </p>
                   </div>
@@ -1364,23 +1396,23 @@ function TicketScannerModal({
             {/* Verified Header Bar */}
             <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
                   <CheckCircle size={18} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-emerald-400" style={{ fontFamily: FM }}>
+                    <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-emerald-700 dark:text-emerald-400" style={{ fontFamily: FM }}>
                       TICKET VERIFIED · {scanResult.status}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-white mt-0.5" style={{ fontFamily: FB }}>
+                  <p className="text-sm font-semibold text-[#1e1b26] dark:text-white mt-0.5" style={{ fontFamily: FB }}>
                     {scanResult.event.title}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => { setScanResult(null); setScanError(null); setManualCode(""); }}
-                className="text-xs px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer font-semibold"
+                className="text-xs px-3.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white transition-all cursor-pointer font-semibold border border-slate-300 dark:border-transparent"
                 style={{ fontFamily: FB }}
               >
                 Scan Next Ticket
@@ -1389,33 +1421,33 @@ function TicketScannerModal({
 
             {/* Scanned Attendee Profile Summary */}
             {scanResult.attendee && (
-              <div className="p-5 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-                  <span className="text-[11px] uppercase tracking-widest text-[#f3f4f6] font-semibold" style={{ fontFamily: FM }}>
+              <div className="p-5 rounded-xl bg-slate-100 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-2.5">
+                  <span className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold" style={{ fontFamily: FM }}>
                     Scanned Attendee Details
                   </span>
                   {scanResult.team && (
-                    <span className="text-xs text-white/70 font-mono" style={{ fontFamily: FB }}>
-                      Team: <strong className="text-white">{scanResult.team.name}</strong> (Passkey: <span className="text-emerald-400 font-bold">{scanResult.team.passkey}</span>)
+                    <span className="text-xs text-slate-600 dark:text-white/70 font-mono" style={{ fontFamily: FB }}>
+                      Team: <strong className="text-[#1e1b26] dark:text-white">{scanResult.team.name}</strong> (Passkey: <span className="text-emerald-700 dark:text-emerald-400 font-bold">{scanResult.team.passkey}</span>)
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-[#94a3b8]" style={{ fontFamily: FB }}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-slate-600 dark:text-[#94a3b8]" style={{ fontFamily: FB }}>
                   <div>
-                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Full Name</span>
-                    <span className="text-white font-medium text-sm">{scanResult.attendee.name}</span>
+                    <span className="text-[10px] uppercase text-slate-500 dark:text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Full Name</span>
+                    <span className="text-[#1e1b26] dark:text-white font-medium text-sm">{scanResult.attendee.name}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>USN</span>
-                    <span className="text-white font-mono">{scanResult.attendee.usn || '—'}</span>
+                    <span className="text-[10px] uppercase text-slate-500 dark:text-[#666] block mb-0.5" style={{ fontFamily: FM }}>USN</span>
+                    <span className="text-[#1e1b26] dark:text-white font-mono">{scanResult.attendee.usn || '—'}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Email</span>
-                    <span className="text-white font-mono text-[11px]">{scanResult.attendee.email || '—'}</span>
+                    <span className="text-[10px] uppercase text-slate-500 dark:text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Email</span>
+                    <span className="text-[#1e1b26] dark:text-white font-mono text-[11px]">{scanResult.attendee.email || '—'}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Branch / Sem</span>
-                    <span className="text-white">
+                    <span className="text-[10px] uppercase text-slate-500 dark:text-[#666] block mb-0.5" style={{ fontFamily: FM }}>Branch / Sem</span>
+                    <span className="text-[#1e1b26] dark:text-white">
                       {scanResult.attendee.branch || '—'}
                       {scanResult.attendee.sem ? `, Sem ${scanResult.attendee.sem}` : ''}
                     </span>
@@ -1428,14 +1460,14 @@ function TicketScannerModal({
             {scanResult.team && scanResult.team.members.length > 0 && (
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#f3f4f6]" style={{ fontFamily: FM }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>
                     Team Roster ({scanResult.team.members.length} members checked-in)
                   </h4>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.005]">
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.005]">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/5 text-[#94a3b8]" style={{ fontFamily: FM }}>
+                      <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-[#94a3b8]" style={{ fontFamily: FM }}>
                         <th className="p-3">Member Name</th>
                         <th className="p-3">USN</th>
                         <th className="p-3">Email</th>
@@ -1443,23 +1475,23 @@ function TicketScannerModal({
                         <th className="p-3 text-right">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5 text-white/80" style={{ fontFamily: FB }}>
+                    <tbody className="divide-y divide-slate-200 dark:divide-white/5 text-slate-800 dark:text-white/80" style={{ fontFamily: FB }}>
                       {scanResult.team.members.map((member: any) => (
-                        <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="p-3 font-semibold text-white flex items-center gap-2">
+                        <tr key={member.id} className="hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors">
+                          <td className="p-3 font-semibold text-[#1e1b26] dark:text-white flex items-center gap-2">
                             {member.name}
                             {member.isLeader && (
-                              <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Leader</span>
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Leader</span>
                             )}
                           </td>
-                          <td className="p-3 font-mono text-[#94a3b8]">{member.usn || '—'}</td>
-                          <td className="p-3 text-[#94a3b8]">{member.email || '—'}</td>
-                          <td className="p-3 text-[#94a3b8]">{member.branch || '—'}</td>
+                          <td className="p-3 font-mono text-slate-600 dark:text-[#94a3b8]">{member.usn || '—'}</td>
+                          <td className="p-3 text-slate-600 dark:text-[#94a3b8]">{member.email || '—'}</td>
+                          <td className="p-3 text-slate-600 dark:text-[#94a3b8]">{member.branch || '—'}</td>
                           <td className="p-3 text-right">
                             <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border ${
                               member.status?.toUpperCase() === 'CONFIRMED'
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
                             }`} style={{ fontFamily: FM }}>
                               {member.status || 'CONFIRMED'}
                             </span>
@@ -1499,7 +1531,7 @@ function EventsPage({
   setShowTeams: (val: boolean, pushHistory?: boolean) => void;
   refreshEvents: () => Promise<void>;
 }) {
-
+  const { isDark } = useTheme();
   const [regsLoading, setRegsLoading] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showApprovals, setShowApprovals] = useState(false);
@@ -1539,6 +1571,17 @@ function EventsPage({
     setShowScannerModal(false);
     setScannedAttendees([]);
   }, [selectedEventId]);
+
+  useEffect(() => {
+    if (showFullBannerModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showFullBannerModal]);
 
   const registrations = selectedEventId
     ? allRegistrations.filter(r => r.eventId === selectedEventId)
@@ -1683,16 +1726,16 @@ function EventsPage({
         {(showParticipants || showTeams || showApprovals) ? (
           <button onClick={() => { setShowParticipants(false); setShowTeams(false); setShowApprovals(false); }}
             className="flex items-center gap-2 text-sm transition-all duration-300 cursor-pointer"
-            style={{ color: "#d1d5db", fontFamily: FB }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
+            style={{ color: isDark ? "#d1d5db" : "#1e1b26", fontFamily: FB }}
+            onMouseEnter={e => (e.currentTarget.style.color = isDark ? "#eeeeee" : "#F03D4E")}
+            onMouseLeave={e => (e.currentTarget.style.color = isDark ? "#999999" : "#1e1b26")}
           ><ChevronLeft size={14} /> Return to Event</button>
         ) : (
           <button onClick={() => { setSelectedEventId(null); setShowTeams(false, false); }}
             className="flex items-center gap-2 text-sm transition-all duration-300 cursor-pointer"
-            style={{ color: "#d1d5db", fontFamily: FB }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#eeeeee")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#999999")}
+            style={{ color: isDark ? "#d1d5db" : "#1e1b26", fontFamily: FB }}
+            onMouseEnter={e => (e.currentTarget.style.color = isDark ? "#eeeeee" : "#F03D4E")}
+            onMouseLeave={e => (e.currentTarget.style.color = isDark ? "#999999" : "#1e1b26")}
           ><ChevronLeft size={14} /> Back to Events</button>
         )}
 
@@ -1993,7 +2036,7 @@ function EventsPage({
                                 )
                               )}
                             </td>
-                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? new Date(req.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
                             <td className="p-4 text-center">
                               <span className="text-[11px] text-[#F03D4E] uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Rejected</span>
                             </td>
@@ -2241,7 +2284,7 @@ function EventsPage({
                           <td className="p-4">
                             {team ? (
                               <div>
-                                <span className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
+                                <span className="text-[11px] bg-slate-200 text-slate-700 dark:bg-purple-500/10 dark:text-purple-400 border border-slate-300 dark:border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
                                 <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">Passkey: {team.passkey}</p>
                               </div>
                             ) : (
@@ -2387,47 +2430,77 @@ function EventsPage({
                     </div>
                   </div>
 
-                  <AnimatePresence>
-                    {showFullBannerModal && activeEvent.bannerUrl && (
+                  {showFullBannerModal && activeEvent.bannerUrl && typeof document !== "undefined" && createPortal(
+                    <AnimatePresence>
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[70] flex items-center justify-center p-4 md:p-8"
-                        style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(16px)" }}
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-8"
+                        style={{
+                          position: "fixed",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          width: "100vw",
+                          height: "100dvh",
+                          backgroundColor: "rgba(0, 0, 0, 0.95)",
+                          backdropFilter: "blur(20px)",
+                          WebkitBackdropFilter: "blur(20px)",
+                        }}
                         onClick={() => setShowFullBannerModal(false)}
                       >
                         <button 
                           onClick={() => setShowFullBannerModal(false)}
-                          className="fixed top-6 right-6 z-[80] p-3 text-white/80 hover:text-white transition-all bg-white/10 hover:bg-white/20 rounded-full cursor-pointer shadow-lg backdrop-blur-md"
-                          title="Close"
+                          className="banner-modal-close-btn fixed top-4 right-4 sm:top-6 sm:right-6 z-[100000] w-8 h-8 sm:w-9 sm:h-9 rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center p-0"
+                          style={{
+                            color: "#ffffff",
+                            backgroundColor: "rgba(255, 255, 255, 0.18)",
+                            border: "none",
+                            outline: "none",
+                            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.4)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
+                            e.currentTarget.style.transform = "scale(1.06)";
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.18)";
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                          title="Close banner view"
+                          aria-label="Close banner view"
                         >
-                          <X size={22} />
+                          <X size={18} color="#ffffff" strokeWidth={2.2} style={{ stroke: "#ffffff", color: "#ffffff" }} />
                         </button>
                         <div 
-                          className="relative max-w-5xl max-h-[85vh] flex items-center justify-center p-2 rounded-2xl"
+                          className="relative max-w-5xl max-h-[88vh] flex items-center justify-center p-2 rounded-2xl"
                           onClick={e => e.stopPropagation()}
                         >
                           <img 
                             src={activeEvent.bannerUrl} 
                             alt={activeEvent.title} 
-                            className="w-auto h-auto max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-white/10" 
+                            className="w-auto h-auto max-w-full max-h-[82vh] object-contain rounded-xl shadow-2xl border border-white/10" 
                           />
                         </div>
                       </motion.div>
-                    )}
-                  </AnimatePresence>
+                    </AnimatePresence>,
+                    document.body
+                  )}
 
                   <AnimatePresence>
                     {showBannerPasswordModal && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
-                        <div className="w-full max-w-md p-8 rounded-3xl relative" style={{ background: "#0c0c0c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)" }}>
-                          <button onClick={() => { setShowBannerPasswordModal(false); setBannerPassword(""); setBannerPasswordError(null); }} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
-                          <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Confirm Banner Update</h2>
-                          <p className="text-xs text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Enter your club password to save the new banner.</p>
+                        <div className="w-full max-w-md p-8 rounded-3xl relative" style={{ background: isDark ? "#0c0c0c" : "#f0f2f6", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.12)", boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.8)" : "0 20px 45px -10px rgba(0,0,0,0.15)" }}>
+                          <button onClick={() => { setShowBannerPasswordModal(false); setBannerPassword(""); setBannerPasswordError(null); }} className="absolute top-6 right-6 text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
+                          <h2 className="text-2xl font-bold text-[#1e1b26] dark:text-white mb-2" style={{ fontFamily: FC }}>Confirm Banner Update</h2>
+                          <p className="text-xs text-slate-600 dark:text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Enter your club password to save the new banner.</p>
 
                           <div className="space-y-1.5 mb-6">
-                            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
+                            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Password</label>
                             <input
                               autoFocus
                               type="password"
@@ -2435,17 +2508,17 @@ function EventsPage({
                               value={bannerPassword}
                               onChange={e => { setBannerPassword(e.target.value); setBannerPasswordError(null); }}
                               onKeyDown={e => { if (e.key === "Enter" && !bannerUploading) handleBannerPasswordConfirm(); }}
-                              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
-                              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+                              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all"
+                              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.12)", fontFamily: FB }}
                               onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                              onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                              onBlur={e => e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)"}
                             />
                           </div>
 
                           {bannerPasswordError && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{bannerPasswordError}</p>}
 
                           <div className="flex items-center justify-center gap-3">
-                            <button onClick={() => { setShowBannerPasswordModal(false); setBannerPassword(""); setBannerPasswordError(null); }} className="px-6 py-2.5 text-xs text-white bg-white/[0.06] hover:bg-white/10 rounded-full transition-all font-semibold cursor-pointer" style={{ fontFamily: FB }}>Cancel</button>
+                            <button onClick={() => { setShowBannerPasswordModal(false); setBannerPassword(""); setBannerPasswordError(null); }} className="px-6 py-2.5 text-xs text-slate-700 dark:text-white bg-slate-200 hover:bg-slate-300 dark:bg-white/[0.06] dark:hover:bg-white/10 rounded-full transition-all font-semibold cursor-pointer border border-slate-300/80 dark:border-transparent" style={{ fontFamily: FB }}>Cancel</button>
                             <button
                               onClick={handleBannerPasswordConfirm}
                               disabled={bannerUploading}
@@ -2490,11 +2563,11 @@ function EventsPage({
                    const max = activeEvent.teamSizeLimit;
                    return (
                      <>
-                       <span className="flex items-center gap-1.5 text-purple-400 font-medium bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20" style={{ fontFamily: FM }}>
+                       <span className="flex items-center gap-1.5 text-slate-700 dark:text-purple-400 font-medium bg-slate-200 dark:bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-slate-300 dark:border-purple-500/20" style={{ fontFamily: FM }}>
                          <Users size={12} />Team
                        </span>
                        {max ? (
-                         <span className="flex items-center gap-1.5 text-purple-300 font-medium bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20" style={{ fontFamily: FM }}>
+                         <span className="flex items-center gap-1.5 text-slate-700 dark:text-purple-300 font-medium bg-slate-200 dark:bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-slate-300 dark:border-purple-500/20" style={{ fontFamily: FM }}>
                            Size: {max}
                          </span>
                        ) : null}
@@ -2679,14 +2752,14 @@ function EventsPage({
             <AnimatePresence>
               {showEditModal && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start pt-16 justify-center p-6 overflow-y-auto" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
-                  <div className="w-full max-w-lg p-8 rounded-3xl relative mb-24" style={{ background: "#0c0c0c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.7)" }}>
-                    <button onClick={() => setShowEditModal(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
-                    <h2 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: FC }}>Update Event</h2>
+                  <div className="w-full max-w-lg p-8 rounded-3xl relative mb-24" style={{ background: isDark ? "#0c0c0c" : "#f0f2f6", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.12)", boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.7)" : "0 20px 45px -10px rgba(0,0,0,0.15)" }}>
+                    <button onClick={() => setShowEditModal(false)} className="absolute top-6 right-6 text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
+                    <h2 className="text-2xl font-bold text-[#1e1b26] dark:text-white mb-6" style={{ fontFamily: FC }}>Update Event</h2>
 
                     <div className="space-y-5">
                       
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event Start Date &amp; Time</label>
+                        <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Event Start Date &amp; Time</label>
                         <GlassDatePicker value={editForm.date} onChange={v => {
                           setEditForm(p => ({...p, date: v}));
                           setEditErrors(e => ({...e, date: ""}));
@@ -2695,40 +2768,40 @@ function EventsPage({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Event End Date &amp; Time</label>
+                        <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Event End Date &amp; Time</label>
                         <GlassDatePicker value={editForm.endDate} onChange={v => { setEditForm(p => ({...p, endDate: v})); setEditErrors(e => ({...e, endDate: ""})); }} defaultTime="23:59" />
                         {editErrors.endDate && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.endDate}</p>}
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Registration Deadline</label>
+                        <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Registration Deadline</label>
                         <GlassDatePicker value={editForm.deadline} onChange={v => { setEditForm(p => ({...p, deadline: v})); setEditErrors(e => ({...e, deadline: ""})); }} defaultTime="23:59" />
                         {editErrors.deadline && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.deadline}</p>}
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue</label>
-                        <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.venue} onChange={e => { setEditForm(p => ({...p, venue: e.target.value})); setEditErrors(er => ({...er, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
+                        <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Venue</label>
+                        <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: `1px solid ${editErrors.venue ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")}`, fontFamily: FB }} value={editForm.venue} onChange={e => { setEditForm(p => ({...p, venue: e.target.value})); setEditErrors(er => ({...er, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.8)" : "#F03D4E"} onBlur={e => e.currentTarget.style.borderColor = editErrors.venue ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")} />
                         {editErrors.venue && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.venue}</p>}
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Venue Capacity</label>
-                        <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); setEditErrors(er => ({...er, capacity: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"} />
+                        <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Venue Capacity</label>
+                        <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: `1px solid ${editErrors.capacity ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); setEditErrors(er => ({...er, capacity: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.8)" : "#F03D4E"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")} />
                         {editErrors.capacity && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.capacity}</p>}
                       </div>
 
                       {activeEvent && (activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team') && (
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1.5">
-                            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Min Team Size</label>
+                            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Min Team Size</label>
                             <input
                               type="number"
                               placeholder="1"
                               min={1}
                               max={editForm.teamSizeLimit ? parseInt(editForm.teamSizeLimit) : undefined}
-                              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
-                              style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }}
+                              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all"
+                              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: `1px solid ${editErrors.minTeamSize ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")}`, fontFamily: FB }}
                               value={editForm.minTeamSize}
                               onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }}
                               onChange={e => {
@@ -2736,20 +2809,20 @@ function EventsPage({
                                 setEditForm(p => ({ ...p, minTeamSize: v }));
                                 setEditErrors(er => ({ ...er, minTeamSize: "", teamSizeLimit: "" }));
                               }}
-                              onFocus={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
-                              onBlur={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}
+                              onFocus={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "rgba(240,61,78,0.8)" : "#F03D4E"}
+                              onBlur={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")}
                             />
                             {editErrors.minTeamSize && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.minTeamSize}</p>}
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Max Team Size</label>
+                            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Max Team Size</label>
                             <input
                               type="number"
                               placeholder="e.g. 4"
                               min={editForm.minTeamSize ? parseInt(editForm.minTeamSize) : 1}
-                              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
-                              style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}`, fontFamily: FB }}
+                              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all"
+                              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: `1px solid ${editErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")}`, fontFamily: FB }}
                               value={editForm.teamSizeLimit}
                               onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }}
                               onChange={e => {
@@ -2757,8 +2830,8 @@ function EventsPage({
                                 setEditForm(p => ({ ...p, teamSizeLimit: v }));
                                 setEditErrors(er => ({ ...er, teamSizeLimit: "", minTeamSize: "", capacity: "" }));
                               }}
-                              onFocus={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "rgba(255,255,255,0.3)"}
-                              onBlur={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : "rgba(255,255,255,0.08)"}
+                              onFocus={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "rgba(240,61,78,0.8)" : "#F03D4E"}
+                              onBlur={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "rgba(240,61,78,0.6)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)")}
                             />
                             {editErrors.teamSizeLimit && <p className="text-[11px] text-[#F03D4E] mt-1" style={{ fontFamily: FB }}>{editErrors.teamSizeLimit}</p>}
                           </div>
@@ -2829,13 +2902,13 @@ function EventsPage({
             <AnimatePresence>
               {showEditPasswordModal && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}>
-                  <div className="w-full max-w-md p-8 rounded-3xl relative" style={{ background: "#0c0c0c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)" }}>
-                    <button onClick={() => { setShowEditPasswordModal(false); setEditPassword(""); setEditPasswordError(null); }} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
-                    <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h2>
-                    <p className="text-xs text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
+                  <div className="w-full max-w-md p-8 rounded-3xl relative" style={{ background: isDark ? "#0c0c0c" : "#f0f2f6", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.12)", boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.8)" : "0 20px 45px -10px rgba(0,0,0,0.15)" }}>
+                    <button onClick={() => { setShowEditPasswordModal(false); setEditPassword(""); setEditPasswordError(null); }} className="absolute top-6 right-6 text-slate-500 hover:text-slate-900 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer"><X size={20} /></button>
+                    <h2 className="text-2xl font-bold text-[#1e1b26] dark:text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h2>
+                    <p className="text-xs text-slate-600 dark:text-[#a1a1aa] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
 
                     <div className="space-y-1.5 mb-6">
-                      <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
+                      <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Password</label>
                       <div className="relative">
                         <input
                           autoFocus
@@ -2880,15 +2953,17 @@ function EventsPage({
                               })();
                             }
                           }}
-                          className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all"
-                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
+                          className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all"
+                          style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.12)", fontFamily: FB }}
                           onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-                          onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                          onBlur={e => e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)"}
                         />
                         <button
                           type="button"
                           onClick={() => setShowEditPasswordText(!showEditPasswordText)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                          className="password-toggle-btn absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-0 outline-none p-1 flex items-center justify-center"
+                          style={{ background: "transparent", backgroundColor: "transparent", border: "none", boxShadow: "none" }}
+                          aria-label={showEditPasswordText ? "Hide password" : "Show password"}
                         >
                           {showEditPasswordText ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -2898,7 +2973,7 @@ function EventsPage({
                     {editPasswordError && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{editPasswordError}</p>}
 
                     <div className="flex items-center justify-center gap-3">
-                      <button onClick={() => { setShowEditPasswordModal(false); setEditPassword(""); setEditPasswordError(null); }} className="px-6 py-2.5 text-xs text-white bg-white/[0.06] hover:bg-white/10 rounded-full transition-all font-semibold cursor-pointer" style={{ fontFamily: FB }}>Cancel</button>
+                      <button onClick={() => { setShowEditPasswordModal(false); setEditPassword(""); setEditPasswordError(null); }} className="px-6 py-2.5 text-xs text-slate-700 dark:text-white bg-slate-200 hover:bg-slate-300 dark:bg-white/[0.06] dark:hover:bg-white/10 rounded-full transition-all font-semibold cursor-pointer border border-slate-300/80 dark:border-transparent" style={{ fontFamily: FB }}>Cancel</button>
                       <button
                         onClick={async () => {
                           if (!editPassword) {
@@ -2983,7 +3058,7 @@ function EventsPage({
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
+                      <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-slate-200 text-slate-700 border-slate-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20" : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {pendingApprovals > 0 && (
@@ -2995,17 +3070,14 @@ function EventsPage({
                       {statusVal === "live" ? (
                         <LiveTag />
                       ) : (
-                        <span className="text-[11px] px-2.5 py-1 rounded-full" style={{
-                          background: "rgba(240,61,78,0.05)",
-                          border: "1px solid rgba(255,255,255,0.06)",
-                          color: "#f9fafb",
+                        <span className="text-[11px] px-2.5 py-1 rounded-full text-slate-700 dark:text-[#f9fafb] bg-slate-100 dark:bg-[#F03D4E]/5 border border-slate-200 dark:border-white/5" style={{
                           fontFamily: FM,
                         }}>Upcoming</span>
                       )}
                     </div>
                   </div>
-                  <h3 className="text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
-                  <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#f3f4f6" }}>
+                  <h3 className="text-[#1e1b26] dark:text-white font-semibold mb-2 leading-tight text-lg group-hover:text-[#F03D4E] transition-colors">{ev.title}</h3>
+                  <div className="flex flex-col gap-1.5 mb-6 text-slate-600 dark:text-[#f3f4f6]">
                     <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{formatEventHeaderDate(ev.eventDate || ev.date, ev.eventEndDate)}</span>
                     {ev.registrationDeadline && (
                       <span className="flex items-center gap-1.5 text-xs text-[#f59e0b]">
@@ -3015,7 +3087,7 @@ function EventsPage({
                     )}
                   </div>
                   <div>
-                    <div className="flex justify-between text-[11px] mb-2" style={{ color: "#f9fafb", fontFamily: FM }}>
+                    <div className="flex justify-between text-[11px] mb-2 text-slate-600 dark:text-[#f9fafb]" style={{ fontFamily: FM }}>
                       <span>{regCount} registered</span><span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
@@ -3032,7 +3104,7 @@ function EventsPage({
             })}
 
             {EVENTS.filter(e => { const st = getEventStatus(e); return st === "upcoming" || st === "live"; }).length === 0 && (
-              <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
+              <div className="col-span-3 p-10 rounded-2xl text-center text-sm text-slate-500 dark:text-[#94a3b8]" style={{ border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>
                 No upcoming events yet.
               </div>
             )}
@@ -3041,7 +3113,7 @@ function EventsPage({
 
         <div>
           <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-base font-medium text-white/50" style={{ fontFamily: FB }}>Past Events</h2>
+            <h2 className="text-base font-semibold text-[#1e1b26] dark:text-white/50" style={{ fontFamily: FB }}>Past Events</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {EVENTS.filter(e => getEventStatus(e) === "previous").map((ev, i) => {
@@ -3052,27 +3124,27 @@ function EventsPage({
                   onClick={() => setSelectedEventId(ev.id)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.05 }}
-                  className="p-6 rounded-2xl cursor-pointer group opacity-60 hover:opacity-100"
+                  className="p-6 rounded-2xl cursor-pointer group opacity-90 dark:opacity-60 hover:opacity-100"
                   style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.03)", transition: "all 0.3s ease" }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
+                      <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-slate-200 text-slate-700 border-slate-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20" : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                     </div>
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.03)", color: "#94a3b8", fontFamily: FM }}>Ended</span>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full text-slate-500 dark:text-[#94a3b8] bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-white/5" style={{ fontFamily: FM }}>Ended</span>
                   </div>
-                  <h3 className="text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
-                  <div className="flex flex-col gap-1.5 mb-6" style={{ color: "#94a3b8" }}>
+                  <h3 className="text-[#1e1b26] dark:text-[#cccccc] font-semibold mb-2 leading-tight text-lg transition-colors">{ev.title}</h3>
+                  <div className="flex flex-col gap-1.5 mb-6 text-slate-600 dark:text-[#94a3b8]">
                     <span className="flex items-center gap-1.5 text-xs"><Calendar size={12} />{formatEventHeaderDate(ev.eventDate || ev.date, ev.eventEndDate)}</span>
                     {ev.registrationDeadline && (
-                      <span className="flex items-center gap-1.5 text-xs text-[#94a3b8]/70">
+                      <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94a3b8]/70">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         Deadline: {formatDateTime12H(ev.registrationDeadline)}
                       </span>
                     )}
                   </div>
                   <div>
-                    <div className="flex justify-between text-[11px] mb-2" style={{ color: "#94a3b8", fontFamily: FM }}>
+                    <div className="flex justify-between text-[11px] mb-2 text-slate-600 dark:text-[#94a3b8]" style={{ fontFamily: FM }}>
                       <span>{regCount} registered</span><span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
@@ -3098,6 +3170,7 @@ function EventsPage({
 }
 
 function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: string; onChange: (v: string) => void; defaultTime?: string }) {
+  const { isDark } = useTheme();
   const [open, setOpen] = useState(false);
   const dateObj = value ? new Date(value) : new Date();
 
@@ -3155,31 +3228,59 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
 
   return (
     <div className="relative">
-      <div onClick={() => setOpen(!open)} className="w-full rounded-xl px-4 py-3 text-sm text-white cursor-pointer flex items-center justify-between transition-all" style={{ background: "rgba(255,255,255,0.02)", border: open ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
-        <span className={value ? "text-white" : "text-[#888]"}>{value ? (() => { const d = new Date(value); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const h = d.getHours() % 12 === 0 ? 12 : d.getHours() % 12; const m = String(d.getMinutes()).padStart(2,'0'); const ampm = d.getHours() >= 12 ? 'PM' : 'AM'; return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${h}:${m} ${ampm}`; })() : "Select Date & Time"}</span>
-        <Calendar size={14} className="text-[#d1d5db]" />
+      <div 
+        onClick={() => setOpen(!open)} 
+        className="w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between transition-all" 
+        style={{ 
+          background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", 
+          border: open ? (isDark ? "1px solid rgba(255,255,255,0.3)" : "1px solid #F03D4E") : (isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)"), 
+          fontFamily: FB 
+        }}
+      >
+        <span className={value ? (isDark ? "text-white" : "text-[#1e1b26] font-medium") : (isDark ? "text-[#888]" : "text-slate-500")}>
+          {value ? (() => { 
+            const d = new Date(value); 
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; 
+            const h = d.getHours() % 12 === 0 ? 12 : d.getHours() % 12; 
+            const m = String(d.getMinutes()).padStart(2,'0'); 
+            const ampm = d.getHours() >= 12 ? 'PM' : 'AM'; 
+            return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${h}:${m} ${ampm}`; 
+          })() : "Select Date & Time"}
+        </span>
+        <Calendar size={14} className={isDark ? "text-[#d1d5db]" : "text-slate-600"} />
       </div>
 
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute z-50 top-full mt-2 w-72 p-5 rounded-2xl shadow-2xl left-0" style={{ background: "rgba(15,15,15,0.98)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(24px)" }}>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: 10 }} 
+            className="absolute z-50 top-full mt-2 w-72 p-5 rounded-2xl shadow-2xl left-0" 
+            style={{ 
+              background: isDark ? "rgba(15,15,15,0.98)" : "#f0f2f6", 
+              border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)", 
+              backdropFilter: "blur(24px)",
+              boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.8)" : "0 15px 35px -5px rgba(0,0,0,0.15)"
+            }}
+          >
 
             <div className="flex justify-between items-center mb-4">
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
                 else { setCurrentMonth(m => m - 1); }
-              }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white cursor-pointer"><ChevronLeft size={16} /></button>
-              <div className="text-sm text-white" style={{ fontFamily: FB }}>
+              }} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors text-slate-700 dark:text-white cursor-pointer"><ChevronLeft size={16} /></button>
+              <div className="text-sm font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FB }}>
                 {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {currentYear}
               </div>
               <button onClick={() => {
                 if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
                 else { setCurrentMonth(m => m + 1); }
-              }} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white cursor-pointer"><ChevronRight size={16} /></button>
+              }} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors text-slate-700 dark:text-white cursor-pointer"><ChevronRight size={16} /></button>
             </div>
 
             <div className="grid grid-cols-7 gap-1 mb-2 text-center">
-              {days.map(d => <div key={d} className="text-[11px] text-[#94a3b8]" style={{ fontFamily: FM }}>{d}</div>)}
+              {days.map(d => <div key={d} className="text-[11px] text-slate-500 dark:text-[#94a3b8] font-semibold" style={{ fontFamily: FM }}>{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
               {Array.from({ length: startDay }).map((_, i) => <div key={`empty-${i}`} />)}
@@ -3187,22 +3288,194 @@ function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { value: st
                 const d = i + 1;
                 const isSelected = selectedDate?.getDate() === d && selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear;
                 return (
-                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-[#F03D4E] text-white' : 'text-[#f3f4f6] hover:bg-white/10 hover:text-white'}`} style={{ fontFamily: FB }}>
+                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-[#F03D4E] text-white font-bold shadow-md' : 'text-slate-700 hover:bg-black/5 dark:text-[#f3f4f6] dark:hover:bg-white/10 dark:hover:text-white'}`} style={{ fontFamily: FB }}>
                     {d}
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-[#888]" style={{ fontFamily: FM }}>Time</span>
-              <input type="time" className="bg-transparent border border-white/10 rounded-md px-2.5 py-1 text-xs text-white outline-none focus:border-white/40 hover:border-white/30 transition-all cursor-pointer" style={{ colorScheme: "dark", fontFamily: FB, cursor: "pointer" }} value={timeStr} onChange={handleTimeChange} />
+            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
+              <span className="text-xs text-slate-600 dark:text-[#888] font-semibold" style={{ fontFamily: FM }}>Time</span>
+              <input type="time" className="bg-transparent border border-slate-300 dark:border-white/10 rounded-md px-2.5 py-1 text-xs text-[#1e1b26] dark:text-white outline-none focus:border-[#F03D4E] transition-all cursor-pointer" style={{ colorScheme: isDark ? "dark" : "light", fontFamily: FB, cursor: "pointer" }} value={timeStr} onChange={handleTimeChange} />
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/5 text-right">
-              <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-colors cursor-pointer" style={{ fontFamily: FB }}>Done</button>
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/5 text-right">
+              <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-white/5 dark:hover:bg-white/10 dark:text-white text-xs rounded-lg transition-colors cursor-pointer font-semibold" style={{ fontFamily: FB }}>Done</button>
             </div>
 
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+interface GlassSelectOption {
+  value: string;
+  label: string;
+  description?: string;
+  badge?: string;
+}
+
+function GlassSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select an option",
+  error,
+  className = "",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: GlassSelectOption[];
+  placeholder?: string;
+  error?: string;
+  className?: string;
+}) {
+  const { isDark } = useTheme();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div ref={containerRef} className={`relative ${className}`}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((prev) => !prev);
+          }
+        }}
+        className="glass-select-trigger w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between transition-all outline-none select-none"
+        style={{
+          background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee",
+          border: error
+            ? "1px solid rgba(240,61,78,0.7)"
+            : open
+              ? (isDark ? "1px solid rgba(255,255,255,0.3)" : "1px solid #F03D4E")
+              : (isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)"),
+          fontFamily: FB,
+          boxShadow: open
+            ? (isDark ? "0 0 0 1px rgba(240,61,78,0.4)" : "0 0 0 1px rgba(240,61,78,0.3)")
+            : "none",
+        }}
+      >
+        <span
+          className={
+            selectedOption
+              ? (isDark ? "text-white font-medium" : "text-[#1e1b26] font-semibold")
+              : (isDark ? "text-[#888]" : "text-slate-500")
+          }
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <motion.div
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center ml-2"
+        >
+          <ChevronDown
+            size={16}
+            className={open ? "text-[#F03D4E]" : (isDark ? "text-white/40" : "text-slate-500")}
+          />
+        </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 4, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute z-50 left-0 right-0 top-full rounded-xl p-1.5 shadow-2xl backdrop-blur-xl overflow-hidden"
+            style={{
+              background: isDark ? "rgba(18, 18, 20, 0.98)" : "#ffffff",
+              border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.12)",
+              boxShadow: isDark
+                ? "0 20px 40px -10px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.05)"
+                : "0 15px 35px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div className="space-y-1">
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className={`w-full px-3.5 py-2.5 rounded-lg text-left transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? (isDark
+                            ? "bg-[#F03D4E]/15 text-white"
+                            : "bg-[#F03D4E]/10 text-[#F03D4E]")
+                        : (isDark
+                            ? "hover:bg-white/5 text-[#d1d5db] hover:text-white"
+                            : "hover:bg-slate-100 text-[#1e1b26] hover:text-[#0f172a]")
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-sm ${
+                          isSelected ? "font-bold" : "font-medium"
+                        }`}
+                        style={{ fontFamily: FB }}
+                      >
+                        {opt.label}
+                      </span>
+                      {opt.badge && (
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                          style={{
+                            background: isSelected
+                              ? (isDark ? "rgba(240,61,78,0.3)" : "rgba(240,61,78,0.2)")
+                              : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
+                            color: isSelected ? "#F03D4E" : (isDark ? "#aaa" : "#666"),
+                            fontFamily: FM,
+                          }}
+                        >
+                          {opt.badge}
+                        </span>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <Check
+                        size={16}
+                        className="text-[#F03D4E] flex-shrink-0 ml-2"
+                        strokeWidth={2.5}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -3459,13 +3732,14 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
           </div>
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Pricing</label>
-            <div className="relative">
-              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.type} onChange={e => setFormData(p => ({...p, type: e.target.value, amount: "", qrCode: "", customUpiId: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
-                <option value="free" style={{ background: "#111" }}>Free</option>
-                <option value="paid" style={{ background: "#111" }}>Paid</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-            </div>
+            <GlassSelect
+              value={formData.type}
+              onChange={val => setFormData(p => ({...p, type: val, amount: "", qrCode: "", customUpiId: ""}))}
+              options={[
+                { value: "free", label: "Free" },
+                { value: "paid", label: "Paid" },
+              ]}
+            />
             {formData.type === "free" && (
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -bottom-5 left-1 text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>
                 FCFS. No approval needed.
@@ -3477,13 +3751,14 @@ function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, re
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5 relative">
             <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Participation Type</label>
-            <div className="relative">
-              <select className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none transition-all appearance-none cursor-pointer" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} value={formData.eventType} onChange={e => setFormData(p => ({...p, eventType: e.target.value, minTeamSize: e.target.value === "Team" ? (p.minTeamSize || "1") : "", teamSizeLimit: ""}))} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}>
-                <option value="Solo" style={{ background: "#111" }}>Solo</option>
-                <option value="Team" style={{ background: "#111" }}>Team</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-            </div>
+            <GlassSelect
+              value={formData.eventType}
+              onChange={val => setFormData(p => ({...p, eventType: val, minTeamSize: val === "Team" ? (p.minTeamSize || "1") : "", teamSizeLimit: ""}))}
+              options={[
+                { value: "Solo", label: "Solo" },
+                { value: "Team", label: "Team" },
+              ]}
+            />
           </div>
           <AnimatePresence>
             {formData.eventType === "Team" && (
@@ -3839,31 +4114,31 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
   return (
     <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-4xl relative">
       <div>
-        <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Settings</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FC }}>Settings</h1>
       </div>
 
       <div className="space-y-6">
         
         <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Profile Settings</h2>
+          <h2 className="text-lg font-medium text-[#1e1b26] dark:text-white mb-6" style={{ fontFamily: FB }}>Profile Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
-              <input type="text" placeholder="e.g. Demo Club" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Club Name</label>
+              <input type="text" placeholder="e.g. Demo Club" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Contact Email</label>
-              <input type="email" value={formData.email} disabled readOnly className="w-full rounded-xl px-4 py-3 text-sm text-white/50 bg-white/[0.01] border border-white/5 cursor-not-allowed outline-none select-none" style={{ fontFamily: FB }} />
+              <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Contact Email</label>
+              <input type="email" value={formData.email} disabled readOnly className="w-full rounded-xl px-4 py-3 text-sm text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 cursor-not-allowed outline-none select-none" style={{ fontFamily: FB }} />
             </div>
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Logo</label>
+              <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Club Logo</label>
               <input type="file" accept="image/*" className="hidden" id="logo-upload-settings" onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) setLogoFile(file);
               }} />
-              <label htmlFor="logo-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
+              <label htmlFor="logo-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
                 <span>{logoFile ? logoFile.name : (isLogoUploaded ? "Logo Uploaded (Click to change)" : "Upload Logo Image...")}</span>
-                <Upload size={14} className={logoFile || isLogoUploaded ? "text-green-400" : ""} />
+                <Upload size={14} className={logoFile || isLogoUploaded ? "text-green-500" : ""} />
               </label>
               {!isLogoUploaded && !logoFile && (
                 <p className="text-[11px] text-[#F03D4E] mt-1.5 font-medium" style={{ fontFamily: FM }}>Logo not uploaded yet</p>
@@ -3873,24 +4148,24 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         </div>
 
         <div id="payment-settings" className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
+          <h2 className="text-lg font-medium text-[#1e1b26] dark:text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Default UPI ID</label>
-              <input type="text" placeholder="club@upi" value={formData.upiId} onChange={e => setFormData(p => ({ ...p, upiId: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Default UPI ID</label>
+              <input type="text" placeholder="club@upi" value={formData.upiId} onChange={e => setFormData(p => ({ ...p, upiId: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
               {!formData.upiId && (
                 <p className="text-[11px] text-[#F03D4E] mt-1.5 font-medium" style={{ fontFamily: FM }}>UPI ID not added yet</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Default QR Code</label>
+              <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Default QR Code</label>
               <input type="file" accept="image/*" className="hidden" id="qr-upload-settings" onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) setQrFile(file);
               }} />
-              <label htmlFor="qr-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
+              <label htmlFor="qr-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-[#cccccc] flex items-center justify-between cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-white/[0.04]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>
                 <span>{qrFile ? qrFile.name : (formData.qrUrl ? "QR Uploaded (Click to change)" : "Upload QR Image...")}</span>
-                <Upload size={14} className={qrFile || formData.qrUrl ? "text-green-400" : ""} />
+                <Upload size={14} className={qrFile || formData.qrUrl ? "text-green-500" : ""} />
               </label>
               {!formData.qrUrl && !qrFile && (
                 <p className="text-[11px] text-[#F03D4E] mt-1.5 font-medium" style={{ fontFamily: FM }}>QR Code not uploaded yet</p>
@@ -3902,14 +4177,14 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <div className="p-6 md:p-8 rounded-3xl space-y-3" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white" style={{ fontFamily: FB }}>Save All Settings</p>
-              <p className="text-[11px] text-[#f3f4f6]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
+              <p className="text-sm text-[#1e1b26] dark:text-white font-medium" style={{ fontFamily: FB }}>Save All Settings</p>
+              <p className="text-[11px] text-slate-600 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
             </div>
             <button onClick={handleSaveInit} disabled={!isDirty || isSaving} className="px-6 py-2.5 bg-[#F03D4E] hover:bg-[#F03D4E]/80 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(240,61,78,0.3)] hover:shadow-[0_0_30px_rgba(240,61,78,0.5)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
           <AnimatePresence>
             {successMsg && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-400 text-sm font-medium pt-2 flex items-center justify-end gap-1.5" style={{ fontFamily: FB }}>
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-green-600 dark:text-green-400 text-sm font-medium pt-2 flex items-center justify-end gap-1.5" style={{ fontFamily: FB }}>
                 {successMsg}
               </motion.div>
             )}
@@ -3919,17 +4194,17 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <div className="p-6 md:p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <Mail size={18} className="text-white/60" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.07]">
+                <Mail size={18} className="text-slate-600 dark:text-white/60" />
               </div>
               <div>
-                <p className="text-sm text-white font-medium" style={{ fontFamily: FB }}>Contact Us</p>
-                <p className="text-[11px] text-[#888] mt-0.5" style={{ fontFamily: FM }}>Reach out for support or queries</p>
+                <p className="text-sm text-[#1e1b26] dark:text-white font-medium" style={{ fontFamily: FB }}>Contact Us</p>
+                <p className="text-[11px] text-slate-600 dark:text-[#888] mt-0.5" style={{ fontFamily: FM }}>Reach out for support or queries</p>
               </div>
             </div>
             <a
               href="mailto:spotlightapp.help@gmail.com"
-              className="px-5 py-2.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 rounded-xl transition-all"
+              className="px-5 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 rounded-xl transition-all"
               style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", fontFamily: FB }}
             >
               spotlightapp.help@gmail.com
@@ -3940,19 +4215,19 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <AnimatePresence>
           {showPasswordPrompt && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h3>
-                <p className="text-xs text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 shadow-2xl">
+                <h3 className="text-lg font-semibold text-[#1e1b26] dark:text-white mb-2" style={{ fontFamily: FC }}>Confirm Changes</h3>
+                <p className="text-xs text-slate-600 dark:text-[#d1d5db] mb-6" style={{ fontFamily: FB }}>Please enter your club login password to save these updates.</p>
 
                 <div className="space-y-1.5 mb-4">
-                  <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Password</label>
-                  <input autoFocus type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !isSaving) handleConfirmSave(); }} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
+                  <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Password</label>
+                  <input autoFocus type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !isSaving) handleConfirmSave(); }} className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} />
                 </div>
 
                 {error && <p className="text-xs text-[#F03D4E] font-medium mb-6 text-center" style={{ fontFamily: FB }}>{error}</p>}
 
                 <div className="flex items-center justify-end gap-3">
-                  <button onClick={() => { setShowPasswordPrompt(false); setError(null); }} className="px-5 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all" style={{ fontFamily: FB }}>Cancel</button>
+                  <button onClick={() => { setShowPasswordPrompt(false); setError(null); }} className="px-5 py-2.5 text-xs text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-all" style={{ fontFamily: FB }}>Cancel</button>
                   <button onClick={handleConfirmSave} disabled={isSaving} className="px-5 py-2.5 text-xs text-white bg-[#F03D4E] hover:bg-[#F03D4E]/80 rounded-xl transition-all font-semibold flex items-center gap-2 disabled:opacity-50" style={{ fontFamily: FB }}>
                     {isSaving ? "Saving..." : "Confirm Save"}
                   </button>
@@ -3965,22 +4240,22 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <AnimatePresence>
           {showPasswordUpdateModal && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: FC }}>Change Password</h3>
-                <p className="text-xs text-[#999] mb-6" style={{ fontFamily: FB }}>Update your login credentials securely by entering your current and new password.</p>
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-sm rounded-3xl p-8 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 shadow-2xl">
+                <h3 className="text-lg font-semibold text-[#1e1b26] dark:text-white mb-2" style={{ fontFamily: FC }}>Change Password</h3>
+                <p className="text-xs text-slate-600 dark:text-[#999] mb-6" style={{ fontFamily: FB }}>Update your login credentials securely by entering your current and new password.</p>
 
                 {passwordError && <p className="text-xs text-[#F03D4E] font-medium mb-4 text-center" style={{ fontFamily: FB }}>{passwordError}</p>}
 
                 <div className="space-y-4 mb-6">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Old Password</label>
+                    <label className="text-[10px] uppercase tracking-widest text-slate-700 dark:text-[#bbbbbb] font-semibold block" style={{ fontFamily: FM }}>Old Password</label>
                     <div className="relative">
                       <input 
                         type={showOldPassword ? "text" : "password"} 
                         placeholder="Enter current password" 
                         value={oldPassword} 
                         onChange={e => setOldPassword(e.target.value)} 
-                        className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all" 
+                        className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
                         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
                         onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} 
                         onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} 
@@ -3988,21 +4263,23 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                       <button 
                         type="button" 
                         onClick={() => setShowOldPassword(!showOldPassword)} 
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                        className="password-toggle-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white transition-colors bg-transparent border-0 outline-none p-1 cursor-pointer flex items-center justify-center"
+                        style={{ background: "transparent", backgroundColor: "transparent", border: "none", boxShadow: "none" }}
+                        aria-label={showOldPassword ? "Hide password" : "Show password"}
                       >
                         {showOldPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>New Password</label>
+                    <label className="text-[10px] uppercase tracking-widest text-slate-700 dark:text-[#bbbbbb] font-semibold block" style={{ fontFamily: FM }}>New Password</label>
                     <div className="relative">
                       <input 
                         type={showNewPassword ? "text" : "password"} 
                         placeholder="Enter new password" 
                         value={newPassword} 
                         onChange={e => setNewPassword(e.target.value)} 
-                        className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all" 
+                        className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
                         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
                         onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} 
                         onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} 
@@ -4010,21 +4287,23 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                       <button 
                         type="button" 
                         onClick={() => setShowNewPassword(!showNewPassword)} 
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                        className="password-toggle-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white transition-colors bg-transparent border-0 outline-none p-1 cursor-pointer flex items-center justify-center"
+                        style={{ background: "transparent", backgroundColor: "transparent", border: "none", boxShadow: "none" }}
+                        aria-label={showNewPassword ? "Hide password" : "Show password"}
                       >
                         {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-widest text-[#bbbbbb] block" style={{ fontFamily: FM }}>Confirm New Password</label>
+                    <label className="text-[10px] uppercase tracking-widest text-slate-700 dark:text-[#bbbbbb] font-semibold block" style={{ fontFamily: FM }}>Confirm New Password</label>
                     <div className="relative">
                       <input 
                         type={showConfirmNewPassword ? "text" : "password"} 
                         placeholder="Confirm new password" 
                         value={confirmNewPassword} 
                         onChange={e => setConfirmNewPassword(e.target.value)} 
-                        className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all" 
+                        className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
                         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
                         onFocus={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"} 
                         onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"} 
@@ -4032,7 +4311,9 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                       <button 
                         type="button" 
                         onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)} 
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                        className="password-toggle-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white transition-colors bg-transparent border-0 outline-none p-1 cursor-pointer flex items-center justify-center"
+                        style={{ background: "transparent", backgroundColor: "transparent", border: "none", boxShadow: "none" }}
+                        aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
                       >
                         {showConfirmNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -4041,7 +4322,7 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
                 </div>
 
                 <div className="flex items-center justify-end gap-3">
-                  <button onClick={() => { setShowPasswordUpdateModal(false); setPasswordError(null); setPasswordSuccess(null); setOldPassword(""); setNewPassword(""); setConfirmNewPassword(""); setShowOldPassword(false); setShowNewPassword(false); setShowConfirmNewPassword(false); }} className="px-5 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all" style={{ fontFamily: FB }}>Cancel</button>
+                  <button onClick={() => { setShowPasswordUpdateModal(false); setPasswordError(null); setPasswordSuccess(null); setOldPassword(""); setNewPassword(""); setConfirmNewPassword(""); setShowOldPassword(false); setShowNewPassword(false); setShowConfirmNewPassword(false); }} className="px-5 py-2.5 text-xs text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-all" style={{ fontFamily: FB }}>Cancel</button>
                   <button 
                     onClick={handleUpdatePassword} 
                     disabled={isUpdatingPassword || !!passwordSuccess} 
@@ -4068,56 +4349,56 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         <AnimatePresence>
           {showPrivacyModal && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto flex flex-col" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-2xl rounded-3xl p-8 max-h-[85vh] overflow-y-auto flex flex-col bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 shadow-2xl">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-white" style={{ fontFamily: FC }}>Dashboard Privacy Policy</h3>
-                    <p className="text-xs text-[#999] mt-1" style={{ fontFamily: FB }}>Last Updated: July 26, 2026</p>
+                    <h3 className="text-lg font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FC }}>Dashboard Privacy Policy</h3>
+                    <p className="text-xs text-slate-500 dark:text-[#999] mt-1" style={{ fontFamily: FB }}>Last Updated: July 26, 2026</p>
                   </div>
-                  <button onClick={() => setShowPrivacyModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                  <button onClick={() => setShowPrivacyModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white transition-colors">
                     <X size={16} />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-[#ccc] leading-relaxed border-t border-b border-white/5 py-6" style={{ fontFamily: FB }}>
+                <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-slate-700 dark:text-[#ccc] leading-relaxed border-t border-b border-slate-200 dark:border-white/5 py-6" style={{ fontFamily: FB }}>
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">About the Spotlight Club Dashboard</h4>
-                    <p className="text-xs text-[#bbbbbb]">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">About the Spotlight Club Dashboard</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
                   </div>
 
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">Information We Collect From Clubs</h4>
-                    <p className="text-xs text-[#bbbbbb]">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">Information We Collect From Clubs</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
                   </div>
 
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">Club Authentication (Clerk)</h4>
-                    <p className="text-xs text-[#bbbbbb]">We integrate with Clerk to provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">Club Authentication (Clerk)</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">We integrate with Clerk to provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
                   </div>
 
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">Participant Information Available to Clubs</h4>
-                    <p className="text-xs text-[#bbbbbb]">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">Participant Information Available to Clubs</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
                   </div>
 
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">Handling Participant Information</h4>
-                    <p className="text-xs text-[#bbbbbb]">Clubs must process participant data strictly to organize and conduct the event. You must not sell or share participant data with third parties, use it for unrelated spam/marketing, or store downloaded lists insecurely.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">Handling Participant Information</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">Clubs must process participant data strictly to organize and conduct the event. You must not sell or share participant data with third parties, use it for unrelated spam/marketing, or store downloaded lists insecurely.</p>
                   </div>
 
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">Third-Party Services</h4>
-                    <p className="text-xs text-[#bbbbbb]">We rely on Clerk (authentication), Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">Third-Party Services</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">We rely on Clerk (authentication), Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
                   </div>
 
                   <div>
-                    <h4 className="text-white font-medium text-sm mb-2">Contact Us</h4>
-                    <p className="text-xs text-[#bbbbbb]">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support at <strong>spotlightapp.help@gmail.com</strong>.</p>
+                    <h4 className="text-[#1e1b26] dark:text-white font-medium text-sm mb-2">Contact Us</h4>
+                    <p className="text-xs text-slate-600 dark:text-[#bbbbbb]">If you have concerns, deactivation requests, or reports of unauthorized dashboard activity, email support at <strong>spotlightapp.help@gmail.com</strong>.</p>
                   </div>
                 </div>
 
                 <div className="flex justify-end mt-6">
-                  <button onClick={() => setShowPrivacyModal(false)} className="px-6 py-2.5 text-xs text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all font-semibold" style={{ fontFamily: FB }}>Close</button>
+                  <button onClick={() => setShowPrivacyModal(false)} className="px-6 py-2.5 text-xs text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-all font-semibold" style={{ fontFamily: FB }}>Close</button>
                 </div>
               </motion.div>
             </motion.div>
@@ -4125,23 +4406,23 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
         </AnimatePresence>
 
          <div className="p-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <h2 className="text-lg font-medium text-white mb-6" style={{ fontFamily: FB }}>Privacy & Security</h2>
+            <h2 className="text-lg font-medium text-[#1e1b26] dark:text-white mb-6" style={{ fontFamily: FB }}>Privacy & Security</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white" style={{ fontFamily: FB }}>Change Password</p>
-                  <p className="text-[11px] text-[#bbbbbb]" style={{ fontFamily: FM }}>
+                  <p className="text-sm text-[#1e1b26] dark:text-white font-medium" style={{ fontFamily: FB }}>Change Password</p>
+                  <p className="text-[11px] text-slate-600 dark:text-[#bbbbbb]" style={{ fontFamily: FM }}>
                     {isSocialLogin 
                       ? "Password managed by your social provider (Google)." 
                       : "Update your login credentials securely."}
                   </p>
                 </div>
                 {isSocialLogin ? (
-                  <span className="px-3.5 py-1.5 bg-white/5 text-[#999] text-[10px] uppercase tracking-wider font-semibold rounded-lg" style={{ border: "1px solid rgba(255,255,255,0.05)", fontFamily: FB }}>
+                  <span className="px-3.5 py-1.5 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#999] text-[10px] uppercase tracking-wider font-semibold rounded-lg border border-slate-200 dark:border-white/5" style={{ fontFamily: FB }}>
                     Social Login
                   </span>
                 ) : (
-                  <button onClick={() => setShowPasswordUpdateModal(true)} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>Update</button>
+                  <button onClick={() => setShowPasswordUpdateModal(true)} className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-white text-xs font-semibold rounded-lg transition-all border border-slate-200 dark:border-white/10" style={{ fontFamily: FB }}>Update</button>
                 )}
               </div>
             </div>
@@ -4149,9 +4430,9 @@ function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: a
 
          <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
            <div>
-             <p className="text-sm font-medium text-white" style={{ fontFamily: FB }}>Privacy Policy</p>
+             <p className="text-sm font-medium text-[#1e1b26] dark:text-white" style={{ fontFamily: FB }}>Privacy Policy</p>
            </div>
-           <button onClick={() => setShowPrivacyModal(true)} className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}>View Policy</button>
+           <button onClick={() => setShowPrivacyModal(true)} className="px-6 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-white text-xs font-semibold rounded-lg transition-all border border-slate-200 dark:border-white/10" style={{ fontFamily: FB }}>View Policy</button>
          </div>
 
         <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "rgba(240,61,78,0.05)", border: "1px solid rgba(240,61,78,0.1)" }}>
@@ -4169,11 +4450,11 @@ function TeamsPage() {
   return (
     <div className="p-8 lg:p-10 space-y-8 max-w-4xl">
       <div>
-        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5 text-[#f3f4f6]" style={{ fontFamily: FM }}>Management</p>
-        <h1 className="text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>Teams</h1>
+        <p className="text-[11px] tracking-[0.5em] uppercase mb-1.5 text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Management</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FC }}>Teams</h1>
       </div>
       <div className="p-10 rounded-2xl text-center" style={{ border: "1px dashed rgba(255,255,255,0.07)" }}>
-        <p className="text-sm text-[#94a3b8]" style={{ fontFamily: FB }}>Team management coming soon.</p>
+        <p className="text-sm text-slate-500 dark:text-[#94a3b8]" style={{ fontFamily: FB }}>Team management coming soon.</p>
       </div>
     </div>
   );
@@ -4184,6 +4465,7 @@ interface ClubOnboardingPageProps {
 }
 
 function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
+  const { isDark } = useTheme();
   const token = localStorage.getItem("spotlight_token");
   const [formData, setFormData] = useState({ name: "", email: "", logoUrl: "", password: "", registrationKey: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -4227,99 +4509,104 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-12 relative overflow-hidden" style={{ background: "rgba(5,5,5,0.98)" }}>
+    <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-12 relative overflow-hidden" style={{ background: isDark ? "rgba(5,5,5,0.98)" : "#f0f2f6" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(240,61,78,0.08) 0%, transparent 60%)" }} />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
         className="w-full max-w-lg p-8 md:p-10 rounded-3xl relative z-10"
-        style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(24px)" }}
+        style={{ 
+          background: isDark ? "rgba(255,255,255,0.015)" : "#f0f2f6", 
+          border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.12)", 
+          backdropFilter: "blur(24px)",
+          boxShadow: isDark ? "none" : "0 20px 45px -10px rgba(0,0,0,0.12)"
+        }}
       >
         <div className="text-center mb-8">
-          <p className="text-[11px] tracking-[0.5em] uppercase mb-2 text-[#f3f4f6]" style={{ fontFamily: FM }}>Step 1 · Onboarding</p>
-          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ fontFamily: FC }}>Set Up Your Club</h2>
-          <p className="text-xs text-[#d1d5db]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details and authorization key to activate the dashboard.</p>
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-2 text-slate-700 dark:text-[#f3f4f6] font-semibold" style={{ fontFamily: FM }}>Step 1 · Onboarding</p>
+          <h2 className="text-2xl md:text-3xl font-semibold text-[#1e1b26] dark:text-white mb-2" style={{ fontFamily: FC }}>Set Up Your Club</h2>
+          <p className="text-xs text-slate-600 dark:text-[#d1d5db]" style={{ fontFamily: FB }}>Welcome to Spotlight! Provide your club details and authorization key to activate the dashboard.</p>
         </div>
 
         <form noValidate onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Authorization Key</label>
+            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Authorization Key</label>
             <input 
               type="text" 
               placeholder="SPOTLIGHT-XXXX-XXXX" 
               required
-              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all uppercase tracking-wider font-mono placeholder:normal-case placeholder:font-sans" 
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,61,78,0.3)" }} 
+              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all uppercase tracking-wider font-mono placeholder:normal-case placeholder:font-sans" 
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: "1px solid rgba(240,61,78,0.4)" }} 
               value={formData.registrationKey} 
               onChange={e => setFormData(p => ({ ...p, registrationKey: e.target.value.toUpperCase() }))}
             />
             <div className="mt-2.5 space-y-1.5 text-left">
-              <p className="text-xs text-white/70 leading-relaxed font-normal" style={{ fontFamily: FB }}>
+              <p className="text-xs text-slate-600 dark:text-white/70 leading-relaxed font-normal" style={{ fontFamily: FB }}>
                 To request a key, email{" "}
-                <a href="mailto:spotlightapp.help@gmail.com" className="text-[#10B981] font-medium hover:text-[#34d399] transition-colors underline underline-offset-2">
+                <a href="mailto:spotlightapp.help@gmail.com" className="text-emerald-700 dark:text-[#10B981] font-semibold hover:underline underline-offset-2">
                   spotlightapp.help@gmail.com
                 </a>
               </p>
-              <p className="text-xs text-white/60 leading-relaxed font-normal" style={{ fontFamily: FB }}>
+              <p className="text-xs text-slate-500 dark:text-white/60 leading-relaxed font-normal" style={{ fontFamily: FB }}>
                 Requests must be submitted using an official club mail ID or student mail ID. Personal email requests will not be processed.
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Name</label>
+            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Club Name</label>
             <input 
               type="text" 
               placeholder="e.g. Turing Club" 
               required
-              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" 
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)", fontFamily: FB }} 
               value={formData.name} 
               onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Contact Email</label>
+            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Contact Email</label>
             <input 
               type="email" 
               placeholder="club@yourcollege.edu" 
               required
-              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" 
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)", fontFamily: FB }} 
               value={formData.email} 
               onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Club Logo URL (Optional)</label>
+            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Club Logo URL (Optional)</label>
             <input 
               type="url" 
               placeholder="https://example.com/logo.png" 
-              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" 
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)", fontFamily: FB }} 
               value={formData.logoUrl} 
               onChange={e => setFormData(p => ({ ...p, logoUrl: e.target.value }))}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[#f3f4f6] block" style={{ fontFamily: FM }}>Mobile App Login Password</label>
+            <label className="text-[11px] uppercase tracking-widest text-slate-700 dark:text-[#f3f4f6] font-semibold block" style={{ fontFamily: FM }}>Mobile App Login Password</label>
             <input 
               type="password" 
               placeholder="Create login password for mobile app" 
               required
-              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30" 
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }} 
+              className="w-full rounded-xl px-4 py-3 text-sm text-[#1e1b26] dark:text-white outline-none transition-all" 
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#e4e7ee", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.12)", fontFamily: FB }} 
               value={formData.password} 
               onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
             />
           </div>
 
           {error && (
-            <p className="text-xs text-[#F03D4E] text-center" style={{ fontFamily: FM }}>{error}</p>
+            <p className="text-xs text-[#F03D4E] text-center font-medium" style={{ fontFamily: FM }}>{error}</p>
           )}
 
           <motion.button 
@@ -4327,7 +4614,7 @@ function ClubOnboardingPage({ onSuccess }: ClubOnboardingPageProps) {
             whileHover={{ scale: 1.02 }} 
             whileTap={{ scale: 0.98 }} 
             disabled={submitting} 
-            className="w-full py-3.5 bg-[#F03D4E] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 mt-8" 
+            className="w-full py-3.5 bg-[#F03D4E] hover:bg-[#d63545] text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 mt-8 shadow-md cursor-pointer" 
             style={{ fontFamily: FB }}
           >
             {submitting ? "Activating Dashboard..." : "Activate Dashboard"}
@@ -4345,6 +4632,7 @@ const DASH_NAV = [
 ];
 
 function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut: () => void }) {
+  const { isDark } = useTheme();
   const {
     clubEvents,
     clubs,
@@ -4386,40 +4674,56 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
   );
 
   const renderProfileSection = () => (
-    <div className="p-4 pb-6 mt-auto flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-      <div className="flex items-center gap-2.5 mb-3 px-1">
-        {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
-          <img
-            src={currentClub.logoUrl}
-            alt={name}
-            className="w-7 h-7 rounded-full flex-shrink-0 object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const sibling = e.currentTarget.nextSibling as HTMLElement;
-              if (sibling) sibling.style.display = 'flex';
-            }}
-          />
-        ) : null}
-        {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
-          <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
-            {name.charAt(0).toUpperCase()}
+    <div className="p-4 pb-6 mt-auto flex-shrink-0" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)" }}>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
+            <img
+              src={currentClub.logoUrl}
+              alt={name}
+              className="w-7 h-7 rounded-full flex-shrink-0 object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const sibling = e.currentTarget.nextSibling as HTMLElement;
+                if (sibling) sibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+            <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
+            <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="overflow-hidden">
+            <p className="text-xs truncate font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.85)" : "#1e1b26", fontFamily: FB }}>{name}</p>
+            <p className="text-[11px]" style={{ color: isDark ? "#f3f4f6" : "#64748b", fontFamily: FM }}>Admin</p>
           </div>
-        )}
-        {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
-          <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
-            {name.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="overflow-hidden">
-          <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.85)", fontFamily: FB }}>{name}</p>
-          <p className="text-[11px]" style={{ color: "#f3f4f6", fontFamily: FM }}>Admin</p>
         </div>
+        <ThemeToggle />
       </div>
       <button onClick={onSignOut}
         className="w-full py-2.5 text-xs rounded-xl transition-all duration-300 font-semibold cursor-pointer active:scale-98"
-        style={{ color: "#ffffff", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", fontFamily: FB }}
-        onMouseEnter={e => { e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
-        onMouseLeave={e => { e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+        style={{
+          color: isDark ? "#ffffff" : "#F03D4E",
+          background: isDark ? "rgba(255,255,255,0.05)" : "rgba(240,61,78,0.06)",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(240,61,78,0.18)",
+          fontFamily: FB
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.color = "#ffffff";
+          e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.1)" : "#F03D4E";
+          e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.15)" : "#F03D4E";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.color = isDark ? "#ffffff" : "#F03D4E";
+          e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(240,61,78,0.06)";
+          e.currentTarget.style.borderColor = isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(240,61,78,0.18)";
+        }}
       >Sign Out</button>
     </div>
   );
@@ -4542,10 +4846,10 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "rgba(5,5,5,0.98)" }}>
+      <div className="flex h-screen items-center justify-center" style={{ background: isDark ? "rgba(5,5,5,0.98)" : "#ffffff" }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 rounded-full border-2 border-[#F03D4E] border-t-transparent animate-spin" />
-          <p className="text-xs tracking-[0.4em] uppercase text-[#94a3b8]" style={{ fontFamily: FM }}>Loading Dashboard</p>
+          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: isDark ? "#94a3b8" : "#1e1b26", fontFamily: FM }}>Loading Dashboard</p>
         </div>
       </div>
     );
@@ -4555,15 +4859,19 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
     <div className="flex h-screen overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
       
       <aside className="hidden xl:flex w-56 flex-shrink-0 flex-col h-screen"
-        style={{ background: "rgba(5,5,5,0.97)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
+        style={{
+          background: isDark ? "rgba(5,5,5,0.97)" : "#f0f2f6",
+          borderRight: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+          backdropFilter: "blur(24px)"
+        }}
       >
         <div className="px-6 pt-6 pb-5 flex-shrink-0 flex items-center gap-2.5">
           {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
             <img src={currentClub.logoUrl} alt={name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
           ) : (
-            <img src="/logo.png" alt="Spotlight Logo" className="w-8 h-8 object-contain flex-shrink-0" />
+            <img src="/rit-emblem.png" alt="RIT Emblem" className="w-8 h-8 object-contain flex-shrink-0" />
           )}
-          <span className="text-[13px] tracking-[0.16em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
+          <span className="text-[13px] tracking-[0.16em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26" }}>
             {name || 'SPOTLIGHT'}
           </span>
         </div>
@@ -4572,7 +4880,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             onClick={() => setActiveTab("create")}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-[#F03D4E] rounded-xl transition-all duration-300"
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.3)")}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 0 25px rgba(240,61,78,0.35)")}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
             style={{ fontFamily: FB }}
           ><Plus size={14} /> Create Event</motion.button>
@@ -4584,13 +4892,23 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               <button key={id} onClick={() => setActiveTab(id)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-300"
                 style={{
-                  background: active ? "rgba(255,255,255,0.065)" : "transparent",
-                  color:      active ? "#fff" : "#999999",
-                  border:     active ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+                  background: active ? (isDark ? "rgba(255,255,255,0.065)" : "rgba(0,0,0,0.07)") : "transparent",
+                  color:      active ? (isDark ? "#fff" : "#1e1b26") : (isDark ? "#999999" : "#64748b"),
+                  border:     active ? (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.1)") : "1px solid transparent",
                   fontFamily: FB,
                 }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#dddddd"; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#999999"; }}
+                onMouseEnter={e => {
+                  if (!active) {
+                    e.currentTarget.style.color = isDark ? "#dddddd" : "#1e1b26";
+                    e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!active) {
+                    e.currentTarget.style.color = isDark ? "#999999" : "#64748b";
+                    e.currentTarget.style.background = "transparent";
+                  }
+                }}
               ><Icon size={14} />{label}</button>
             );
           })}
@@ -4601,22 +4919,26 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
       <div className="flex-1 flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden">
         
         <header className="xl:hidden flex items-center justify-between px-4 sm:px-6 py-3.5 flex-shrink-0"
-          style={{ background: "rgba(5,5,5,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(16px)" }}
+          style={{
+            background: isDark ? "rgba(5,5,5,0.97)" : "#f0f2f6",
+            borderBottom: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+            backdropFilter: "blur(16px)"
+          }}
         >
-          <button onClick={() => setIsMobileMenuOpen(true)} className="text-white hover:text-[#F03D4E] transition-colors p-1.5 rounded-lg active:bg-white/10">
+          <button onClick={() => setIsMobileMenuOpen(true)} className={`p-1.5 rounded-lg active:bg-black/5 ${isDark ? "text-white hover:text-[#F03D4E]" : "text-slate-800 hover:text-[#F03D4E]"}`}>
             <Menu size={22} />
           </button>
           <div className="flex items-center gap-2">
             {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
               <img src={currentClub.logoUrl} alt={name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
             ) : (
-              <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
+              <img src="/rit-emblem.png" alt="RIT Emblem" className="w-7 h-7 object-contain flex-shrink-0" />
             )}
-            <span className="text-xs sm:text-[13px] tracking-[0.14em] font-bold truncate max-w-[180px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
+            <span className="text-xs sm:text-[13px] tracking-[0.14em] font-bold truncate max-w-[180px]" title={name} style={{ fontFamily: FB, color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26" }}>
               {name || 'SPOTLIGHT'}
             </span>
           </div>
-          <div className="w-8" />
+          <ThemeToggle />
         </header>
 
         <AnimatePresence>
@@ -4748,20 +5070,24 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col h-[100dvh] max-h-[100dvh] xl:hidden"
-              style={{ background: "rgba(5,5,5,0.98)", borderRight: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(24px)" }}
+              style={{
+                background: isDark ? "rgba(5,5,5,0.98)" : "#f0f2f6",
+                borderRight: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+                backdropFilter: "blur(24px)"
+              }}
             >
               <div className="px-5 pt-5 pb-4 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-2">
                   {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
                     <img src={currentClub.logoUrl} alt={name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                   ) : (
-                    <img src="/logo.png" alt="Spotlight Logo" className="w-7 h-7 object-contain flex-shrink-0" />
+                    <img src="/rit-emblem.png" alt="RIT Emblem" className="w-7 h-7 object-contain flex-shrink-0" />
                   )}
-                  <span className="text-xs tracking-[0.14em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: "rgba(255,255,255,0.9)" }}>
+                  <span className="text-xs tracking-[0.14em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26" }}>
                     {name || 'SPOTLIGHT'}
                   </span>
                 </div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white transition-colors p-1.5 rounded-lg active:bg-white/10">
+                <button onClick={() => setIsMobileMenuOpen(false)} className={`p-1.5 rounded-lg active:bg-black/5 ${isDark ? "text-white/60 hover:text-white" : "text-slate-600 hover:text-black"}`}>
                   <X size={18} />
                 </button>
               </div>
@@ -4780,13 +5106,23 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                     <button key={id} onClick={() => { setActiveTab(id); setIsMobileMenuOpen(false); }}
                       className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-300"
                       style={{
-                        background: active ? "rgba(255,255,255,0.065)" : "transparent",
-                        color:      active ? "#fff" : "#999999",
-                        border:     active ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+                        background: active ? (isDark ? "rgba(255,255,255,0.065)" : "rgba(0,0,0,0.07)") : "transparent",
+                        color:      active ? (isDark ? "#fff" : "#1e1b26") : (isDark ? "#999999" : "#64748b"),
+                        border:     active ? (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.1)") : "1px solid transparent",
                         fontFamily: FB,
                       }}
-                      onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#dddddd"; }}
-                      onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#999999"; }}
+                      onMouseEnter={e => {
+                        if (!active) {
+                          e.currentTarget.style.color = isDark ? "#dddddd" : "#1e1b26";
+                          e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (!active) {
+                          e.currentTarget.style.color = isDark ? "#999999" : "#64748b";
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     ><Icon size={16} />{label}</button>
                   );
                 })}
@@ -4803,11 +5139,11 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-md p-8 rounded-3xl relative border border-white/10"
-            style={{ background: "rgba(15,15,15,0.98)" }}
+            className="w-full max-w-md p-8 rounded-3xl relative border border-slate-200 dark:border-white/10 shadow-2xl"
+            style={{ background: isDark ? "rgba(15,15,15,0.98)" : "#f0f2f6" }}
           >
-            <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: FC }}>Welcome to Spotlight! 🚀</h2>
-            <p className="text-xs text-[#d1d5db] mb-6 leading-relaxed" style={{ fontFamily: FB }}>
+            <h2 className="text-xl font-bold text-[#1e1b26] dark:text-white mb-2" style={{ fontFamily: FC }}>Welcome to Spotlight! 🚀</h2>
+            <p className="text-xs text-slate-600 dark:text-[#d1d5db] mb-6 leading-relaxed" style={{ fontFamily: FB }}>
               Your club has been successfully created, but a few settings are yet to be completed. Please configure the pending fields below:
             </p>
             <div className="space-y-3 mb-8">
@@ -4815,21 +5151,21 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
                 <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
-                  <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Club Logo is not uploaded</span>
+                  <span className="text-xs text-slate-800 dark:text-white/90" style={{ fontFamily: FB }}>Club Logo is not uploaded</span>
                 </div>
               )}
 
               {!currentClub?.upiId && (
                 <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
-                  <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Default UPI ID is not configured</span>
+                  <span className="text-xs text-slate-800 dark:text-white/90" style={{ fontFamily: FB }}>Default UPI ID is not configured</span>
                 </div>
               )}
 
               {!currentClub?.qrUrl && (
                 <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "rgba(240,61,78,0.03)", border: "1px dashed rgba(240,61,78,0.2)" }}>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F03D4E]" />
-                  <span className="text-xs text-white/90" style={{ fontFamily: FB }}>Default QR Code is not uploaded</span>
+                  <span className="text-xs text-slate-800 dark:text-white/90" style={{ fontFamily: FB }}>Default QR Code is not uploaded</span>
                 </div>
               )}
             </div>
@@ -4850,7 +5186,7 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
                   localStorage.removeItem("show_first_time_notice");
                   setShowOnboardingNotice(false);
                 }}
-                className="px-5 py-3 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+                className="px-5 py-3 text-xs font-semibold text-slate-700 dark:text-white/60 hover:text-slate-900 dark:hover:text-white bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl transition-all cursor-pointer border border-slate-300/80 dark:border-transparent"
                 style={{ fontFamily: FB }}
               >
                 Later
@@ -4901,13 +5237,13 @@ function OverviewPage({
         className="relative p-5 sm:p-7 md:p-8 rounded-2xl overflow-hidden"
         style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.06)" }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(255,255,255,0.03) 0%, transparent 60%)" }} />
+        <div className="absolute inset-0 pointer-events-none hidden dark:block" style={{ background: "radial-gradient(ellipse at 0% 50%, rgba(255,255,255,0.03) 0%, transparent 60%)" }} />
         <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.06), transparent 55%)" }} />
-        <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-2 sm:mb-3" style={{ color: "#f3f4f6", fontFamily: FM }}>Dashboard</p>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-white" style={{ fontFamily: FC }}>
+        <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-2 sm:mb-3 text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Dashboard</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FC }}>
           Welcome Back, {name}
         </h1>
-        <p className="mt-1 text-xs sm:text-sm" style={{ color: "#94a3b8", fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
+        <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-[#94a3b8]" style={{ fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
       </motion.div>
 
       {/* KPI Cards — live data */}
@@ -4937,12 +5273,12 @@ function OverviewPage({
               el.style.transform   = "none";
             }}
           >
-            <div className="absolute top-0 right-0 w-36 h-36 pointer-events-none" style={{ background: "radial-gradient(circle at 85% 15%, rgba(255,255,255,0.05), transparent 65%)" }} />
-            <p className="text-[11px] tracking-[0.42em] uppercase mb-6" style={{ color: "#f3f4f6", fontFamily: FM }}>{k.label}</p>
-            <p className="text-3xl font-semibold text-white mb-3" style={{ fontFamily: FB }}>
+            <div className="absolute top-0 right-0 w-36 h-36 pointer-events-none hidden dark:block" style={{ background: "radial-gradient(circle at 85% 15%, rgba(255,255,255,0.05), transparent 65%)" }} />
+            <p className="text-[11px] tracking-[0.42em] uppercase mb-6 text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>{k.label}</p>
+            <p className="text-3xl font-semibold text-[#1e1b26] dark:text-white mb-3" style={{ fontFamily: FB }}>
               <AnimatedCounter target={k.value} suffix={k.suffix} />
             </p>
-            <p className="text-sm mt-2" style={{ color: "#d1d5db", fontFamily: FB }}>{k.sub}</p>
+            <p className="text-sm mt-2 text-slate-600 dark:text-[#d1d5db]" style={{ fontFamily: FB }}>{k.sub}</p>
           </motion.div>
         ))}
       </div>
@@ -4951,10 +5287,10 @@ function OverviewPage({
       <div>
         <div className="flex items-end justify-between mb-5">
           <div>
-            <p className="text-[11px] tracking-[0.5em] uppercase mb-1" style={{ color: "#f3f4f6", fontFamily: FM }}>Upcoming & Live</p>
-            <h2 className="text-xl font-semibold text-white" style={{ fontFamily: FC }}>Events</h2>
+            <p className="text-[11px] tracking-[0.5em] uppercase mb-1 text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Upcoming & Live</p>
+            <h2 className="text-xl font-semibold text-[#1e1b26] dark:text-white" style={{ fontFamily: FC }}>Events</h2>
           </div>
-          <button className="group flex items-center gap-1.5 text-sm font-medium transition-all duration-300 text-white/70 hover:text-white cursor-pointer" style={{ fontFamily: FB }}
+          <button className="group flex items-center gap-1.5 text-sm font-medium transition-all duration-300 text-slate-600 dark:text-white/70 hover:text-black dark:hover:text-white cursor-pointer" style={{ fontFamily: FB }}
             onClick={() => onNavigate("events")}
           >
             <span>View all</span>
@@ -4979,16 +5315,16 @@ function OverviewPage({
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className="flex items-center gap-2">
-                    <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full border ${(ev.type ?? '').toLowerCase() === "team" ? "bg-slate-200 text-slate-700 border-slate-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20" : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"}`} style={{ fontFamily: FM }}>{(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"}</span>
                   </div>
                   {getEventStatus(ev) === 'live' ? (
                     <LiveTag />
                   ) : (
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#aaaaaa", fontFamily: FM }}>Upcoming</span>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full text-slate-500 dark:text-[#aaaaaa]" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", fontFamily: FM }}>Upcoming</span>
                   )}
                 </div>
-                <h3 className="text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>
-                <div className="flex items-center gap-3 mb-3" style={{ color: "#d1d5db" }}>
+                <h3 className="text-[#1e1b26] dark:text-white font-semibold mb-1 leading-tight text-sm">{ev.title}</h3>
+                <div className="flex items-center gap-3 mb-3 text-slate-600 dark:text-[#d1d5db]">
                   <span className="flex items-center gap-1 text-[11px]"><Calendar size={9} />{formatEventHeaderDate(ev.eventDate || ev.date, ev.eventEndDate)}</span>
                   <span className="flex items-center gap-1 text-[11px]"><MapPin size={9} />{ev.venue}</span>
                 </div>
@@ -4999,7 +5335,7 @@ function OverviewPage({
                   </div>
                 )}
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1.5" style={{ color: "#f3f4f6", fontFamily: FM }}>
+                  <div className="flex justify-between text-[11px] mb-1.5 text-slate-600 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>
                     <span>{ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}</span>
                     <span>{ev.type}</span>
                   </div>
@@ -5014,7 +5350,7 @@ function OverviewPage({
       {/* Quick Actions + Live Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
         <div className="lg:col-span-2">
-          <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-3 sm:mb-5" style={{ color: "#f3f4f6", fontFamily: FM }}>Quick Actions</p>
+          <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-3 sm:mb-5 text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Quick Actions</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((qa, i) => (
               <motion.button key={qa.label} onClick={() => onNavigate(qa.id)}
@@ -5040,41 +5376,34 @@ function OverviewPage({
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                   <qa.icon size={14} className="text-muted-foreground group-hover:text-white/65 transition-colors duration-300" />
                 </div>
-                <p className="text-white text-sm font-medium mb-0.5" style={{ fontFamily: FB }}>{qa.label}</p>
-                <p className="text-xs" style={{ color: "#d1d5db", fontFamily: FB }}>{qa.desc}</p>
+                <p className="text-[#1e1b26] dark:text-white text-sm font-medium mb-0.5" style={{ fontFamily: FB }}>{qa.label}</p>
+                <p className="text-xs text-slate-600 dark:text-[#d1d5db]" style={{ fontFamily: FB }}>{qa.desc}</p>
               </motion.button>
             ))}
           </div>
         </div>
 
         {/* Live Activity Feed */}
-        <div>
-          <p className="text-[11px] tracking-[0.5em] uppercase mb-5" style={{ color: "#f3f4f6", fontFamily: FM, marginBottom: "18px" }}>Recent Activity</p>
-          <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="activity-feed-container">
+          <p className="text-[11px] tracking-[0.5em] uppercase mb-4 text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Recent Activity</p>
+          <div className="space-y-1">
             {recentActivity.length === 0 ? (
-              <p className="text-xs text-center py-6" style={{ color: "#94a3b8", fontFamily: FB }}>No activity yet.</p>
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]" style={{ fontFamily: FB }}>No activity yet.</p>
             ) : (
               recentActivity.map((a, i) => (
                 <motion.div key={a.id}
                   initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.06 }}
-                  className="flex items-start gap-2.5 py-3 px-2 rounded-lg transition-all duration-300"
-                  style={{ borderBottom: i < recentActivity.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.022)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+                  className="flex items-start gap-2.5 py-2.5 px-0.5 border-b border-slate-100 dark:border-white/[0.04] last:border-b-0"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{
-                    background: a.status?.toLowerCase() === 'confirmed'
-                      ? "rgba(255,255,255,0.55)"
-                      : "rgba(255,255,255,0.18)",
-                  }} />
+                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-slate-400 dark:bg-white/40" />
                   <div>
-                    <p className="text-xs leading-snug" style={{ color: "#f9fafb", fontFamily: FB }}>
-                      <span className="text-white/80">{a.user?.name ?? a.team?.name ?? 'Someone'}</span>
+                    <p className="text-xs leading-snug text-[#1e1b26] dark:text-[#f9fafb]" style={{ fontFamily: FB }}>
+                      <span className="text-slate-800 dark:text-white/80 font-medium">{a.user?.name ?? a.team?.name ?? 'Someone'}</span>
                       {" signed up for "}
-                      <span className="text-white/80">{a.eventTitle}</span>
+                      <span className="text-slate-800 dark:text-white/80 font-medium">{a.eventTitle}</span>
                     </p>
-                    <p className="text-[11px] mt-0.5" style={{ color: "#94a3b8", fontFamily: FM }}>{timeAgo(a.created_at)}</p>
+                    <p className="text-[11px] mt-0.5 text-slate-400 dark:text-[#94a3b8]" style={{ fontFamily: FM }}>{timeAgo(a.created_at)}</p>
                   </div>
                 </motion.div>
               ))
@@ -5087,6 +5416,7 @@ function OverviewPage({
 }
 
 export default function App() {
+  const { isDark } = useTheme();
   const [localToken, setLocalToken] = useState<string | null>(() => localStorage.getItem("spotlight_token"));
   const isLocalSignedIn = !!localToken;
   const isSignedIn = isLocalSignedIn;
@@ -5246,7 +5576,7 @@ export default function App() {
     >
       {/* Cursor flashlight */}
       <div className="pointer-events-none fixed inset-0 z-50 hidden lg:block" style={{
-        background: `radial-gradient(720px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.038), transparent 50%)`,
+        background: `radial-gradient(720px circle at ${mousePos.x}px ${mousePos.y}px, ${isDark ? "rgba(255,255,255,0.038)" : "rgba(0,0,0,0.025)"}, transparent 50%)`,
       }} />
 
       {/* Liquid blobs */}
@@ -5293,6 +5623,10 @@ export default function App() {
         .blob-1 { width:750px; height:750px; background: radial-gradient(circle,rgba(240,61,78,.15),transparent 68%); top:-18%; left:-20%; animation-duration:20s; }
         .blob-2 { width:580px; height:580px; background: radial-gradient(circle,rgba(160,160,160,.25),transparent 68%); bottom:0; right:-14%; animation-duration:26s; animation-delay:-9s; }
         .blob-3 { width:440px; height:440px; background: radial-gradient(circle,rgba(240,61,78,.1),transparent 68%); top:42%; left:38%; animation-duration:32s; animation-delay:-16s; }
+        html.light .blob { opacity: 0.12; }
+        html.light .blob-1 { background: radial-gradient(circle,rgba(240,61,78,.12),transparent 68%); }
+        html.light .blob-2 { background: radial-gradient(circle,rgba(200,205,215,.35),transparent 68%); }
+        html.light .blob-3 { background: radial-gradient(circle,rgba(240,61,78,.08),transparent 68%); }
         @keyframes morphBlob {
           0%,100% { transform:translate(0,0) scale(1);          border-radius:60% 40% 70% 30%/50% 60% 40% 70%; }
           25%      { transform:translate(55px,-44px) scale(1.07); border-radius:40% 60% 30% 70%/60% 40% 70% 30%; }

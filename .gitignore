@@ -143,3 +143,7 @@ vite.config.ts.timestamp-*
 .vite/
 .vscode/
 
+# Archive files and database data dumps
+*.zip
+*data_export.sql
+*complete_godaddy_database.sql

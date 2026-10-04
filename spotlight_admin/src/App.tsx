@@ -29,7 +29,10 @@ interface RegistrationKeyRecord {
   usedAt?: string | null;
 }
 
-let rawAdminBase = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+let rawAdminBase = String((import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api')
+  .replace(/\s+/g, '')
+  .trim()
+  .replace(/\/+$/, '');
 if (!rawAdminBase.endsWith('/api')) {
   rawAdminBase += '/api';
 }
@@ -61,7 +64,10 @@ export default function App() {
     try {
       const secret = localStorage.getItem('spotlight_admin_secret') || '';
       const res = await fetch(`${API_BASE}/clubs/registration-keys`, {
-        headers: { 'x-admin-secret': secret },
+        headers: {
+          'x-admin-secret': secret,
+          'ngrok-skip-browser-warning': 'true',
+        },
       });
       const data = await res.json();
       if (res.status === 403 || res.status === 401) {
@@ -97,7 +103,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/clubs/verify-admin-secret`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: JSON.stringify({ secret: adminPasscode.trim() }),
       });
       const data = await res.json();
@@ -131,6 +140,7 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json',
           'x-admin-secret': secret,
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify({ customCode: codeToUse }),
       });
