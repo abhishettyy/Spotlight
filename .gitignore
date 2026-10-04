@@ -147,3 +147,7 @@ vite.config.ts.timestamp-*
 *.zip
 *data_export.sql
 *complete_godaddy_database.sql
+
+# GoDaddy cPanel deployment scripts & docs
+godaddy_cpanel_deployment/
+GODADDY_CPANEL_DEPLOYMENT_GUIDE.md
