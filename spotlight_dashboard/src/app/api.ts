@@ -88,6 +88,24 @@ if (!rawBase.endsWith('/api')) {
 }
 const BASE_URL = rawBase;
 
+function sanitizeImageUrls(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeImageUrls);
+  }
+  const result: any = {};
+  for (const key of Object.keys(obj)) {
+    let val = obj[key];
+    if (typeof val === 'string' && val.includes('spotlight.msritise.in/uploads/')) {
+      val = val.replace(/^https?:\/\/spotlight\.msritise\.in\/uploads\//, 'https://msritise.in/spotlight.msritise.in/uploads/');
+    } else if (typeof val === 'object' && val !== null) {
+      val = sanitizeImageUrls(val);
+    }
+    result[key] = val;
+  }
+  return result;
+}
+
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -108,7 +126,7 @@ async function request(path: string, options: RequestInit = {}, token?: string) 
       const rawError = data.error || data.message || `Request failed (${res.status})`;
       throw new Error(sanitizeErrorMessage(rawError));
     }
-    return data;
+    return sanitizeImageUrls(data);
   } catch (err: any) {
     throw new Error(sanitizeErrorMessage(err));
   }

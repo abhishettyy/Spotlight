@@ -4872,9 +4872,26 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
       >
         <div className="px-6 pt-6 pb-5 flex-shrink-0 flex items-center gap-2.5">
           {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
-            <img src={currentClub.logoUrl} alt={name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-          ) : (
-            <img src="/rit-emblem.png" alt="RIT Emblem" className="w-8 h-8 object-contain flex-shrink-0" />
+            <img
+              src={currentClub.logoUrl}
+              alt={name}
+              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const sibling = e.currentTarget.nextSibling as HTMLElement;
+                if (sibling) sibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
+              {(name || 'S').charAt(0).toUpperCase()}
+            </div>
+          )}
+          {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
+              {(name || 'S').charAt(0).toUpperCase()}
+            </div>
           )}
           <span className="text-[13px] tracking-[0.16em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26" }}>
             {name || 'SPOTLIGHT'}
@@ -4935,9 +4952,26 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
           </button>
           <div className="flex items-center gap-2">
             {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
-              <img src={currentClub.logoUrl} alt={name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-            ) : (
-              <img src="/rit-emblem.png" alt="RIT Emblem" className="w-7 h-7 object-contain flex-shrink-0" />
+              <img
+                src={currentClub.logoUrl}
+                alt={name}
+                className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const sibling = e.currentTarget.nextSibling as HTMLElement;
+                  if (sibling) sibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+              <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
+                {(name || 'S').charAt(0).toUpperCase()}
+              </div>
+            )}
+            {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
+              <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
+                {(name || 'S').charAt(0).toUpperCase()}
+              </div>
             )}
             <span className="text-xs sm:text-[13px] tracking-[0.14em] font-bold truncate max-w-[180px]" title={name} style={{ fontFamily: FB, color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26" }}>
               {name || 'SPOTLIGHT'}
@@ -5084,9 +5118,26 @@ function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onSignOut:
               <div className="px-5 pt-5 pb-4 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-2">
                   {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" ? (
-                    <img src={currentClub.logoUrl} alt={name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-                  ) : (
-                    <img src="/rit-emblem.png" alt="RIT Emblem" className="w-7 h-7 object-contain flex-shrink-0" />
+                    <img
+                      src={currentClub.logoUrl}
+                      alt={name}
+                      className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const sibling = e.currentTarget.nextSibling as HTMLElement;
+                        if (sibling) sibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  {(!currentClub?.logoUrl || currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3") && (
+                    <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]">
+                      {(name || 'S').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  {currentClub?.logoUrl && currentClub.logoUrl !== "https://images.unsplash.com/photo-1516321318423-f06f85e504b3" && (
+                    <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-[#F03D4E]" style={{ display: 'none' }}>
+                      {(name || 'S').charAt(0).toUpperCase()}
+                    </div>
                   )}
                   <span className="text-xs tracking-[0.14em] font-bold truncate max-w-[150px]" title={name} style={{ fontFamily: FB, color: isDark ? "rgba(255,255,255,0.9)" : "#1e1b26" }}>
                     {name || 'SPOTLIGHT'}

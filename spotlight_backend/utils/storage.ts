@@ -46,8 +46,12 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
 
       const data: any = await response.json().catch(() => ({}));
       if (response.ok && data.url) {
-        console.log(`[Storage] Successfully uploaded to GoDaddy: ${data.url}`);
-        return data.url;
+        let finalUrl = data.url;
+        if (finalUrl.includes('spotlight.msritise.in/uploads/')) {
+          finalUrl = finalUrl.replace(/^https?:\/\/spotlight\.msritise\.in\/uploads\//, 'https://msritise.in/spotlight.msritise.in/uploads/');
+        }
+        console.log(`[Storage] Successfully uploaded to GoDaddy: ${finalUrl}`);
+        return finalUrl;
       } else {
         console.warn(`[Storage] GoDaddy upload returned non-200 (${response.status}):`, data.error || 'Unknown error');
       }

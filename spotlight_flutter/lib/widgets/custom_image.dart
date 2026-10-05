@@ -79,9 +79,13 @@ class CustomImage extends StatelessWidget {
     }
 
     if (cleanUrl.startsWith('/uploads') || cleanUrl.startsWith('/static') || cleanUrl.startsWith('/images') || cleanUrl.startsWith('/public')) {
-      cleanUrl = 'https://spotlight-production-74d4.up.railway.app$cleanUrl';
+      cleanUrl = 'https://msritise.in/spotlight.msritise.in$cleanUrl';
     } else if (cleanUrl.startsWith('uploads/') || cleanUrl.startsWith('static/') || cleanUrl.startsWith('images/') || cleanUrl.startsWith('public/')) {
-      cleanUrl = 'https://spotlight-production-74d4.up.railway.app/$cleanUrl';
+      cleanUrl = 'https://msritise.in/spotlight.msritise.in/$cleanUrl';
+    }
+
+    if (cleanUrl.contains('spotlight.msritise.in/uploads/')) {
+      cleanUrl = cleanUrl.replaceFirst(RegExp(r'https?:\/\/spotlight\.msritise\.in\/uploads\/'), 'https://msritise.in/spotlight.msritise.in/uploads/');
     }
 
     return _SmartHttpImage(
@@ -171,6 +175,25 @@ class _SmartHttpImageState extends State<_SmartHttpImage> {
         }
       }
     } catch (_) {
+      // Fallback for self-signed SSL or network issues with spotlight.msritise.in
+      if (cleanUriStr.contains('spotlight.msritise.in')) {
+        try {
+          final fallbackUri = Uri.parse(cleanUriStr.replaceFirst('https://', 'http://'));
+          final response = await http.get(fallbackUri).timeout(const Duration(seconds: 12));
+          if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+            _cache[cleanUriStr] = response.bodyBytes;
+            if (mounted) {
+              setState(() {
+                _bytes = response.bodyBytes;
+                _isLoading = false;
+                _hasError = false;
+              });
+            }
+            return;
+          }
+        } catch (_) {}
+      }
+
       if (mounted) {
         setState(() {
           _isLoading = false;
