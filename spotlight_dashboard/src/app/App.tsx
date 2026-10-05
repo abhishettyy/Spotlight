@@ -1111,27 +1111,40 @@ function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
 
 const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: string | null) => {
   if (!eventDateStr) {
-    return { enabled: true, reason: "Scanner Active", isUpcoming: false };
+    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
   }
 
   const eventStart = parseLocalDate(eventDateStr);
   if (!eventStart) {
-    return { enabled: true, reason: "Scanner Active", isUpcoming: false };
+    return { enabled: false, reason: "Scan disabled", isUpcoming: false };
   }
 
   const now = new Date();
+
+  // 7:00 AM on the morning of event date
+  const morningStart = new Date(
+    eventStart.getFullYear(),
+    eventStart.getMonth(),
+    eventStart.getDate(),
+    7, 0, 0, 0
+  );
+  // If event starts earlier than 7 AM (e.g. Midnight 00:00), windowStart opens 2 hours before start
+  const windowStart = eventStart < morningStart 
+    ? new Date(eventStart.getTime() - 2 * 60 * 60 * 1000)
+    : morningStart;
+
   const eventEnd = eventEndDateStr ? parseLocalDate(eventEndDateStr) : null;
   const effectiveEnd = eventEnd ?? new Date(eventStart.getTime() + 6 * 60 * 60 * 1000);
+  const windowEnd = new Date(effectiveEnd.getTime() + 6 * 60 * 60 * 1000);
 
-  // If event has ended completely (past the effective end + 12 hours grace period)
-  if (now > new Date(effectiveEnd.getTime() + 12 * 60 * 60 * 1000)) {
-    return { enabled: true, reason: "Event Concluded", isUpcoming: false };
-  }
-
-  if (now < eventStart) {
+  if (now < windowStart) {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const dateFormatted = `${monthNames[eventStart.getMonth()]} ${eventStart.getDate()}`;
-    return { enabled: true, reason: `Upcoming (${dateFormatted})`, isUpcoming: true };
+    return { enabled: false, reason: `Opens ${dateFormatted} at 7:00 AM`, isUpcoming: true };
+  }
+
+  if (now > windowEnd) {
+    return { enabled: false, reason: "Event Concluded", isUpcoming: false };
   }
 
   return { enabled: true, reason: "Scanner Active", isUpcoming: false };
@@ -2116,7 +2129,7 @@ function EventsPage({
                     Export CSV
                   </button>
                   {(() => {
-                    const scanInfo = checkScanStatus(activeEvent.eventDate || activeEvent.date);
+                    const scanInfo = checkScanStatus(activeEvent.eventDate || activeEvent.date, activeEvent.eventEndDate);
                     return (
                       <button
                         disabled={!scanInfo.enabled}
