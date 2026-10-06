@@ -1743,25 +1743,29 @@ function EventsPage({
         {showTeams ? (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
+              <h1 className="text-[13px] tracking-[0.4em] uppercase text-slate-900 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {teamsList.map(team => (
-                <div key={team.id} className="p-6 rounded-2xl flex flex-col" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div key={team.id} className="p-6 rounded-2xl flex flex-col" style={{
+                  background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff",
+                  border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+                  boxShadow: isDark ? "none" : "0 2px 10px rgba(0,0,0,0.02)"
+                }}>
                   <div className="flex justify-between items-start mb-5">
                     <div>
-                      <h3 className="text-white font-semibold text-lg leading-tight" style={{ fontFamily: FC }}>{team.name}</h3>
-                      <p className="text-[11px] text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey || 'Pending Payment'}</p>
+                      <h3 className="text-slate-900 dark:text-white font-semibold text-lg leading-tight" style={{ fontFamily: FC }}>{team.name}</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-[#888] font-mono mt-1 tracking-wider">PASSKEY: {team.passkey || 'Pending Payment'}</p>
                     </div>
-                    <span className="text-[11px] bg-white/5 px-2 py-1 rounded text-[#f3f4f6]" style={{ fontFamily: FM }}>{team.members.length} MEMBERS</span>
+                    <span className="text-[11px] bg-black/5 dark:bg-white/5 border border-black/5 dark:border-transparent px-2 py-1 rounded text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>{team.members.length} MEMBERS</span>
                   </div>
                   <div className="space-y-3 mt-auto">
                     {team.members.map(m => (
-                      <div key={m.id} className="flex justify-between items-center bg-black/20 p-2.5 rounded-lg border border-white/5">
+                      <div key={m.id} className="flex justify-between items-center bg-slate-50 dark:bg-black/20 p-2.5 rounded-lg border border-black/5 dark:border-white/5">
                         <div className="flex flex-col">
-                          <span className="text-xs text-[#ddd]" style={{ fontFamily: FB }}>{m.user?.name || m.user?.usn || 'Unknown'}</span>
-                          <span className="text-[11px] text-[#94a3b8]" style={{ fontFamily: FM }}>{m.user?.usn || m.user?.email}</span>
+                          <span className="text-xs text-slate-800 dark:text-[#ddd]" style={{ fontFamily: FB }}>{m.user?.name || m.user?.usn || 'Unknown'}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-[#94a3b8]" style={{ fontFamily: FM }}>{m.user?.usn || m.user?.email}</span>
                         </div>
                         <span className="text-[11px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm" style={{ 
                           color: m.status?.toLowerCase() === 'confirmed' ? '#10b981' : '#f59e0b',
@@ -1782,13 +1786,13 @@ function EventsPage({
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Registration Approval</h1>
-                <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>{pending.length} pending · {approved.length} approved · {rejected.length} rejected</p>
+                <h1 className="text-[13px] tracking-[0.4em] uppercase text-slate-900 dark:text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Registration Approval</h1>
+                <p className="text-xs text-slate-500 dark:text-[#888]" style={{ fontFamily: FB }}>{pending.length} pending · {approved.length} approved · {rejected.length} rejected</p>
               </div>
             </div>
 
             {isEventFinished && (
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center gap-2.5" style={{ fontFamily: FB }}>
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 text-xs flex items-center gap-2.5" style={{ fontFamily: FB }}>
                 <AlertTriangle size={16} className="flex-shrink-0" />
                 <span>This event has finished. Approving or rejecting pending registrations is disabled.</span>
               </div>
@@ -1796,73 +1800,73 @@ function EventsPage({
 
             {/* Pending requests table */}
             <div>
-              <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Pending Requests ({pending.length})</p>
+              <p className="text-[11px] tracking-[0.4em] uppercase text-slate-900 dark:text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Pending Requests ({pending.length})</p>
               {pending.length === 0 ? (
-                <div className="p-8 rounded-xl text-center text-xs text-[#94a3b8]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>No pending requests — you're all caught up.</div>
+                <div className="p-8 rounded-xl text-center text-xs text-slate-500 dark:text-[#94a3b8]" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff", border: isDark ? "1px dashed rgba(255,255,255,0.05)" : "1px dashed rgba(0,0,0,0.12)", fontFamily: FB }}>No pending requests — you're all caught up.</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+                <div className="overflow-x-auto rounded-xl border border-black/5 dark:border-white/5 bg-white dark:bg-white/[0.005] shadow-sm dark:shadow-none">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Action</th>
+                      <tr className="border-b border-black/5 dark:border-white/5" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#f8fafc" }}>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
                       <AnimatePresence>
                         {pending.map((req) => {
                           const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                           return (
-                            <motion.tr key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }} className="hover:bg-white/[0.01] transition-colors">
+                            <motion.tr key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
                               <td className="p-4 max-w-[180px]">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                  <p className="text-sm font-medium text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
+                                  <p className="text-sm font-medium text-slate-900 dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
                                 </div>
                               </td>
-                              <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                              <td className="p-4 text-xs font-mono text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
-                              <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
-                              <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
-                              <td className="p-4 text-xs text-[#888] max-w-[180px]">
+                              <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                              <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
+                              <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                              <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                              <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[180px]">
                                 {req.team ? (
                                   <div>
-                                    <span className="font-medium text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
-                                    <p className="text-[10px] text-[#94a3b8] font-mono">Passkey: {req.team.passkey || 'Pending Payment'}</p>
+                                    <span className="font-medium text-slate-900 dark:text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
+                                    <p className="text-[10px] text-slate-500 dark:text-[#94a3b8] font-mono">Passkey: {req.team.passkey || 'Pending Payment'}</p>
                                   </div>
                                 ) : (
-                                  <span className="text-[#888] font-mono">—</span>
+                                  <span className="text-slate-400 dark:text-[#888] font-mono">—</span>
                                 )}
                               </td>
-                              <td className="p-4 text-xs font-mono text-[#888] max-w-[150px]">
+                              <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[150px]">
                                 {activeEvent.price === 0 ? (
-                                  <span className="text-[#94a3b8]">Free</span>
+                                  <span className="text-slate-500 dark:text-[#94a3b8]">Free</span>
                                 ) : req.team ? (
                                   isLeader ? (
                                     req.transaction_id ? (
-                                      <span className="select-all text-[#a3e635] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
+                                      <span className="select-all text-emerald-700 dark:text-[#a3e635] bg-emerald-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-emerald-500/20 dark:border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
                                     ) : (
-                                      <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
+                                      <span className="text-amber-600 dark:text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
                                     )
                                   ) : (
-                                    <span className="text-[#94a3b8] italic text-[11px]">Member</span>
+                                    <span className="text-slate-500 dark:text-[#94a3b8] italic text-[11px]">Member</span>
                                   )
                                 ) : (
                                   req.transaction_id ? (
-                                    <span className="select-all text-[#a3e635] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
+                                    <span className="select-all text-emerald-700 dark:text-[#a3e635] bg-emerald-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-emerald-500/20 dark:border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
                                   ) : (
-                                    <span className="text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
+                                    <span className="text-amber-600 dark:text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
                                   )
                                 )}
                               </td>
-                              <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
+                              <td className="p-4 text-[11px] text-slate-500 dark:text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
                               <td className="p-4 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                   <button
@@ -1871,8 +1875,8 @@ function EventsPage({
                                     title="Approve Registration"
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                                       isEventFinished 
-                                        ? 'bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50' 
-                                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/20 hover:scale-105'
+                                        ? 'bg-black/5 dark:bg-white/5 text-black/30 dark:text-white/30 border-black/5 dark:border-white/5 cursor-not-allowed opacity-50' 
+                                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/20 hover:scale-105 cursor-pointer'
                                     }`}
                                     style={{ fontFamily: FB }}
                                   >
@@ -1884,8 +1888,8 @@ function EventsPage({
                                     title="Reject Registration"
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                                       isEventFinished 
-                                        ? 'bg-white/5 text-white/30 border-white/5 cursor-not-allowed opacity-50' 
-                                        : 'bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/20 hover:scale-105'
+                                        ? 'bg-black/5 dark:bg-white/5 text-black/30 dark:text-white/30 border-black/5 dark:border-white/5 cursor-not-allowed opacity-50' 
+                                        : 'bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/20 hover:scale-105 cursor-pointer'
                                     }`}
                                     style={{ fontFamily: FB }}
                                   >
@@ -1904,63 +1908,63 @@ function EventsPage({
             </div>
 
             <div>
-              <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Approved ({approved.length})</p>
+              <p className="text-[11px] tracking-[0.4em] uppercase text-slate-900 dark:text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Approved ({approved.length})</p>
               {approved.length === 0 ? (
-                <div className="p-8 rounded-xl text-center text-xs text-[#94a3b8]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>No approved registrations yet.</div>
+                <div className="p-8 rounded-xl text-center text-xs text-slate-500 dark:text-[#94a3b8]" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff", border: isDark ? "1px dashed rgba(255,255,255,0.05)" : "1px dashed rgba(0,0,0,0.12)", fontFamily: FB }}>No approved registrations yet.</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+                <div className="overflow-x-auto rounded-xl border border-black/5 dark:border-white/5 bg-white dark:bg-white/[0.005] shadow-sm dark:shadow-none">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Status</th>
+                      <tr className="border-b border-black/5 dark:border-white/5" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#f8fafc" }}>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
                       {approved.map((req) => {
                         const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                         return (
-                          <tr key={req.id} className="hover:bg-white/[0.01] transition-colors">
+                          <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
                             <td className="p-4 max-w-[180px]">
                               <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                <p className="text-sm font-medium text-white/70 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
+                                <p className="text-sm font-medium text-slate-900 dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
                               </div>
                             </td>
-                            <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
-                            <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
-                            <td className="p-4 text-xs text-[#888] max-w-[180px]">
+                            <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                            <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                            <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[180px]">
                               {req.team?.name ? (
-                                <span className="truncate block" title={req.team.name}>{req.team.name}</span>
+                                <span className="truncate block font-medium text-slate-900 dark:text-white/80" title={req.team.name}>{req.team.name}</span>
                               ) : (
                                 '—'
                               )}
                             </td>
-                            <td className="p-4 text-xs font-mono text-[#888] max-w-[150px]">
+                            <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[150px]">
                               {activeEvent.price === 0 ? (
-                                <span className="text-[#94a3b8]">Free</span>
+                                <span className="text-slate-500 dark:text-[#94a3b8]">Free</span>
                               ) : req.team ? (
                                 isLeader ? (
-                                  <span className="truncate block" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
+                                  <span className="truncate block text-slate-900 dark:text-white" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
                                 ) : (
-                                  <span className="italic text-[11px]">Member</span>
+                                  <span className="italic text-[11px] text-slate-500 dark:text-[#94a3b8]">Member</span>
                                 )
                               ) : (
-                                <span className="truncate block" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
+                                <span className="truncate block text-slate-900 dark:text-white" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
                               )}
                             </td>
-                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
+                            <td className="p-4 text-[11px] text-slate-500 dark:text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
                             <td className="p-4 text-center">
-                              <span className="text-[11px] text-green-500 uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Approved</span>
+                              <span className="text-[11px] text-green-600 dark:text-green-500 uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Approved</span>
                             </td>
                           </tr>
                         );
@@ -1972,72 +1976,72 @@ function EventsPage({
             </div>
 
             <div>
-              <p className="text-[11px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Rejected ({rejected.length})</p>
+              <p className="text-[11px] tracking-[0.4em] uppercase text-slate-900 dark:text-[#f3f4f6] mb-4" style={{ fontFamily: FM }}>Rejected ({rejected.length})</p>
               {rejected.length === 0 ? (
-                <div className="p-8 rounded-xl text-center text-xs text-[#94a3b8]" style={{ background: "rgba(255,255,255,0.01)", border: "1px dashed rgba(255,255,255,0.05)", fontFamily: FB }}>No rejected registrations.</div>
+                <div className="p-8 rounded-xl text-center text-xs text-slate-500 dark:text-[#94a3b8]" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff", border: isDark ? "1px dashed rgba(255,255,255,0.05)" : "1px dashed rgba(0,0,0,0.12)", fontFamily: FB }}>No rejected registrations.</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+                <div className="overflow-x-auto rounded-xl border border-black/5 dark:border-white/5 bg-white dark:bg-white/[0.005] shadow-sm dark:shadow-none">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Status</th>
+                      <tr className="border-b border-black/5 dark:border-white/5" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#f8fafc" }}>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Email</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Phone</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>UTR / Payment</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Date</th>
+                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6] text-left" style={{ fontFamily: FM }}>Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
                       {rejected.map((req) => {
                         const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                         return (
-                          <tr key={req.id} className="hover:bg-white/[0.01] transition-colors">
+                          <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
                             <td className="p-4 max-w-[180px]">
                               <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                <p className="text-sm font-medium text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
+                                <p className="text-sm font-medium text-slate-900 dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
                               </div>
                             </td>
-                            <td className="p-4 text-xs text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
-                            <td className="p-4 text-xs text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
-                            <td className="p-4 text-xs text-[#888] max-w-[180px]">
+                            <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
+                            <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                            <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                            <td className="p-4 text-xs text-slate-500 dark:text-[#888] max-w-[180px]">
                               {req.team ? (
                                 <div>
-                                  <span className="font-medium text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
-                                  <p className="text-[10px] text-[#94a3b8] font-mono">Passkey: {req.team.passkey}</p>
+                                  <span className="font-medium text-slate-900 dark:text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
+                                  <p className="text-[10px] text-slate-500 dark:text-[#94a3b8] font-mono">Passkey: {req.team.passkey}</p>
                                 </div>
                               ) : (
-                                <span className="text-[#888] font-mono">—</span>
+                                <span className="text-slate-400 dark:text-[#888] font-mono">—</span>
                               )}
                             </td>
-                            <td className="p-4 text-xs font-mono text-[#888] max-w-[150px]">
+                            <td className="p-4 text-xs font-mono text-slate-500 dark:text-[#888] max-w-[150px]">
                               {activeEvent.price === 0 ? (
-                                <span className="text-[#94a3b8]">Free</span>
+                                <span className="text-slate-500 dark:text-[#94a3b8]">Free</span>
                               ) : req.team ? (
                                 isLeader ? (
                                   req.transaction_id ? (
-                                    <span className="select-all text-[#f87171] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
+                                    <span className="select-all text-red-600 dark:text-[#f87171] bg-red-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-red-500/20 dark:border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
                                   ) : (
-                                    <span className="text-[#888] text-[10px] uppercase tracking-wider">—</span>
+                                    <span className="text-slate-400 dark:text-[#888] text-[10px] uppercase tracking-wider">—</span>
                                   )
                                 ) : (
-                                  <span className="text-[#94a3b8] italic text-[11px]">Member</span>
+                                  <span className="text-slate-500 dark:text-[#94a3b8] italic text-[11px]">Member</span>
                                 )
                               ) : (
                                 req.transaction_id ? (
-                                  <span className="select-all text-[#f87171] bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
+                                  <span className="select-all text-red-600 dark:text-[#f87171] bg-red-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-red-500/20 dark:border-white/5 text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
                                 ) : (
-                                  <span className="text-[#888] text-[10px] uppercase tracking-wider">—</span>
+                                  <span className="text-slate-400 dark:text-[#888] text-[10px] uppercase tracking-wider">—</span>
                                 )
                               )}
                             </td>
-                            <td className="p-4 text-[11px] text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
+                            <td className="p-4 text-[11px] text-slate-500 dark:text-[#888] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
                             <td className="p-4 text-center">
                               <span className="text-[11px] text-[#F03D4E] uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Rejected</span>
                             </td>
@@ -2084,8 +2088,8 @@ function EventsPage({
             <div className="mt-4 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
                 <div>
-                  <h1 className="text-[13px] tracking-[0.4em] uppercase text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
-                  <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>
+                  <h1 className="text-[13px] tracking-[0.4em] uppercase text-slate-900 dark:text-[#f3f4f6] mb-1" style={{ fontFamily: FM }}>Manage Attendees</h1>
+                  <p className="text-xs text-slate-500 dark:text-[#888]" style={{ fontFamily: FB }}>
                     <span className="text-[#10b981] font-bold">{combinedAttendanceList.length} checked-in</span>
                   </p>
                 </div>
@@ -2123,7 +2127,7 @@ function EventsPage({
                       document.body.removeChild(link);
                     }}
                     disabled={combinedAttendanceList.length === 0}
-                    className="text-xs px-4 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300 border border-green-500/20 transition-all font-semibold disabled:opacity-40 disabled:cursor-not-allowed" 
+                    className="text-xs px-4 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 border border-green-500/20 transition-all font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" 
                     style={{ fontFamily: FB }}
                   >
                     Export CSV
@@ -2143,13 +2147,13 @@ function EventsPage({
                         className={`text-xs px-4 py-2 rounded-lg border transition-all font-semibold flex items-center gap-2 ${
                           scanInfo.enabled
                             ? "bg-[#F03D4E]/10 hover:bg-[#F03D4E]/20 text-[#F03D4E] border-[#F03D4E]/30 cursor-pointer shadow-sm"
-                            : "bg-[#F03D4E]/10 text-white/30 border-white/5 cursor-not-allowed opacity-50"
+                            : "bg-[#F03D4E]/10 text-slate-400 dark:text-white/30 border-black/5 dark:border-white/5 cursor-not-allowed opacity-50"
                         }`}
                         style={{ fontFamily: FB }}
                       >
                         <Camera size={14} /> Scan Ticket QR
                         {!scanInfo.enabled && (
-                          <span className={`text-[10px] font-mono ${scanInfo.isUpcoming ? 'text-emerald-400 font-semibold' : 'text-amber-400/80'}`}>{scanInfo.reason}</span>
+                          <span className={`text-[10px] font-mono ${scanInfo.isUpcoming ? 'text-emerald-500 dark:text-emerald-400 font-semibold' : 'text-amber-500 dark:text-amber-400/80'}`}>{scanInfo.reason}</span>
                         )}
                       </button>
                     );
@@ -2232,25 +2236,25 @@ function EventsPage({
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search scanned attendees by name, USN, email, branch or team..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#F03D4E]/40 focus:ring-1 focus:ring-[#F03D4E]/40 transition-all"
+                  className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 focus:outline-none focus:border-[#F03D4E]/40 focus:ring-1 focus:ring-[#F03D4E]/40 transition-all shadow-sm dark:shadow-none"
                   style={{ fontFamily: FB }}
                 />
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.005]">
+              <div className="overflow-x-auto rounded-xl border border-black/5 dark:border-white/5 bg-white dark:bg-white/[0.005] shadow-sm dark:shadow-none">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5" style={{ background: "rgba(255,255,255,0.01)" }}>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch / Sem</th>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Contact</th>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Type</th>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
-                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Attendance</th>
+                    <tr className="border-b border-black/5 dark:border-white/5" style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#f8fafc" }}>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Name</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>USN</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Branch / Sem</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Contact</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Type</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6]" style={{ fontFamily: FM }}>Team Name</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-slate-700 dark:text-[#f3f4f6] text-right" style={{ fontFamily: FM }}>Attendance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5">
                     {combinedAttendanceList.filter(s => {
                       const q = searchQuery.toLowerCase().trim();
                       if (!q) return true;
@@ -2267,29 +2271,29 @@ function EventsPage({
                       const attendee = s.attendee || {};
                       const team = s.team || null;
                       return (
-                        <tr key={s.id} className="hover:bg-white/[0.01] transition-colors">
+                        <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
                                 {(attendee.name ?? '?').charAt(0)}
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-white/90 flex items-center gap-2" style={{ fontFamily: FB }}>
+                                <p className="text-sm font-medium text-slate-900 dark:text-white/90 flex items-center gap-2" style={{ fontFamily: FB }}>
                                   {attendee.name ?? 'Unknown'}
                                   {attendee.isLeader && (
-                                    <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">Leader</span>
+                                    <span className="text-[10px] text-amber-500 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">Leader</span>
                                   )}
                                 </p>
-                                <p className="text-[11px] text-[#94a3b8] mt-0.5" style={{ fontFamily: FM }}>{attendee.email}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-[#94a3b8] mt-0.5" style={{ fontFamily: FM }}>{attendee.email}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-xs font-mono text-[#aaa]">{attendee.usn ?? 'N/A'}</td>
-                          <td className="p-4 text-xs text-[#aaa]">
+                          <td className="p-4 text-xs font-mono text-slate-600 dark:text-[#aaa]">{attendee.usn ?? 'N/A'}</td>
+                          <td className="p-4 text-xs text-slate-600 dark:text-[#aaa]">
                             {attendee.branch ? (
                               <div>
                                 <p>{attendee.branch}</p>
-                                <p className="text-[11px] text-[#94a3b8] mt-0.5 font-mono">
+                                <p className="text-[11px] text-slate-500 dark:text-[#94a3b8] mt-0.5 font-mono">
                                   {attendee.year ? `Y${attendee.year}` : ''}
                                   {attendee.year && attendee.sem ? ' · ' : ''}
                                   {attendee.sem ? `Sem ${attendee.sem}` : ''}
@@ -2298,26 +2302,26 @@ function EventsPage({
                               </div>
                             ) : 'N/A'}
                           </td>
-                          <td className="p-4 text-xs text-[#aaa] font-mono">{attendee.phone ?? 'N/A'}</td>
+                          <td className="p-4 text-xs text-slate-600 dark:text-[#aaa] font-mono">{attendee.phone ?? 'N/A'}</td>
                           <td className="p-4">
                             {team ? (
                               <div>
                                 <span className="text-[11px] bg-slate-200 text-slate-700 dark:bg-purple-500/10 dark:text-purple-400 border border-slate-300 dark:border-purple-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>TEAM</span>
-                                <p className="text-[11px] text-[#94a3b8] mt-1 font-mono">Passkey: {team.passkey}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-[#94a3b8] mt-1 font-mono">Passkey: {team.passkey}</p>
                               </div>
                             ) : (
-                              <span className="text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
+                              <span className="text-[11px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold" style={{ fontFamily: FM }}>SOLO</span>
                             )}
                           </td>
                           <td className="p-4 text-xs">
                             {team?.name ? (
-                              <span className="font-medium text-white/90" style={{ fontFamily: FB }}>{team.name}</span>
+                              <span className="font-medium text-slate-900 dark:text-white/90" style={{ fontFamily: FB }}>{team.name}</span>
                             ) : (
-                              <span className="text-[#888] font-mono">-</span>
+                              <span className="text-slate-400 dark:text-[#888] font-mono">-</span>
                             )}
                           </td>
                           <td className="p-4 text-right">
-                            <span className="text-[11px] uppercase tracking-widest px-2.5 py-1 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" style={{ fontFamily: FM }}>
+                            <span className="text-[11px] uppercase tracking-widest px-2.5 py-1 rounded font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" style={{ fontFamily: FM }}>
                               CHECKED IN
                             </span>
                           </td>
@@ -2331,8 +2335,8 @@ function EventsPage({
                             <div className="w-12 h-12 rounded-2xl bg-[#F03D4E]/10 border border-[#F03D4E]/20 flex items-center justify-center text-[#F03D4E]">
                               <Camera size={24} />
                             </div>
-                            <p className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>No attendees scanned yet</p>
-                            <p className="text-xs text-[#888] max-w-sm" style={{ fontFamily: FB }}>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white" style={{ fontFamily: FB }}>No attendees scanned yet</p>
+                            <p className="text-xs text-slate-500 dark:text-[#888] max-w-sm" style={{ fontFamily: FB }}>
                               Click <span className="text-[#F03D4E] font-semibold">"Scan Ticket QR"</span> above to start scanning.
                             </p>
                           </div>
@@ -2404,21 +2408,21 @@ function EventsPage({
 
               return (
                 <>
-                  <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl mb-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl mb-6" style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff", border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)", boxShadow: isDark ? "none" : "0 2px 10px rgba(0,0,0,0.02)" }}>
                     {activeEvent.bannerUrl ? (
                       <div className="flex items-center gap-3.5 cursor-pointer group" onClick={() => setShowFullBannerModal(true)}>
-                        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 relative border border-white/10 shadow-md">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 relative border border-black/10 dark:border-white/10 shadow-md">
                           <img src={activeEvent.bannerUrl} alt="Banner thumbnail" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                         </div>
                         <div>
-                          <span className="text-sm font-semibold text-white group-hover:text-[#F03D4E] transition-colors flex items-center gap-2" style={{ fontFamily: FB }}>
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-[#F03D4E] transition-colors flex items-center gap-2" style={{ fontFamily: FB }}>
                             <Eye size={15} className="text-[#F03D4E]" /> Click to view full banner
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2.5 text-xs text-[#94a3b8]" style={{ fontFamily: FB }}>
-                        <ImageIcon size={16} className="text-white/40" /> No banner image uploaded for this event.
+                      <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-[#94a3b8]" style={{ fontFamily: FB }}>
+                        <ImageIcon size={16} className="text-slate-400 dark:text-white/40" /> No banner image uploaded for this event.
                       </div>
                     )}
 
@@ -2436,11 +2440,11 @@ function EventsPage({
                       />
                       <label
                         htmlFor="banner-update-input"
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${getEventStatus(activeEvent) === "previous" ? "opacity-40 pointer-events-none" : "cursor-pointer bg-white/5 hover:bg-white/10 text-white"}`}
-                        style={{ border: "1px solid rgba(255,255,255,0.1)", fontFamily: FB }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${getEventStatus(activeEvent) === "previous" ? "opacity-40 pointer-events-none" : "cursor-pointer text-slate-700 dark:text-white bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"}`}
+                        style={{ border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)", fontFamily: FB }}
                       >
                         {bannerUploading ? (
-                          <><div className="w-3.5 h-3.5 rounded-full border-2 border-white/60 border-t-transparent animate-spin" /> Uploading...</>
+                          <><div className="w-3.5 h-3.5 rounded-full border-2 border-slate-500 dark:border-white/60 border-t-transparent animate-spin" /> Uploading...</>
                         ) : (
                           <><Upload size={13} /> {activeEvent.bannerUrl ? "Update Banner" : "Upload Banner"}</>
                         )}
@@ -2559,21 +2563,35 @@ function EventsPage({
                 {getEventStatus(activeEvent) === "live" ? (
                   <LiveTag size="large" />
                 ) : (
-                  <span className="text-[11px] tracking-[0.3em] uppercase px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#aaa]" style={{ fontFamily: FM }}>
+                  <span className="text-[11px] tracking-[0.3em] uppercase px-3 py-1 rounded-full"
+                    style={{
+                      background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                      border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
+                      color: isDark ? "#aaa" : "#475569",
+                      fontFamily: FM
+                    }}
+                  >
                     {getEventStatus(activeEvent) === "previous" ? "Ended" : "Upcoming"}
                   </span>
                 )}
-                <span className="text-[11px] tracking-[0.2em] px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "#aaa", fontFamily: FM }}>{activeEvent.club}</span>
+                <span className="text-[11px] tracking-[0.2em] px-2 py-0.5 rounded-full"
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                    border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
+                    color: isDark ? "#aaa" : "#475569",
+                    fontFamily: FM
+                  }}
+                >{activeEvent.club}</span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-semibold text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-xs" style={{ color: "#f9fafb", fontFamily: FB }}>
-                 <span className="flex items-center gap-1.5"><Calendar size={12} />{formatEventHeaderDate(activeEvent.eventDate || activeEvent.date, activeEvent.eventEndDate)}</span>
-                 <span className="flex items-center gap-1.5"><MapPin size={12} />{activeEvent.venue}</span>
+              <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 dark:text-white" style={{ fontFamily: FC }}>{activeEvent.title}</h1>
+              <div className="flex flex-wrap items-center gap-4 mt-3 text-xs" style={{ color: isDark ? "#cbd5e1" : "#475569", fontFamily: FB }}>
+                 <span className="flex items-center gap-1.5"><Calendar size={12} className={isDark ? "text-slate-400" : "text-slate-600"} />{formatEventHeaderDate(activeEvent.eventDate || activeEvent.date, activeEvent.eventEndDate)}</span>
+                 <span className="flex items-center gap-1.5"><MapPin size={12} className={isDark ? "text-slate-400" : "text-slate-600"} />{activeEvent.venue}</span>
                  {(() => {
                    const isTeam = activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team';
                    if (!isTeam) {
                      return (
-                       <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20" style={{ fontFamily: FM }}>
+                       <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20" style={{ fontFamily: FM }}>
                          <Users size={12} />Solo
                        </span>
                      );
@@ -2581,11 +2599,11 @@ function EventsPage({
                    const max = activeEvent.teamSizeLimit;
                    return (
                      <>
-                       <span className="flex items-center gap-1.5 text-slate-700 dark:text-purple-400 font-medium bg-slate-200 dark:bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-slate-300 dark:border-purple-500/20" style={{ fontFamily: FM }}>
+                       <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 font-medium bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20" style={{ fontFamily: FM }}>
                          <Users size={12} />Team
                        </span>
                        {max ? (
-                         <span className="flex items-center gap-1.5 text-slate-700 dark:text-purple-300 font-medium bg-slate-200 dark:bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-slate-300 dark:border-purple-500/20" style={{ fontFamily: FM }}>
+                         <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-300 font-medium bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20" style={{ fontFamily: FM }}>
                            Size: {max}
                          </span>
                        ) : null}
@@ -2601,9 +2619,13 @@ function EventsPage({
                 { label: "Registered",     value: registrations.length },
                 { label: "Pending Approval", value: pending.length },
               ].map((stat, i) => (
-                 <div key={i} className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: "#f3f4f6", fontFamily: FM }}>{stat.label}</p>
-                    <p className="text-3xl font-semibold text-white">{stat.value}</p>
+                 <div key={i} className="p-6 rounded-2xl" style={{
+                   background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff",
+                   border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+                   boxShadow: isDark ? "none" : "0 2px 10px rgba(0,0,0,0.02)"
+                 }}>
+                    <p className="text-[11px] tracking-[0.3em] uppercase mb-2 font-semibold" style={{ color: isDark ? "#94a3b8" : "#64748b", fontFamily: FM }}>{stat.label}</p>
+                    <p className="text-3xl font-semibold text-slate-900 dark:text-white">{stat.value}</p>
                  </div>
               ))}
             </div>
@@ -2611,8 +2633,8 @@ function EventsPage({
             <div className="flex items-center justify-between mt-8 mb-2">
                <div>
                  {activeEvent.registrationDeadline && (
-                   <p className="text-xs text-[#888]" style={{ fontFamily: FB }}>
-                     Registration Deadline: <span className="text-white/80 font-medium">{formatDateTime12H(activeEvent.registrationDeadline)}</span>
+                   <p className="text-xs" style={{ color: isDark ? "#888" : "#64748b", fontFamily: FB }}>
+                     Registration Deadline: <span className="font-semibold" style={{ color: isDark ? "#ffffff" : "#1e1b26" }}>{formatDateTime12H(activeEvent.registrationDeadline)}</span>
                    </p>
                  )}
                </div>
@@ -2674,43 +2696,54 @@ function EventsPage({
                </motion.button>
             </div>
 
-            <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)" }}>
 
               <div 
                 onClick={() => {
                   if (!isEventFinished) setShowApprovals(true);
                 }}
                 className={`p-5 rounded-2xl flex items-center gap-5 transition-all duration-300 ${
-                  isEventFinished ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-white/[0.03] hover:border-white/10'
+                  isEventFinished ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                 }`}
-                style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "280px" }}
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff",
+                  border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+                  boxShadow: isDark ? "none" : "0 2px 10px rgba(0,0,0,0.02)",
+                  width: "fit-content",
+                  minWidth: "280px"
+                }}
                 onMouseEnter={e => {
                   if (isEventFinished) return;
-                  e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                  e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)";
+                  e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)";
                   e.currentTarget.style.transform = "translateY(-2px)";
                 }}
                 onMouseLeave={e => {
                   if (isEventFinished) return;
-                  e.currentTarget.style.background = "rgba(255,255,255,0.015)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                  e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.015)" : "#ffffff";
+                  e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
                   e.currentTarget.style.transform = "none";
                 }}
               >
-                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <CheckCircle size={20} className={isEventFinished ? "text-white/30" : "text-white/70"} />
+                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
+                    border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)"
+                  }}
+                >
+                  <CheckCircle size={20} className={isEventFinished ? (isDark ? "text-white/30" : "text-black/30") : (isDark ? "text-white/80" : "text-slate-700")} />
                   {!isEventFinished && pending.length > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-[#F03D4E] text-white text-[10px] font-bold flex items-center justify-center" style={{ fontFamily: FM }}>{pending.length}</span>
                   )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className={`font-medium text-lg leading-tight ${isEventFinished ? 'text-white/40' : 'text-white'}`} style={{ fontFamily: FC }}>Registration Approval</h3>
+                    <h3 className={`font-medium text-lg leading-tight ${isEventFinished ? (isDark ? 'text-white/40' : 'text-slate-400') : (isDark ? 'text-white' : 'text-slate-900')}`} style={{ fontFamily: FC }}>Registration Approval</h3>
                     {isEventFinished && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Closed</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Closed</span>
                     )}
                   </div>
-                  <p className="text-xs mt-1" style={{ color: isEventFinished ? "#666" : "#888", fontFamily: FB }}>
+                  <p className="text-xs mt-1" style={{ color: isEventFinished ? (isDark ? "#666" : "#94a3b8") : (isDark ? "#888" : "#64748b"), fontFamily: FB }}>
                     {isEventFinished ? "Disabled (Event has ended)" : "Review & approve pending requests"}
                   </p>
                 </div>
@@ -2719,23 +2752,35 @@ function EventsPage({
               <div 
                 onClick={() => setShowParticipants(true)}
                 className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
-                style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "280px" }}
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff",
+                  border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+                  boxShadow: isDark ? "none" : "0 2px 10px rgba(0,0,0,0.02)",
+                  width: "fit-content",
+                  minWidth: "280px"
+                }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                  e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)";
+                  e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)";
                   e.currentTarget.style.transform = "translateY(-2px)";
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.015)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                  e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.015)" : "#ffffff";
+                  e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
                   e.currentTarget.style.transform = "none";
                 }}
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <Users size={20} className="text-white/70" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
+                    border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)"
+                  }}
+                >
+                  <Users size={20} className={isDark ? "text-white/80" : "text-slate-700"} />
                 </div>
                 <div>
-                  <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Manage Attendees</h3>
+                  <h3 className={`font-medium text-lg leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ fontFamily: FC }}>Manage Attendees</h3>
+                  <p className="text-xs mt-1" style={{ color: isDark ? "#888" : "#64748b", fontFamily: FB }}>View attendee list & attendance</p>
                 </div>
               </div>
 
@@ -2743,24 +2788,35 @@ function EventsPage({
                 <div 
                   onClick={() => setShowTeams(true)}
                   className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300" 
-                  style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", width: "fit-content", minWidth: "280px" }}
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff",
+                    border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)",
+                    boxShadow: isDark ? "none" : "0 2px 10px rgba(0,0,0,0.02)",
+                    width: "fit-content",
+                    minWidth: "280px"
+                  }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                    e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)";
+                    e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)";
                     e.currentTarget.style.transform = "translateY(-2px)";
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.015)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.015)" : "#ffffff";
+                    e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
                     e.currentTarget.style.transform = "none";
                   }}
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <Users size={20} className="text-white/70" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
+                      border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.08)"
+                    }}
+                  >
+                    <Users size={20} className={isDark ? "text-white/80" : "text-slate-700"} />
                   </div>
                   <div>
-                    <h3 className="text-white font-medium text-lg leading-tight" style={{ fontFamily: FC }}>Manage Teams</h3>
-                    <p className="text-xs mt-1" style={{ color: "#888", fontFamily: FB }}>Oversee team slots per event</p>
+                    <h3 className={`font-medium text-lg leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ fontFamily: FC }}>Manage Teams</h3>
+                    <p className="text-xs mt-1" style={{ color: isDark ? "#888" : "#64748b", fontFamily: FB }}>Oversee team slots per event</p>
                   </div>
                 </div>
               )}
