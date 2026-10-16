@@ -10,6 +10,7 @@ import eventsRouter from './routes/events';
 import clubsRouter from './routes/clubs';
 import registrationsRouter from './routes/registrations';
 import notificationsRouter from './routes/notifications';
+import { ensureAdminProfile } from './utils/admin';
 
 declare global {
   namespace Express {
@@ -54,6 +55,8 @@ const mountRoutes = (basePath: string) => {
 
 mountRoutes('api');
 mountRoutes('');
+
+ensureAdminProfile();
 
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {

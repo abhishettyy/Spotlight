@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../config/db';
 import { requireAuth, requireOptionalAuth, signToken } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
+import { ADMIN_PROFILE_ID, requireAdmin, signAdminToken, isThrottled, recordFailure, clearFailures } from '../utils/admin';
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -106,26 +107,52 @@ router.post('/check-email', async (req: Request, res: Response): Promise<any> =>
   }
 });
 
-router.post('/verify-admin-secret', async (req: Request, res: Response): Promise<any> => {
+router.post('/admin/login', async (req: Request, res: Response): Promise<any> => {
   try {
-    const { secret } = req.body;
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret) return res.status(500).json({ error: 'Admin secret not configured on server.' });
-    if (!secret || secret.trim() !== adminSecret.trim()) {
-      return res.status(401).json({ error: 'Invalid admin passcode.' });
+    const key = req.ip || 'unknown';
+    if (isThrottled(key)) return res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' });
+    const { password } = req.body;
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Password is required.' });
     }
-    return res.status(200).json({ valid: true });
+    const admin = await prisma.profile.findUnique({ where: { id: ADMIN_PROFILE_ID } });
+    const ok = !!admin?.password && await bcrypt.compare(password, admin.password);
+    if (!ok) {
+      recordFailure(key);
+      return res.status(401).json({ error: 'Incorrect admin password.' });
+    }
+    clearFailures(key);
+    return res.status(200).json({ token: signAdminToken() });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-router.get('/registration-keys', async (req: Request, res: Response): Promise<any> => {
+router.post('/admin/change-password', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
-      return res.status(403).json({ error: 'Forbidden: Invalid admin secret.' });
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword || typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: 'Old and new password are required.' });
     }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters.' });
+    }
+    const admin = await prisma.profile.findUnique({ where: { id: ADMIN_PROFILE_ID } });
+    if (!admin?.password || !(await bcrypt.compare(oldPassword, admin.password))) {
+      return res.status(401).json({ error: 'Old password is incorrect.' });
+    }
+    await prisma.profile.update({
+      where: { id: ADMIN_PROFILE_ID },
+      data: { password: await bcrypt.hash(newPassword, SALT_ROUNDS) },
+    });
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/registration-keys', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
     await ensureActiveRegistrationKey();
 
     const keys = await prisma.registrationKey.findMany({
@@ -149,12 +176,8 @@ router.get('/registration-keys', async (req: Request, res: Response): Promise<an
   }
 });
 
-router.post('/registration-keys/generate', async (req: Request, res: Response): Promise<any> => {
+router.post('/registration-keys/generate', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
-      return res.status(403).json({ error: 'Forbidden: Invalid admin secret.' });
-    }
     const { customCode } = req.body;
     let codeToUse = '';
 
