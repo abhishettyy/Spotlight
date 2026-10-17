@@ -329,6 +329,64 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
+// Student sign-in with Google. Signs in existing student accounts only; new students sign up with email and password.
+router.post('/google-student', async (req: Request, res: Response): Promise<any> => {
+  const { credential, access_token } = req.body;
+
+  if (!credential && !access_token) {
+    return res.status(400).json({ error: 'Google credential or access token is required.' });
+  }
+
+  try {
+    let email: string | null = null;
+    let emailVerified = false;
+
+    if (credential) {
+      const ticket = await googleOAuthClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+      const payload = ticket.getPayload();
+      email = payload?.email ?? null;
+      emailVerified = !!payload?.email_verified;
+    } else {
+      // The access token must have been issued to Spotlight's own client, not to another app
+      const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(access_token)}`);
+      if (!infoRes.ok) {
+        return res.status(401).json({ error: 'Google sign-in expired. Please try again.' });
+      }
+      const info = await infoRes.json() as any;
+      if (info.aud !== GOOGLE_CLIENT_ID && info.azp !== GOOGLE_CLIENT_ID) {
+        return res.status(401).json({ error: 'Invalid Google sign-in.' });
+      }
+      email = info.email ?? null;
+      emailVerified = info.email_verified === true || info.email_verified === 'true';
+    }
+
+    if (!email || !emailVerified) {
+      return res.status(400).json({ error: 'Your Google account email could not be verified.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const profile = await prisma.profile.findFirst({ where: { email: cleanEmail, clubId: null } });
+
+    if (!profile) {
+      const club = await prisma.club.findUnique({ where: { email: cleanEmail } });
+      if (club) {
+        return res.status(400).json({ error: 'This email is registered to a club account. Please use the club login.' });
+      }
+      return res.status(404).json({ error: 'No student account found with this Google email. Please sign up first.' });
+    }
+
+    const token = signToken(profile.id);
+    console.log(`Student logged in with Google: ${profile.email}`);
+
+    const { password: _pw, ...safeProfile } = profile as any;
+    safeProfile.hasPassword = !!profile.password;
+    return res.status(200).json({ message: 'Logged in successfully', profile: safeProfile, token });
+  } catch (error: any) {
+    console.error('Student Google Auth Error:', error);
+    return res.status(500).json({ error: 'Google sign-in failed: ' + error.message });
+  }
+});
+
 router.post('/verify-password', requireAuth, async (req: Request, res: Response): Promise<any> => {
   const { userId, password } = req.body;
 
