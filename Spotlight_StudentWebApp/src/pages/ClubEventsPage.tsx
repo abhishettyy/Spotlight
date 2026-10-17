@@ -1,17 +1,25 @@
-import { useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, CalendarX, Users } from 'lucide-react';
 import { useClubsStore } from '@/store/clubsStore';
 import { useEventsStore } from '@/store/eventsStore';
 import EventCard from '@/components/ui/EventCard';
-import { EmptyState } from '@/components/ui/States';
-import { buildAvatarInitials } from '@/utils/imageUtils';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { getEventStartDate, isEventUpcoming } from '@/types/event';
+
+/** Name/logo passed by the caller, for clubs that only exist on an event or ticket. */
+export interface ClubRouteState {
+  name?: string;
+  logoUrl?: string | null;
+}
 
 export default function ClubEventsPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const routeState = useLocation().state as ClubRouteState | null;
   const { clubs, load } = useClubsStore();
-  const { events, loadEvents } = useEventsStore();
+  const { events, isLoading, loadEvents } = useEventsStore();
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
     if (clubs.length === 0) load();
@@ -19,42 +27,61 @@ export default function ClubEventsPage() {
   }, []);
 
   const club = clubs.find((c) => c.id === id);
-  const clubEvents = useMemo(() => events.filter((e) => e.clubId === id), [events, id]);
+  const clubName = club?.name ?? routeState?.name ?? events.find((e) => e.clubId === id)?.clubName ?? id;
+  const logoUrl = club?.logoUrl ?? routeState?.logoUrl ?? null;
+
+  // Upcoming events of this club (matched by id or name), soonest first
+  const clubEvents = useMemo(() => events
+    .filter((e) => {
+      const isThisClub = e.clubId === id || (!!e.clubName && e.clubName.toLowerCase() === clubName.toLowerCase());
+      return isThisClub && isEventUpcoming(e);
+    })
+    .sort((a, b) => {
+      const da = getEventStartDate(a);
+      const db = getEventStartDate(b);
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da.getTime() - db.getTime();
+    }), [events, id, clubName]);
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <button
-        onClick={() => navigate('/clubs')}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-crimson)', fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}
-      >
-        <ArrowLeft size={16} /> Clubs
-      </button>
-
       {/* Club header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <div style={{ width: 60, height: 60, borderRadius: 16, overflow: 'hidden', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {club?.logoUrl ? (
-            <img src={club.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', display: 'flex', padding: 4 }}
+        >
+          <ArrowLeft size={22} strokeWidth={2.5} />
+        </button>
+        <div style={{
+          width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: 'var(--raised)',
+          border: '1px solid var(--border)', display: 'grid', placeItems: 'center', flexShrink: 0,
+        }}>
+          {logoUrl && !logoFailed ? (
+            <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setLogoFailed(true)} />
           ) : (
-            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--subtext)' }}>{buildAvatarInitials(club?.name ?? '?')}</span>
+            <Users size={20} color="var(--subtext)" />
           )}
         </div>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-            {club?.name ?? 'Club Events'}
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {clubName}
           </h1>
-          <p style={{ color: 'var(--subtext)', fontSize: 14 }}>
-            {clubEvents.length} event{clubEvents.length !== 1 ? 's' : ''}
-          </p>
+          <p style={{ color: 'var(--subtext)', fontSize: 12 }}>Upcoming Events</p>
         </div>
       </div>
 
-      {clubEvents.length === 0 ? (
-        <EmptyState
-          svgSrc="/svg/empty_events.svg"
-          title="No events yet"
-          description="This club hasn't posted any events. Check back soon!"
-        />
+      {isLoading ? (
+        <PageLoader />
+      ) : clubEvents.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '64px 24px', textAlign: 'center' }}>
+          <CalendarX size={56} color="var(--subtext)" style={{ opacity: 0.4, marginBottom: 10 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--subtext)' }}>No upcoming events</h3>
+          <p style={{ fontSize: 13, color: 'var(--subtext)', opacity: 0.7 }}>Check back later for new events from {clubName}</p>
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {clubEvents.map((e) => <EventCard key={e.id} event={e} />)}

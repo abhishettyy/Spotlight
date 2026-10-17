@@ -23,6 +23,7 @@
 
     /* Path Aliases */
     "paths": {
+      "@student/*": ["./src/student/*"],
       "@/*": ["./src/*"]
     }
   },

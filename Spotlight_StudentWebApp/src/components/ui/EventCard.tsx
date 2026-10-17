@@ -1,336 +1,143 @@
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Bookmark } from 'lucide-react';
-import { EventModel, isEventLive, isEventPast, isEventFull, getEventStartDate } from '@/types/event';
+import { Bookmark, Calendar, MapPin, Clock } from 'lucide-react';
+import { EventModel, isEventLive, getEventStartDate } from '@/types/event';
 import { formatEventHeaderDate, formatDeadline } from '@/utils/dateUtils';
 import { useSavedEventsStore } from '@/store/savedEventsStore';
+import { toast } from 'sonner';
 
 interface EventCardProps {
   event: EventModel;
   compact?: boolean;
 }
 
+/** Event tile used in lists. Shows the same details as the Flutter app's event card. */
 export default function EventCard({ event, compact = false }: EventCardProps) {
   const navigate = useNavigate();
   const { isSaved, toggle } = useSavedEventsStore();
   const saved = isSaved(event.id);
   const live = isEventLive(event);
-  const past = isEventPast(event);
-  const full = isEventFull(event);
 
   const dateStr = event.eventDate?.toISOString() ?? event.date ?? null;
   const endDateStr = event.eventEndDate?.toISOString() ?? null;
+  const start = getEventStartDate(event) ?? event.registrationDeadline ?? null;
+  const day = start ? String(start.getDate()).padStart(2, '0') : null;
+  const month = start ? start.toLocaleString('en-US', { month: 'short' }).toUpperCase() : null;
+  const deadline = event.registrationDeadline ?? null;
 
-  const startDate = getEventStartDate(event);
-  const startDay = startDate ? String(startDate.getDate()).padStart(2, '0') : null;
-  const startMonth = startDate
-    ? startDate.toLocaleString('en-US', { month: 'short' }).toUpperCase()
-    : null;
-
-  const deadlineDate = event.registrationDeadline
-    ? (event.registrationDeadline instanceof Date ? event.registrationDeadline : new Date(event.registrationDeadline))
-    : null;
+  const toggleSaved = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggle(event.id);
+    toast(saved ? 'Event removed from saved list' : 'Event saved to your list');
+  };
 
   return (
-    <div
+    <article
       className="spotlight-card"
       onClick={() => navigate(`/events/${event.id}`)}
-      style={{
-        cursor: 'pointer',
-        overflow: 'hidden',
-        borderRadius: 20,
-        background: '#121215',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        opacity: past ? 0.75 : 1,
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-      }}
+      style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}
     >
-      {/* Banner image */}
-      <div
-        style={{
-          height: compact ? 150 : 180,
-          background: '#16171b',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+      <div style={{ position: 'relative', height: compact ? 150 : 180, width: '100%', overflow: 'hidden', flexShrink: 0, background: 'var(--raised)' }}>
         {event.imageUrl ? (
           <img
             src={event.imageUrl}
-            alt={event.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+            alt=""
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
           />
         ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(135deg, #1c1d22 0%, #121316 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Calendar size={36} style={{ opacity: 0.18, color: '#ffffff' }} />
+          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--sk-faint)' }}>
+            <Calendar size={28} />
           </div>
         )}
-
-        {/* Top left badges: Club/Spotlight text pill + Live badge */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            zIndex: 2,
-          }}
-        >
-          {/* Spotlight / Club text pill */}
-          <span
+        {day && month && (
+          <div
+            aria-hidden
             style={{
-              background: 'rgba(255, 255, 255, 0.16)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              color: '#ffffff',
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '4px 12px',
-              borderRadius: 999,
-              letterSpacing: '0.2px',
+              position: 'absolute', top: 10, right: 10, minWidth: 44, padding: '5px 8px', borderRadius: 8,
+              background: 'var(--surface)', color: 'var(--text)', textAlign: 'center', lineHeight: 1.05,
             }}
           >
-            {event.clubName || 'Spotlight'}
-          </span>
-
-          {/* LIVE status badge */}
+            <div style={{ fontSize: 17, fontWeight: 700 }}>{day}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--subtext)', letterSpacing: '0.5px' }}>{month}</div>
+          </div>
+        )}
+        <div style={{ position: 'absolute', top: 10, left: 10, right: 70, display: 'flex', gap: 6, alignItems: 'center' }}>
+          {event.clubName && (
+            <span style={{
+              background: 'var(--surface)', color: 'var(--text)', fontSize: 10, fontWeight: 800,
+              letterSpacing: '0.8px', padding: '5px 10px', borderRadius: 20,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+            }}>
+              {event.clubName}
+            </span>
+          )}
           {live && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'rgba(0, 0, 0, 0.45)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                color: '#ff4d4f',
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                letterSpacing: '0.5px',
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#ff4d4f',
-                  display: 'inline-block',
-                  boxShadow: '0 0 6px #ff4d4f',
-                }}
-              />
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
+              background: 'var(--surface)', color: 'var(--sk-danger)', fontSize: 9, fontWeight: 800,
+              letterSpacing: '0.6px', padding: '5px 8px', borderRadius: 20,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: 99, background: 'currentColor' }} />
               LIVE
             </span>
           )}
         </div>
-
-        {/* Top right date box */}
-        {startDay && startMonth && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              background: 'rgba(30, 30, 36, 0.8)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 14,
-              padding: '6px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 46,
-              zIndex: 2,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                color: '#ffffff',
-                lineHeight: 1.1,
-              }}
-            >
-              {startDay}
-            </span>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: 'rgba(255, 255, 255, 0.7)',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-                marginTop: 1,
-              }}
-            >
-              {startMonth}
-            </span>
-          </div>
-        )}
-
-        {/* Full badge */}
-        {full && !past && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: 'rgba(0,0,0,0.7)',
-              color: '#fff',
-              textAlign: 'center',
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 0',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            FULL
-          </div>
-        )}
       </div>
 
-      {/* Content */}
-      <div style={{ padding: compact ? '14px 14px' : '16px' }}>
-        {/* Event Type / Category */}
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: 'var(--color-crimson)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.6px',
-            marginBottom: 4,
-          }}
-        >
-          {event.eventType || event.category || 'EVENT'}
-        </p>
+      <div style={{ padding: compact ? 14 : 16, display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.2px', color: 'var(--sk-brand)' }}>
+          {event.category.toUpperCase()}
+        </span>
 
-        {/* Title */}
         <h3
           style={{
-            fontSize: compact ? 17 : 18,
-            fontWeight: 800,
-            color: '#ffffff',
-            marginBottom: 8,
-            lineHeight: 1.25,
-            display: '-webkit-box',
-            WebkitLineClamp: 1,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
+            fontSize: 16, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3, letterSpacing: '-0.01em',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0,
+            minHeight: '2.6em', // always reserve two lines so every card is the same height
           }}
         >
           {event.title}
         </h3>
 
-        {/* Deadline or Date info */}
-        {deadlineDate && !isNaN(deadlineDate.getTime()) ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              color: '#f59e0b',
-              fontSize: 12,
-              fontWeight: 500,
-              marginBottom: 10,
-            }}
-          >
-            <Clock size={13} color="#f59e0b" />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Deadline: {formatDeadline(deadlineDate)}
-            </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--subtext)', minWidth: 0 }}>
+          <Calendar size={13} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dateStr ? formatEventHeaderDate(dateStr, endDateStr) : 'TBD'}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--subtext)', minWidth: 0 }}>
+          <MapPin size={13} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.venue}</span>
+        </div>
+        {deadline && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--sk-warn)', minWidth: 0 }}>
+            <Clock size={12} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Deadline: {formatDeadline(deadline)}</span>
           </div>
-        ) : dateStr ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              color: 'var(--subtext)',
-              fontSize: 12,
-              marginBottom: 10,
-            }}
-          >
-            <Calendar size={13} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {formatEventHeaderDate(dateStr, endDateStr)}
-            </span>
-          </div>
-        ) : null}
+        )}
 
-        {/* Footer */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: 8,
-          }}
-        >
-          <span style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.65)', fontWeight: 500 }}>
-            {event.registrationCount ?? 0}{' '}
-            {(event.registrationCount ?? 0) === 1 ? 'registration' : 'registrations'}
+        <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 12, color: 'var(--subtext)', fontWeight: 500 }}>
+            {event.registrationCount} {event.registrationCount === 1 ? 'registration' : 'registrations'}
           </span>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: '#ffffff',
-              }}
-            >
-              {event.price > 0 ? `₹${event.price}` : 'Free'}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+              {event.price > 0 ? `₹${event.price.toFixed(0)}` : 'Free'}
             </span>
-
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggle(event.id);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: saved ? 'var(--color-crimson)' : 'rgba(255, 255, 255, 0.7)',
-                transition: 'color 0.15s ease',
-              }}
+              onClick={toggleSaved}
               aria-label={saved ? 'Remove bookmark' : 'Bookmark event'}
+              aria-pressed={saved}
+              style={{
+                width: 30, height: 30, borderRadius: 8, border: 'none', display: 'grid', placeItems: 'center',
+                cursor: 'pointer', background: 'transparent', color: saved ? 'var(--sk-brand)' : 'var(--subtext)',
+              }}
             >
-              <Bookmark size={18} fill={saved ? 'var(--color-crimson)' : 'none'} />
+              <Bookmark size={17} fill={saved ? 'currentColor' : 'none'} />
             </button>
-          </div>
+          </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

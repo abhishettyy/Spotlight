@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Loader2, Info, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Lock, Loader2, Info } from 'lucide-react';
 import { useEventsStore } from '@/store/eventsStore';
 import { useUserStore } from '@/store/userStore';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationsStore } from '@/store/notificationsStore';
 import { getProfile } from '@/api/profiles';
 import { registerSolo, createTeam, joinTeam } from '@/api/registrations';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import PasskeyDialog from '@/components/ui/PasskeyDialog';
+import type { PaymentRouteState } from '@/pages/PaymentPage';
 import { toast } from 'sonner';
 
 type Mode = 'solo' | 'create-team' | 'join-team';
@@ -26,7 +29,7 @@ export default function RegisterPage() {
   const [passkey, setPasskey] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [teamCreatedModal, setTeamCreatedModal] = useState<{ passkey: string; registrationId: string } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const loadNotifications = useNotificationsStore((s) => s.load);
 
   useEffect(() => {
     if (events.length === 0) loadEvents();
@@ -51,94 +54,63 @@ export default function RegisterPage() {
   if (!event) return <PageLoader />;
 
   // Locked non-editable credentials from user account profile
-  const fullName = currentUser?.name || 'Student';
-  const usn = currentUser?.usn || '—';
-  const phone = currentUser?.phone || '—';
+  const fullName = currentUser?.name ?? '';
+  const usn = currentUser?.usn ?? '';
+  const phone = currentUser?.phone ?? '';
+
+  // Mirrors the tail of RegisterScreen._submit: paid solo/create-team go to payment,
+  // everything else refreshes data and returns home.
+  const finish = (registrationId?: string, referenceCode?: string) => {
+    if (event.price > 0 && mode !== 'join-team' && registrationId) {
+      const state: PaymentRouteState = {
+        eventName: event.title,
+        price: event.price,
+        qrUrl: event.qrUrl ?? null,
+        upiId: event.upiId ?? null,
+        teamSizeLimit: event.teamSizeLimit ?? null,
+        referenceCode,
+      };
+      navigate(`/events/${event.id}/payment?registrationId=${registrationId}`, { replace: true, state });
+      return;
+    }
+    loadEvents();
+    loadNotifications();
+    toast.success('Registration submitted successfully!');
+    navigate('/', { replace: true });
+  };
 
   const handleSubmit = async () => {
-    if (mode === 'solo') {
-      if (!usn || usn === '—') {
-        toast.error('USN missing from profile. Please complete your profile first.');
-        return;
+    if (mode === 'create-team' && !teamName.trim()) {
+      toast.error('Team name is required');
+      return;
+    }
+    if (mode === 'join-team' && passkey.trim().length !== 5) {
+      toast.error('Passkey must be 5 characters');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (mode === 'solo') {
+        const regId = await registerSolo({ eventId: event.id, name: fullName.trim(), usn: usn.trim() });
+        finish(regId, regId);
+      } else if (mode === 'create-team') {
+        const result = await createTeam({ eventId: event.id, teamName: teamName.trim(), leaderUsn: usn.trim() });
+        // The dialog's button continues the flow via finish()
+        setTeamCreatedModal({ passkey: result.passkey, registrationId: result.registrationId });
+      } else {
+        await joinTeam({ eventId: event.id, passkey: passkey.trim() });
+        finish();
       }
-      setIsSubmitting(true);
-      try {
-        const regId = await registerSolo({
-          eventId: event.id,
-          name: fullName,
-          usn: usn.toUpperCase(),
-        });
-        toast.success('Registration submitted successfully!');
-        if (event.price > 0) {
-          navigate(`/events/${event.id}/payment?registrationId=${regId}`, { replace: true });
-        } else {
-          navigate('/tickets', { replace: true });
-        }
-      } catch (err: any) {
-        toast.error(err.message || 'Registration failed.');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else if (mode === 'create-team') {
-      if (!teamName.trim()) {
-        toast.error('Team name is required.');
-        return;
-      }
-      if (!usn || usn === '—') {
-        toast.error('USN missing from profile. Please complete your profile first.');
-        return;
-      }
-      setIsSubmitting(true);
-      try {
-        const result = await createTeam({
-          eventId: event.id,
-          teamName: teamName.trim(),
-          leaderUsn: usn.toUpperCase(),
-        });
-        if (result.passkey) {
-          setTeamCreatedModal({ passkey: result.passkey, registrationId: result.registrationId });
-        } else if (event.price > 0) {
-          navigate(`/events/${event.id}/payment?registrationId=${result.registrationId}`, { replace: true });
-        } else {
-          toast.success('Team registered successfully!');
-          navigate('/tickets', { replace: true });
-        }
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to create team.');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      // join team
-      if (!passkey.trim() || passkey.trim().length !== 5) {
-        toast.error('Passkey must be 5 characters.');
-        return;
-      }
-      setIsSubmitting(true);
-      try {
-        await joinTeam({
-          eventId: event.id,
-          passkey: passkey.trim().toUpperCase(),
-        });
-        toast.success('Joined team successfully!');
-        navigate('/tickets', { replace: true });
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to join team. Please check the passkey.');
-      } finally {
-        setIsSubmitting(false);
-      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleCopyPasskey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    setCopied(true);
-    toast.success('Passkey copied to clipboard!');
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <div style={{ minHeight: '100vh', background: '#000000', color: '#ffffff', padding: '16px 20px 48px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: '16px 20px 48px' }}>
       
       {/* ── Top Bar ────────────────────────────────────────────────────── */}
       <div
@@ -156,7 +128,7 @@ export default function RegisterPage() {
           style={{
             background: 'none',
             border: 'none',
-            color: '#ffffff',
+            color: 'var(--text)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -166,7 +138,7 @@ export default function RegisterPage() {
         >
           <ArrowLeft size={22} strokeWidth={2.5} />
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.3px' }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
           Register
         </h1>
       </div>
@@ -179,7 +151,7 @@ export default function RegisterPage() {
             style={{
               height: 52,
               padding: 4,
-              background: '#141416',
+              background: 'var(--surface)',
               borderRadius: 28,
               display: 'flex',
               marginBottom: 28,
@@ -191,8 +163,8 @@ export default function RegisterPage() {
                 flex: 1,
                 borderRadius: 24,
                 border: 'none',
-                background: mode === 'create-team' ? 'var(--color-crimson, #e63946)' : 'transparent',
-                color: mode === 'create-team' ? '#ffffff' : '#9ca3af',
+                background: mode === 'create-team' ? 'var(--sk-brand)' : 'transparent',
+                color: mode === 'create-team' ? '#ffffff' : 'var(--subtext)',
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -207,8 +179,8 @@ export default function RegisterPage() {
                 flex: 1,
                 borderRadius: 24,
                 border: 'none',
-                background: mode === 'join-team' ? 'var(--color-crimson, #e63946)' : 'transparent',
-                color: mode === 'join-team' ? '#ffffff' : '#9ca3af',
+                background: mode === 'join-team' ? 'var(--sk-brand)' : 'transparent',
+                color: mode === 'join-team' ? '#ffffff' : 'var(--subtext)',
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -239,13 +211,13 @@ export default function RegisterPage() {
             {/* Team Name (editable) */}
             <div
               style={{
-                background: '#1E1E22',
+                background: 'var(--raised)',
                 borderRadius: 16,
                 padding: '12px 20px',
                 marginBottom: 16,
               }}
             >
-              <p style={{ fontSize: 12, color: '#A09B9B', fontWeight: 500, marginBottom: 4 }}>
+              <p style={{ fontSize: 12, color: 'var(--subtext)', fontWeight: 500, marginBottom: 4 }}>
                 Team Name
               </p>
               <input
@@ -258,7 +230,7 @@ export default function RegisterPage() {
                   background: 'transparent',
                   border: 'none',
                   outline: 'none',
-                  color: '#FFFFFF',
+                  color: 'var(--text)',
                   fontSize: 16,
                   fontWeight: 500,
                   fontFamily: 'inherit',
@@ -276,7 +248,7 @@ export default function RegisterPage() {
             <div
               style={{
                 padding: '14px 18px',
-                background: '#141416',
+                background: 'var(--surface)',
                 borderRadius: 16,
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -285,8 +257,8 @@ export default function RegisterPage() {
                 marginBottom: 16,
               }}
             >
-              <Info size={18} color="var(--color-crimson, #e63946)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <p style={{ fontSize: 13, color: '#A09B9B', lineHeight: 1.5 }}>
+              <Info size={18} color="var(--sk-brand)" style={{ flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: 13, color: 'var(--subtext)', lineHeight: 1.5 }}>
                 A unique passkey will be generated after you submit. Share it with your teammates.
                 {event.teamSizeLimit ? ` Team size limit is ${event.teamSizeLimit} members.` : ''}
               </p>
@@ -299,13 +271,13 @@ export default function RegisterPage() {
             {/* Team Passkey (editable) */}
             <div
               style={{
-                background: '#1E1E22',
+                background: 'var(--raised)',
                 borderRadius: 16,
                 padding: '12px 20px',
                 marginBottom: 16,
               }}
             >
-              <p style={{ fontSize: 12, color: '#A09B9B', fontWeight: 500, marginBottom: 4 }}>
+              <p style={{ fontSize: 12, color: 'var(--subtext)', fontWeight: 500, marginBottom: 4 }}>
                 Team Passkey
               </p>
               <input
@@ -319,7 +291,7 @@ export default function RegisterPage() {
                   background: 'transparent',
                   border: 'none',
                   outline: 'none',
-                  color: '#FFFFFF',
+                  color: 'var(--text)',
                   fontSize: 16,
                   fontWeight: 600,
                   letterSpacing: '2px',
@@ -341,7 +313,7 @@ export default function RegisterPage() {
             width: '100%',
             height: 52,
             borderRadius: 30,
-            background: 'var(--color-crimson, #e63946)',
+            background: 'var(--sk-brand)',
             border: 'none',
             color: '#ffffff',
             fontSize: 16,
@@ -354,7 +326,7 @@ export default function RegisterPage() {
             marginTop: 32,
             transition: 'opacity 0.15s ease',
             opacity: isSubmitting ? 0.7 : 1,
-            boxShadow: '0 4px 14px rgba(230, 57, 70, 0.3)',
+            boxShadow: 'none',
           }}
         >
           {isSubmitting ? (
@@ -367,96 +339,22 @@ export default function RegisterPage() {
 
       {/* ── Team Created Dialog ────────────────────────────────────────── */}
       {teamCreatedModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1000,
-            background: 'rgba(0, 0, 0, 0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20,
-          }}
-        >
-          <div
-            style={{
-              background: '#141416',
-              borderRadius: 24,
-              padding: 28,
-              maxWidth: 380,
-              width: '100%',
-              textAlign: 'center',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)',
-            }}
-          >
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', marginBottom: 12 }}>
-              Team Created!
-            </h3>
-            <p style={{ fontSize: 14, color: '#A09B9B', marginBottom: 20 }}>
-              Share this passkey with your teammates:
-            </p>
-
-            <div
-              onClick={() => handleCopyPasskey(teamCreatedModal.passkey)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 24px',
-                borderRadius: 16,
-                background: 'rgba(230, 57, 70, 0.12)',
-                border: '1px solid rgba(230, 57, 70, 0.3)',
-                cursor: 'pointer',
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 28,
-                  fontWeight: 800,
-                  letterSpacing: '4px',
-                  color: 'var(--color-crimson, #e63946)',
-                  fontFamily: 'monospace',
-                }}
-              >
-                {teamCreatedModal.passkey}
-              </span>
-              {copied ? (
-                <Check size={20} color="#22c55e" strokeWidth={2.5} />
-              ) : (
-                <Copy size={20} color="var(--color-crimson, #e63946)" strokeWidth={2} />
-              )}
-            </div>
-
-            <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 24 }}>
-              Tap to copy passkey
-            </p>
-
-            <button
-              onClick={() => {
-                if (event.price > 0) {
-                  navigate(`/events/${event.id}/payment?registrationId=${teamCreatedModal.registrationId}`, { replace: true });
-                } else {
-                  navigate('/tickets', { replace: true });
-                }
-              }}
-              style={{
-                width: '100%',
-                height: 48,
-                borderRadius: 24,
-                background: 'var(--color-crimson, #e63946)',
-                border: 'none',
-                color: '#ffffff',
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {event.price > 0 ? 'Proceed to Payment' : 'View My Ticket'}
-            </button>
-          </div>
-        </div>
+        teamCreatedModal.passkey ? (
+          <PasskeyDialog
+            title="Team Created!"
+            message="Share this passkey with your teammates:"
+            passkey={teamCreatedModal.passkey}
+            actionLabel="Got it"
+            onAction={() => finish(teamCreatedModal.registrationId, teamCreatedModal.passkey)}
+          />
+        ) : (
+          <PasskeyDialog
+            title="Team Created!"
+            message="Your team has been created. Next, submit your payment details to receive your Team Passkey."
+            actionLabel="Proceed to Payment"
+            onAction={() => finish(teamCreatedModal.registrationId, teamCreatedModal.registrationId)}
+          />
+        )
       )}
     </div>
   );
@@ -467,7 +365,7 @@ function LockedCredentialField({ label, value }: { label: string; value: string 
   return (
     <div
       style={{
-        background: '#141416',
+        background: 'var(--surface)',
         borderRadius: 16,
         padding: '14px 20px',
         display: 'flex',
@@ -480,7 +378,7 @@ function LockedCredentialField({ label, value }: { label: string; value: string 
         <p
           style={{
             fontSize: 12,
-            color: '#A09B9B',
+            color: 'var(--subtext)',
             fontWeight: 500,
             marginBottom: 4,
           }}
@@ -490,14 +388,14 @@ function LockedCredentialField({ label, value }: { label: string; value: string 
         <p
           style={{
             fontSize: 16,
-            color: '#FFFFFF',
+            color: value ? 'var(--text)' : 'var(--sk-faint)',
             fontWeight: 500,
           }}
         >
-          {value}
+          {value || `${label} from profile`}
         </p>
       </div>
-      <Lock size={18} color="#A09B9B" strokeWidth={1.8} />
+      <Lock size={18} color="var(--subtext)" strokeWidth={1.8} />
     </div>
   );
 }

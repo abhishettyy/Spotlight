@@ -1,60 +1,162 @@
 import { useEffect } from 'react';
-import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { BellOff, BellRing, Trash2, WifiOff } from 'lucide-react';
 import { useNotificationsStore } from '@/store/notificationsStore';
+import { useNotificationPrefsStore } from '@/store/notificationPrefsStore';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/States';
-import { timeAgo } from '@/utils/dateUtils';
+import { formatDate } from '@/utils/dateUtils';
 import { toast } from 'sonner';
 
+// Same buckets as NotificationsScreen._formatTime
+function formatTime(dt?: Date | null): string {
+  if (!dt) return '';
+  const diffMs = Date.now() - dt.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return formatDate(dt).replace(/, \d{4}$/, '');
+}
+
 export default function NotificationsPage() {
-  const { notifications, unreadCount, isLoading, load, markAllRead, markOneRead, remove } = useNotificationsStore();
+  const { notifications, unreadCount, isLoading, error, load, markAllRead, markOneRead, remove } = useNotificationsStore();
+  const { enabled, toggle } = useNotificationPrefsStore();
 
   useEffect(() => {
     load();
   }, []);
 
+  const header = (subtitle?: string, action?: React.ReactNode) => (
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-1px' }}>Notifications</h1>
+        {subtitle && <p style={{ color: 'var(--subtext)', fontSize: 14, marginTop: 4 }}>{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+
+  if (!enabled) {
+    return (
+      <div style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
+        {header()}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '48px 40px' }}>
+          <div style={{ padding: 24, borderRadius: '50%', background: 'var(--raised)', display: 'flex' }}>
+            <BellOff size={48} color="var(--subtext)" />
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginTop: 24 }}>Notifications are off</h3>
+          <p style={{ fontSize: 14, color: 'var(--subtext)', lineHeight: 1.5, marginTop: 8, maxWidth: 340 }}>
+            Enable notifications in your profile settings to stay updated on events and registrations.
+          </p>
+          <button
+            onClick={toggle}
+            className="btn-primary"
+            style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            <BellRing size={18} /> Enable Notifications
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleMarkAllRead = async () => {
     await markAllRead();
-    toast.success('All notifications marked as read.');
+    toast.success('All notifications marked as read');
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await remove(id);
-  };
-
-  const handleMarkOne = async (id: string, isRead: boolean) => {
-    if (!isRead) {
-      await markOneRead(id);
+    try {
+      await remove(id);
+      toast('Notification deleted');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 
-  if (isLoading && notifications.length === 0) return <PageLoader />;
+  const renderBody = () => {
+    if (isLoading) return <PageLoader />;
+    if (error) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '48px 24px' }}>
+          <WifiOff size={48} color="var(--subtext)" style={{ opacity: 0.6 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Could not load notifications</h3>
+          <button onClick={load} className="btn-primary" style={{ padding: '8px 20px' }}>Retry</button>
+        </div>
+      );
+    }
+    if (notifications.length === 0) {
+      return (
+        <EmptyState
+          svgSrc="/svg/empty_notifications.svg"
+          svgWidth={210}
+          title="No Notifications Yet"
+          description="You're all caught up! We'll alert you here when new events, approvals, or updates arrive."
+        />
+      );
+    }
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {notifications.map((n) => (
+          <div
+            key={n.id}
+            onClick={() => { if (!n.isRead) markOneRead(n.id).catch(() => {}); }}
+            style={{
+              padding: 18,
+              borderRadius: 20,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              cursor: n.isRead ? 'default' : 'pointer',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <p style={{
+                fontSize: 15, fontWeight: n.isRead ? 600 : 700, color: 'var(--text)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+              }}>
+                {n.title}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--sk-faint)' }}>{formatTime(n.createdAt)}</span>
+                <button
+                  onClick={(e) => handleDelete(n.id, e)}
+                  aria-label="Delete notification"
+                  title="Delete notification"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--subtext)', padding: 2, display: 'flex' }}
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+              <p style={{ flex: 1, fontSize: 13, color: 'var(--subtext)', lineHeight: 1.5 }}>{n.body}</p>
+              {!n.isRead && (
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF5252', flexShrink: 0 }} />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-            Notifications
-          </h1>
-          {unreadCount > 0 && (
-            <p style={{ color: 'var(--subtext)', fontSize: 14, marginTop: 2 }}>
-              {unreadCount} unread
-            </p>
-          )}
-        </div>
-        {unreadCount > 0 && (
+      {header(
+        isLoading ? 'Loading...' : unreadCount > 0 ? `${unreadCount} unread` : 'All caught up',
+        unreadCount > 0 ? (
           <button
             onClick={handleMarkAllRead}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
               background: 'none',
               border: '1px solid var(--border)',
-              borderRadius: 10,
-              padding: '8px 14px',
+              borderRadius: 12,
+              padding: '8px 16px',
               cursor: 'pointer',
               color: 'var(--subtext)',
               fontFamily: 'var(--font-sans)',
@@ -62,110 +164,11 @@ export default function NotificationsPage() {
               fontWeight: 600,
             }}
           >
-            <CheckCheck size={15} /> Mark all read
+            Mark all read
           </button>
-        )}
-      </div>
-
-      {notifications.length === 0 ? (
-        <EmptyState
-          svgSrc="/svg/empty_notifications.svg"
-          title="No Notifications Yet"
-          description="You're all caught up! We'll alert you here when new events, approvals, or updates arrive."
-        />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {notifications.map((n) => (
-            <div
-              key={n.id}
-              onClick={() => handleMarkOne(n.id, n.isRead)}
-              style={{
-                display: 'flex',
-                gap: 14,
-                padding: '14px 16px',
-                borderRadius: 14,
-                background: n.isRead ? 'var(--surface)' : 'var(--color-crimson-dim)',
-                border: `1px solid ${n.isRead ? 'var(--border)' : 'rgba(230,57,70,0.2)'}`,
-                cursor: 'pointer',
-                transition: 'opacity 0.2s ease',
-                position: 'relative',
-              }}
-            >
-              {/* Unread dot */}
-              {!n.isRead && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 14,
-                    left: 14,
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: 'var(--color-crimson)',
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-
-              {/* Icon */}
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: n.isRead ? 'var(--border)' : 'rgba(230,57,70,0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  marginLeft: !n.isRead ? 12 : 0,
-                }}
-              >
-                <Bell size={18} color={n.isRead ? 'var(--subtext)' : 'var(--color-crimson)'} />
-              </div>
-
-              {/* Content */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 14,
-                    fontWeight: n.isRead ? 500 : 700,
-                    color: 'var(--text)',
-                    marginBottom: 3,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {n.title}
-                </p>
-                {n.body && (
-                  <p style={{ fontSize: 13, color: 'var(--subtext)', lineHeight: 1.5 }}>{n.body}</p>
-                )}
-                <p style={{ fontSize: 11, color: 'var(--subtext)', marginTop: 6 }}>
-                  {timeAgo(n.createdAt ?? null)}
-                </p>
-              </div>
-
-              {/* Delete */}
-              <button
-                onClick={(e) => handleDelete(n.id, e)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--subtext)',
-                  padding: 4,
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                }}
-                title="Delete notification"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          ))}
-        </div>
+        ) : undefined,
       )}
+      {renderBody()}
     </div>
   );
 }

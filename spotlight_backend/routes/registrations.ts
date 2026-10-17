@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
@@ -21,6 +22,33 @@ const generateUniquePasskey = async (): Promise<string> => {
   }
   return passkey;
 };
+
+/** A rule check that failed inside a registration transaction; becomes a 400 with this message. */
+class RegistrationRejected extends Error {}
+
+/**
+ * Locks the event row until the transaction ends, so registrations for the same event run one at a time.
+ * Without it, two students taking the last seat (or team spot) at once could both pass the capacity check.
+ */
+async function lockEvent(tx: Prisma.TransactionClient, eventId: string) {
+  await tx.$queryRaw`SELECT id FROM \`Event\` WHERE id = ${eventId} FOR UPDATE`;
+}
+
+async function assertNotRegistered(tx: Prisma.TransactionClient, eventId: string, userId: string) {
+  const alreadyRegistered = await tx.registration.findFirst({
+    where: { eventId, userId, status: { in: ['PENDING', 'CONFIRMED'] } },
+    select: { id: true },
+  });
+  if (alreadyRegistered) throw new RegistrationRejected('You are already registered for this event.');
+}
+
+async function assertEventHasCapacity(tx: Prisma.TransactionClient, eventId: string, registrationLimit: number | null) {
+  if (!registrationLimit) return;
+  const activeCount = await tx.registration.count({
+    where: { eventId, status: { in: ['PENDING', 'CONFIRMED'] } },
+  });
+  if (activeCount >= registrationLimit) throw new RegistrationRejected('Registration full. Capacity reached for this event.');
+}
 
 router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
@@ -124,27 +152,19 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
-    const alreadyRegistered = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: clerkUserId, status: { in: ['PENDING', 'CONFIRMED'] } }
-    });
-    if (alreadyRegistered) {
-      return res.status(400).json({ error: 'You are already registered for this event.' });
-    }
-
-    if (event.registrationLimit) {
-      const activeCount = await prisma.registration.count({
-        where: { eventId: eventId, status: { in: ['PENDING', 'CONFIRMED'] } }
-      });
-      if (activeCount >= event.registrationLimit) return res.status(400).json({ error: 'Registration full. Capacity reached for this event.' });
-    }
-
     const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
-    const registration = await prisma.registration.create({
-      data: { eventId: eventId, userId: clerkUserId, status }
+    const registration = await prisma.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      await assertNotRegistered(tx, eventId, clerkUserId);
+      await assertEventHasCapacity(tx, eventId, event.registrationLimit);
+      return tx.registration.create({
+        data: { eventId: eventId, userId: clerkUserId, status }
+      });
     });
 
     return res.status(201).json({ success: true, registration });
   } catch (error) {
+    if (error instanceof RegistrationRejected) return res.status(400).json({ error: error.message });
     return res.status(500).json({ error: 'Internal error.' });
   }
 });
@@ -162,25 +182,14 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
     }
 
-    const alreadyRegistered = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: clerkUserId, status: { in: ['PENDING', 'CONFIRMED'] } }
-    });
-    if (alreadyRegistered) {
-      return res.status(400).json({ error: 'You are already registered for this event.' });
-    }
-
-    if (event.registrationLimit) {
-      const activeCount = await prisma.registration.count({
-        where: { eventId: eventId, status: { in: ['PENDING', 'CONFIRMED'] } }
-      });
-      if (activeCount >= event.registrationLimit) return res.status(400).json({ error: 'Registration full. Capacity reached for this event.' });
-    }
-
     // For free events (fee === 0), generate passkey immediately.
     // For paid events (fee > 0), passkey is null until payment details are submitted.
     const passkey = (event.fee === 0) ? await generateUniquePasskey() : null;
 
     const result = await prisma.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      await assertNotRegistered(tx, eventId, clerkUserId);
+      await assertEventHasCapacity(tx, eventId, event.registrationLimit);
       const team = await tx.team.create({
         data: { eventId: eventId, teamName: teamName, passkey, leaderId: clerkUserId }
       });
@@ -193,6 +202,7 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
 
     return res.status(201).json({ success: true, passkey, teamId: result.team.id, registrationId: result.registration.id });
   } catch (error) {
+    if (error instanceof RegistrationRejected) return res.status(400).json({ error: error.message });
     return res.status(500).json({ error: 'Internal error.' });
   }
 });
@@ -218,37 +228,34 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
     }
 
-    const alreadyRegistered = await prisma.registration.findFirst({
-      where: { eventId: eventId, userId: clerkUserId, status: { in: ['PENDING', 'CONFIRMED'] } }
-    });
-    if (alreadyRegistered) {
-      return res.status(400).json({ error: 'You are already registered for this event.' });
-    }
-
-    const currentMemberCount = await prisma.registration.count({
-      where: { teamId: team.id, status: { in: ['PENDING', 'CONFIRMED'] } }
-    });
-    const maxTeamSize = team.event?.teamSizeLimit;
-    if (maxTeamSize && currentMemberCount >= maxTeamSize) {
-      return res.status(400).json({
-        error: 'This team is already full.'
-      });
-    }
-
     const status = (team.event?.fee === 0) ? 'CONFIRMED' : 'PENDING';
+    const maxTeamSize = team.event?.teamSizeLimit;
 
-    const registration = await prisma.registration.create({
-      data: { 
-        eventId: eventId, 
-        userId: clerkUserId, 
-        teamId: team.id, 
-        status,
-        checkedInAt: null,
-      } as any
+    const registration = await prisma.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      await assertNotRegistered(tx, eventId, clerkUserId);
+
+      const currentMemberCount = await tx.registration.count({
+        where: { teamId: team.id, status: { in: ['PENDING', 'CONFIRMED'] } }
+      });
+      if (maxTeamSize && currentMemberCount >= maxTeamSize) {
+        throw new RegistrationRejected('This team is already full.');
+      }
+
+      return tx.registration.create({
+        data: {
+          eventId: eventId,
+          userId: clerkUserId,
+          teamId: team.id,
+          status,
+          checkedInAt: null,
+        } as any
+      });
     });
 
     return res.status(201).json({ success: true, registration });
   } catch (error) {
+    if (error instanceof RegistrationRejected) return res.status(400).json({ error: error.message });
     return res.status(500).json({ error: 'Internal error.' });
   }
 });
@@ -627,12 +634,6 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
       }
     }
 
-    // Clean up any legacy or orphaned checkedInAt timestamps on non-confirmed registrations
-    await prisma.registration.updateMany({
-      where: { status: { in: ['REJECTED', 'PENDING'] }, checkedInAt: { not: null } } as any,
-      data: { checkedInAt: null } as any,
-    });
-
     const now = new Date();
     if (registration.teamId) {
       await prisma.registration.updateMany({
@@ -723,25 +724,13 @@ router.get('/public/stats', async (req: Request, res: Response): Promise<any> =>
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const liveEvents = await prisma.event.count({
-      where: {
-        eventDate: {
-          gte: todayStart,
-        },
-      },
-    });
-
-    const registrations = await prisma.registration.count();
-
-    const clubs = await prisma.club.count();
-
-    const totalEvents = await prisma.event.count();
-
-    const totalStudents = await prisma.profile.count({
-      where: {
-        clubId: null,
-      },
-    });
+    const [liveEvents, registrations, clubs, totalEvents, totalStudents] = await Promise.all([
+      prisma.event.count({ where: { eventDate: { gte: todayStart } } }),
+      prisma.registration.count(),
+      prisma.club.count(),
+      prisma.event.count(),
+      prisma.profile.count({ where: { clubId: null } }),
+    ]);
 
     return res.status(200).json({
       liveEvents,

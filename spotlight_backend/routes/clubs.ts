@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../config/db';
 import { requireAuth, requireOptionalAuth, signToken } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
+import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
 import { ADMIN_PROFILE_ID, requireAdmin, signAdminToken, isThrottled, recordFailure, clearFailures } from '../utils/admin';
 
 const router = Router();
@@ -12,7 +13,7 @@ const SALT_ROUNDS = 10;
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
     const clubs = await prisma.club.findMany({
-      include: { admins: true },
+      include: { admins: { select: { id: true } } },
       orderBy: { name: 'asc' },
     });
 
@@ -157,20 +158,10 @@ router.get('/registration-keys', requireAdmin, async (req: Request, res: Respons
 
     const keys = await prisma.registrationKey.findMany({
       orderBy: { createdAt: 'desc' },
+      include: { usedByClub: { select: { id: true, name: true, email: true } } },
     });
 
-    const enrichedKeys = await Promise.all(keys.map(async (key) => {
-      if (key.usedByClubId) {
-        const club = await prisma.club.findUnique({
-          where: { id: key.usedByClubId },
-          select: { id: true, name: true, email: true },
-        });
-        return { ...key, usedByClub: club };
-      }
-      return { ...key, usedByClub: null };
-    }));
-
-    return res.status(200).json({ keys: enrichedKeys });
+    return res.status(200).json({ keys });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -425,6 +416,35 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
   }
 });
 
+// Every visible registration across the club's events, in one request (same rows as /events/:id/registrations)
+router.get('/:id/registrations', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const clubId = req.params.id as string;
+
+    const profile = await prisma.profile.findUnique({ where: { id: req.auth!.userId }, select: { clubId: true } });
+    if (!profile || profile.clubId !== clubId) {
+      return res.status(403).json({ error: "Forbidden: You do not have access to this club's registrations." });
+    }
+
+    const registrations = await prisma.registration.findMany({
+      where: { event: { clubId } },
+      include: { profile: true, team: true, event: { select: { fee: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const mapped = filterVisibleRegistrations(registrations).map(r => ({
+      ...mapClubRegistration(r),
+      eventId: r.eventId,
+      eventTitle: r.event.name,
+    }));
+
+    return res.status(200).json({ registrations: mapped });
+  } catch (error: any) {
+    console.error('Failed to fetch club registrations:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const clubId = req.params.id as string;
@@ -433,10 +453,6 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
     if (!profile || profile.clubId !== clubId) {
       return res.status(403).json({ error: "Forbidden: You do not have access to this club's statistics." });
     }
-
-    const totalEvents = await prisma.event.count({
-      where: { clubId },
-    });
 
     const clubEvents = await prisma.event.findMany({
       where: { clubId },
@@ -460,6 +476,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       return 'previous';
     };
 
+    const totalEvents = clubEvents.length;
     const upcomingEventsCount = clubEvents.filter(
       e => getEventStatus(e.eventDate, e.eventEndDate) !== 'previous'
     ).length;
@@ -476,26 +493,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       orderBy: { createdAt: 'desc' },
     });
 
-    const teamIdsWithPayment = new Set(
-      registrations
-        .filter(r => r.teamId && r.transactionId !== null)
-        .map(r => r.teamId)
-    );
-
-    const confirmedTeamIds = new Set(
-      registrations
-        .filter(r => r.teamId && r.status === 'CONFIRMED')
-        .map(r => r.teamId)
-    );
-
-    const filteredRegistrations = registrations.filter(r => {
-      if (r.event.fee === 0) return true;
-      if (r.status === 'CONFIRMED' || r.status === 'REJECTED') return true;
-      if (r.transactionId !== null) return true;
-      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
-      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
-      return false;
-    });
+    const filteredRegistrations = filterVisibleRegistrations(registrations);
 
     const uniqueTeamIds = new Set(
       filteredRegistrations
@@ -541,11 +539,19 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       } : null,
     }));
 
+    // Pending count per event (a team counts once), built in one pass instead of filtering per event
+    const pendingByEvent = new Map<string, { solo: number; teams: Set<string> }>();
+    for (const r of filteredRegistrations) {
+      if (r.status !== 'PENDING') continue;
+      let entry = pendingByEvent.get(r.eventId);
+      if (!entry) pendingByEvent.set(r.eventId, entry = { solo: 0, teams: new Set() });
+      if (r.teamId === null) entry.solo++;
+      else entry.teams.add(r.teamId);
+    }
+
     const mappedEvents = clubEvents.map(e => {
-      const eventRegs = filteredRegistrations.filter(r => r.eventId === e.id && r.status === 'PENDING');
-      const pendingTeamIds = new Set(eventRegs.filter(r => r.teamId !== null).map(r => r.teamId));
-      const pendingSolo = eventRegs.filter(r => r.teamId === null).length;
-      const eventPendingCount = pendingSolo + pendingTeamIds.size;
+      const pendingEntry = pendingByEvent.get(e.id);
+      const eventPendingCount = pendingEntry ? pendingEntry.solo + pendingEntry.teams.size : 0;
 
       return {
         id: e.id,

@@ -180,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               context: context,
               barrierDismissible: false,
               builder: (dialogContext) => AlertDialog(
-                backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF141416) : Colors.white,
+                backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161618) : Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 title: const Text('Team Created!'),
                 content: const Column(
@@ -254,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final warningBg = isDark ? const Color(0xFF141416) : Colors.red[50]!;
+    final warningBg = isDark ? const Color(0xFF161618) : Colors.red[50]!;
     final warningText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
 
     return Scaffold(
@@ -278,7 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 54,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF141416) : Colors.grey[200],
+                        color: isDark ? const Color(0xFF161618) : Colors.grey[200],
                         borderRadius: BorderRadius.circular(28),
                       ),
                       child: Row(
@@ -475,7 +475,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       validator: validator,
       style: GoogleFonts.inter(
         color: enabled 
-            ? (isDark ? Colors.white : Colors.black)
+            ? (isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C))
             : (isDark ? Colors.white54 : Colors.grey[600]),
       ),
       decoration: InputDecoration(
@@ -496,8 +496,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         filled: true,
         fillColor: enabled
-            ? (isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!)
-            : (isDark ? const Color(0xFF141416) : Colors.grey[200]!),
+            ? (isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!)
+            : (isDark ? const Color(0xFF161618) : Colors.grey[200]!),
       ),
     );
   }

@@ -2,12 +2,8 @@
 
 import apiClient, { formatApiError } from './client';
 import { userFromJson, UserModel } from '@/types/user';
-import { DEMO_USER } from '@/utils/demoData';
 
 export async function getProfile(userId: string): Promise<UserModel | null> {
-  if (userId === DEMO_USER.id) {
-    return DEMO_USER;
-  }
   try {
     const res = await apiClient.get(`/profiles/${userId}`);
     return userFromJson(res.data.profile as Record<string, unknown>);

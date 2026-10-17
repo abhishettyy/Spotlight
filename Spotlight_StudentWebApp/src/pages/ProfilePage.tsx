@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useSavedEventsStore } from '@/store/savedEventsStore';
+import { useNotificationPrefsStore } from '@/store/notificationPrefsStore';
 import { fetchProfileStats, editProfile } from '@/api/profiles';
 import { changePassword, verifyPassword } from '@/api/auth';
 import { buildAvatarInitials } from '@/utils/imageUtils';
@@ -41,7 +42,7 @@ function SettingsRow({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered && onClick ? 'rgba(255,255,255,0.05)' : 'var(--surface)',
+        background: hovered && onClick ? 'var(--raised)' : 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: 14,
         padding: '15px 16px',
@@ -91,24 +92,43 @@ function SectionLabel({ text }: { text: string }) {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
-  const { currentUser, setCurrentUser } = useUserStore();
+  const { currentUser, setCurrentUser, clearUser } = useUserStore();
   const { isDark, toggle: toggleTheme } = useThemeStore();
   const userId = useAuthStore((s) => s.userId);
-  const { savedIds } = useSavedEventsStore();
+  const { savedIds, clear: clearSaved } = useSavedEventsStore();
+  const { enabled: notificationsEnabled, toggle: toggleNotifications } = useNotificationPrefsStore();
 
   const [stats, setStats] = useState({ eventsCount: 0, clubsCount: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
-      fetchProfileStats(userId).then(setStats).catch(() => {});
+      fetchProfileStats(userId)
+        .then(setStats)
+        .finally(() => setStatsLoading(false));
     }
   }, [userId]);
 
   const handleLogout = () => {
     logout();
+    clearSaved();
+    clearUser();
     navigate('/login', { replace: true });
+  };
+
+  const handleContactSupport = () => {
+    const body =
+      'Hi Spotlight Support,\n\n' +
+      'I am having an issue with the app. Here are my details:\n' +
+      `- Name: ${currentUser?.name ?? 'User'}\n` +
+      `- Email: ${currentUser?.email ?? 'Unknown Email'}\n` +
+      `- USN: ${currentUser?.usn ?? 'N/A'}\n\n` +
+      'Please describe your issue below:\n' +
+      '---------------------------------\n';
+    window.location.href =
+      `mailto:spotlightapp.help@gmail.com?subject=${encodeURIComponent('[Spotlight Support] Help Request')}&body=${encodeURIComponent(body)}`;
   };
 
   if (!currentUser) {
@@ -167,12 +187,13 @@ export default function ProfilePage() {
       {/* ── Stats Row ──────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 28 }}>
         {[
-          { icon: <Ticket size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Events', value: stats.eventsCount },
-          { icon: <Bookmark size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Saved', value: savedIds.size },
-          { icon: <Users size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Clubs', value: stats.clubsCount },
-        ].map(({ icon, label, value }) => (
-          <div
+          { icon: <Ticket size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Events', value: statsLoading ? 0 : stats.eventsCount, to: '/tickets' },
+          { icon: <Bookmark size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Saved', value: savedIds.size, to: '/tickets?tab=saved' },
+          { icon: <Users size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Clubs', value: statsLoading ? 0 : stats.clubsCount, to: '/my-clubs' },
+        ].map(({ icon, label, value, to }) => (
+          <button
             key={label}
+            onClick={() => navigate(to)}
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -182,22 +203,24 @@ export default function ProfilePage() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: 8,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
             }}
           >
             {icon}
             <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{value}</p>
             <p style={{ fontSize: 12, color: 'var(--subtext)', fontWeight: 500 }}>{label}</p>
-          </div>
+          </button>
         ))}
       </div>
 
       {/* ── Academic Profile ─────────────────────────── */}
       <SectionLabel text="Academic Profile" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
-        <SettingsRow icon={<IdCard size={18} strokeWidth={1.8} />} label="USN" rightLabel={currentUser.usn ?? '—'} showChevron={false} />
-        <SettingsRow icon={<GraduationCap size={18} strokeWidth={1.8} />} label="Branch" rightLabel={currentUser.branch ?? '—'} showChevron={false} />
-        <SettingsRow icon={<Calendar size={18} strokeWidth={1.8} />} label="Academic Year" rightLabel={currentUser.year ? `Year ${currentUser.year}` : '—'} showChevron={false} />
-        <SettingsRow icon={<BookOpen size={18} strokeWidth={1.8} />} label="Semester" rightLabel={currentUser.sem ? `Sem ${currentUser.sem}` : '—'} showChevron={false} />
+        <SettingsRow icon={<IdCard size={18} strokeWidth={1.8} />} label="USN" rightLabel={currentUser.usn || 'Not set'} showChevron={false} />
+        <SettingsRow icon={<GraduationCap size={18} strokeWidth={1.8} />} label="Branch" rightLabel={currentUser.branch || 'Not set'} showChevron={false} />
+        <SettingsRow icon={<Calendar size={18} strokeWidth={1.8} />} label="Academic Year" rightLabel={currentUser.year ? `Year ${currentUser.year}` : 'Not set'} showChevron={false} />
+        <SettingsRow icon={<BookOpen size={18} strokeWidth={1.8} />} label="Semester" rightLabel={currentUser.sem ? `Sem ${currentUser.sem}` : 'Not set'} showChevron={false} />
       </div>
 
       {/* ── Preferences ──────────────────────────────── */}
@@ -207,8 +230,8 @@ export default function ProfilePage() {
         <SettingsRow
           icon={<Bell size={18} strokeWidth={1.8} />}
           label="Notifications"
-          rightLabel="Off"
-          onClick={() => navigate('/notifications')}
+          rightLabel={notificationsEnabled ? 'On' : 'Off'}
+          onClick={toggleNotifications}
         />
         <SettingsRow
           icon={<Moon size={18} strokeWidth={1.8} />}
@@ -216,17 +239,15 @@ export default function ProfilePage() {
           rightLabel={isDark ? 'On' : 'Off'}
           onClick={toggleTheme}
         />
-        {currentUser.hasPassword && (
-          <SettingsRow
-            icon={<Lock size={18} strokeWidth={1.8} />}
-            label="Update Password"
-            onClick={() => setShowPasswordModal(true)}
-          />
-        )}
+        <SettingsRow
+          icon={<Lock size={18} strokeWidth={1.8} />}
+          label="Update Password"
+          onClick={() => setShowPasswordModal(true)}
+        />
         <SettingsRow
           icon={<Star size={18} strokeWidth={1.8} />}
           label="Rate Us"
-          onClick={() => toast.info('Rating coming soon!')}
+          onClick={() => window.open('https://play.google.com/store/apps/details?id=com.spotlight.connect', '_blank', 'noopener')}
         />
       </div>
 
@@ -236,9 +257,7 @@ export default function ProfilePage() {
         <SettingsRow
           icon={<HelpCircle size={18} strokeWidth={1.8} />}
           label="Help Center"
-          onClick={() => {
-            window.location.href = 'mailto:spotlightapp.help@gmail.com?subject=%5BSpotlight%20Support%5D%20Help%20Request';
-          }}
+          onClick={handleContactSupport}
         />
         <SettingsRow
           icon={<Info size={18} strokeWidth={1.8} />}
@@ -289,10 +308,10 @@ function SignOutBtn({ onLogout }: { onLogout: () => void }) {
           justifyContent: 'center',
           gap: 10,
           padding: '16px 0',
-          background: hovered ? 'rgba(230,57,70,0.08)' : 'transparent',
+          background: hovered ? 'var(--sk-danger-soft)' : 'transparent',
           border: 'none',
           cursor: 'pointer',
-          color: 'var(--color-crimson)',
+          color: 'var(--sk-danger)',
           fontFamily: 'var(--font-sans)',
           fontWeight: 700,
           fontSize: 15,
@@ -315,7 +334,7 @@ function EditBtn({ onClick }: { onClick: () => void }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered ? 'rgba(255,255,255,0.1)' : 'var(--surface)',
+        background: hovered ? 'var(--raised)' : 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: 999,
         padding: '4px 14px',
@@ -344,7 +363,7 @@ function SheetField({
   type = 'text',
   maxLength,
   helperText,
-  helperColor = '#FF9F0A',
+  helperColor = 'var(--sk-warn)',
   autoUppercase = false,
 }: {
   label: string;
@@ -363,7 +382,7 @@ function SheetField({
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
-          background: disabled ? 'rgba(255,255,255,0.035)' : 'var(--color-surface2-dark, #1E1E22)',
+          background: disabled ? 'var(--border)' : 'var(--raised)',
           borderRadius: 14,
           padding: '10px 16px 12px 16px',
           border: focused
@@ -459,6 +478,7 @@ function EditProfileModal({
   const [year, setYear] = useState(initialYear);
   const [sem, setSem] = useState(initialSem);
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmingPassword, setConfirmingPassword] = useState(false);
 
   const hasChanges =
     name.trim() !== initialName.trim() ||
@@ -468,14 +488,18 @@ function EditProfileModal({
     year.trim() !== initialYear.trim() ||
     sem.trim() !== initialSem.trim();
 
-  const handleSave = async () => {
+  // Validation as in ProfileScreen._showEditSheet; then the password must be confirmed
+  const handleSave = () => {
     if (!name.trim()) {
-      toast.error('Full Name is required');
+      toast.error('Name is required');
       return;
     }
-    if (!hasUsnSet && usn.trim()) {
-      const u = usn.trim().toUpperCase();
-      if (!u.startsWith('1MS')) {
+    if (!hasUsnSet) {
+      if (!usn.trim()) {
+        toast.error('USN is required');
+        return;
+      }
+      if (!usn.trim().toUpperCase().startsWith('1MS')) {
         toast.error('USN must start with 1MS (e.g. 1MS21CS001)');
         return;
       }
@@ -487,36 +511,40 @@ function EditProfileModal({
     if (year.trim()) {
       const y = parseInt(year.trim(), 10);
       if (isNaN(y) || y < 1 || y > 4) {
-        toast.error('Year must be between 1 and 4');
+        toast.error('Year must be 1-4');
         return;
       }
     }
     if (sem.trim()) {
       const s = parseInt(sem.trim(), 10);
       if (isNaN(s) || s < 1 || s > 8) {
-        toast.error('Semester must be between 1 and 8');
+        toast.error('Sem must be 1-8');
         return;
       }
     }
     if (phone.trim() && !/^\d{10}$/.test(phone.trim())) {
-      toast.error('Phone number must be exactly 10 digits');
+      toast.error('Must be 10 digits');
       return;
     }
+    setConfirmingPassword(true);
+  };
 
+  const saveAfterConfirm = async () => {
+    setConfirmingPassword(false);
     setIsLoading(true);
     try {
       const updated = await editProfile({
         userId: user.id,
         name: name.trim(),
-        usn: hasUsnSet ? undefined : (usn.trim().toUpperCase() || undefined),
-        branch: branch.trim().toUpperCase() || undefined,
-        phone: phone.trim() || undefined,
-        year: year.trim() || undefined,
-        sem: sem.trim() || undefined,
+        usn: usn.trim().toUpperCase(),
+        branch: branch.trim().toUpperCase(),
+        phone: phone.trim(),
+        year: year.trim(),
+        sem: sem.trim(),
       });
       onSaved(updated);
     } catch (e) {
-      toast.error(String(e).replace('Error: ', ''));
+      toast.error(`Failed to update profile: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setIsLoading(false);
     }
@@ -543,13 +571,13 @@ function EditProfileModal({
         style={{
           width: '100%',
           maxWidth: 520,
-          background: 'var(--color-surface-dark, #141416)',
+          background: 'var(--surface)',
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
           padding: '12px 20px 32px 20px',
           maxHeight: '92vh',
           overflowY: 'auto',
-          boxShadow: '0 -12px 40px rgba(0,0,0,0.6)',
+          boxShadow: 'none',
         }}
       >
         {/* Grab Handle */}
@@ -559,7 +587,7 @@ function EditProfileModal({
               width: 42,
               height: 4.5,
               borderRadius: 3,
-              background: 'rgba(255,255,255,0.22)',
+              background: 'var(--sk-line-strong)',
             }}
           />
         </div>
@@ -618,7 +646,7 @@ function EditProfileModal({
                 'Note: USN cannot be edited once set'
               )
             }
-            helperColor={hasUsnSet ? '#FF9F0A' : 'var(--subtext)'}
+            helperColor={hasUsnSet ? 'var(--sk-warn)' : 'var(--subtext)'}
           />
 
           {/* Branch */}
@@ -677,8 +705,8 @@ function EditProfileModal({
               height: 52,
               borderRadius: 16,
               border: 'none',
-              background: hasChanges && !isLoading ? 'var(--color-crimson)' : 'rgba(255,255,255,0.08)',
-              color: hasChanges && !isLoading ? '#FFFFFF' : 'rgba(255,255,255,0.38)',
+              background: hasChanges && !isLoading ? 'var(--color-crimson)' : 'var(--raised)',
+              color: hasChanges && !isLoading ? '#FFFFFF' : 'var(--sk-faint)',
               fontSize: 16,
               fontWeight: 700,
               fontFamily: 'var(--font-sans)',
@@ -701,44 +729,141 @@ function EditProfileModal({
           </button>
         </div>
       </div>
+      {confirmingPassword && (
+        <ConfirmPasswordDialog
+          userId={user.id}
+          onCancel={() => setConfirmingPassword(false)}
+          onConfirmed={saveAfterConfirm}
+        />
+      )}
     </div>
   );
 }
 
-function ChangePasswordModal({ onClose }: { onClose: () => void }) {
-  const userId = useAuthStore((s) => s.userId);
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showOld, setShowOld] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+// ── Confirm Password dialog (ported from _showPasswordConfirmDialog) ─────────
+function ConfirmPasswordDialog({
+  userId,
+  onCancel,
+  onConfirmed,
+}: {
+  userId: string;
+  onCancel: () => void;
+  onConfirmed: () => void;
+}) {
+  const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleChange = async () => {
-    if (!oldPassword || !newPassword) { toast.error('Please fill in all fields.'); return; }
-    if (newPassword.length < 6) { toast.error('New password must be at least 6 characters.'); return; }
-    setIsLoading(true);
+  const confirm = async () => {
+    if (!password) {
+      setError('Password cannot be empty');
+      return;
+    }
+    setIsVerifying(true);
+    setError(null);
     try {
-      if (userId) await verifyPassword(userId, oldPassword);
-      await changePassword(oldPassword, newPassword);
-      toast.success('Password updated successfully!');
-      onClose();
-    } catch (e) {
-      toast.error(String(e).replace('Error: ', ''));
-    } finally {
-      setIsLoading(false);
+      await verifyPassword(userId, password);
+      onConfirmed();
+    } catch {
+      setIsVerifying(false);
+      setError('Incorrect password');
     }
   };
 
-  return <Modal title="Update Password" onClose={onClose}>
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 }}
+    >
+      <div className="spotlight-card" style={{ width: '100%', maxWidth: 400, padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <span style={{ padding: 8, borderRadius: '50%', background: 'var(--color-crimson-dim)', display: 'flex' }}>
+            <Lock size={20} color="var(--color-crimson)" />
+          </span>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Confirm Password</h2>
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--subtext)', marginBottom: 16 }}>
+          Enter your current password to save changes.
+        </p>
+        <PasswordInput
+          value={password}
+          onChange={setPassword}
+          show={show}
+          onToggle={() => setShow(!show)}
+          placeholder="Enter password"
+          autoFocus
+          invalid={!!error}
+          onEnter={confirm}
+        />
+        {error && <p style={{ color: 'var(--sk-danger)', fontSize: 12, marginTop: 6 }}>{error}</p>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+          <button
+            onClick={onCancel}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--subtext)', fontFamily: 'var(--font-sans)', fontSize: 14, padding: '10px 16px' }}
+          >
+            Cancel
+          </button>
+          <button onClick={confirm} disabled={isVerifying} className="btn-primary" style={{ padding: '10px 24px', display: 'flex', alignItems: 'center' }}>
+            {isVerifying ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : 'Confirm'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Ported from ProfileScreen._showUpdatePasswordModal
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = async () => {
+    const oldP = oldPassword.trim();
+    const newP = newPassword.trim();
+    const confirmP = confirmPassword.trim();
+    if (!oldP) { setError('Please enter your old password.'); return; }
+    if (!newP) { setError('Please enter your new password.'); return; }
+    if (newP.length < 4) { setError('New password must be at least 4 characters.'); return; }
+    if (newP !== confirmP) { setError('New passwords do not match.'); return; }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      await changePassword(oldP, newP);
+      toast.success('Password updated successfully!');
+      onClose();
+    } catch (e) {
+      setIsLoading(false);
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  return <Modal title="Change Password" onClose={onClose}>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <ModalField label="Current Password">
-        <PasswordInput value={oldPassword} onChange={setOldPassword} show={showOld} onToggle={() => setShowOld(!showOld)} placeholder="Current password" />
+      <p style={{ fontSize: 12, color: 'var(--subtext)', marginTop: -12 }}>Update your account password</p>
+      {error && (
+        <div style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--sk-danger-soft)', color: 'var(--sk-danger)', fontSize: 12, fontWeight: 500 }}>
+          {error}
+        </div>
+      )}
+      <ModalField label="OLD PASSWORD">
+        <PasswordInput value={oldPassword} onChange={setOldPassword} show={showOld} onToggle={() => setShowOld(!showOld)} placeholder="Enter old password" autoComplete="current-password" />
       </ModalField>
-      <ModalField label="New Password">
-        <PasswordInput value={newPassword} onChange={setNewPassword} show={showNew} onToggle={() => setShowNew(!showNew)} placeholder="Min 6 characters" />
+      <ModalField label="NEW PASSWORD">
+        <PasswordInput value={newPassword} onChange={setNewPassword} show={showNew} onToggle={() => setShowNew(!showNew)} placeholder="Enter new password" autoComplete="new-password" />
       </ModalField>
-      <button onClick={handleChange} disabled={isLoading} className="btn-primary" style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        {isLoading ? <><Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> Updating…</> : 'Update Password'}
+      <ModalField label="CONFIRM NEW PASSWORD">
+        <PasswordInput value={confirmPassword} onChange={setConfirmPassword} show={showConfirm} onToggle={() => setShowConfirm(!showConfirm)} placeholder="Confirm new password" autoComplete="new-password" />
+      </ModalField>
+      <button onClick={handleChange} disabled={isLoading} className="btn-primary" style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {isLoading ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : 'Save Changes'}
       </button>
     </div>
   </Modal>;
@@ -768,10 +893,30 @@ function ModalField({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-function PasswordInput({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) {
+function PasswordInput({ value, onChange, show, onToggle, placeholder, autoFocus, invalid, onEnter, autoComplete }: {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  placeholder: string;
+  autoFocus?: boolean;
+  invalid?: boolean;
+  onEnter?: () => void;
+  autoComplete?: string;
+}) {
   return (
     <div style={{ position: 'relative' }}>
-      <input type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="input-field" style={{ paddingRight: 44 }} />
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && onEnter) onEnter(); }}
+        placeholder={placeholder}
+        autoFocus={autoFocus}
+        autoComplete={autoComplete}
+        className="input-field"
+        style={{ paddingRight: 44, ...(invalid ? { borderColor: 'var(--sk-danger)' } : {}) }}
+      />
       <button type="button" onClick={onToggle} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--subtext)', display: 'flex' }}>
         {show ? <EyeOff size={18} /> : <Eye size={18} />}
       </button>

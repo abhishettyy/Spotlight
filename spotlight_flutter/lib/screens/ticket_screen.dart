@@ -370,21 +370,7 @@ class _TicketScreenState extends State<TicketScreen> {
         height: 280,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          boxShadow: isDark
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+          boxShadow: null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
@@ -580,19 +566,13 @@ class _TicketScreenState extends State<TicketScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF141416),
+                Color(0xFF161618),
                 Color(0xFF0C0C0E),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
             border: null,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.35),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            
           )
         : BoxDecoration(
             color: Colors.white,
@@ -601,18 +581,7 @@ class _TicketScreenState extends State<TicketScreen> {
               color: Colors.black.withOpacity(0.04),
               width: 1.0,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            
           );
 
     final event = ticket.event;
@@ -840,7 +809,7 @@ class _TicketScreenState extends State<TicketScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF16161A) : const Color(0xFFF3F4F6),
+                        color: isDark ? const Color(0xFF161618) : const Color(0xFFE9E8E6),
                         borderRadius: BorderRadius.circular(12),
                         border: isDark ? null : Border.all(color: Colors.black.withOpacity(0.05)),
                       ),
@@ -868,7 +837,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: (isDark ? const Color(0xFFF03D4E) : const Color(0xFFD32F2F)).withOpacity(0.12),
+                                    color: (isDark ? const Color(0xFFE63946) : const Color(0xFFD32F2F)).withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -876,7 +845,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                     style: GoogleFonts.robotoMono(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? const Color(0xFFF03D4E) : const Color(0xFFD32F2F),
+                                      color: isDark ? const Color(0xFFE63946) : const Color(0xFFD32F2F),
                                       letterSpacing: 1.0,
                                     ),
                                   ),
@@ -903,7 +872,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                   ),
                                   duration: const Duration(seconds: 2),
                                   behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF16161A),
+                                  backgroundColor: const Color(0xFF161618),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                               );
@@ -956,7 +925,7 @@ class _TicketScreenState extends State<TicketScreen> {
                               style: GoogleFonts.inter(
                                 color: isTeamIncomplete
                                     ? const Color(0xFFFBBF24)
-                                    : (isDark ? const Color(0xFF4ADE80) : const Color(0xFF22C55E)),
+                                    : (isDark ? const Color(0xFF81C995) : const Color(0xFF188038)),
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1049,14 +1018,14 @@ class _TicketScreenState extends State<TicketScreen> {
     String label;
 
     if (upper == 'CONFIRMED' || upper == 'APPROVED') {
-      badgeBg = const Color(0xFF22C55E).withOpacity(0.15);
-      borderColor = const Color(0xFF22C55E).withOpacity(0.35);
-      textColor = const Color(0xFF4ADE80);
+      badgeBg = const Color(0xFF188038).withOpacity(0.15);
+      borderColor = const Color(0xFF188038).withOpacity(0.35);
+      textColor = const Color(0xFF81C995);
       icon = Icons.check_circle_rounded;
       label = 'Confirmed';
     } else if (upper == 'REJECTED') {
-      badgeBg = const Color(0xFFEF4444).withOpacity(0.15);
-      borderColor = const Color(0xFFEF4444).withOpacity(0.35);
+      badgeBg = const Color(0xFFD93025).withOpacity(0.15);
+      borderColor = const Color(0xFFD93025).withOpacity(0.35);
       textColor = const Color(0xFFF87171);
       icon = Icons.cancel_rounded;
       label = 'Rejected';
@@ -1067,9 +1036,9 @@ class _TicketScreenState extends State<TicketScreen> {
       icon = Icons.payment_rounded;
       label = 'Payment Pending';
     } else {
-      badgeBg = const Color(0xFF38BDF8).withOpacity(0.15);
-      borderColor = const Color(0xFF38BDF8).withOpacity(0.35);
-      textColor = const Color(0xFF38BDF8);
+      badgeBg = const Color(0xFFA0A0A8).withOpacity(0.15);
+      borderColor = const Color(0xFFA0A0A8).withOpacity(0.35);
+      textColor = const Color(0xFFA0A0A8);
       icon = Icons.hourglass_top_rounded;
       label = 'Approval Pending';
     }

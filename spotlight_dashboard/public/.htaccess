@@ -16,3 +16,12 @@
   ExpiresByType image/jpeg "access plus 1 year"
   ExpiresByType image/svg+xml "access plus 1 year"
 </IfModule>
+
+# Student PWA: the service worker and manifest must always be revalidated,
+# otherwise the 1-year JS cache above would freeze app updates.
+<IfModule mod_headers.c>
+  <FilesMatch "^(sw\.js|registerSW\.js|workbox-.*\.js|student\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+AddType application/manifest+json .webmanifest

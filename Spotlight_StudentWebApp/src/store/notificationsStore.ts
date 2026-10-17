@@ -13,19 +13,21 @@ interface NotificationsState {
   notifications: NotificationModel[];
   unreadCount: number;
   isLoading: boolean;
+  error: string | null;
   load: () => Promise<void>;
   markAllRead: () => Promise<void>;
   markOneRead: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
 }
 
-export const useNotificationsStore = create<NotificationsState>((set, get) => ({
+export const useNotificationsStore = create<NotificationsState>((set) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
+  error: null,
 
   load: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const result = await fetchNotifications();
       set({
@@ -33,8 +35,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         unreadCount: result.unreadCount,
         isLoading: false,
       });
-    } catch {
-      set({ isLoading: false });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : String(e), isLoading: false });
     }
   },
 
@@ -48,20 +50,21 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
   markOneRead: async (id: string) => {
     await markSingleNotificationRead(id);
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, isRead: true } : n
-      ),
-      unreadCount: Math.max(0, state.unreadCount - 1),
-    }));
+    set((state) => {
+      const target = state.notifications.find((n) => n.id === id);
+      if (!target || target.isRead) return state;
+      return {
+        notifications: state.notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+        unreadCount: Math.max(0, state.unreadCount - 1),
+      };
+    });
   },
 
   remove: async (id: string) => {
-    const wasUnread = get().notifications.find((n) => n.id === id)?.isRead === false;
     await deleteNotification(id);
-    set((state) => ({
-      notifications: state.notifications.filter((n) => n.id !== id),
-      unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
-    }));
+    set((state) => {
+      const notifications = state.notifications.filter((n) => n.id !== id);
+      return { notifications, unreadCount: notifications.filter((n) => !n.isRead).length };
+    });
   },
 }));

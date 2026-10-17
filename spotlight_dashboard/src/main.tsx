@@ -1,10 +1,4 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import App from "./app/App.tsx";
-import { ThemeProvider } from "./app/theme.tsx";
-import { ErrorBoundary } from "./app/components/ErrorBoundary.tsx";
-import "./styles/index.css";
 
 if (import.meta.env.PROD) {
   console.log = () => {};
@@ -12,16 +6,14 @@ if (import.meta.env.PROD) {
   console.info = () => {};
 }
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// Three areas share this site: the student app (/student), the admin console (/admin)
+// and the club dashboard (everything else). Each is loaded on its own so their styles never mix.
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const path = window.location.pathname.slice(base.length) || "/";
+const root = createRoot(document.getElementById("root")!);
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <ThemeProvider>
-          <App />
-        </ThemeProvider>
-      </GoogleOAuthProvider>
-    </ErrorBoundary>
-  </StrictMode>
-);
+if (/^\/student(\/|$)/.test(path)) {
+  import("./student/main.tsx").then((m) => m.mountStudentApp(root));
+} else {
+  import("./app/mountDashboard.tsx").then((m) => m.mountDashboard(root, /^\/admin(\/|$)/.test(path)));
+}

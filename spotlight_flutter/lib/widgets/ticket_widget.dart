@@ -32,13 +32,7 @@ class TicketWidget extends StatelessWidget {
           color: isConfirmed ? const Color(0xFFFFD700) : Colors.grey[200]!,
           width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isConfirmed ? const Color(0xFFFFD700).withOpacity(0.2) : Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        
       ),
       child: Column(
         children: [

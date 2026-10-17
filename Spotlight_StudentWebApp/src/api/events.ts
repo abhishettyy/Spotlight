@@ -1,11 +1,10 @@
 // Ported from spotlight_flutter/lib/core/api_service.dart — events methods
-// GET /events
+// GET /events, GET /public/stats
 
 import apiClient, { formatApiError } from './client';
 import { eventFromJson, EventModel } from '@/types/event';
-import { DEMO_EVENTS, DEMO_CLUBS } from '@/utils/demoData';
 
-export async function fetchEvents(): Promise<EventModel[]> {
+export async function fetchEvents(): Promise<{ events: EventModel[]; raw: unknown[] }> {
   try {
     const res = await apiClient.get('/events');
     const data = res.data;
@@ -15,27 +14,27 @@ export async function fetchEvents(): Promise<EventModel[]> {
     } else if (data?.events && Array.isArray(data.events)) {
       eventsJson = data.events;
     }
-    return eventsJson.map((e) => eventFromJson(e as Record<string, unknown>));
+    return {
+      events: eventsJson.map((e) => eventFromJson(e as Record<string, unknown>)),
+      raw: eventsJson,
+    };
   } catch (e) {
-    console.warn('Backend unavailable, falling back to demo events:', e);
-    return DEMO_EVENTS;
+    throw new Error(formatApiError(e, 'Failed to fetch events.'));
   }
 }
 
-export async function fetchPublicStats(): Promise<{
-  totalEvents: number;
-  clubs: number;
-  totalStudents: number;
-}> {
+export interface PublicStats {
+  totalEvents?: number;
+  liveEvents?: number;
+  clubs?: number;
+  totalStudents?: number;
+}
+
+export async function fetchPublicStats(): Promise<PublicStats> {
   try {
     const res = await apiClient.get('/public/stats');
-    return res.data;
+    return res.data as PublicStats;
   } catch (e) {
-    console.warn('Backend unavailable, falling back to demo stats:', e);
-    return {
-      totalEvents: DEMO_EVENTS.length,
-      clubs: DEMO_CLUBS.length,
-      totalStudents: 150,
-    };
+    throw new Error(formatApiError(e, 'Failed to fetch public stats.'));
   }
 }

@@ -1,32 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Users, ChevronRight } from 'lucide-react';
+import { Search, Users, ChevronRight, WifiOff } from 'lucide-react';
 import { useClubsStore } from '@/store/clubsStore';
 import { useEventsStore } from '@/store/eventsStore';
 import { ClubModel } from '@/types/club';
+import { isEventUpcoming } from '@/types/event';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { ErrorState, EmptyState } from '@/components/ui/States';
-import { buildAvatarInitials } from '@/utils/imageUtils';
+import { EmptyState } from '@/components/ui/States';
 
 export default function ClubsPage() {
   const navigate = useNavigate();
-  const { clubs, isLoading, error, load } = useClubsStore();
+  const { clubs: storeClubs, isLoading, error, load } = useClubsStore();
   const { events } = useEventsStore();
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (clubs.length === 0) load();
+    load();
   }, []);
 
-  const filteredClubs = clubs.filter((c) =>
-    !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Like ClubsScreen._loadClubs: add any club that only appears on an event
+  const clubs = useMemo(() => {
+    const seen = new Set(storeClubs.map((c) => c.id));
+    const merged: ClubModel[] = [...storeClubs];
+    for (const e of events) {
+      const clubId = e.clubId ?? e.clubName;
+      if (clubId && !seen.has(clubId)) {
+        seen.add(clubId);
+        merged.push({ id: clubId, name: e.clubName ?? 'Unknown Club', logoUrl: e.clubLogoUrl });
+      }
+    }
+    return merged;
+  }, [storeClubs, events]);
 
-  // Count active events per club
-  const eventCountByClub = events.reduce((acc: Record<string, number>, e) => {
-    if (e.clubId) acc[e.clubId] = (acc[e.clubId] ?? 0) + 1;
-    return acc;
-  }, {});
+  const query = searchQuery.toLowerCase().trim();
+  const filteredClubs = clubs.filter((c) => !query || c.name.toLowerCase().includes(query));
+
+  // Upcoming events per club, matched by id or name
+  const activeEventCount = (club: ClubModel) => events.filter((e) => {
+    const cid = e.clubId ?? e.clubName;
+    const isThisClub = cid === club.id || (!!e.clubName && e.clubName.toLowerCase() === club.name.toLowerCase());
+    return isThisClub && isEventUpcoming(e);
+  }).length;
 
   if (isLoading && clubs.length === 0) return <PageLoader />;
 
@@ -80,24 +94,16 @@ export default function ClubsPage() {
         />
       </div>
 
-      {error && <ErrorState message={error} onRetry={load} />}
-
-      {filteredClubs.length === 0 ? (
+      {error && clubs.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '48px 24px', textAlign: 'center' }}>
+          <WifiOff size={48} color="var(--subtext)" style={{ opacity: 0.6 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Could not load clubs</h3>
+          <button onClick={load} className="btn-primary" style={{ padding: '8px 20px' }}>Retry</button>
+        </div>
+      ) : filteredClubs.length === 0 ? (
         <EmptyState
           svgSrc="/svg/empty_clubs.svg"
-          title={searchQuery ? 'No clubs matching your search' : 'No clubs registered yet'}
-          description={
-            searchQuery
-              ? `No clubs match "${searchQuery}". Try searching for another name.`
-              : 'Clubs will appear here once registered.'
-          }
-          action={
-            searchQuery ? (
-              <button onClick={() => setSearchQuery('')} className="btn-primary">
-                Clear Search
-              </button>
-            ) : undefined
-          }
+          title={query ? `No clubs matching "${query}"` : 'No clubs registered yet'}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -105,8 +111,8 @@ export default function ClubsPage() {
             <ClubRow
               key={club.id}
               club={club}
-              eventCount={eventCountByClub[club.id] ?? 0}
-              onClick={() => navigate(`/clubs/${club.id}`)}
+              eventCount={activeEventCount(club)}
+              onClick={() => navigate(`/clubs/${encodeURIComponent(club.id)}`, { state: { name: club.name, logoUrl: club.logoUrl } })}
             />
           ))}
         </div>
@@ -124,6 +130,7 @@ function ClubRow({
   eventCount: number;
   onClick: () => void;
 }) {
+  const [logoFailed, setLogoFailed] = useState(false);
   return (
     <div
       onClick={onClick}
@@ -139,7 +146,7 @@ function ClubRow({
         transition: 'background 0.15s ease',
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+        (e.currentTarget as HTMLElement).style.background = 'var(--raised)';
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
@@ -152,7 +159,7 @@ function ClubRow({
           height: 52,
           borderRadius: '50%',
           overflow: 'hidden',
-          background: 'rgba(255,255,255,0.06)',
+          background: 'var(--raised)',
           border: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
@@ -160,15 +167,12 @@ function ClubRow({
           flexShrink: 0,
         }}
       >
-        {club.logoUrl ? (
+        {club.logoUrl?.trim() && !logoFailed ? (
           <img
             src={club.logoUrl}
             alt={club.name}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => {
-              (e.currentTarget as HTMLElement).style.display = 'none';
-              (e.currentTarget.parentElement as HTMLElement).innerHTML = `<span style="font-size:18px;font-weight:800;color:var(--subtext)">${buildAvatarInitials(club.name)}</span>`;
-            }}
+            onError={() => setLogoFailed(true)}
           />
         ) : (
           <Users size={22} color="var(--subtext)" strokeWidth={1.5} />

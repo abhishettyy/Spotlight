@@ -23,7 +23,7 @@ class EventCard extends StatelessWidget {
         color: SpotlightTheme.deepBlack, 
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E1E24), Color(0xFF0F0F12), Color(0xFF141419)],
+          colors: [Color(0xFF1D1D20), Color(0xFF0E0E10), Color(0xFF161618)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

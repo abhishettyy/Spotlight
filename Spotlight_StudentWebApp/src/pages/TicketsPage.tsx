@@ -1,161 +1,107 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Ticket, RefreshCw, Calendar, MapPin, Copy, Users, Check } from 'lucide-react';
-import { fetchUserTickets } from '@/api/registrations';
-import { TicketModel, isTicketUpcoming, isTicketConfirmed } from '@/types/event';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  RefreshCw, Calendar, Clock, MapPin, Copy, Users, CheckCircle2, XCircle, CreditCard, Hourglass, WifiOff,
+} from 'lucide-react';
+import { fetchUserTickets, loadCachedTickets } from '@/api/registrations';
+import {
+  TicketModel, isTicketUpcoming, isTicketConfirmed, ticketHasPaid, ticketIsLive,
+} from '@/types/event';
 import { useSavedEventsStore } from '@/store/savedEventsStore';
 import { useEventsStore } from '@/store/eventsStore';
 import EventCard from '@/components/ui/EventCard';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { ErrorState, EmptyState } from '@/components/ui/States';
-import { formatEventHeaderDate } from '@/utils/dateUtils';
+import { EmptyState } from '@/components/ui/States';
+import { formatDate, formatTime12H } from '@/utils/dateUtils';
+import { toast } from 'sonner';
 
 const TABS = ['Upcoming', 'Saved', 'Past'] as const;
 type TabType = typeof TABS[number];
 
 export default function TicketsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { savedIds } = useSavedEventsStore();
   const { events, loadEvents } = useEventsStore();
-  const [tickets, setTickets] = useState<TicketModel[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [tickets, setTickets] = useState<TicketModel[]>(() => loadCachedTickets());
+  const [isLoading, setIsLoading] = useState(() => loadCachedTickets().length === 0);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('Upcoming');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tab = searchParams.get('tab');
+    return tab === 'saved' ? 'Saved' : tab === 'past' ? 'Past' : 'Upcoming';
+  });
+  const currentUserId = localStorage.getItem('userId') ?? '';
 
   useEffect(() => {
     loadTickets();
-    if (events.length === 0) {
-      loadEvents();
-    }
+    if (events.length === 0) loadEvents();
   }, []);
 
+  // Cache-first, then network — mirrors TicketScreen._loadTickets
   const loadTickets = async () => {
-    setIsLoading(true);
-    setError(null);
+    const hasCached = tickets.length > 0;
+    if (!hasCached) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const data = await fetchUserTickets();
       setTickets(data);
+      setError(null);
     } catch (e) {
-      setError(String(e).replace('Error: ', ''));
+      if (!hasCached) setError(e instanceof Error ? e.message : String(e));
     } finally {
       setIsLoading(false);
     }
   };
 
   const upcomingTickets = tickets.filter((t) => isTicketUpcoming(t));
-  const pastTickets = tickets.filter((t) => !isTicketUpcoming(t));
-  const savedEvents = events.filter((e) => savedIds.has(e.id));
-  const savedCount = savedIds.size;
+  const pastTickets = tickets.filter((t) => !isTicketUpcoming(t) && isTicketConfirmed(t));
+  const savedEvents = [...savedIds]
+    .map((id) => events.find((e) => e.id === id))
+    .filter((e): e is NonNullable<typeof e> => !!e);
 
-  const displayed: TicketModel[] =
-    activeTab === 'Upcoming' ? upcomingTickets : activeTab === 'Past' ? pastTickets : [];
+  const displayed = activeTab === 'Upcoming' ? upcomingTickets : pastTickets;
 
-  if (isLoading) return <PageLoader />;
-
-  return (
-    <div style={{ padding: '24px 20px', maxWidth: 680, margin: '0 auto' }}>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 6,
-        }}
-      >
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>
-          My Events
-        </h1>
-        <button
-          onClick={loadTickets}
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '50%',
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: 'var(--subtext)',
-            transition: 'all 0.15s ease',
-          }}
-          aria-label="Refresh"
-        >
-          <RefreshCw size={17} />
-        </button>
-      </div>
-
-      {/* Stats line */}
-      <p style={{ fontSize: 13, color: 'var(--subtext)', marginBottom: 20, fontWeight: 500 }}>
-        {upcomingTickets.length} upcoming · {savedCount} saved · {pastTickets.length} past
-      </p>
-
-      {/* Tab switcher — pill style */}
-      <div
-        style={{
-          display: 'flex',
-          background: 'rgba(255,255,255,0.06)',
-          borderRadius: 50,
-          padding: '4px',
-          marginBottom: 24,
-          width: '100%',
-        }}
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '9px 0',
-              borderRadius: 50,
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-sans)',
-              fontWeight: 600,
-              fontSize: 14,
-              background: activeTab === tab ? 'var(--color-crimson)' : 'transparent',
-              color: activeTab === tab ? '#fff' : 'var(--subtext)',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-              textAlign: 'center',
-            }}
-          >
-            {tab}
+  const renderBody = () => {
+    if (isLoading) return <PageLoader />;
+    if (error) {
+      const m = error.toLowerCase();
+      const isConnection = m.includes('connection') || m.includes('timeout') || m.includes('network');
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', padding: '48px 32px' }}>
+          <WifiOff size={48} color="var(--subtext)" style={{ opacity: 0.6, marginBottom: 8 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Could not load tickets</h3>
+          <p style={{ fontSize: 12, color: 'var(--subtext)' }}>
+            {isConnection ? 'Please check your internet connection and try again.' : error}
+          </p>
+          <button onClick={loadTickets} className="btn-primary" style={{ marginTop: 16, padding: '8px 20px' }}>
+            Retry
           </button>
-        ))}
-      </div>
+        </div>
+      );
+    }
 
-      {error && <ErrorState message={error} onRetry={loadTickets} />}
-
-      {/* Saved tab */}
-      {activeTab === 'Saved' && (
-        savedEvents.length === 0 ? (
+    if (activeTab === 'Saved') {
+      if (savedIds.size === 0) {
+        return (
           <EmptyState
             svgSrc="/svg/empty_saved.svg"
             title="No Saved Events Yet"
             description="Tap the bookmark icon on any event to save it to your list"
-            action={
-              <button onClick={() => navigate('/')} className="btn-primary">
-                Browse Events
-              </button>
-            }
           />
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {savedEvents.map((e) => (
-              <EventCard key={e.id} event={e} />
-            ))}
-          </div>
-        )
-      )}
+        );
+      }
+      if (savedEvents.length === 0) return <PageLoader />;
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          {savedEvents.map((e) => <EventCard key={e.id} event={e} />)}
+        </div>
+      );
+    }
 
-      {activeTab !== 'Saved' && displayed.length === 0 && !error && (
+    if (displayed.length === 0) {
+      return (
         <EmptyState
           svgSrc={activeTab === 'Upcoming' ? '/svg/empty_upcoming.svg' : '/svg/empty_past.svg'}
           title={activeTab === 'Upcoming' ? 'No Upcoming Events' : 'No Past Events'}
@@ -164,362 +110,232 @@ export default function TicketsPage() {
               ? 'Your registered upcoming event passes will show up here'
               : 'Events you attended previously will appear here'
           }
-          action={
-            activeTab === 'Upcoming' ? (
-              <button onClick={() => navigate('/')} className="btn-primary">
-                Browse Events
-              </button>
-            ) : undefined
-          }
         />
-      )}
+      );
+    }
 
-      {activeTab !== 'Saved' && displayed.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {displayed.map((ticket) => (
-            <TicketCard
-              key={ticket.id}
-              ticket={ticket}
-              onViewTicket={() => navigate(`/tickets/${ticket.id}`)}
-            />
-          ))}
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {displayed.map((ticket) => (
+          <TicketCard
+            key={ticket.id}
+            ticket={ticket}
+            currentUserId={currentUserId}
+            onOpen={() => navigate(`/tickets/${ticket.id}`)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: '24px 20px', maxWidth: 680, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-1px' }}>
+            My Events
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--subtext)', fontWeight: 500, marginTop: 4 }}>
+            {isLoading
+              ? 'Loading...'
+              : `${upcomingTickets.length} upcoming · ${savedIds.size} saved · ${pastTickets.length} past`}
+          </p>
         </div>
-      )}
+        <button
+          onClick={loadTickets}
+          aria-label="Refresh"
+          title="Refresh"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--subtext)', display: 'flex', padding: 8 }}
+        >
+          <RefreshCw size={20} />
+        </button>
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{ display: 'flex', background: 'var(--raised)', borderRadius: 24, padding: 4, marginBottom: 24 }}>
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: 20,
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
+              fontWeight: activeTab === tab ? 600 : 500,
+              fontSize: 14,
+              background: activeTab === tab ? 'var(--color-crimson)' : 'transparent',
+              color: activeTab === tab ? '#fff' : 'var(--subtext)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {renderBody()}
     </div>
   );
 }
 
-function TicketCard({ ticket, onViewTicket }: { ticket: TicketModel; onViewTicket: () => void }) {
-  const [copied, setCopied] = useState(false);
+// ── Ticket card (ported from TicketScreen._buildTicketCard) ───────────────────
+function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; currentUserId: string; onOpen: () => void }) {
   const event = ticket.event;
-  const confirmed = isTicketConfirmed(ticket);
+  const status = ticket.status.toUpperCase();
+  const confirmed = status === 'CONFIRMED' || status === 'APPROVED';
 
-  const dateStr = event?.eventDate?.toISOString() ?? event?.date ?? null;
-  const endDateStr = event?.eventEndDate?.toISOString() ?? null;
+  const isFreeEvent = (event?.price ?? 0) === 0;
+  const isLeader = ticket.team == null || (ticket.team.leaderId
+    ? ticket.team.leaderId === currentUserId
+    : ticket.team.members.some((m) => m.isLeader && m.id === currentUserId));
+  const isPaymentPending = !isFreeEvent && !ticketHasPaid(ticket) && isLeader && !confirmed;
+  const isViewDisabled = status === 'REJECTED' || isPaymentPending;
 
-  // Is live?
-  const live = event?.eventDate
-    ? (() => {
-        const start = event.eventDate!;
-        const end = event.eventEndDate ?? new Date(start.getTime() + 3 * 60 * 60 * 1000);
-        const now = new Date();
-        return now >= start && now <= end;
-      })()
-    : false;
+  const minRequired = event?.minTeamSize ?? 1;
+  const joinedCount = ticket.team ? ticket.team.members.filter((m) => m.status.toUpperCase() !== 'REJECTED').length : 1;
+  const confirmedCount = ticket.team
+    ? ticket.team.members.filter((m) => ['CONFIRMED', 'APPROVED'].includes(m.status.toUpperCase())).length
+    : confirmed ? 1 : 0;
+  const effectiveCount = isFreeEvent ? joinedCount : confirmedCount;
+  const isTeamIncomplete = ticket.team != null && effectiveCount < minRequired;
 
-  const joinedCount =
-    ticket.team?.members?.filter((m) => m.status === 'CONFIRMED' || m.status === 'JOINED').length ??
-    (confirmed ? 1 : 0);
+  // Date / time lines, same formatting as the Flutter card
+  const start = event?.eventDate ?? null;
+  const end = event?.eventEndDate ?? null;
+  let dateStr = 'TBD';
+  let timeStr = '';
+  if (start) {
+    dateStr = formatDate(start);
+    if (end) {
+      const sameDay = start.toDateString() === end.toDateString();
+      timeStr = sameDay
+        ? `${formatTime12H(start)} - ${formatTime12H(end)}`
+        : `${formatTime12H(start)} → ${end.toLocaleString('en-US', { month: 'short' })} ${end.getDate()}, ${formatTime12H(end)}`;
+    } else {
+      timeStr = formatTime12H(start);
+    }
+  } else if (event?.date) {
+    dateStr = event.date;
+  }
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (ticket.team?.passkey) {
-      navigator.clipboard.writeText(ticket.team.passkey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const openTicket = () => {
+    if (isViewDisabled) return;
+    if (isTeamIncomplete) {
+      toast.warning(isFreeEvent
+        ? `A minimum of ${minRequired} members must join to get the ticket.`
+        : `A minimum of ${minRequired} members must be approved to get the ticket.`);
+      return;
+    }
+    if (isTicketConfirmed(ticket)) {
+      onOpen();
+    } else {
+      toast.warning('Your registration is pending organizer approval.');
     }
   };
 
+  const copyPasskey = () => {
+    if (!ticket.team?.passkey) return;
+    navigator.clipboard.writeText(ticket.team.passkey);
+    toast.success(`Passkey copied: ${ticket.team.passkey}`);
+  };
+
   return (
-    <div
-      style={{
-        background: '#121215',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 20,
-        overflow: 'hidden',
-      }}
-    >
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden' }}>
       {/* Banner */}
-      <div style={{ height: 180, background: '#1a1b20', position: 'relative', overflow: 'hidden' }}>
-        {event?.imageUrl ? (
+      <div style={{ height: 140, background: 'var(--raised)', position: 'relative', overflow: 'hidden' }}>
+        {event?.imageUrl && (
           <img
             src={event.imageUrl}
-            alt={event?.title ?? ''}
+            alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
           />
-        ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(135deg, #1c1d22 0%, #0d0e12 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Calendar size={40} style={{ opacity: 0.15, color: '#fff' }} />
-          </div>
         )}
-
-        {/* Top-left badges */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            zIndex: 2,
-          }}
-        >
-          <span
-            style={{
-              background: 'rgba(255,255,255,0.18)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '4px 12px',
-              borderRadius: 999,
-            }}
-          >
-            {event?.clubName || 'Spotlight'}
-          </span>
-
-          {live && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'rgba(255,77,79,0.15)',
-                border: '1px solid rgba(255,77,79,0.4)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                color: '#ff4d4f',
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                letterSpacing: '0.4px',
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#ff4d4f',
-                  boxShadow: '0 0 6px #ff4d4f',
-                }}
-              />
-              LIVE NOW
-            </span>
-          )}
-        </div>
-
-        {/* Top-right status badge */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            zIndex: 2,
-          }}
-        >
-          {confirmed ? (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'rgba(22, 163, 74, 0.18)',
-                border: '1.5px solid rgba(74, 222, 128, 0.45)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                color: '#4ade80',
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '5px 12px',
-                borderRadius: 999,
-                letterSpacing: '0.2px',
-              }}
-            >
-              <Check size={13} strokeWidth={3} />
-              Confirmed
-            </span>
-          ) : (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'rgba(245,158,11,0.15)',
-                border: '1.5px solid rgba(245,158,11,0.35)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                color: '#f59e0b',
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '5px 12px',
-                borderRadius: 999,
-              }}
-            >
-              Pending
-            </span>
-          )}
+        <div style={{ position: 'absolute', top: 14, right: 14 }}>
+          <StatusBadge ticket={ticket} />
         </div>
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '16px 18px' }}>
-        {/* Club name */}
-        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--subtext)', marginBottom: 3 }}>
-          {event?.clubName || 'Spotlight'}
-        </p>
-
-        {/* Title */}
-        <h3
-          style={{
-            fontSize: 22,
-            fontWeight: 800,
-            color: '#fff',
-            marginBottom: 12,
-            letterSpacing: '-0.3px',
-          }}
-        >
+      <div style={{ padding: 20 }}>
+        {event?.clubName && (
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.2px', color: 'var(--subtext)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {event.clubName}
+          </p>
+        )}
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginTop: 4 }}>
           {event?.title ?? 'Unknown Event'}
         </h3>
 
-        {/* Date */}
-        {dateStr && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              color: 'var(--subtext)',
-              fontSize: 13,
-              marginBottom: 6,
-            }}
-          >
-            <Calendar size={14} />
-            <span>{formatEventHeaderDate(dateStr, endDateStr)}</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 10, fontSize: 12, color: 'var(--subtext)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> {dateStr}</span>
+          {timeStr && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={13} /> {timeStr}</span>}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={13} /> {event?.venue ?? 'TBD'}</span>
+        </div>
 
-        {/* Venue */}
-        {event?.venue && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              color: 'var(--subtext)',
-              fontSize: 13,
-              marginBottom: 14,
-            }}
-          >
-            <MapPin size={14} />
-            <span>{event.venue}</span>
-          </div>
-        )}
-
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 14 }} />
-
-        {/* Team row */}
-        {ticket.team ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 14,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Users size={15} color="var(--subtext)" />
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+        {ticket.team?.passkey && (
+          <div style={{
+            marginTop: 10, padding: '8px 12px', borderRadius: 12, background: 'var(--raised)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <Users size={14} color="var(--subtext)" />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {ticket.team.name}
               </span>
-              {ticket.team.passkey && (
-                <span
-                  style={{
-                    background: 'var(--color-crimson)',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 10px',
-                    borderRadius: 999,
-                    letterSpacing: '1px',
-                  }}
-                >
-                  {ticket.team.passkey}
-                </span>
-              )}
+              <span style={{
+                padding: '2px 6px', borderRadius: 6, background: 'var(--sk-brand-soft)', color: 'var(--sk-brand)',
+                fontSize: 12, fontWeight: 700, letterSpacing: '1px', fontFamily: 'var(--sk-mono)',
+              }}>
+                {ticket.team.passkey}
+              </span>
             </div>
-            {ticket.team.passkey && (
-              <button
-                onClick={handleCopy}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 10,
-                  padding: '6px 14px',
-                  color: '#fff',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)',
-                }}
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            )}
+            <button
+              onClick={copyPasskey}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: 'none',
+                background: 'var(--surface)', color: 'var(--text)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-sans)', flexShrink: 0,
+              }}
+            >
+              <Copy size={12} /> Copy
+            </button>
           </div>
-        ) : (
-          <div style={{ marginBottom: 14 }} />
         )}
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 14 }} />
+        <div style={{ height: 1, background: 'var(--border)', margin: '14px 0' }} />
 
-        {/* Bottom row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             {ticket.team && (
               <>
-                <p style={{ fontSize: 11, color: 'var(--subtext)', fontWeight: 500, marginBottom: 2 }}>
-                  Team Members
+                <p style={{ fontSize: 10, color: 'var(--subtext)' }}>
+                  {isFreeEvent ? 'Team Members' : 'Approved Members'}
                 </p>
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#4ade80' }}>
-                  {joinedCount} Joined
+                <p style={{ fontSize: 13, fontWeight: 700, color: isTeamIncomplete ? '#FBBF24' : 'var(--sk-ok)' }}>
+                  {isFreeEvent ? `${joinedCount} Joined` : `${confirmedCount} Approved`}
                 </p>
               </>
             )}
           </div>
 
           <button
-            onClick={onViewTicket}
+            onClick={openTicket}
+            disabled={isViewDisabled}
             style={{
-              background: 'var(--color-crimson)',
-              color: '#fff',
+              background: isViewDisabled ? 'var(--raised)' : 'var(--color-crimson)',
+              color: isViewDisabled ? 'var(--sk-faint)' : '#fff',
               border: 'none',
-              borderRadius: 50,
-              padding: '12px 28px',
-              fontSize: 15,
+              borderRadius: 20,
+              padding: '10px 20px',
+              fontSize: 12,
               fontWeight: 700,
-              cursor: 'pointer',
+              cursor: isViewDisabled ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-sans)',
-              transition: 'background 0.15s ease',
             }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.background = '#c0303b')
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.background = 'var(--color-crimson)')
-            }
           >
             View Ticket
           </button>
@@ -527,4 +343,30 @@ function TicketCard({ ticket, onViewTicket }: { ticket: TicketModel; onViewTicke
       </div>
     </div>
   );
+}
+
+// ── Status badge (ported from TicketScreen._statusBadge) ──────────────────────
+function StatusBadge({ ticket }: { ticket: TicketModel }) {
+  const pill = (color: string, icon: React.ReactNode, label: string) => (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 20,
+      background: 'rgba(0,0,0,0.55)', border: `1px solid ${color}55`, color, fontSize: 10, fontWeight: 700, letterSpacing: '0.3px',
+    }}>
+      {icon}{label}
+    </span>
+  );
+
+  if (ticketIsLive(ticket)) {
+    return pill('#FF5252', <span style={{ width: 6, height: 6, borderRadius: 99, background: '#FF5252' }} />, 'LIVE NOW');
+  }
+
+  const upper = ticket.status.toUpperCase();
+  const isPaid = (ticket.event?.price ?? 0) > 0;
+  const hasTeamPasskey = !!ticket.team?.passkey.trim();
+  const isPaymentPending = isPaid && !ticketHasPaid(ticket) && !hasTeamPasskey && upper !== 'CONFIRMED' && upper !== 'APPROVED';
+
+  if (upper === 'CONFIRMED' || upper === 'APPROVED') return pill('#81C995', <CheckCircle2 size={12} />, 'Confirmed');
+  if (upper === 'REJECTED') return pill('#F87171', <XCircle size={12} />, 'Rejected');
+  if (isPaymentPending) return pill('#FBBF24', <CreditCard size={12} />, 'Payment Pending');
+  return pill('#38BDF8', <Hourglass size={12} />, 'Approval Pending');
 }

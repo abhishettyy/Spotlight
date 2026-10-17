@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,18 +10,18 @@ import { toast } from 'sonner';
 
 const schema = z.object({
   usn: z.string()
+    .trim()
     .min(1, 'USN is required')
-    .regex(/^[1-9][A-Z]{2}\d{2}[A-Z]{2}\d{3}$/i, 'Enter a valid USN (e.g., 1AB23CD456)'),
-  branch: z.string().min(1, 'Please select your branch'),
+    .refine((v) => v.toUpperCase().startsWith('1MS'), 'USN must start with 1MS (e.g. 1MS21CS001)'),
+  branch: z.string().min(1, 'Branch is required'),
   phone: z.string()
-    .min(10, 'Enter a valid 10-digit phone number')
-    .max(10, 'Enter a valid 10-digit phone number')
-    .regex(/^\d+$/, 'Phone must contain only digits'),
+    .min(1, 'Phone number is required')
+    .regex(/^\d{10}$/, 'Must be 10 digits'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-const BRANCHES = ['CS', 'IS', 'EC', 'ME', 'CV', 'EE', 'AI', 'BT', 'Other'];
+const BRANCHES = ['CS', 'IS', 'EC', 'ME', 'CV', 'EE', 'AI', 'BT'];
 
 // Equivalent to Flutter's OnboardingScreen
 // Shows after signup when profile is incomplete (missing USN/branch/phone)
@@ -45,7 +44,6 @@ export default function OnboardingPage() {
         phone: data.phone,
       });
       setCurrentUser(updated);
-      toast.success('Profile completed!');
       navigate('/', { replace: true });
     } catch (e) {
       toast.error(String(e).replace('Error: ', ''));
@@ -91,13 +89,16 @@ export default function OnboardingPage() {
         <div className="spotlight-card" style={{ padding: 28 }}>
           <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-                USN *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                  USN *
+                </label>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sk-warn)' }}>Cannot be edited later</span>
+              </div>
               <input
                 {...register('usn')}
                 type="text"
-                placeholder="e.g. 1AB23CD456"
+                placeholder="e.g. 1MS21CS001"
                 className="input-field"
                 style={{ textTransform: 'uppercase' }}
                 autoCapitalize="characters"

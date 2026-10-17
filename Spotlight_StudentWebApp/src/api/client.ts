@@ -3,7 +3,8 @@
 
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'https://spotlight-backend-x0q7.onrender.com/api';
+// Same backend the Flutter app talks to (ApiService.baseUrl)
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'https://spotlight-c5je.onrender.com/api';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -24,11 +25,15 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — clear auth and redirect
+// An expired/invalid session token ends the session. /auth/* routes are skipped:
+// they answer 401 for a wrong password (login, verify-password, change-password),
+// which must surface as an error message, not a logout.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url: string = error.config?.url ?? '';
+    const sentToken = !!error.config?.headers?.['Authorization'];
+    if (error.response?.status === 401 && sentToken && !url.startsWith('/auth/')) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('userId');
       window.location.href = '/login';
@@ -40,30 +45,46 @@ apiClient.interceptors.response.use(
 // Equivalent to ApiService.formatExceptionMessage()
 export function formatApiError(error: unknown, defaultMsg: string): string {
   if (!error) return defaultMsg;
-  const errStr = String(error).toLowerCase();
+
+  // Prefer the backend's own message, as Flutter does with data['error']
+  if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      return 'Connection error. Please check your internet connection and try again.';
+    }
+    const msg = error.response.data?.error ?? error.response.data?.message;
+    if (typeof msg === 'string' && msg) return cleanServerMessage(msg);
+    if (error.response.status >= 500) {
+      return 'An unexpected server error occurred. Please try again later.';
+    }
+    return defaultMsg;
+  }
+
+  return cleanServerMessage(String(error)) || defaultMsg;
+}
+
+function cleanServerMessage(msg: string): string {
+  const errStr = msg.toLowerCase();
 
   if (errStr.includes('network error') || errStr.includes('econnrefused') ||
       errStr.includes('failed to fetch') || errStr.includes('timeout')) {
     return 'Connection error. Please check your internet connection and try again.';
   }
   if (errStr.includes('user_not_found') || errStr.includes('invalid_credentials') ||
-      errStr.includes('invalid password') || errStr.includes('invalid email or password')) {
+      errStr.includes('invalid password') || errStr.includes('wrong password') ||
+      errStr.includes('invalid email or password')) {
     return 'Invalid email address or password. Please try again.';
   }
-  if (errStr.includes('already_exists') || errStr.includes('already exists')) {
+  if (errStr.includes('already_exists') || errStr.includes('email already in use') ||
+      errStr.includes('user already exists')) {
     return 'An account with this email address already exists.';
   }
-  if (errStr.includes('500') || errStr.includes('internal server error')) {
+  if (errStr.includes('internal server error') || errStr.includes('prisma') ||
+      errStr.includes('p2002') || errStr.includes('p2003') || errStr.includes('constraint') ||
+      errStr.includes('syntaxerror') || errStr.includes('typeerror') ||
+      errStr.includes('postgres') || errStr.includes('sqlite') || errStr.includes('database')) {
     return 'An unexpected server error occurred. Please try again later.';
   }
-
-  // Extract backend error message from axios response
-  if (axios.isAxiosError(error)) {
-    const msg = error.response?.data?.error ?? error.response?.data?.message;
-    if (msg) return msg;
-  }
-
-  return defaultMsg;
+  return msg.replace(/^Error:\s*/i, '');
 }
 
 export default apiClient;

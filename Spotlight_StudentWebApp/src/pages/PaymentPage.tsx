@@ -1,189 +1,184 @@
-import { useState, useRef } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, CheckCircle, Copy, Loader2, QrCode } from 'lucide-react';
 import { useEventsStore } from '@/store/eventsStore';
+import { useNotificationsStore } from '@/store/notificationsStore';
 import { submitPayment } from '@/api/registrations';
-import { fileToBase64 } from '@/utils/imageUtils';
+import PasskeyDialog from '@/components/ui/PasskeyDialog';
 import { toast } from 'sonner';
+
+/** What the caller knows about the payment, like the arguments of Flutter's PaymentScreen. */
+export interface PaymentRouteState {
+  eventName: string;
+  price: number;
+  qrUrl?: string | null;
+  upiId?: string | null;
+  teamSizeLimit?: number | null;
+  referenceCode?: string;
+}
 
 export default function PaymentPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const registrationId = searchParams.get('registrationId') ?? '';
   const navigate = useNavigate();
-  const { events } = useEventsStore();
+  const routeState = useLocation().state as PaymentRouteState | null;
+  const { events, loadEvents } = useEventsStore();
+  const loadNotifications = useNotificationsStore((s) => s.load);
   const event = events.find((e) => e.id === id);
 
-  const [transactionId, setTransactionId] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const eventName = routeState?.eventName ?? event?.title ?? '';
+  const price = routeState?.price ?? event?.price ?? 0;
+  const qrUrl = routeState ? routeState.qrUrl : event?.qrUrl;
+  const upiId = routeState ? routeState.upiId : event?.upiId;
+  const teamSizeLimit = routeState ? routeState.teamSizeLimit : event?.teamSizeLimit;
 
-  const handleFileChange = (file: File) => {
-    setSelectedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-  };
+  const [transactionId, setTransactionId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passkey, setPasskey] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async () => {
-    if (!transactionId.trim() && !selectedFile) {
-      toast.error('Please enter a transaction ID or upload a payment screenshot.');
-      return;
-    }
-    if (!registrationId) {
-      toast.error('Invalid registration. Please go back and try again.');
+    const utr = transactionId.trim();
+    if (!utr) {
+      toast.error('Please enter your Transaction ID.');
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      let base64: string | undefined;
-      if (selectedFile) {
-        base64 = await fileToBase64(selectedFile);
+      const res = await submitPayment({ registrationId, transactionId: utr });
+      loadEvents();
+      loadNotifications();
+      toast.success('Registration & Payment submitted successfully!');
+      if (res.passkey) {
+        setPasskey(res.passkey);
+      } else {
+        setSubmitted(true);
       }
-      await submitPayment({ registrationId, base64Image: base64, transactionId: transactionId.trim() });
-      setSuccess(true);
-      toast.success('Payment submitted! Awaiting approval.');
-      setTimeout(() => navigate('/tickets', { replace: true }), 1500);
     } catch (e) {
-      toast.error(String(e).replace('Error: ', ''));
+      toast.error(`Submission failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (success) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16, padding: 24 }}>
-        <CheckCircle size={64} color="#16a34a" />
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>Payment Submitted!</h2>
-        <p style={{ color: 'var(--subtext)', textAlign: 'center' }}>Your payment is awaiting approval. You'll be notified once confirmed.</p>
-      </div>
-    );
-  }
+  if (submitted) return <PaymentPendingView onHome={() => navigate('/', { replace: true })} />;
 
   return (
     <div style={{ maxWidth: 540, margin: '0 auto', padding: 24 }}>
-      <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-crimson)', fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
-        <ArrowLeft size={16} /> Back
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', display: 'flex', padding: 4 }}
+        >
+          <ArrowLeft size={22} strokeWidth={2.5} />
+        </button>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Payment</h1>
+      </div>
 
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Complete Payment</h1>
-      {event && <p style={{ color: 'var(--subtext)', fontSize: 14, marginBottom: 24 }}>{event.title} · ₹{event.price}</p>}
+      {/* Summary */}
+      <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 20, textAlign: 'center', marginBottom: 24 }}>
+        <p style={{ color: 'var(--subtext)', fontSize: 14 }}>Paying for</p>
+        <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginTop: 8 }}>{eventName}</p>
+        {teamSizeLimit != null && (
+          <span style={{
+            display: 'inline-block', marginTop: 6, padding: '4px 10px', borderRadius: 12,
+            background: 'var(--color-crimson-dim)', color: 'var(--color-crimson)', fontSize: 12, fontWeight: 600,
+          }}>
+            Team Event · Max {teamSizeLimit} members per team
+          </span>
+        )}
+        <p style={{ fontSize: 32, fontWeight: 700, color: 'var(--color-crimson)', marginTop: 16 }}>₹{price.toFixed(0)}</p>
+      </div>
 
-      {/* Payment QR */}
-      {event?.qrUrl && (
-        <div className="spotlight-card" style={{ padding: 24, textAlign: 'center', marginBottom: 20 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--subtext)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Scan to Pay
+      {/* UPI ID */}
+      {upiId && (
+        <>
+          <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 12, color: 'var(--subtext)' }}>UPI ID</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginTop: 4, wordBreak: 'break-all' }}>{upiId}</p>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(upiId);
+                toast.success('UPI ID copied to clipboard!');
+              }}
+              aria-label="Copy UPI ID"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', display: 'flex', padding: 8 }}
+            >
+              <Copy size={20} />
+            </button>
+          </div>
+          <p style={{ fontSize: 11, fontWeight: 500, color: 'var(--sk-brand)', lineHeight: 1.4, marginTop: 8, marginBottom: 24 }}>
+            ⚠️ Make sure you enter a valid Transaction ID. If incorrect, your registration request will not be approved.
           </p>
-          <img
-            src={event.qrUrl}
-            alt="Payment QR"
-            style={{ width: 200, height: 200, objectFit: 'contain', margin: '0 auto', display: 'block', borderRadius: 12 }}
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
-          {event.upiId && (
-            <p style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'monospace' }}>
-              UPI: {event.upiId}
-            </p>
-          )}
-          {event.price > 0 && (
-            <p style={{ marginTop: 4, fontSize: 22, fontWeight: 900, color: 'var(--color-crimson)' }}>
-              ₹{event.price}
-            </p>
-          )}
-        </div>
+        </>
       )}
 
-      <div className="spotlight-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {/* Transaction ID */}
-        <div>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-            Transaction / UTR ID
-          </label>
-          <input
-            type="text"
-            placeholder="Enter transaction ID"
-            value={transactionId}
-            onChange={(e) => setTransactionId(e.target.value)}
-            className="input-field"
-          />
-          <p style={{ fontSize: 12, color: 'var(--subtext)', marginTop: 4 }}>
-            Enter the UPI transaction ID or reference number
-          </p>
-        </div>
-
-        {/* Screenshot upload */}
-        <div>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-            Payment Screenshot
-          </label>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFileChange(file);
-            }}
-          />
-          {preview ? (
-            <div style={{ position: 'relative' }}>
-              <img
-                src={preview}
-                alt="Payment proof"
-                style={{ width: '100%', maxHeight: 240, objectFit: 'contain', borderRadius: 12, border: '1px solid var(--border)' }}
-              />
-              <button
-                onClick={() => { setSelectedFile(null); setPreview(null); }}
-                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
-              >
-                Remove
-              </button>
-            </div>
+      {/* QR */}
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 16 }}>Scan QR to Pay</p>
+        <div style={{
+          width: 200, height: 200, margin: '0 auto', background: '#ffffff', borderRadius: 16,
+          border: '1px solid #e0e0e0', overflow: 'hidden', display: 'grid', placeItems: 'center',
+        }}>
+          {qrUrl ? (
+            <img src={qrUrl} alt="Payment QR" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <button
-              onClick={() => fileRef.current?.click()}
-              style={{
-                width: '100%',
-                padding: '28px 0',
-                borderRadius: 12,
-                border: '2px dashed var(--border)',
-                background: 'transparent',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 10,
-                color: 'var(--subtext)',
-                fontFamily: 'var(--font-sans)',
-                transition: 'border-color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--color-crimson)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <Upload size={28} />
-              <span style={{ fontSize: 14, fontWeight: 600 }}>Upload Screenshot</span>
-              <span style={{ fontSize: 12 }}>Click to select an image</span>
-            </button>
+            <QrCode size={150} color="#424242" strokeWidth={1.2} />
           )}
         </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading}
-          className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-        >
-          {isLoading ? (
-            <><Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> Submitting…</>
-          ) : 'Submit Payment'}
-        </button>
       </div>
+
+      {/* Transaction ID */}
+      <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>Transaction ID</p>
+      <input
+        type="text"
+        placeholder="Enter Transaction ID"
+        value={transactionId}
+        onChange={(e) => setTransactionId(e.target.value)}
+        className="input-field"
+      />
+
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="btn-primary"
+        style={{ width: '100%', marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+      >
+        {isSubmitting ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : 'Submit Payment'}
+      </button>
+
+      {passkey && (
+        <PasskeyDialog
+          title="Team Passkey Unlocked!"
+          message="Payment details submitted! Share this Team Passkey with your teammates so they can join:"
+          passkey={passkey}
+          actionLabel="Got it"
+          onAction={() => {
+            setPasskey(null);
+            setSubmitted(true);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PaymentPendingView({ onHome }: { onHome: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: 40, textAlign: 'center' }}>
+      <CheckCircle size={80} color="var(--sk-ok)" strokeWidth={1.5} />
+      <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', marginTop: 24 }}>Payment Pending</h2>
+      <p style={{ fontSize: 16, color: 'var(--subtext)', lineHeight: 1.5, marginTop: 16, maxWidth: 360 }}>
+        Your payment details have been submitted. It will be verified by the organizers shortly.
+      </p>
+      <button onClick={onHome} className="btn-primary" style={{ marginTop: 40 }}>
+        Back to Home
+      </button>
     </div>
   );
 }

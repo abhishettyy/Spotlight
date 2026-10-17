@@ -151,8 +151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (sheetContext) {
         final cs = Theme.of(sheetContext).colorScheme;
         final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        final sheetBg = isDark ? const Color(0xFF141416) : Colors.white;
-        final fieldBg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
+        final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+        final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
         final labelColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
         InputDecoration fieldDecoration(String label, {String? hint, String? helperText}) {
@@ -471,12 +471,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        final fieldBg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
+        final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF141416) : Colors.white,
+              backgroundColor: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Row(
                 children: [
@@ -638,8 +638,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final theme = Theme.of(context);
             final cs = theme.colorScheme;
             final isDark = theme.brightness == Brightness.dark;
-            final sheetBg = isDark ? const Color(0xFF141416) : Colors.white;
-            final fieldBg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
+            final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+            final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
             final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
             return AutofillGroup(
@@ -926,7 +926,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? const Color(0xFF141416) : Colors.white;
+    final surfaceColor = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
     final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
 
@@ -992,16 +992,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF1A1A1E) : Colors.white,
+                                  color: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
                                   borderRadius: BorderRadius.circular(16),
                                   border: isDark ? null : Border.all(color: Colors.grey.shade300, width: 1),
-                                  boxShadow: isDark ? null : [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.06),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                                  boxShadow: null,
                                 ),
                                 child: Text(
                                   'Edit',
@@ -1206,7 +1200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: const Color(0xFFD90429))),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).cardTheme.color,
-                    elevation: isDark ? 0 : 3,
+                    elevation: 0,
                     shadowColor: isDark ? Colors.transparent : Colors.black.withOpacity(0.1),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -1240,18 +1234,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height: 128,
           constraints: const BoxConstraints(maxHeight: 128),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF141416) : Colors.white,
+            color: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
             borderRadius: BorderRadius.circular(20),
             border: isDark ? null : Border.all(color: Colors.grey.shade200),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+            boxShadow: null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1259,7 +1245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100],
+                  color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100],
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: cs.primary, size: 20),
@@ -1311,15 +1297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.grey.shade200,
                   width: 1.0,
                 ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.07),
-                    blurRadius: 14,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+          boxShadow: null,
         ),
         child: Row(
           children: [

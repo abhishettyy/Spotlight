@@ -17,6 +17,7 @@ interface SavedEventsState {
   savedIds: Set<string>;
   isSaved: (id: string) => boolean;
   toggle: (id: string) => void;
+  clear: () => void;
 }
 
 export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
@@ -33,5 +34,10 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
     }
     localStorage.setItem(SAVED_KEY, JSON.stringify([...newSet]));
     set({ savedIds: newSet });
+  },
+
+  clear: () => {
+    localStorage.removeItem(SAVED_KEY);
+    set({ savedIds: new Set() });
   },
 }));

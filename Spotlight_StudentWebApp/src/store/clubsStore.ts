@@ -1,8 +1,18 @@
-// Replaces Flutter ClubsProvider
+// Replaces Flutter ClubsProvider: shows cached clubs first, then refreshes from the API
 
 import { create } from 'zustand';
-import { ClubModel } from '@/types/club';
+import { ClubModel, clubFromJson } from '@/types/club';
 import { fetchClubs } from '@/api/clubs';
+
+function loadFromCache(): ClubModel[] {
+  try {
+    const cached = localStorage.getItem('cached_clubs_json');
+    if (!cached) return [];
+    return (JSON.parse(cached) as unknown[]).map((c) => clubFromJson(c as Record<string, unknown>));
+  } catch {
+    return [];
+  }
+}
 
 interface ClubsState {
   clubs: ClubModel[];
@@ -11,18 +21,18 @@ interface ClubsState {
   load: () => Promise<void>;
 }
 
-export const useClubsStore = create<ClubsState>((set) => ({
-  clubs: [],
+export const useClubsStore = create<ClubsState>((set, get) => ({
+  clubs: loadFromCache(),
   isLoading: false,
   error: null,
 
   load: async () => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: get().clubs.length === 0, error: null });
     try {
       const clubs = await fetchClubs();
       set({ clubs, isLoading: false });
     } catch (e) {
-      set({ error: String(e), isLoading: false });
+      set({ error: e instanceof Error ? e.message : String(e), isLoading: false });
     }
   },
 }));

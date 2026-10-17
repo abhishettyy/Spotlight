@@ -33,9 +33,9 @@ class ClubEventsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
     final now = DateTime.now();
 
     final eventsProvider = Provider.of<EventsProvider>(context);
@@ -77,7 +77,7 @@ class ClubEventsScreen extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100],
+                      color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100],
                       border: isDark ? null : Border.all(color: Colors.grey[200]!),
                     ),
                     child: (clubLogoUrl != null && clubLogoUrl!.isNotEmpty)
@@ -226,15 +226,7 @@ class _EventCard extends StatelessWidget {
           color: cardBg,
           borderRadius: BorderRadius.circular(20),
           border: isDark ? null : Border.all(color: Colors.grey[200]!),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          boxShadow: null,
         ),
         child: Row(
           children: [
@@ -377,7 +369,7 @@ class _EventCard extends StatelessWidget {
   }
 
   Widget _placeholder(bool isDark) => Container(
-        color: isDark ? const Color(0xFF141416) : Colors.grey[200],
+        color: isDark ? const Color(0xFF161618) : Colors.grey[200],
         child: Center(
           child: Icon(Icons.image_outlined,
               color: isDark ? Colors.white24 : Colors.grey[400], size: 28),

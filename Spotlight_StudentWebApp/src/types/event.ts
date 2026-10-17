@@ -221,6 +221,14 @@ export function isTicketUpcoming(ticket: TicketModel): boolean {
   return new Date() < end;
 }
 
+export function ticketIsLive(ticket: TicketModel): boolean {
+  const start = ticket.event?.eventDate;
+  if (!start) return false;
+  const end = ticket.event?.eventEndDate ?? new Date(start.getTime() + 3 * 60 * 60 * 1000);
+  const now = new Date();
+  return now >= start && now <= end;
+}
+
 export function isTicketConfirmed(ticket: TicketModel): boolean {
   return ticket.status.toUpperCase() === 'CONFIRMED';
 }

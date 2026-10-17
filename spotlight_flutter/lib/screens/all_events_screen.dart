@@ -86,7 +86,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                       : null,
                   filled: true,
                   fillColor:
-                      isDark ? const Color(0xFF141416) : Colors.grey[100],
+                      isDark ? const Color(0xFF161618) : Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -121,7 +121,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? cs.primary
-                              : (isDark ? const Color(0xFF141416) : Colors.grey[200]),
+                              : (isDark ? const Color(0xFF161618) : Colors.grey[200]),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -357,13 +357,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
         height: 280,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
@@ -510,7 +504,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                                   width: 6,
                                   height: 6,
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFFEF4444),
+                                    color: Color(0xFFD93025),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -520,7 +514,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w800,
-                                    color: const Color(0xFFEF4444),
+                                    color: const Color(0xFFD93025),
                                     letterSpacing: 0.6,
                                   ),
                                 ),

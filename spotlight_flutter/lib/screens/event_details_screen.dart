@@ -217,11 +217,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final pageBg = isDark ? Colors.black : const Color(0xFFF9F9F9);
+    final pageBg = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF1F0EF);
     final cardBg = isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!;
-    final textPrimary = isDark ? Colors.white : Colors.black;
+    final textPrimary = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
     final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
-    final footerBg = isDark ? Colors.black : Colors.white;
+    final footerBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
 
     final eventsProvider = Provider.of<EventsProvider>(context);
     final event = eventsProvider.events.firstWhere(
@@ -407,7 +407,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
+                          color: isDark ? const Color(0xFF161618) : Colors.grey[50]!,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
@@ -460,7 +460,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF161414) : Colors.grey[50]!,
+                            color: isDark ? const Color(0xFF161618) : Colors.grey[50]!,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
@@ -567,13 +567,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
         decoration: BoxDecoration(
           color: footerBg,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.12),
-              offset: const Offset(0, -4),
-              blurRadius: 16,
-            )
-          ],
+          
         ),
         child: Row(
             children: [
@@ -733,22 +727,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   width: 5,
                   height: 5,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
+                    color: Color(0xFFD93025),
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFFEF4444),
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                      ),
-                    ],
+                    
                   ),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'LIVE NOW',
                   style: GoogleFonts.inter(
-                    color: const Color(0xFFEF4444),
+                    color: const Color(0xFFD93025),
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,

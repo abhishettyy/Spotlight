@@ -2,7 +2,6 @@
 
 import apiClient, { formatApiError } from './client';
 import { notificationFromJson, NotificationModel } from '@/types/notification';
-import { DEMO_NOTIFICATIONS } from '@/utils/demoData';
 
 export async function fetchNotifications(): Promise<{
   notifications: NotificationModel[];
@@ -17,11 +16,7 @@ export async function fetchNotifications(): Promise<{
       unreadCount: (data?.unreadCount as number) ?? 0,
     };
   } catch (e) {
-    console.warn('Backend unavailable, falling back to demo notifications:', e);
-    return {
-      notifications: DEMO_NOTIFICATIONS,
-      unreadCount: DEMO_NOTIFICATIONS.filter((n) => !n.isRead).length,
-    };
+    throw new Error(formatApiError(e, 'Failed to fetch notifications.'));
   }
 }
 

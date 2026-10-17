@@ -5,9 +5,8 @@
 
 import apiClient, { formatApiError } from './client';
 import { ticketFromJson, TicketModel } from '@/types/event';
-import { DEMO_TICKETS } from '@/utils/demoData';
 
-const TICKETS_CACHE_KEY = 'cached_user_tickets_json';
+export const TICKETS_CACHE_KEY = 'cached_user_tickets_json';
 
 export async function registerSolo(params: {
   eventId: string;
@@ -24,7 +23,7 @@ export async function registerSolo(params: {
     });
     return res.data.registration.id as string;
   } catch (e) {
-    throw new Error(formatApiError(e, 'Registration failed. Please try again.'));
+    throw new Error(formatApiError(e, 'Registration failed. Please check your connection.'));
   }
 }
 
@@ -42,11 +41,11 @@ export async function createTeam(params: {
       clerkUserId: userId,
     });
     return {
-      passkey: (res.data.passkey as string) ?? '',
+      passkey: (res.data.passkey as string | null) ?? '',
       registrationId: res.data.registrationId as string,
     };
   } catch (e) {
-    throw new Error(formatApiError(e, 'Failed to create team. Please try again.'));
+    throw new Error(formatApiError(e, 'Failed to create team. Please check your connection.'));
   }
 }
 
@@ -62,22 +61,33 @@ export async function joinTeam(params: {
       clerkUserId: userId,
     });
   } catch (e) {
-    throw new Error(formatApiError(e, 'Failed to join team. Please verify the passkey.'));
+    throw new Error(formatApiError(e, 'Failed to join team. Please check your connection.'));
   }
 }
 
+/** Submits the UPI transaction ID. For a paid team, the response carries the team passkey. */
 export async function submitPayment(params: {
   registrationId: string;
-  base64Image?: string;
   transactionId: string;
-}): Promise<Record<string, unknown>> {
+}): Promise<{ passkey?: string | null }> {
   try {
-    const body: Record<string, string> = { transactionId: params.transactionId };
-    if (params.base64Image) body['paymentProof'] = params.base64Image;
-    const res = await apiClient.put(`/registrations/${params.registrationId}/payment`, body);
-    return res.data as Record<string, unknown>;
+    const res = await apiClient.put(`/registrations/${params.registrationId}/payment`, {
+      transactionId: params.transactionId,
+    });
+    return res.data as { passkey?: string | null };
   } catch (e) {
-    throw new Error(formatApiError(e, 'Failed to upload payment proof. Please try again.'));
+    throw new Error(formatApiError(e, 'Failed to upload payment proof. Please check your connection.'));
+  }
+}
+
+export function loadCachedTickets(): TicketModel[] {
+  try {
+    const cached = localStorage.getItem(TICKETS_CACHE_KEY);
+    if (!cached) return [];
+    const raw = JSON.parse(cached) as unknown[];
+    return raw.map((t) => ticketFromJson(t as Record<string, unknown>));
+  } catch {
+    return [];
   }
 }
 
@@ -94,15 +104,8 @@ export async function fetchUserTickets(): Promise<TicketModel[]> {
     localStorage.setItem(TICKETS_CACHE_KEY, JSON.stringify(raw));
     return raw.map((t) => ticketFromJson(t as Record<string, unknown>));
   } catch (e) {
-    const cached = localStorage.getItem(TICKETS_CACHE_KEY);
-    if (cached) {
-      try {
-        const raw = JSON.parse(cached) as unknown[];
-        return raw.map((t) => ticketFromJson(t as Record<string, unknown>));
-      } catch {
-        // ignore
-      }
-    }
+    const cached = loadCachedTickets();
+    if (cached.length > 0) return cached;
     throw new Error(formatApiError(e, 'Failed to fetch tickets.'));
   }
 }

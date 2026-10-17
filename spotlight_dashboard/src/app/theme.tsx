@@ -69,7 +69,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       className={`relative inline-flex items-center justify-center p-2 rounded-full transition-all duration-300 cursor-pointer ${
         isDark
           ? "bg-white/[0.04] hover:bg-white/[0.08] text-white/80 hover:text-white border border-white/15"
-          : "bg-black/[0.04] hover:bg-black/[0.08] text-slate-800 hover:text-[#F03D4E] border border-black/10 shadow-sm"
+          : "bg-black/[0.04] hover:bg-black/[0.08] text-slate-800 hover:text-[color:var(--sk-brand)] border border-black/10"
       } ${className}`}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -91,7 +91,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
             exit={{ opacity: 0, rotate: 40, scale: 0.8 }}
             transition={{ duration: 0.2 }}
           >
-            <Sun size={15} className="text-[#F03D4E]" />
+            <Sun size={15} className="text-[color:var(--sk-brand)]" />
           </motion.div>
         )}
       </AnimatePresence>

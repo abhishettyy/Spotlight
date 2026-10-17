@@ -301,19 +301,6 @@ spotlight/
 │   ├── package.json
 │   └── vite.config.ts
 │
-├── spotlight_admin/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Login/
-│   │   │   ├── InviteKeys/
-│   │   │   ├── ClubApprovals/
-│   │   │   └── Overview/
-│   │   ├── components/
-│   │   ├── lib/
-│   │   └── main.tsx
-│   ├── .env.example
-│   └── package.json
-│
 ├── spotlight_flutter/
 │   ├── lib/
 │   │   ├── screens/
@@ -644,12 +631,7 @@ npm run dev
 
 ### 3️⃣ Spotlight Admin Portal
 
-```bash
-cd spotlight_admin
-npm install
-cp .env.example .env
-npm run dev
-```
+The admin console is part of the dashboard app and is served at `/admin` (for example `http://localhost:5173/admin`). Run the dashboard as above; no separate install is needed.
 
 ### 4️⃣ Spotlight Flutter App
 
@@ -688,13 +670,6 @@ SUPABASE_BUCKET="spotlight-uploads"
 ```
 
 ### `spotlight_dashboard/.env.example`
-
-```env
-VITE_API_BASE_URL="http://localhost:4000/api"
-VITE_CLERK_PUBLISHABLE_KEY="pk_test_xxxxxxxxxxxxxxxx"
-```
-
-### `spotlight_admin/.env.example`
 
 ```env
 VITE_API_BASE_URL="http://localhost:4000/api"

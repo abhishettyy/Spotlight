@@ -15,7 +15,7 @@ void showSpotlightToast(
 
   final bgColor = isError
       ? const Color(0xFFC62828)
-      : (isDark ? const Color(0xFF141416) : const Color(0xFF1E1E1E));
+      : (isDark ? const Color(0xFF161618) : const Color(0xFF1E1E1E));
 
   final accentColor = isError ? Colors.white : cs.primary;
 
@@ -24,7 +24,7 @@ void showSpotlightToast(
     SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: bgColor,
-      elevation: 10,
+      elevation: 0,
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       shape: RoundedRectangleBorder(

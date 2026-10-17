@@ -74,9 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.colorScheme.primary;
-    final textColor = isDark ? Colors.white : Colors.black;
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -152,15 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           color: isDark
                                               ? Colors.white12
                                               : Colors.grey[200]!),
-                                      boxShadow: isDark
-                                          ? null
-                                          : [
-                                               BoxShadow(
-                                                 color: Colors.black.withOpacity(0.07),
-                                                 blurRadius: 10,
-                                                 offset: const Offset(0, 3),
-                                               ),
-                                            ],
+                                      boxShadow: null,
                                     ),
                                     child: Icon(Icons.notifications_outlined,
                                         color: textColor, size: 20),
@@ -218,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF141416) : Colors.grey[100],
+                    fillColor: isDark ? const Color(0xFF161618) : Colors.grey[100],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -259,21 +251,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: isActive
                                     ? primaryColor
                                     : (isDark
-                                        ? const Color(0xFF141416)
-                                        : Colors.white),
+                                        ? const Color(0xFF161618)
+                                        : const Color(0xFFF9F9F8)),
                                 borderRadius: BorderRadius.circular(24),
                                 border: isActive || isDark
                                     ? null
                                     : Border.all(color: Colors.grey[300]!),
-                                boxShadow: isActive || isDark
-                                    ? null
-                                    : [
-                                         BoxShadow(
-                                           color: Colors.black.withOpacity(0.07),
-                                           blurRadius: 10,
-                                           offset: const Offset(0, 3),
-                                         ),
-                                      ],
+                                boxShadow: null,
                               ),
                               child: Text(filters[i],
                                   style: GoogleFonts.inter(
@@ -634,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: 64,
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? const Color(0xFF1E1E22)
+                                      ? const Color(0xFF1D1D20)
                                       : Colors.grey[100],
                                   shape: BoxShape.circle,
                                   border: isDark
@@ -733,13 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
@@ -886,7 +864,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 width: 6,
                                 height: 6,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFEF4444),
+                                  color: Color(0xFFD93025),
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -896,7 +874,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFEF4444),
+                                  color: const Color(0xFFD93025),
                                   letterSpacing: 0.6,
                                 ),
                               ),

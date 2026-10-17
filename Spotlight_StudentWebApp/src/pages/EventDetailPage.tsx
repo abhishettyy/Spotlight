@@ -8,10 +8,11 @@ import { useSavedEventsStore } from '@/store/savedEventsStore';
 import { useAuthStore } from '@/store/authStore';
 import { fetchUserTickets } from '@/api/registrations';
 import {
-  isEventLive, isEventPast, isEventFull, TicketModel, EventModel,
+  isEventLive, isEventFull, isTicketConfirmed, ticketHasPaid, TicketModel, EventModel,
 } from '@/types/event';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { ErrorState } from '@/components/ui/States';
+import type { PaymentRouteState } from '@/pages/PaymentPage';
 import { toast } from 'sonner';
 
 function formatDeadlineStr(deadline: Date): string {
@@ -69,32 +70,60 @@ export default function EventDetailPage() {
   const { isSaved, toggle } = useSavedEventsStore();
   const { isAuthenticated } = useAuthStore();
 
-  const [existingTicket, setExistingTicket] = useState<TicketModel | null>(null);
-  const [checkingRegistration, setCheckingRegistration] = useState(false);
+  // null = still checking (mirrors Flutter's `bool? _isRegistered`)
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
+  const [pendingPaymentTicket, setPendingPaymentTicket] = useState<TicketModel | null>(null);
   const [posterOpen, setPosterOpen] = useState(false);
+  const [, setTick] = useState(0);
 
   const event = events.find((e) => e.id === id);
 
   useEffect(() => {
     if (events.length === 0) loadEvents();
+    // Re-evaluate the deadline every second, like Flutter's _deadlineTimer
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    if (event && isAuthenticated) checkRegistration();
-  }, [event, isAuthenticated]);
+    if (isAuthenticated) checkRegistration();
+  }, [id, isAuthenticated]);
 
+  // Ported from EventDetailsScreen._checkRegistration
   const checkRegistration = async () => {
-    setCheckingRegistration(true);
     try {
+      const currentUserId = localStorage.getItem('userId') ?? '';
       const tickets = await fetchUserTickets();
-      const ticket = tickets.find(
-        (t) => t.event?.id === id && t.status.toUpperCase() !== 'REJECTED'
-      );
-      setExistingTicket(ticket ?? null);
+      let pendingTicket: TicketModel | null = null;
+      let confirmedTicket: TicketModel | null = null;
+
+      for (const t of tickets) {
+        if (t.event?.id !== id) continue;
+        if (t.status.toUpperCase() === 'REJECTED') continue;
+
+        const isFree = (t.event?.price ?? 0) === 0;
+        const isTeamMember = t.team != null;
+        const isLeader = isTeamMember && (t.team!.leaderId
+          ? t.team!.leaderId === currentUserId
+          : t.team!.members.some((m) => m.isLeader && m.id === currentUserId));
+
+        if (isFree || isTicketConfirmed(t) || ticketHasPaid(t) || (isTeamMember && !isLeader)) {
+          confirmedTicket = t;
+        } else {
+          pendingTicket = t;
+        }
+      }
+
+      if (confirmedTicket) {
+        setIsRegistered(true);
+        setPendingPaymentTicket(null);
+      } else {
+        setIsRegistered(false);
+        setPendingPaymentTicket(pendingTicket);
+      }
     } catch {
-      // silently fail
-    } finally {
-      setCheckingRegistration(false);
+      setIsRegistered(false);
+      setPendingPaymentTicket(null);
     }
   };
 
@@ -103,14 +132,13 @@ export default function EventDetailPage() {
 
   const saved = isSaved(event.id);
   const live = isEventLive(event);
-  const past = isEventPast(event);
   const full = isEventFull(event);
 
   const { start: startDate, end: endDate } = parseDates(event);
 
-  const isRegistered = !!existingTicket;
-  const isPendingPayment =
-    existingTicket && !existingTicket.paymentProofUrl && !existingTicket.transactionId && event.price > 0;
+  const checkingRegistration = isRegistered === null;
+  const alreadyRegistered = isRegistered === true;
+  const isPendingPayment = pendingPaymentTicket != null;
   const isDeadlinePassed = event.registrationDeadline ? new Date() > event.registrationDeadline : false;
   const isClosed = isDeadlinePassed || full;
 
@@ -142,39 +170,34 @@ export default function EventDetailPage() {
 
   // ── Bottom CTA state (mirrors Flutter) ───────────────────────────────────
   let btnLabel = 'Register Now';
-  let btnColor = 'var(--color-crimson, #e63946)';
+  let btnColor = 'var(--sk-brand)';
   let btnTextColor = '#ffffff';
-  let btnDisabled = isClosed || isRegistered || past;
+  const btnDisabled = isClosed || alreadyRegistered || checkingRegistration;
 
   if (checkingRegistration) {
     btnLabel = '';
-    btnColor = '#27272a';
-    btnTextColor = '#71717a';
-    btnDisabled = true;
-  } else if (isRegistered) {
+    btnColor = 'var(--raised)';
+    btnTextColor = 'var(--sk-faint)';
+  } else if (alreadyRegistered) {
     btnLabel = 'Already Registered';
-    btnColor = '#1a2e1a';
-    btnTextColor = '#4caf50';
-    btnDisabled = true;
+    btnColor = 'var(--sk-ok-soft)';
+    btnTextColor = 'var(--sk-ok)';
   } else if (isPendingPayment) {
     btnLabel = 'Complete Payment';
-    btnColor = '#f59e0b';
+    btnColor = '#F59E0B';
     btnTextColor = '#000000';
-    btnDisabled = false;
   } else if (full) {
     btnLabel = 'Registration Full';
-    btnColor = '#27272a';
-    btnTextColor = '#71717a';
-    btnDisabled = true;
-  } else if (past || isClosed) {
-    btnLabel = past ? 'Event has ended' : 'Registration Closed';
-    btnColor = '#27272a';
-    btnTextColor = '#71717a';
-    btnDisabled = true;
+    btnColor = 'var(--raised)';
+    btnTextColor = 'var(--sk-faint)';
+  } else if (isClosed) {
+    btnLabel = 'Registration Closed';
+    btnColor = 'var(--raised)';
+    btnTextColor = 'var(--sk-faint)';
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000000', color: '#ffffff', paddingBottom: 110 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', paddingBottom: 110 }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
 
         {/* ── Full-width Poster ─────────────────────────────────────────── */}
@@ -183,7 +206,7 @@ export default function EventDetailPage() {
             position: 'relative',
             height: 320,
             width: '100%',
-            background: '#0a0a0a',
+            background: 'var(--raised)',
             overflow: 'hidden',
             cursor: event.imageUrl ? 'zoom-in' : 'default',
           }}
@@ -206,7 +229,7 @@ export default function EventDetailPage() {
               style={{
                 width: '100%',
                 height: '100%',
-                background: '#111111',
+                background: 'var(--raised)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -286,16 +309,15 @@ export default function EventDetailPage() {
                 style={{
                   padding: '7px 14px',
                   borderRadius: 20,
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
+                  background: 'var(--raised)',
+                  border: '1px solid var(--border)',
                   fontSize: 12,
                   fontWeight: 600,
-                  color: '#ffffff',
+                  color: 'var(--text)',
                   display: 'inline-block',
                 }}
               >
-                {event.eventType ?? event.category}
+                {event.category}
               </span>
 
               {/* LIVE badge */}
@@ -310,7 +332,7 @@ export default function EventDetailPage() {
                     background: 'transparent',
                     fontSize: 9,
                     fontWeight: 700,
-                    color: '#ef4444',
+                    color: 'var(--sk-danger)',
                     letterSpacing: '0.6px',
                     textTransform: 'uppercase',
                   }}
@@ -320,8 +342,7 @@ export default function EventDetailPage() {
                       width: 5,
                       height: 5,
                       borderRadius: '50%',
-                      background: '#ef4444',
-                      boxShadow: '0 0 4px 1px #ef4444',
+                      background: 'var(--sk-danger)',
                       animation: 'pulse-dot 1.2s infinite',
                     }}
                   />
@@ -335,10 +356,10 @@ export default function EventDetailPage() {
               style={{
                 padding: '6px 12px',
                 borderRadius: 14,
-                background: 'rgba(255, 255, 255, 0.1)',
+                background: 'var(--raised)',
                 fontSize: 13,
                 fontWeight: 600,
-                color: '#ffffff',
+                color: 'var(--text)',
                 display: 'inline-block',
               }}
             >
@@ -351,7 +372,7 @@ export default function EventDetailPage() {
             style={{
               fontSize: 22,
               fontWeight: 700,
-              color: '#ffffff',
+              color: 'var(--text)',
               letterSpacing: '-0.5px',
               lineHeight: 1.3,
               marginBottom: 6,
@@ -364,7 +385,7 @@ export default function EventDetailPage() {
           <p
             style={{
               fontSize: 15,
-              color: '#a09b9b',
+              color: 'var(--subtext)',
               fontWeight: 500,
               marginBottom: 6,
             }}
@@ -379,7 +400,7 @@ export default function EventDetailPage() {
               style={{
                 fontSize: 14,
                 fontWeight: 600,
-                color: 'var(--color-crimson, #e63946)',
+                color: 'var(--sk-brand)',
                 marginBottom: 6,
                 cursor: event.clubId ? 'pointer' : 'default',
               }}
@@ -398,15 +419,15 @@ export default function EventDetailPage() {
                 marginBottom: 28,
               }}
             >
-              <Clock size={13} color="#eab308" strokeWidth={2.5} />
+              <Clock size={13} color="var(--sk-warn)" strokeWidth={2.5} />
               <span
                 style={{
                   fontSize: 13,
                   fontWeight: 600,
-                  color: '#eab308',
+                  color: 'var(--sk-warn)',
                 }}
               >
-                {isDeadlinePassed ? 'Deadline passed: ' : 'Deadline: '}
+                Deadline:{' '}
                 {formatDeadlineStr(event.registrationDeadline)}
               </span>
             </div>
@@ -416,9 +437,9 @@ export default function EventDetailPage() {
           {/* Date & Time card */}
           <div
             style={{
-              background: '#161414',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              borderRadius: 24,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--sk-radius-lg)',
               padding: 16,
               display: 'flex',
               alignItems: 'center',
@@ -431,21 +452,21 @@ export default function EventDetailPage() {
                 width: 44,
                 height: 44,
                 borderRadius: '50%',
-                background: '#1e1c1c',
+                background: 'var(--raised)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              <Calendar size={20} color="#a09b9b" strokeWidth={1.5} />
+              <Calendar size={20} color="var(--subtext)" strokeWidth={1.5} />
             </div>
             <div>
               <p
                 style={{
                   fontSize: 15,
                   fontWeight: 700,
-                  color: '#ffffff',
+                  color: 'var(--text)',
                   marginBottom: 4,
                 }}
               >
@@ -455,7 +476,7 @@ export default function EventDetailPage() {
                 style={{
                   fontSize: 13,
                   fontWeight: 500,
-                  color: '#a09b9b',
+                  color: 'var(--subtext)',
                   lineHeight: 1.4,
                 }}
               >
@@ -468,9 +489,9 @@ export default function EventDetailPage() {
           {isTeam && (
             <div
               style={{
-                background: '#161414',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                borderRadius: 24,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--sk-radius-lg)',
                 padding: 16,
                 display: 'flex',
                 alignItems: 'center',
@@ -483,21 +504,21 @@ export default function EventDetailPage() {
                   width: 44,
                   height: 44,
                   borderRadius: '50%',
-                  background: '#1e1c1c',
+                  background: 'var(--raised)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                 }}
               >
-                <Users size={20} color="#a09b9b" strokeWidth={1.5} />
+                <Users size={20} color="var(--subtext)" strokeWidth={1.5} />
               </div>
               <div>
                 <p
                   style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: '#ffffff',
+                    color: 'var(--text)',
                     marginBottom: 4,
                   }}
                 >
@@ -507,7 +528,7 @@ export default function EventDetailPage() {
                   style={{
                     fontSize: 13,
                     fontWeight: 500,
-                    color: '#a09b9b',
+                    color: 'var(--subtext)',
                   }}
                 >
                   Min {event.minTeamSize ?? 1} · Max {event.teamSizeLimit ?? 'No limit'} members per team
@@ -522,7 +543,7 @@ export default function EventDetailPage() {
               style={{
                 fontSize: 18,
                 fontWeight: 700,
-                color: '#ffffff',
+                color: 'var(--text)',
                 marginBottom: 12,
               }}
             >
@@ -531,12 +552,12 @@ export default function EventDetailPage() {
             <p
               style={{
                 fontSize: 16,
-                color: '#a09b9b',
+                color: 'var(--subtext)',
                 lineHeight: 1.6,
                 whiteSpace: 'pre-wrap',
               }}
             >
-              {event.description || 'No description available.'}
+              {event.description ?? 'No Description'}
             </p>
           </div>
         </div>
@@ -549,8 +570,8 @@ export default function EventDetailPage() {
             bottom: 0,
             left: 0,
             right: 0,
-            background: '#000000',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--surface)',
+            borderTop: '1px solid var(--border)',
             padding: '14px 24px',
             paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
             display: 'flex',
@@ -559,7 +580,7 @@ export default function EventDetailPage() {
             zIndex: 100,
             maxWidth: 720,
             margin: '0 auto',
-            boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.3)',
+            boxShadow: 'var(--sk-shadow)',
           }}
         >
           {/* Bookmark circle */}
@@ -575,13 +596,13 @@ export default function EventDetailPage() {
               height: 52,
               borderRadius: '50%',
               flexShrink: 0,
-              background: 'rgba(255, 255, 255, 0.08)',
+              background: 'var(--raised)',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: saved ? 'var(--color-crimson, #e63946)' : '#ffffff',
+              color: saved ? 'var(--sk-brand)' : 'var(--text)',
               transition: 'transform 0.15s ease',
             }}
           >
@@ -596,18 +617,26 @@ export default function EventDetailPage() {
           <button
             disabled={btnDisabled}
             onClick={() => {
-              if (!btnDisabled) {
-                if (isPendingPayment) {
-                  navigate(`/events/${id}/payment?registrationId=${existingTicket!.id}`);
-                } else {
-                  navigate(`/events/${id}/register`);
-                }
+              if (btnDisabled) return;
+              if (pendingPaymentTicket) {
+                const info = pendingPaymentTicket.event;
+                const state: PaymentRouteState = {
+                  eventName: info?.title ?? event.title,
+                  price: info?.price ?? event.price,
+                  qrUrl: info?.qrUrl ?? event.qrUrl ?? null,
+                  upiId: info?.upiId ?? event.upiId ?? null,
+                  teamSizeLimit: info?.teamSizeLimit ?? event.teamSizeLimit ?? null,
+                  referenceCode: pendingPaymentTicket.id.slice(0, 6).toUpperCase(),
+                };
+                navigate(`/events/${id}/payment?registrationId=${pendingPaymentTicket.id}`, { state });
+              } else {
+                navigate(`/events/${id}/register`);
               }
             }}
             style={{
               flex: 1,
               height: 52,
-              borderRadius: 30,
+              borderRadius: 'var(--sk-radius-lg)',
               background: btnColor,
               border: 'none',
               cursor: btnDisabled ? 'default' : 'pointer',
@@ -619,7 +648,7 @@ export default function EventDetailPage() {
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s ease',
-              boxShadow: btnDisabled ? 'none' : '0 4px 12px rgba(230, 57, 70, 0.25)',
+              boxShadow: 'none',
             }}
           >
             {checkingRegistration ? (

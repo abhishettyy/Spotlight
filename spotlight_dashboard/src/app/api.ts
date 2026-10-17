@@ -290,11 +290,19 @@ export async function rejectRegistration(registrationId: string, token?: string)
   }, token);
 }
 
+/** All visible registrations for a club's events, fetched in a single request. */
 export async function fetchAllRegistrationsForEvents(
+  clubId: string,
   events: { id: string; title: string }[],
   token?: string
 ): Promise<any[]> {
   if (events.length === 0) return [];
+  try {
+    const data = await request(`/clubs/${clubId}/registrations`, {}, token);
+    return data.registrations ?? [];
+  } catch {
+    // Older backend without the club-wide endpoint: fall back to one request per event
+  }
   const results = await Promise.allSettled(
     events.map(ev =>
       fetchEventRegistrations(ev.id, token).then(d =>

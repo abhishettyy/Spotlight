@@ -91,6 +91,8 @@ model Registration {
   @@index([eventId], map: "fk_registration_event")
   @@index([userId], map: "fk_registration_profile")
   @@index([teamId], map: "fk_registration_team")
+  @@index([eventId, status], map: "idx_registration_event_status")
+  @@index([eventId, userId, status], map: "idx_registration_event_user_status")
 }
 
 model Notification {
@@ -105,6 +107,7 @@ model Notification {
   event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade, map: "fk_notification_event")
 
   @@index([eventId], map: "fk_notification_event")
+  @@index([userId, createdAt], map: "idx_notification_user_created")
 }
 
 model RegistrationKey {

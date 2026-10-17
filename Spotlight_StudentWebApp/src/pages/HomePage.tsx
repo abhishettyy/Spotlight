@@ -1,93 +1,159 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, BookmarkIcon, ChevronRight } from 'lucide-react';
+import { Search, Bell, X, WifiOff, Users } from 'lucide-react';
 import { useEventsStore } from '@/store/eventsStore';
 import { useClubsStore } from '@/store/clubsStore';
 import { useNotificationsStore } from '@/store/notificationsStore';
 import { useUserStore } from '@/store/userStore';
-import { useSavedEventsStore } from '@/store/savedEventsStore';
 import { ClubModel } from '@/types/club';
 import EventCard from '@/components/ui/EventCard';
-import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { ErrorState, EmptyState } from '@/components/ui/States';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/States';
 import { getGreeting } from '@/utils/dateUtils';
-import { buildAvatarInitials } from '@/utils/imageUtils';
-import { isEventLive, isEventUpcoming } from '@/types/event';
+import { isEventUpcoming } from '@/types/event';
+
+function isConnectionError(message: string) {
+  const m = message.toLowerCase();
+  return m.includes('connection') || m.includes('timeout') || m.includes('network');
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { events, isLoading, error, loadEvents } = useEventsStore();
-  const { clubs, load: loadClubs } = useClubsStore();
+  const { clubs, isLoading: clubsLoading, error: clubsError, load: loadClubs } = useClubsStore();
   const { unreadCount, load: loadNotifications } = useNotificationsStore();
   const { currentUser } = useUserStore();
-  const { savedIds } = useSavedEventsStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
+  // Same as Flutter's pull-to-refresh: events, clubs and notifications together
   useEffect(() => {
-    if (events.length === 0) loadEvents();
-    if (clubs.length === 0) loadClubs();
+    loadEvents();
+    loadClubs();
     loadNotifications();
   }, []);
 
-  // Build filter categories from events
   const filters = useMemo(() => {
-    const cats = events
-      .map((e) => e.category.trim())
-      .filter((c) => c && c.toLowerCase() !== 'other')
-      .reduce((acc: string[], c) => (acc.includes(c) ? acc : [...acc, c]), [])
-      .sort();
+    const cats = [...new Set(
+      events.map((e) => e.category.trim()).filter((c) => c && c.toLowerCase() !== 'other')
+    )].sort();
     return ['All', ...cats];
   }, [events]);
 
-  // Filter events
-  const filteredEvents = useMemo(() => {
-    return events.filter((e) => {
-      const matchFilter = activeFilter === 'All' || e.category === activeFilter;
-      const q = searchQuery.toLowerCase();
-      const matchSearch =
-        !q ||
-        e.title.toLowerCase().includes(q) ||
-        e.description?.toLowerCase().includes(q) ||
-        e.venue.toLowerCase().includes(q) ||
-        e.clubName?.toLowerCase().includes(q);
-      return matchFilter && matchSearch;
-    });
-  }, [events, activeFilter, searchQuery]);
+  useEffect(() => {
+    if (!filters.includes(activeFilter)) setActiveFilter('All');
+  }, [filters]);
 
-  const savedEvents = events.filter((e) => savedIds.has(e.id));
+  const query = searchQuery.toLowerCase().trim();
+  const filteredEvents = events.filter((e) => {
+    const matchesCategory = activeFilter === 'All' || e.category.toLowerCase() === activeFilter.toLowerCase();
+    const matchesSearch = !query ||
+      e.title.toLowerCase().includes(query) ||
+      e.venue.toLowerCase().includes(query) ||
+      e.category.toLowerCase().includes(query);
+    return isEventUpcoming(e) && matchesCategory && matchesSearch;
+  });
 
-  // Featured = live first, then upcoming, max 10 for horizontal scroll
-  const featuredEvents = [
-    ...filteredEvents.filter(isEventLive),
-    ...filteredEvents.filter((e) => !isEventLive(e) && isEventUpcoming(e)),
-  ].slice(0, 10);
+  const renderEvents = () => {
+    if (isLoading) {
+      return <div style={{ height: 280, display: 'grid', placeItems: 'center' }}><LoadingSpinner /></div>;
+    }
+    if (error) {
+      return (
+        <div style={{ minHeight: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, textAlign: 'center', padding: '0 24px' }}>
+          <WifiOff size={48} color="var(--subtext)" style={{ opacity: 0.6, marginBottom: 6 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Unable to load events</h3>
+          <p style={{ fontSize: 12, color: 'var(--subtext)' }}>
+            {isConnectionError(error)
+              ? 'Please check your internet connection and try again.'
+              : 'Something went wrong. Please try again later.'}
+          </p>
+          <button onClick={loadEvents} className="btn-primary" style={{ marginTop: 10, padding: '8px 20px', fontSize: 12 }}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+    if (events.length === 0) {
+      return (
+        <EmptyState
+          svgSrc="/svg/empty_events.svg"
+          svgWidth={170}
+          svgHeight={110}
+          title="No upcoming or live events"
+          description="Check back later for exciting campus events!"
+        />
+      );
+    }
+    if (filteredEvents.length === 0) {
+      return (
+        <EmptyState
+          svgSrc="/svg/empty_events.svg"
+          svgWidth={170}
+          svgHeight={110}
+          title={query ? `No events match "${query}"` : 'No upcoming events in this category'}
+          description="Try clearing your search or switching categories"
+        />
+      );
+    }
+    return (
+      <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
+        {filteredEvents.map((e) => (
+          <div key={e.id} style={{ minWidth: 280, maxWidth: 300, flexShrink: 0 }}>
+            <EventCard event={e} compact />
+          </div>
+        ))}
+      </div>
+    );
+  };
 
-  if (isLoading && events.length === 0) return <PageLoader />;
+  const renderClubs = () => {
+    if (clubsLoading) {
+      return <div style={{ height: 90, display: 'grid', placeItems: 'center' }}><LoadingSpinner size={24} /></div>;
+    }
+    if (clubsError) {
+      return (
+        <div style={{ height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 12, color: 'var(--subtext)' }}>
+          <span>{isConnectionError(clubsError) ? 'Connection error. Please try again.' : 'Unable to load active clubs.'}</span>
+          <button
+            onClick={loadClubs}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-crimson)', fontWeight: 700, fontSize: 12, fontFamily: 'var(--font-sans)' }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    if (clubs.length === 0) {
+      return (
+        <EmptyState svgSrc="/svg/empty_clubs.svg" svgWidth={160} svgHeight={90} title="No clubs available" />
+      );
+    }
+    return (
+      <div style={{ display: 'flex', gap: 20, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
+        {clubs.map((club) => (
+          <ClubAvatar key={club.id} club={club} onClick={() => navigate(`/clubs/${club.id}`)} />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div style={{ padding: '24px 20px', maxWidth: 1200, margin: '0 auto' }}>
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 16,
-        }}
-      >
-        <div>
-          <p style={{ color: 'var(--subtext)', fontSize: 14, marginBottom: 2 }}>
-            {getGreeting()} 👋
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ color: 'var(--subtext)', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+            {getGreeting()}
           </p>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-            {currentUser?.name ?? 'Explore'}
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {currentUser?.name ?? 'User'}
           </h1>
         </div>
         <button
           onClick={() => navigate('/notifications')}
+          aria-label="Notifications"
           style={{
             position: 'relative',
             background: 'var(--surface)',
@@ -108,30 +174,31 @@ export default function HomePage() {
             <span
               style={{
                 position: 'absolute',
-                top: 8,
-                right: 8,
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
+                top: -2,
+                right: -2,
+                minWidth: 18,
+                height: 18,
+                padding: '0 4px',
+                borderRadius: 99,
                 background: 'var(--color-crimson)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                display: 'grid',
+                placeItems: 'center',
               }}
-            />
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
           )}
         </button>
       </div>
 
       {/* Search bar */}
-      <div style={{ position: 'relative', marginBottom: 20 }}>
+      <div style={{ position: 'relative', marginBottom: 24 }}>
         <Search
           size={16}
-          style={{
-            position: 'absolute',
-            left: 14,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'var(--subtext)',
-            pointerEvents: 'none',
-          }}
+          style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--subtext)', pointerEvents: 'none' }}
         />
         <input
           type="text"
@@ -142,7 +209,7 @@ export default function HomePage() {
             background: 'var(--surface)',
             border: '1.5px solid var(--border)',
             borderRadius: 14,
-            padding: '13px 16px 13px 40px',
+            padding: '13px 40px 13px 40px',
             fontSize: 15,
             color: 'var(--text)',
             width: '100%',
@@ -150,26 +217,26 @@ export default function HomePage() {
             outline: 'none',
           }}
         />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            aria-label="Clear search"
+            style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--subtext)', display: 'flex' }}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Category filters */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          overflowX: 'auto',
-          paddingBottom: 8,
-          marginBottom: 24,
-          scrollbarWidth: 'none',
-        }}
-      >
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, marginBottom: 24, scrollbarWidth: 'none' }}>
         {filters.map((f) => (
           <button
             key={f}
             onClick={() => setActiveFilter(f)}
             style={{
-              padding: '8px 20px',
-              borderRadius: 99,
+              padding: '10px 20px',
+              borderRadius: 24,
               border: '1.5px solid',
               borderColor: activeFilter === f ? 'var(--color-crimson)' : 'var(--border)',
               background: activeFilter === f ? 'var(--color-crimson)' : 'var(--surface)',
@@ -188,237 +255,36 @@ export default function HomePage() {
         ))}
       </div>
 
-      {error && <ErrorState message={error} onRetry={loadEvents} />}
+      {/* Featured Events */}
+      <section style={{ marginBottom: 48 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Featured Events</h2>
+          <button
+            onClick={() => navigate('/events')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-crimson)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-sans)' }}
+          >
+            See all &gt;
+          </button>
+        </div>
+        {renderEvents()}
+      </section>
 
-      {/* Empty state when no events */}
-      {!error && !isLoading && filteredEvents.length === 0 && (
-        <EmptyState
-          svgSrc="/svg/empty_events.svg"
-          title={searchQuery ? 'No events found' : 'No upcoming or live events'}
-          description={
-            searchQuery
-              ? `No events match "${searchQuery}"`
-              : 'Check back later for exciting campus events!'
-          }
-          action={
-            searchQuery ? (
-              <button
-                onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
-                className="btn-primary"
-              >
-                Clear Search
-              </button>
-            ) : undefined
-          }
-        />
-      )}
-
-      {/* Featured Events — horizontal scroll (live first, then upcoming) */}
-      {featuredEvents.length > 0 && (
-        <section style={{ marginBottom: 36 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 16,
-            }}
-          >
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-              Featured Events
-            </h2>
-            <button
-              onClick={() => navigate('/events')}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--color-crimson)',
-                fontSize: 14,
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              See all &gt;
-            </button>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 14,
-              overflowX: 'auto',
-              paddingBottom: 8,
-              scrollbarWidth: 'none',
-            }}
-          >
-            {featuredEvents.map((e) => (
-              <div key={e.id} style={{ minWidth: 280, maxWidth: 280, flexShrink: 0 }}>
-                <EventCard event={e} compact />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Saved events */}
-      {savedEvents.length > 0 && !searchQuery && activeFilter === 'All' && (
-        <section style={{ marginBottom: 32 }}>
-          <SectionHeader
-            icon={<BookmarkIcon size={16} color="var(--color-crimson)" />}
-            title="Saved Events"
-            count={savedEvents.length}
-            onSeeAll={() => {/* shows all saved */}}
-          />
-          <div
-            style={{
-              display: 'flex',
-              gap: 14,
-              overflowX: 'auto',
-              paddingBottom: 8,
-              scrollbarWidth: 'none',
-            }}
-          >
-            {savedEvents.slice(0, 5).map((e) => (
-              <div key={e.id} style={{ minWidth: 240, maxWidth: 240, flexShrink: 0 }}>
-                <EventCard event={e} compact />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Active Clubs — horizontal scroll */}
-      {clubs.length > 0 && (
-        <section style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 16,
-            }}
-          >
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-              Active Clubs
-            </h2>
-            <button
-              onClick={() => navigate('/clubs')}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--color-crimson)',
-                fontSize: 14,
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              See all <ChevronRight size={16} />
-            </button>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 20,
-              overflowX: 'auto',
-              paddingBottom: 8,
-              scrollbarWidth: 'none',
-            }}
-          >
-            {clubs.map((club) => (
-              <ClubAvatar
-                key={club.id}
-                club={club}
-                onClick={() => navigate(`/clubs/${club.id}`)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-}
-
-function SectionHeader({
-  icon,
-  title,
-  count,
-  onSeeAll,
-}: {
-  icon?: React.ReactNode;
-  title: string;
-  count?: number;
-  onSeeAll?: () => void;
-}) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {icon}
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{title}</h2>
-        {count !== undefined && count > 0 && (
-          <span
-            style={{
-              background: 'var(--color-crimson-dim)',
-              color: 'var(--color-crimson)',
-              fontSize: 12,
-              fontWeight: 700,
-              borderRadius: 99,
-              padding: '1px 8px',
-            }}
-          >
-            {count}
-          </span>
-        )}
-      </div>
-      {onSeeAll && (
-        <button
-          onClick={onSeeAll}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--color-crimson)',
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            fontFamily: 'var(--font-sans)',
-          }}
-        >
-          See all <ChevronRight size={14} />
-        </button>
-      )}
+      {/* Active Clubs */}
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>Active Clubs</h2>
+        {renderClubs()}
+      </section>
     </div>
   );
 }
 
 function ClubAvatar({ club, onClick }: { club: ClubModel; onClick: () => void }) {
+  const [failed, setFailed] = useState(false);
+  const showLogo = !!club.logoUrl && !failed;
   return (
     <div
       onClick={onClick}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        cursor: 'pointer',
-        flexShrink: 0,
-        width: 72,
-      }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0, width: 80 }}
     >
       <div
         style={{
@@ -426,31 +292,23 @@ function ClubAvatar({ club, onClick }: { club: ClubModel; onClick: () => void })
           height: 64,
           borderRadius: '50%',
           overflow: 'hidden',
-          background: 'var(--surface)',
+          background: 'var(--raised)',
           border: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          transition: 'transform 0.15s ease',
         }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = 'scale(1.05)')}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = 'scale(1)')}
       >
-        {club.logoUrl ? (
+        {showLogo ? (
           <img
-            src={club.logoUrl}
+            src={club.logoUrl!}
             alt={club.name}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => {
-              (e.currentTarget as HTMLElement).style.display = 'none';
-              (e.currentTarget.parentElement as HTMLElement).innerHTML = `<span style="font-size:18px;font-weight:800;color:var(--subtext)">${buildAvatarInitials(club.name)}</span>`;
-            }}
+            onError={() => setFailed(true)}
           />
         ) : (
-          <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--subtext)' }}>
-            {buildAvatarInitials(club.name)}
-          </span>
+          <Users size={22} color="var(--subtext)" strokeWidth={1.6} />
         )}
       </div>
       <p
@@ -459,7 +317,6 @@ function ClubAvatar({ club, onClick }: { club: ClubModel; onClick: () => void })
           fontWeight: 600,
           color: 'var(--text)',
           textAlign: 'center',
-          lineHeight: 1.2,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',

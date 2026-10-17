@@ -9,6 +9,7 @@ import { useEventsStore } from '@/store/eventsStore';
 import { useClubsStore } from '@/store/clubsStore';
 import { useNotificationsStore } from '@/store/notificationsStore';
 import { getProfile } from '@/api/profiles';
+import { isProfileIncomplete } from '@/types/user';
 
 // Route guards
 import ProtectedRoute from '@/routes/ProtectedRoute';
@@ -32,6 +33,7 @@ import ClubEventsPage from '@/pages/ClubEventsPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AboutPage from '@/pages/AboutPage';
+import MyClubsPage from '@/pages/MyClubsPage';
 import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
@@ -64,6 +66,15 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Like Flutter's AppInitializer: a signed-in user with an incomplete profile goes to onboarding
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const currentUser = useUserStore((s) => s.currentUser);
+  if (currentUser && isProfileIncomplete(currentUser)) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -82,6 +93,7 @@ export default function App() {
           {/* Protected app routes */}
           <Route path="/*" element={
             <ProtectedRoute>
+              <OnboardingGate>
               <AppShell>
                 <Routes>
                   <Route index element={<HomePage />} />
@@ -95,10 +107,12 @@ export default function App() {
                   <Route path="clubs/:id" element={<ClubEventsPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="profile" element={<ProfilePage />} />
+                  <Route path="my-clubs" element={<MyClubsPage />} />
                   <Route path="about" element={<AboutPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </AppShell>
+              </OnboardingGate>
             </ProtectedRoute>
           } />
         </Routes>

@@ -31,12 +31,12 @@ class AboutUsScreen extends StatelessWidget {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = isDark ? Colors.black : const Color(0xFFF8F9FA);
-    final cardColor = isDark ? const Color(0xFF18181B) : Colors.white;
-    final textColor = isDark ? const Color(0xFFFAFAFA) : const Color(0xFF18181B);
+    final bgColor = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF1F0EF);
+    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF161618);
     final subTextColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A);
-    final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
-    const accentRed = Color(0xFFF03D4E);
+    final borderColor = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE2E1DE);
+    const accentRed = Color(0xFFE63946);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -275,8 +275,8 @@ class AboutUsScreen extends StatelessWidget {
     required Color subTextColor,
     required bool isDark,
   }) {
-    final avatarBg = isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5);
-    final badgeBg = isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5);
+    final avatarBg = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE9E8E6);
+    final badgeBg = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE9E8E6);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),

@@ -8,7 +8,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     Widget buildSubSection({required String title, required String body}) {
@@ -40,7 +40,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : const Color(0xFFF8F9FA),
+      backgroundColor: isDark ? const Color(0xFF0E0E10) : const Color(0xFFF1F0EF),
       appBar: AppBar(
         title: Text(
           'Privacy Policy',
@@ -182,7 +182,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.email_outlined, size: 16, color: Color(0xFF10B981)),
+                        const Icon(Icons.email_outlined, size: 16, color: Color(0xFF188038)),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -190,7 +190,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF10B981),
+                              color: const Color(0xFF188038),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -226,15 +226,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
         border: isDark ? null : Border.all(color: Colors.grey.shade200),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+        boxShadow: null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

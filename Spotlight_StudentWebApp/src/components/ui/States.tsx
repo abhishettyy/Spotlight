@@ -116,7 +116,7 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
           width: 80,
           height: 80,
           borderRadius: '50%',
-          background: 'rgba(230,57,70,0.08)',
+          background: 'var(--sk-danger-soft)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

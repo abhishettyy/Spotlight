@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Calendar, Clock, MapPin, Copy, Check, Users, Key,
+  ArrowLeft, Calendar, Clock, MapPin, Copy, Check, Users,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { fetchUserTickets } from '@/api/registrations';
-import { TicketModel, ticketHasPaid } from '@/types/event';
+import { fetchUserTickets, loadCachedTickets } from '@/api/registrations';
+import { TicketModel, isTicketConfirmed } from '@/types/event';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 
@@ -47,7 +47,7 @@ function formatTicketDates(
   let formattedTime = '';
 
   if (startDate) {
-    formattedDate = `${startDate.getDate()} ${months[startDate.getMonth()]}, ${startDate.getFullYear()}`;
+    formattedDate = `${String(startDate.getDate()).padStart(2, '0')} ${months[startDate.getMonth()]}, ${startDate.getFullYear()}`;
     const startTimeStr = formatTime(startDate);
     if (endDate) {
       const endTimeStr = formatTime(endDate);
@@ -74,31 +74,32 @@ function formatTicketDates(
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [ticket, setTicket] = useState<TicketModel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Cached tickets first so the QR shows offline, like the Flutter app
+  const cached = loadCachedTickets().find((t) => t.id === id) ?? null;
+  const [ticket, setTicket] = useState<TicketModel | null>(cached);
+  const [isLoading, setIsLoading] = useState(!cached);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchUserTickets()
-      .then((tickets) => {
-        setTicket(tickets.find((t) => t.id === id) ?? null);
-        setIsLoading(false);
-      })
-      .catch(() => setIsLoading(false));
+      .then((tickets) => setTicket(tickets.find((t) => t.id === id) ?? null))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, [id]);
 
   if (isLoading) return <PageLoader />;
 
-  if (!ticket) {
+  // Only confirmed tickets have a QR pass (the tickets list never opens any other)
+  if (!ticket || !isTicketConfirmed(ticket)) {
     return (
-      <div style={{ minHeight: '100vh', background: '#000000', color: '#ffffff', padding: 24 }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
         <button
           onClick={() => navigate(-1)}
           style={{
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: '#ffffff',
+            color: 'var(--text)',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
@@ -108,7 +109,9 @@ export default function TicketDetailPage() {
         >
           <ArrowLeft size={20} /> Back
         </button>
-        <p style={{ color: '#a0a0a0', marginTop: 32, textAlign: 'center' }}>Ticket not found.</p>
+        <p style={{ color: 'var(--subtext)', marginTop: 32, textAlign: 'center' }}>
+          {ticket ? 'Your registration is pending organizer approval.' : 'Ticket not found.'}
+        </p>
       </div>
     );
   }
@@ -125,10 +128,8 @@ export default function TicketDetailPage() {
     event?.date
   );
 
-  const venue = event?.venue || 'TBD';
+  const venue = event?.venue || 'No Venue';
   const price = event?.price ?? 0;
-  const hasPaid = ticketHasPaid(ticket);
-  const isPendingPayment = !hasPaid && price > 0;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(qrCodeString);
@@ -138,7 +139,7 @@ export default function TicketDetailPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000000', color: '#ffffff', padding: '16px 20px 48px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: '16px 20px 48px' }}>
       
       {/* ── Top Bar ────────────────────────────────────────────────────── */}
       <div
@@ -156,7 +157,7 @@ export default function TicketDetailPage() {
           style={{
             background: 'none',
             border: 'none',
-            color: '#ffffff',
+            color: 'var(--text)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -166,7 +167,7 @@ export default function TicketDetailPage() {
         >
           <ArrowLeft size={22} strokeWidth={2.5} />
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.3px' }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
           My Ticket
         </h1>
       </div>
@@ -176,9 +177,9 @@ export default function TicketDetailPage() {
         style={{
           maxWidth: 440,
           margin: '0 auto',
-          background: '#141416',
+          background: 'var(--surface)',
           borderRadius: 24,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+          boxShadow: 'var(--sk-shadow-lg)',
           overflow: 'hidden',
           position: 'relative',
         }}
@@ -189,7 +190,7 @@ export default function TicketDetailPage() {
             style={{
               fontSize: 22,
               fontWeight: 800,
-              color: '#ffffff',
+              color: 'var(--text)',
               letterSpacing: '-0.4px',
               lineHeight: 1.3,
               marginBottom: 16,
@@ -216,13 +217,13 @@ export default function TicketDetailPage() {
                 gap: 6,
                 padding: '7px 14px',
                 borderRadius: 20,
-                background: '#1E1E22',
-                color: 'rgba(255, 255, 255, 0.75)',
+                background: 'var(--raised)',
+                color: 'var(--subtext)',
                 fontSize: 12,
                 fontWeight: 500,
               }}
             >
-              <Calendar size={13} color="rgba(255, 255, 255, 0.75)" />
+              <Calendar size={13} color="var(--subtext)" />
               <span>{formattedDate}</span>
             </div>
 
@@ -235,13 +236,13 @@ export default function TicketDetailPage() {
                   gap: 6,
                   padding: '7px 14px',
                   borderRadius: 20,
-                  background: '#1E1E22',
-                  color: 'rgba(255, 255, 255, 0.75)',
+                  background: 'var(--raised)',
+                  color: 'var(--subtext)',
                   fontSize: 12,
                   fontWeight: 500,
                 }}
               >
-                <Clock size={13} color="rgba(255, 255, 255, 0.75)" />
+                <Clock size={13} color="var(--subtext)" />
                 <span>{formattedTime}</span>
               </div>
             )}
@@ -255,13 +256,13 @@ export default function TicketDetailPage() {
               gap: 6,
               padding: '7px 14px',
               borderRadius: 20,
-              background: '#1E1E22',
-              color: 'rgba(255, 255, 255, 0.75)',
+              background: 'var(--raised)',
+              color: 'var(--subtext)',
               fontSize: 12,
               fontWeight: 500,
             }}
           >
-            <MapPin size={13} color="rgba(255, 255, 255, 0.75)" />
+            <MapPin size={13} color="var(--subtext)" />
             <span>{venue}</span>
           </div>
 
@@ -281,12 +282,12 @@ export default function TicketDetailPage() {
                   gap: 8,
                   padding: '7px 14px',
                   borderRadius: 20,
-                  background: '#1E1E22',
+                  background: 'var(--raised)',
                   cursor: 'pointer',
                 }}
               >
-                <Users size={14} color="#a0a0a0" />
-                <span style={{ fontSize: 12, color: '#ffffff', fontWeight: 500 }}>
+                <Users size={14} color="var(--subtext)" />
+                <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>
                   {ticket.team.name}
                 </span>
                 <span
@@ -296,13 +297,13 @@ export default function TicketDetailPage() {
                     fontFamily: 'monospace',
                     padding: '2px 6px',
                     borderRadius: 6,
-                    background: 'rgba(230, 57, 70, 0.15)',
-                    color: 'var(--color-crimson, #e63946)',
+                    background: 'var(--sk-brand-soft)',
+                    color: 'var(--sk-brand)',
                   }}
                 >
-                  {ticket.team.passkey || 'Pending'}
+                  {ticket.team.passkey || 'Pending Payment'}
                 </span>
-                <Copy size={12} color="#a0a0a0" />
+                <Copy size={12} color="var(--subtext)" />
               </div>
 
               {/* Members */}
@@ -312,7 +313,7 @@ export default function TicketDetailPage() {
                     marginTop: 12,
                     padding: '12px 14px',
                     borderRadius: 12,
-                    background: '#1E1E22',
+                    background: 'var(--raised)',
                     textAlign: 'left',
                   }}
                 >
@@ -320,7 +321,7 @@ export default function TicketDetailPage() {
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
-                      color: 'var(--color-crimson, #e63946)',
+                      color: 'var(--sk-brand)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
                       marginBottom: 8,
@@ -342,7 +343,7 @@ export default function TicketDetailPage() {
                           fontSize: 12,
                         }}
                       >
-                        <span style={{ color: '#ffffff', fontWeight: m.isLeader ? 600 : 400 }}>
+                        <span style={{ color: 'var(--text)', fontWeight: m.isLeader ? 600 : 400 }}>
                           {m.name}
                         </span>
                         {m.isLeader && (
@@ -352,8 +353,8 @@ export default function TicketDetailPage() {
                               fontWeight: 700,
                               padding: '1px 6px',
                               borderRadius: 4,
-                              background: 'rgba(230, 57, 70, 0.15)',
-                              color: 'var(--color-crimson, #e63946)',
+                              background: 'var(--sk-brand-soft)',
+                              color: 'var(--sk-brand)',
                             }}
                           >
                             Leader
@@ -383,7 +384,7 @@ export default function TicketDetailPage() {
               width: 20,
               height: 20,
               borderRadius: '50%',
-              background: '#000000',
+              background: 'var(--bg)',
               marginLeft: -10,
               flexShrink: 0,
             }}
@@ -393,7 +394,7 @@ export default function TicketDetailPage() {
             style={{
               flex: 1,
               height: 0,
-              borderTop: '1.5px dashed rgba(255, 255, 255, 0.15)',
+              borderTop: '1.5px dashed var(--sk-line-strong)',
               margin: '0 8px',
             }}
           />
@@ -403,7 +404,7 @@ export default function TicketDetailPage() {
               width: 20,
               height: 20,
               borderRadius: '50%',
-              background: '#000000',
+              background: 'var(--bg)',
               marginRight: -10,
               flexShrink: 0,
             }}
@@ -428,7 +429,7 @@ export default function TicketDetailPage() {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
+              boxShadow: 'var(--sk-shadow-lg)',
             }}
           >
             <QRCodeSVG
@@ -444,7 +445,7 @@ export default function TicketDetailPage() {
           <p
             style={{
               fontSize: 12,
-              color: '#A0A0A0',
+              color: 'var(--subtext)',
               marginTop: 14,
               textAlign: 'center',
               fontWeight: 400,
@@ -463,7 +464,7 @@ export default function TicketDetailPage() {
               gap: 6,
               padding: '8px 12px',
               borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.06)',
+              background: 'var(--raised)',
               marginTop: 8,
               cursor: 'pointer',
               maxWidth: '100%',
@@ -474,7 +475,7 @@ export default function TicketDetailPage() {
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: '#A0A0A0',
+                color: 'var(--subtext)',
                 fontFamily: 'monospace',
                 letterSpacing: '0.5px',
                 whiteSpace: 'nowrap',
@@ -486,7 +487,7 @@ export default function TicketDetailPage() {
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: 'var(--color-crimson, #e63946)',
+                color: 'var(--sk-brand)',
                 fontFamily: 'monospace',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -497,9 +498,9 @@ export default function TicketDetailPage() {
               {qrCodeString}
             </span>
             {copied ? (
-              <Check size={12} color="#22c55e" strokeWidth={2.5} />
+              <Check size={12} color="var(--sk-ok)" strokeWidth={2.5} />
             ) : (
-              <Copy size={12} color="var(--color-crimson, #e63946)" strokeWidth={2} />
+              <Copy size={12} color="var(--sk-brand)" strokeWidth={2} />
             )}
           </div>
 
@@ -514,14 +515,14 @@ export default function TicketDetailPage() {
               paddingTop: 4,
             }}
           >
-            <span style={{ fontSize: 13, color: '#A0A0A0', fontWeight: 500 }}>
+            <span style={{ fontSize: 13, color: 'var(--subtext)', fontWeight: 500 }}>
               Registration Fee
             </span>
             <span
               style={{
                 fontSize: 18,
                 fontWeight: 800,
-                color: 'var(--color-crimson, #e63946)',
+                color: 'var(--sk-brand)',
               }}
             >
               {price > 0 ? `₹${price}` : 'Free'}
@@ -529,32 +530,6 @@ export default function TicketDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Complete payment banner if pending */}
-      {isPendingPayment && (
-        <div style={{ maxWidth: 440, margin: '20px auto 0' }}>
-          <button
-            onClick={() => navigate(`/events/${event?.id}/payment?registrationId=${ticket.id}`)}
-            style={{
-              width: '100%',
-              height: 48,
-              borderRadius: 24,
-              background: '#f59e0b',
-              border: 'none',
-              color: '#000000',
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
-            }}
-          >
-            Complete Payment →
-          </button>
-        </div>
-      )}
     </div>
   );
 }

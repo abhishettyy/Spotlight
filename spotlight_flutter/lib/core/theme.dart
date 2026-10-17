@@ -34,25 +34,33 @@ const _pageTransitionsTheme = PageTransitionsTheme(
 );
 
 class SpotlightTheme {
+  // Skyline design tokens. Light: Radix "Sand"; dark: neutral near-black. Brand: Spotlight crimson.
   static const Color pureWhite    = Color(0xFFFFFFFF);
-  static const Color deepBlack    = Color(0xFF000000);
-  static const Color subtleGray   = Color(0xFFF5F5F5);
-  static const Color darkGray     = Color(0xFF141416);
-  static const Color darkBg       = Color(0xFF000000);
-  static const Color lightGray    = Color(0xFFA0A0A0);
-  static const Color crimsonRed   = Color(0xFFE63946); 
+  static const Color deepBlack    = Color(0xFF21201C); // light-mode foreground
+  static const Color subtleGray   = Color(0xFFE9E8E6); // light raised
+  static const Color darkGray     = Color(0xFF161618); // dark surface
+  static const Color darkBg       = Color(0xFF0E0E10); // dark canvas
+  static const Color lightGray    = Color(0xFFA0A0A8); // dark muted
+  static const Color crimsonRed   = Color(0xFFE63946); // brand (name kept so existing call sites keep working)
+
+  static const Color _lightCanvas  = Color(0xFFF1F0EF);
+  static const Color _lightSurface = Color(0xFFF9F9F8);
+  static const Color _lightLine    = Color(0xFFE2E1DE);
+  static const Color _darkRaised   = Color(0xFF1D1D20);
+  static const Color _darkLine     = Color(0xFF2A2A2E);
+  static const Color _darkFg       = Color(0xFFEDEDEF);
 
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
       primaryColor: crimsonRed,
-      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+      scaffoldBackgroundColor: _lightCanvas,
       pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.light(
         primary: crimsonRed,
         secondary: deepBlack,
-        surface: pureWhite,
-        background: Color(0xFFF8F9FA),
+        surface: _lightSurface,
+        background: _lightCanvas,
         onPrimary: pureWhite,
         onSecondary: pureWhite,
         onSurface: deepBlack,
@@ -63,21 +71,21 @@ class SpotlightTheme {
         displayColor: deepBlack,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: pureWhite,
+        backgroundColor: _lightSurface,
         elevation: 0,
         iconTheme: const IconThemeData(color: deepBlack),
         titleTextStyle: GoogleFonts.inter(
           color: deepBlack,
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
       ),
       cardTheme: const CardThemeData(
-        color: pureWhite,
-        elevation: 2,
-        shadowColor: Color(0x0C000000), 
+        color: _lightSurface,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: _lightLine),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -87,7 +95,7 @@ class SpotlightTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
@@ -99,28 +107,27 @@ class SpotlightTheme {
         filled: true,
         fillColor: subtleGray,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        hintStyle: GoogleFonts.inter(color: Colors.grey[500]),
+        hintStyle: GoogleFonts.inter(color: const Color(0xFF82827C)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: deepBlack,
         contentTextStyle: GoogleFonts.inter(
           color: Colors.white,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Color(0xFF333333), width: 1),
+          borderRadius: BorderRadius.circular(12),
         ),
-        elevation: 10,
+        elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       ),
     );
@@ -138,28 +145,29 @@ class SpotlightTheme {
         surface: darkGray,
         background: darkBg,
         onPrimary: pureWhite,
-        onSurface: pureWhite,
-        onBackground: pureWhite,
+        onSurface: _darkFg,
+        onBackground: _darkFg,
       ),
       textTheme: GoogleFonts.interTextTheme().apply(
-        bodyColor: pureWhite,
-        displayColor: pureWhite,
+        bodyColor: _darkFg,
+        displayColor: _darkFg,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: deepBlack,
+        backgroundColor: darkGray,
         elevation: 0,
-        iconTheme: const IconThemeData(color: pureWhite),
+        iconTheme: const IconThemeData(color: _darkFg),
         titleTextStyle: GoogleFonts.inter(
-          color: pureWhite,
+          color: _darkFg,
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
       ),
       cardTheme: const CardThemeData(
         color: darkGray,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: _darkLine),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -169,7 +177,7 @@ class SpotlightTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
@@ -179,30 +187,30 @@ class SpotlightTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkGray,
+        fillColor: _darkRaised,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         hintStyle: GoogleFonts.inter(color: lightGray),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF242222),
+        backgroundColor: _darkRaised,
         contentTextStyle: GoogleFonts.inter(
-          color: Colors.white,
+          color: _darkFg,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withOpacity(0.12), width: 1),
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: _darkLine, width: 1),
         ),
-        elevation: 10,
+        elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       ),
     );

@@ -2,81 +2,76 @@
 @custom-variant light (&:is(.light *));
 
 @layer base {
-  html.dark, html.dark body {
-    background-color: #050505 !important;
-    background: #050505 !important;
-    color: #ffffff !important;
-  }
-  html.light, html.light body {
-    background-color: #f0f2f6 !important;
-    background: #f0f2f6 !important;
-    color: #1e1b26 !important;
+  html, html body {
+    background-color: var(--sk-canvas) !important;
+    background: var(--sk-canvas) !important;
+    color: var(--sk-fg) !important;
   }
 }
 
 :root, .light {
   color-scheme: light;
-  --font-size: 16.5px;
-  --background: #f0f2f6;
-  --foreground: #1e1b26;
-  --card: #f0f2f6;
-  --card-foreground: #1e1b26;
-  --popover: #f0f2f6;
-  --popover-foreground: #1e1b26;
-  --primary: #F03D4E;
+  --font-size: 16px;
+  --background: var(--sk-canvas);
+  --foreground: var(--sk-fg);
+  --card: var(--sk-surface);
+  --card-foreground: var(--sk-fg);
+  --popover: var(--sk-surface);
+  --popover-foreground: var(--sk-fg);
+  --primary: var(--sk-brand);
   --primary-foreground: #ffffff;
-  --secondary: #1e1b26;
-  --secondary-foreground: #ffffff;
-  --muted: #e4e7ee;
-  --muted-foreground: #64748b;
-  --accent: #fdf2ee;
-  --accent-foreground: #F03D4E;
+  --secondary: var(--sk-raised);
+  --secondary-foreground: var(--sk-fg);
+  --muted: var(--sk-raised);
+  --muted-foreground: var(--sk-muted);
+  --accent: var(--sk-raised);
+  --accent-foreground: var(--sk-fg);
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.08);
-  --input: #f0f2f6;
-  --input-background: #e4e7ee;
+  --border: var(--sk-line);
+  --input: var(--sk-line);
+  --input-background: var(--sk-raised);
   --switch-background: #e2e8f0;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: rgba(240, 61, 78, 0.25);
+  --ring: var(--sk-brand-soft);
   --chart-1: oklch(0.7 0 0);
   --chart-2: oklch(0.6 0 0);
   --chart-3: oklch(0.5 0 0);
   --chart-4: oklch(0.4 0 0);
   --chart-5: oklch(0.3 0 0);
-  --radius: 0.75rem;
-  --sidebar: #f0f2f6;
-  --sidebar-foreground: #1e1b26;
-  --sidebar-primary: #F03D4E;
+  --radius: 0.625rem;
+  --sidebar: var(--sk-surface);
+  --sidebar-foreground: var(--sk-fg);
+  --sidebar-primary: var(--sk-brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e2e6ed;
-  --sidebar-accent-foreground: #1e1b26;
-  --sidebar-border: rgba(0, 0, 0, 0.08);
-  --sidebar-ring: rgba(240, 61, 78, 0.25);
+  --sidebar-accent: var(--sk-raised);
+  --sidebar-accent-foreground: var(--sk-fg);
+  --sidebar-border: var(--sk-line);
+  --sidebar-ring: var(--sk-brand-soft);
 }
 
 .dark {
   color-scheme: dark;
-  --background: #050505;
-  --foreground: #ffffff;
-  --card: #0d0d0d;
-  --card-foreground: #ffffff;
-  --popover: #0d0d0d;
-  --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #050505;
-  --secondary: #111111;
-  --secondary-foreground: #ffffff;
-  --muted: #0a0a0a;
-  --muted-foreground: #a0a0a0;
-  --accent: #1e1e1e;
-  --accent-foreground: #ffffff;
+  --background: var(--sk-canvas);
+  --foreground: var(--sk-fg);
+  --card: var(--sk-surface);
+  --card-foreground: var(--sk-fg);
+  --popover: var(--sk-surface);
+  --popover-foreground: var(--sk-fg);
+  --primary: var(--sk-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--sk-raised);
+  --secondary-foreground: var(--sk-fg);
+  --muted: var(--sk-raised);
+  --muted-foreground: var(--sk-muted);
+  --accent: var(--sk-raised);
+  --accent-foreground: var(--sk-fg);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: rgba(255, 255, 255, 0.06);
-  --input: rgba(255, 255, 255, 0.04);
-  --ring: rgba(255, 255, 255, 0.15);
+  --border: var(--sk-line);
+  --input: var(--sk-line);
+  --ring: var(--sk-brand-soft);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.7 0 0);
@@ -84,14 +79,14 @@
   --chart-3: oklch(0.5 0 0);
   --chart-4: oklch(0.4 0 0);
   --chart-5: oklch(0.3 0 0);
-  --sidebar: #080808;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #050505;
-  --sidebar-accent: #111111;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: rgba(255, 255, 255, 0.15);
+  --sidebar: var(--sk-surface);
+  --sidebar-foreground: var(--sk-fg);
+  --sidebar-primary: var(--sk-brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--sk-raised);
+  --sidebar-accent-foreground: var(--sk-fg);
+  --sidebar-border: var(--sk-line);
+  --sidebar-ring: var(--sk-brand-soft);
 }
 
 @theme inline {
@@ -141,16 +136,16 @@
   }
 
   html, body {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--sk-font);
     @apply bg-background text-foreground;
   }
 
   input, select, textarea {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--sk-font);
   }
 
   button {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--sk-font);
     background-color: transparent;
   }
 
@@ -352,17 +347,17 @@
 }
 
 /* ==========================================================================
-   Ramaiah Institute of Technology - Comprehensive Light Theme Styling
+   SkylineOS - Comprehensive Light Theme Styling
    ========================================================================== */
 
 html.light {
-  background-color: #f0f2f6 !important;
-  color: #1e1b26 !important;
+  background-color: var(--sk-canvas) !important;
+  color: var(--sk-fg) !important;
 }
 
 html.light body {
-  background-color: #f0f2f6 !important;
-  color: #1e1b26 !important;
+  background-color: var(--sk-canvas) !important;
+  color: var(--sk-fg) !important;
 }
 
 /* Headings in Light Mode */
@@ -372,12 +367,12 @@ html.light h3:not(button):not(button *),
 html.light h4:not(button):not(button *),
 html.light h5:not(button):not(button *),
 html.light h6:not(button):not(button *) {
-  color: #1e1b26 !important;
+  color: var(--sk-fg) !important;
 }
 
 /* All white text classes become dark readable charcoal in Light Mode, except on saturated colored action buttons & badges */
-html.light .text-white:not([class*="bg-[#F03D4E]"]):not([class*="bg-[#F03D4E]"] *):not([class*="bg-[#DE3F0F]"]):not([class*="bg-[#DE3F0F]"] *):not(.bg-primary):not(.bg-primary *):not(.bg-emerald-600):not(.bg-emerald-600 *):not(.bg-red-600):not(.bg-red-600 *):not(.bg-blue-600):not(.bg-blue-600 *):not(.banner-modal-close-btn):not(.banner-modal-close-btn *) {
-  color: #1e1b26 !important;
+html.light .text-white:not([class*="bg-[color:var(--sk-brand)]"]):not([class*="bg-[color:var(--sk-danger)]"]):not([class*="bg-[color:var(--sk-fg)]"]):not([class*="bg-[color:var(--sk-brand)]"] *):not([class*="bg-[#DE3F0F]"]):not([class*="bg-[#DE3F0F]"] *):not(.bg-primary):not(.bg-primary *):not(.bg-emerald-600):not(.bg-emerald-600 *):not(.bg-red-600):not(.bg-red-600 *):not(.bg-blue-600):not(.bg-blue-600 *):not(.banner-modal-close-btn):not(.banner-modal-close-btn *) {
+  color: var(--sk-fg) !important;
 }
 
 /* Secondary / Ghost / Filter / Cancel / Table buttons with faint white backgrounds or borders */
@@ -394,8 +389,8 @@ html.light a.bg-white\/20,
 html.light label.bg-white\/5,
 html.light label.bg-white\/10,
 html.light label.bg-white\/20 {
-  background-color: #e2e6ed !important;
-  color: #1e1b26 !important;
+  background-color: var(--sk-raised) !important;
+  color: var(--sk-fg) !important;
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
 }
 
@@ -408,16 +403,16 @@ html.light a.bg-white\/20:hover,
 html.light label.bg-white\/5:hover,
 html.light label.bg-white\/10:hover,
 html.light label.bg-white\/20:hover {
-  background-color: #d4d9e2 !important;
-  color: #1e1b26 !important;
+  background-color: var(--sk-line-strong) !important;
+  color: var(--sk-fg) !important;
 }
 
 /* All non-colored buttons in Light Mode get dark charcoal text and inherit color on icons */
-html.light button:not([class*="bg-[#F03D4E]"]):not([class*="bg-[#DE3F0F]"]):not(.bg-primary):not(.bg-emerald-600):not(.bg-red-600):not(.bg-blue-600):not(.banner-modal-close-btn) {
-  color: #1e1b26;
+html.light button:not([class*="bg-[color:var(--sk-brand)]"]):not([class*="bg-[color:var(--sk-danger)]"]):not([class*="bg-[color:var(--sk-fg)]"]):not([class*="bg-[#DE3F0F]"]):not(.bg-primary):not(.bg-emerald-600):not(.bg-red-600):not(.bg-blue-600):not(.banner-modal-close-btn) {
+  color: var(--sk-fg);
 }
 
-html.light button:not([class*="bg-[#F03D4E]"]):not([class*="bg-[#DE3F0F]"]):not(.bg-primary):not(.bg-emerald-600):not(.bg-red-600):not(.bg-blue-600):not(.banner-modal-close-btn) svg {
+html.light button:not([class*="bg-[color:var(--sk-brand)]"]):not([class*="bg-[color:var(--sk-danger)]"]):not([class*="bg-[color:var(--sk-fg)]"]):not([class*="bg-[#DE3F0F]"]):not(.bg-primary):not(.bg-emerald-600):not(.bg-red-600):not(.bg-blue-600):not(.banner-modal-close-btn) svg {
   color: inherit !important;
   stroke: currentColor !important;
 }
@@ -426,18 +421,16 @@ html.light button:not([class*="bg-[#F03D4E]"]):not([class*="bg-[#DE3F0F]"]):not(
 html.light button.text-white\/40,
 html.light button.text-white\/50,
 html.light button.text-white\/60 {
-  color: #475569 !important;
+  color: var(--sk-muted) !important;
 }
 
 html.light button.text-white\/40:hover,
 html.light button.text-white\/50:hover,
 html.light button.text-white\/60:hover {
-  color: #1e1b26 !important;
+  color: var(--sk-fg) !important;
 }
 
 /* Preserve crisp white text on explicitly dark containers/elements in light theme */
-html.light .bg-\[\#1e1b26\] .text-white,
-html.light .bg-\[\#1e1b26\] span.text-white,
 html.light .bg-black .text-white,
 html.light .bg-black span.text-white,
 html.light .bg-slate-900 .text-white {
@@ -447,13 +440,13 @@ html.light .bg-slate-900 .text-white {
 /* Faint whites and light grays become readable dark text */
 html.light .text-\[\#ffffff\],
 html.light .text-\[\#f9fafb\],
-html.light .text-\[\#f8fafc\],
+html.light .text-\[\var(--sk-raised)\],
 html.light .text-\[\#cccccc\],
 html.light .text-\[\#dddddd\],
 html.light .text-\[\#e5e7eb\],
 html.light .text-white\/90,
 html.light .text-white\/80 {
-  color: #1e1b26 !important;
+  color: var(--sk-fg) !important;
 }
 
 /* Section overlines & tracking labels (#f3f4f6) -> Clean high-contrast dark text */
@@ -467,8 +460,7 @@ html.light .tracking-\[0\.42em\],
 html.light .tracking-\[0\.32em\],
 html.light .tracking-\[0\.3em\],
 html.light .tracking-widest {
-  color: #1e1b26 !important;
-  font-weight: 600 !important;
+  color: var(--sk-fg) !important;
 }
 
 /* Secondary & Muted text -> Slate-600 / Slate-700 with clear contrast */
@@ -491,13 +483,13 @@ html.light .text-\[\#bbbbbb\],
 html.light .text-\[\#a1a1aa\],
 html.light .text-white\/70,
 html.light .text-white\/60 {
-  color: #475569 !important;
+  color: var(--sk-muted) !important;
 }
 
 html.light .text-white\/50,
 html.light .text-white\/40,
 html.light .text-white\/30 {
-  color: #64748b !important;
+  color: var(--sk-muted) !important;
 }
 
 /* Status indicators high-contrast in light mode */
@@ -524,8 +516,8 @@ html.light .text-\[\#ff949d\] {
 
 /* Select dropdown options */
 html.light select option {
-  background-color: #f0f2f6 !important;
-  color: #1e1b26 !important;
+  background-color: var(--sk-canvas) !important;
+  color: var(--sk-fg) !important;
 }
 
 /* In light mode, remove dimming on past event cards */
@@ -551,9 +543,9 @@ html.light .bg-white\/\[0\.03\],
 html.light .bg-white\/\[0\.04\],
 html.light .bg-white\/\[0\.05\],
 html.light .bg-white\/5 {
-  background-color: #f0f2f6 !important;
+  background-color: var(--sk-canvas) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: none !important;
 }
 
 /* Decorative overlays & gradients inside cards must NEVER have borders, backgrounds, or shadows */
@@ -575,7 +567,7 @@ html.light div[style*="linear-gradient"] {
 html.light div[style*="rgba(255,255,255,0.0"]:hover,
 html.light div[style*="rgba(255, 255, 255, 0.0"]:hover {
   border-color: rgba(0, 0, 0, 0.16) !important;
-  box-shadow: 0 6px 18px -3px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: none !important;
 }
 
 /* Borders */
@@ -594,23 +586,23 @@ html.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
 html.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]),
 html.light textarea,
 html.light select {
-  background-color: #e4e7ee !important;
-  color: #1e1b26 !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background-color: var(--sk-surface) !important;
+  color: var(--sk-fg) !important;
+  border: 1px solid var(--sk-line-strong) !important;
 }
 
 html.light input::placeholder,
 html.light textarea::placeholder {
-  color: #64748b !important;
+  color: var(--sk-muted) !important;
 }
 
 html.light input:focus,
 html.light textarea:focus,
 html.light select:focus {
-  background-color: #f0f2f6 !important;
-  color: #1e1b26 !important;
-  border-color: #F03D4E !important;
-  box-shadow: 0 0 0 3px rgba(240, 61, 78, 0.15) !important;
+  background-color: var(--sk-surface) !important;
+  color: var(--sk-fg) !important;
+  border-color: var(--sk-fg) !important;
+  box-shadow: 0 0 0 3px rgba(23, 23, 26, 0.08) !important;
 }
 
 /* File upload label buttons */
@@ -619,18 +611,18 @@ html.light label[for*="logo"],
 html.light label[for*="qr"],
 html.light label.cursor-pointer[class*="rounded-xl"] {
   background-color: #e4e7ee !important;
-  color: #1e1b26 !important;
+  color: var(--sk-fg) !important;
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Tables */
 html.light table thead tr {
-  background-color: #e2e6ed !important;
+  background-color: var(--sk-raised) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 html.light table thead th {
-  color: #1e1b26 !important;
+  color: var(--sk-fg) !important;
   font-weight: 600 !important;
 }
 
@@ -651,17 +643,17 @@ html.light div[style*="background: #111"],
 html.light div[style*="background:#111"],
 html.light div[style*="rgba(10,10,10"],
 html.light div[style*="rgba(15,15,15"] {
-  background-color: #f0f2f6 !important;
-  color: #1e1b26 !important;
+  background-color: var(--sk-canvas) !important;
+  color: var(--sk-fg) !important;
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
 }
 
 /* Keep White Text on Primary & Accent Badges/Buttons */
-html.light button.bg-\[\#F03D4E\],
-html.light button.bg-\[\#F03D4E\] *,
-html.light .bg-\[\#F03D4E\],
-html.light .bg-\[\#F03D4E\] *,
+html.light button.bg-\[\var(--sk-brand)\],
+html.light button.bg-\[\var(--sk-brand)\] *,
+html.light .bg-\[\var(--sk-brand)\],
+html.light .bg-\[\var(--sk-brand)\] *,
 html.light button.bg-\[\#10B981\],
 html.light button.bg-\[\#10b981\],
 html.light button.bg-emerald-600,
@@ -712,7 +704,7 @@ div.relative > button[class*="absolute"] {
 html.light div.relative > button.absolute,
 html.light div.relative > button[class*="absolute"],
 html.light .password-toggle-btn {
-  color: #64748b !important;
+  color: var(--sk-muted) !important;
   background: transparent !important;
   background-color: transparent !important;
 }
@@ -720,7 +712,7 @@ html.light .password-toggle-btn {
 html.light div.relative > button.absolute:hover,
 html.light div.relative > button[class*="absolute"]:hover,
 html.light .password-toggle-btn:hover {
-  color: #1e1b26 !important;
+  color: var(--sk-fg) !important;
   background: transparent !important;
   background-color: transparent !important;
 }

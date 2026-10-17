@@ -1,0 +1,19 @@
+/* Admin console (rendered at /admin). Maps the shared Skyline tokens to the ad-* utilities it uses. */
+@theme inline {
+  --color-ad-ink: var(--sk-canvas);
+  --color-ad-surface: var(--sk-surface);
+  --color-ad-raised: var(--sk-raised);
+  --color-ad-line: var(--sk-line);
+  --color-ad-fg: var(--sk-fg);
+  --color-ad-muted: var(--sk-muted);
+  --color-ad-faint: var(--sk-faint);
+  --color-ad-brand: var(--sk-brand);
+  --color-ad-ok: var(--sk-ok);
+  --color-ad-warn: var(--sk-warn);
+  --color-ad-info: var(--sk-info);
+  --color-ad-danger: var(--sk-danger);
+}
+
+@layer components {
+  .ad-card { @apply rounded-xl border border-ad-line bg-ad-surface; }
+}

@@ -84,7 +84,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             context: context,
             barrierDismissible: false,
             builder: (dialogContext) => AlertDialog(
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF141416) : Colors.white,
+              backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161618) : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: const Text('Team Passkey Unlocked!'),
               content: Column(
@@ -197,7 +197,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141416) : cs.surfaceVariant,
+                    color: isDark ? const Color(0xFF161618) : cs.surfaceVariant,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -230,7 +230,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF141416) : Colors.grey[100]!,
+                      color: isDark ? const Color(0xFF161618) : Colors.grey[100]!,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -263,7 +263,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     '⚠️ Make sure you enter a valid Transaction ID. If incorrect, your registration request will not be approved.',
                     style: GoogleFonts.inter(
                       fontSize: 11,
-                      color: const Color(0xFFF03D4E),
+                      color: const Color(0xFFE63946),
                       fontWeight: FontWeight.w500,
                       height: 1.4,
                     ),
@@ -306,7 +306,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!,
+                    fillColor: isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!,
                   ),
                 ),
                 const SizedBox(height: 32),

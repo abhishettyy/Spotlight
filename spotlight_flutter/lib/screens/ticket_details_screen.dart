@@ -14,7 +14,7 @@ class TicketDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
-    final cardBg = isDark ? const Color(0xFF141416) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     final title = ticket['title'] ?? 'No Title';
@@ -79,13 +79,7 @@ class TicketDetailsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: cardBg,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
-                    blurRadius: 24,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                
               ),
               child: Column(
                 children: [
@@ -133,7 +127,7 @@ class TicketDetailsScreen extends StatelessWidget {
                                     ),
                                     duration: const Duration(seconds: 2),
                                     behavior: SnackBarBehavior.floating,
-                                    backgroundColor: const Color(0xFF141416),
+                                    backgroundColor: const Color(0xFF161618),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
                                 );
@@ -143,7 +137,7 @@ class TicketDetailsScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!,
+                                color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!,
                                 borderRadius: BorderRadius.circular(20),
                                 border: isDark ? null : Border.all(color: Colors.grey[300]!),
                               ),
@@ -175,7 +169,7 @@ class TicketDetailsScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E1E22) : Colors.grey[50]!,
+                              color: isDark ? const Color(0xFF1D1D20) : Colors.grey[50]!,
                               borderRadius: BorderRadius.circular(12),
                               border: isDark ? null : Border.all(color: Colors.grey[200]!),
                             ),
@@ -269,7 +263,7 @@ class TicketDetailsScreen extends StatelessWidget {
                                 ),
                                 duration: const Duration(seconds: 2),
                                 behavior: SnackBarBehavior.floating,
-                                backgroundColor: const Color(0xFF141416),
+                                backgroundColor: const Color(0xFF161618),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             );
@@ -345,7 +339,7 @@ class TicketDetailsScreen extends StatelessWidget {
 
   Widget _infoChip(BuildContext context, IconData icon, String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1E1E22) : Colors.grey[100]!;
+    final bg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
     final textColor = isDark ? Colors.white70 : Colors.grey[700]!;
 
     return Container(

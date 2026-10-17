@@ -63,7 +63,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF1E1E22)
+                                    ? const Color(0xFF1D1D20)
                                     : Colors.grey[100],
                                 shape: BoxShape.circle,
                               ),
@@ -246,7 +246,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildEmpty(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     return Center(
@@ -326,7 +326,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildCard(BuildContext context, NotificationModel n) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF141416) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
     final timeText = isDark ? const Color(0xFF808080) : Colors.grey[400]!;
     final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
@@ -339,13 +339,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
         border: isDark ? null : Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),

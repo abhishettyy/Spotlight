@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
+import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
 
 const router = Router();
 
@@ -204,55 +205,11 @@ router.get('/:id/registrations', requireAuth, async (req: Request, res: Response
 
     const registrations = await prisma.registration.findMany({
       where: { eventId: id },
-      include: { profile: true, team: true, event: true },
+      include: { profile: true, team: true, event: { select: { fee: true } } },
       orderBy: { createdAt: 'desc' },
     });
 
-    const teamIdsWithPayment = new Set(
-      registrations
-        .filter(r => r.teamId && r.transactionId !== null)
-        .map(r => r.teamId)
-    );
-
-    const confirmedTeamIds = new Set(
-      registrations
-        .filter(r => r.teamId && r.status === 'CONFIRMED')
-        .map(r => r.teamId)
-    );
-
-    const filteredRegistrations = registrations.filter(r => {
-      if (r.event.fee === 0) return true;
-      if (r.status === 'CONFIRMED' || r.status === 'REJECTED') return true;
-      if (r.transactionId !== null) return true;
-      if (r.teamId && teamIdsWithPayment.has(r.teamId)) return true;
-      if (r.teamId && confirmedTeamIds.has(r.teamId)) return true;
-      return false;
-    });
-
-    const mapped = filteredRegistrations.map(r => ({
-      id: r.id,
-      status: r.status,
-      checkedInAt: (r as any).checkedInAt,
-      payment_proof_url: r.paymentProofUrl,
-      transaction_id: r.transactionId,
-      created_at: r.createdAt,
-      user: r.profile ? {
-        id: r.profile.id,
-        name: r.profile.fullName,
-        email: r.profile.email,
-        usn: r.profile.usn,
-        branch: r.profile.branch,
-        phone: r.profile.phone,
-        year: r.profile.year,
-        sem: r.profile.sem,
-      } : null,
-      team: r.team ? {
-        id: r.team.id,
-        name: r.team.teamName,
-        passkey: r.team.passkey,
-        leaderId: r.team.leaderId,
-      } : null,
-    }));
+    const mapped = filterVisibleRegistrations(registrations).map(mapClubRegistration);
 
     return res.status(200).json({ registrations: mapped });
   } catch (error: any) {
