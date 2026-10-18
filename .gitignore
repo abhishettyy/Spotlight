@@ -68,7 +68,7 @@ web_modules/
 # dotenv environment variable files
 .env
 .env.*
-!.env.example
+!.env*.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -151,3 +151,48 @@ vite.config.ts.timestamp-*
 # GoDaddy cPanel deployment scripts & docs
 godaddy_cpanel_deployment/
 GODADDY_CPANEL_DEPLOYMENT_GUIDE.md
+PRIVACY_POLICY_APP.md
+PRIVACY_POLICY_DASHBOARD.md
+PROJECT_RULES.md
+
+# IDE and operating-system files
+.idea/
+.history/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local databases, exports, and backups
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.tmp
+*.orig
+
+# Signing keys and private certificates
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+**/key.properties
+
+# Flutter and Android local tooling
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/.gradle/
+**/captures/
+**/generated/
+**/local.properties
+.agent/
+.agents/
+.gemini/
+.gsd/
+adapters/
+scripts/
+model_capabilities.yaml

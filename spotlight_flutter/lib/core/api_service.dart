@@ -477,6 +477,29 @@ class ApiService {
     }
   }
 
+  /// Signs in an existing student account with a Google ID token (no account creation).
+  Future<UserModel?> googleLogin({required String idToken}) async {
+    try {
+      final response = await _post(
+        '/auth/google-student',
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'credential': idToken}),
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', data['token'] as String);
+        await prefs.setString('userId', data['profile']['id'] as String);
+        return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
+      } else {
+        throw AppException(data['error'] ?? 'Google sign-in failed');
+      }
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, 'Google sign-in failed. Please check your connection.'));
+    }
+  }
+
   Future<Map<String, int>> fetchProfileStats(String userId) async {
     try {
       final response = await _get(
