@@ -13,9 +13,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white&labelColor=1a1a2e)](#)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=1a1a2e)](#)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white&labelColor=1a1a2e)](#)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=1a1a2e)](#)
+[![MySQL](https://img.shields.io/badge/MySQL-MariaDB-4479A1?style=for-the-badge&logo=mysql&logoColor=white&labelColor=1a1a2e)](#)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white&labelColor=1a1a2e)](#)
-[![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?style=for-the-badge&logo=clerk&logoColor=white&labelColor=1a1a2e)](#)
+[![JWT](https://img.shields.io/badge/Auth-JWT%20%2B%20Google-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white&labelColor=1a1a2e)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-00C896?style=for-the-badge&labelColor=1a1a2e)](#-contributing)
 
 </div>
@@ -133,10 +133,10 @@ A quick tour of what each surface of Spotlight feels like to use:
 
 ### 🌐 Platform-Wide
 
-- 🔐 **Authentication** — Clerk-powered, JWT-secured, synced to the database
+- 🔐 **Authentication** — Email/password (bcrypt) and Google Sign-In, secured with backend-issued JWTs
 - 📡 **Real-Time Notifications** — Instant registration status updates
 - 🎨 **Responsive Design** — Fluid layouts across mobile, tablet, and desktop
-- ⚡ **Modern Stack** — TypeScript, Prisma, PostgreSQL, React, Flutter
+- ⚡ **Modern Stack** — TypeScript, Express, Prisma, MySQL, React, Flutter
 
 ---
 
@@ -146,41 +146,36 @@ A quick tour of what each surface of Spotlight feels like to use:
 flowchart TB
     subgraph Clients["📱 Client Applications"]
         FLUTTER["Spotlight Mobile<br/>(Flutter)"]
-        DASH["Spotlight Dashboard<br/>(React + Vite)"]
-        ADMIN["Spotlight Admin Portal<br/>(React + Vite)"]
+        STUDENT["Student Web App<br/>(React + Vite)"]
+        DASH["Club Dashboard + Admin Console<br/>(React + Vite)"]
     end
 
-    subgraph Edge["🔐 Auth Layer"]
-        CLERK["Clerk Authentication"]
-    end
-
-    subgraph Core["⚙️ Spotlight Backend"]
-        API["Express + TypeScript API"]
-        JWT["JWT Middleware"]
+    subgraph Core["⚙️ Spotlight Backend (Node.js)"]
+        API["Express + TypeScript REST API"]
+        AUTH["Auth Middleware<br/>(JWT / Google ID token)"]
         PRISMA["Prisma ORM"]
     end
 
     subgraph Data["🗄️ Data Layer"]
-        PG[("PostgreSQL Database")]
-        SUPA[("Supabase Storage<br/>(Payment Proofs / Assets)")]
+        DB[("MySQL / MariaDB")]
+        FILES[("File Storage<br/>(upload endpoint on own hosting,<br/>Supabase Storage fallback)")]
     end
 
+    GOOGLE["Google Identity<br/>(Sign-In)"]
+
     FLUTTER -->|HTTPS / REST| API
+    STUDENT -->|HTTPS / REST| API
     DASH -->|HTTPS / REST| API
-    ADMIN -->|HTTPS / REST| API
+    FLUTTER -.->|ID token| GOOGLE
+    STUDENT -.->|ID token| GOOGLE
 
-    FLUTTER --> CLERK
-    DASH --> CLERK
-    ADMIN --> CLERK
-    CLERK -->|User Sync Webhook| API
-
-    API --> JWT
-    JWT --> PRISMA
-    PRISMA --> PG
-    API -->|Upload / Fetch Files| SUPA
+    API --> AUTH
+    AUTH -->|verifies ID tokens| GOOGLE
+    API --> PRISMA
+    PRISMA --> DB
+    API -->|Upload / delete images| FILES
 
     style Clients fill:#1e1b4b,color:#fff
-    style Edge fill:#4c1d95,color:#fff
     style Core fill:#0f172a,color:#fff
     style Data fill:#052e2b,color:#fff
 ```
@@ -259,70 +254,38 @@ flowchart LR
 
 ```
 spotlight/
-├── spotlight_backend/
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── auth.routes.ts
-│   │   │   ├── profiles.routes.ts
-│   │   │   ├── clubs.routes.ts
-│   │   │   ├── events.routes.ts
-│   │   │   ├── registrations.routes.ts
-│   │   │   └── notifications.routes.ts
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   │   ├── auth.middleware.ts
-│   │   │   └── validate.middleware.ts
-│   │   ├── services/
-│   │   ├── utils/
-│   │   ├── prisma/
-│   │   │   ├── schema.prisma
-│   │   │   └── migrations/
-│   │   ├── config/
-│   │   └── index.ts
-│   ├── .env.example
-│   ├── package.json
-│   └── tsconfig.json
+├── spotlight_backend/              # Express + TypeScript REST API
+│   ├── index.ts                    # App entry: middleware, route mounting
+│   ├── config/db.ts                # Prisma client setup
+│   ├── middlewares/auth.ts         # requireAuth / requireOptionalAuth (JWT + Google ID token)
+│   ├── routes/
+│   │   ├── auth.ts                 # signup, login, club login, Google sign-in, passwords
+│   │   ├── profiles.ts
+│   │   ├── clubs.ts
+│   │   ├── events.ts
+│   │   ├── registrations.ts        # solo/team registration, payments, approval, check-in
+│   │   └── notifications.ts
+│   ├── utils/                      # admin bootstrap, registration helpers, storage
+│   ├── prisma/schema.prisma        # Data model
+│   ├── export_postgres_to_mysql.ts # One-off migration script (PostgreSQL → MySQL)
+│   ├── migrate_base64_to_storage.ts# One-off migration (inline base64 images → file storage)
+│   └── .env.example
 │
-├── spotlight_dashboard/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── DashboardHome/
-│   │   │   ├── Events/
-│   │   │   ├── Registrations/
-│   │   │   ├── PaymentVerification/
-│   │   │   ├── QRScanner/
-│   │   │   └── Analytics/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── lib/
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── .env.example
-│   ├── package.json
-│   └── vite.config.ts
+├── spotlight_dashboard/            # React + Vite: club dashboard (/) and admin console (/admin)
+│   └── src/
+│       ├── app/                    # Dashboard, AdminConsole, API client
+│       └── student/                # Student-facing pages bundled with the dashboard
 │
-├── spotlight_flutter/
-│   ├── lib/
-│   │   ├── screens/
-│   │   │   ├── onboarding/
-│   │   │   ├── home/
-│   │   │   ├── event_details/
-│   │   │   ├── registration/
-│   │   │   ├── wallet/
-│   │   │   ├── notifications/
-│   │   │   └── profile/
-│   │   ├── widgets/
-│   │   ├── providers/
-│   │   ├── services/
-│   │   ├── models/
-│   │   └── main.dart
-│   ├── pubspec.yaml
-│   └── android/ ios/
+├── Spotlight_StudentWebApp/        # React + Vite student web app (PWA)
 │
-├── docs/
-│   └── assets/
-│       └── logo.png
+├── spotlight_flutter/              # Flutter student app (Play Store)
+│   └── lib/
+│       ├── core/                   # ApiService + Provider state (auth, events, clubs, ...)
+│       ├── models/
+│       ├── screens/                # home, event details, register, payment, tickets, profile, ...
+│       └── widgets/
 │
+├── spotlight_privacy_policy/       # Static privacy policy site
 ├── LICENSE
 └── README.md
 ```
@@ -339,11 +302,11 @@ spotlight/
 ![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 
 **Auth & Storage**
 
-![Clerk](https://img.shields.io/badge/Clerk-6C47FF?style=for-the-badge&logo=clerk&logoColor=white)
+![Google](https://img.shields.io/badge/Google_Sign--In-4285F4?style=for-the-badge&logo=google&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
@@ -369,10 +332,10 @@ spotlight/
 | **Backend Framework** | Express | REST API routing & middleware |
 | **Language** | TypeScript | Type-safe backend & frontend code |
 | **ORM** | Prisma | Type-safe database access layer |
-| **Database** | PostgreSQL | Primary relational data store |
-| **Authentication** | Clerk | Identity provider & session management |
+| **Database** | MySQL / MariaDB | Primary relational data store (migrated from PostgreSQL) |
+| **Authentication** | bcrypt + Google Sign-In | Password hashing and Google identity |
 | **Authorization** | JWT | Stateless API request authentication |
-| **File Storage** | Supabase Storage | Payment proofs, images, assets |
+| **File Storage** | Upload endpoint on own hosting (Supabase fallback) | Payment proofs, banners, logos |
 | **Dashboard Framework** | React + Vite | Club organizer web console |
 | **Styling** | Tailwind CSS | Utility-first responsive design |
 | **Animation** | Framer Motion | Smooth, premium UI transitions |
@@ -400,10 +363,10 @@ erDiagram
 
     Profile {
         string id PK
-        string clerkId
-        string name
+        string fullName
         string email
-        string role
+        string usn
+        string branch
     }
     Club {
         string id PK
@@ -450,7 +413,7 @@ erDiagram
 
 | Entity | Description |
 |---|---|
-| **Profile** | Represents any platform user (student, organizer, or admin), synced from Clerk |
+| **Profile** | Represents a student / platform user (email-password or Google account) |
 | **Club** | A registered campus organization allowed to host events |
 | **Event** | A single event with metadata such as fee, capacity, and schedule |
 | **Team** | A group of participants registering together for a team event |
@@ -462,32 +425,39 @@ erDiagram
 
 ## 🔐 Authentication Flow
 
-Spotlight uses **Clerk** as the identity provider across all client applications, with backend-issued **JWTs** securing every API request.
+Spotlight uses its own authentication: passwords are hashed with **bcrypt**, Google Sign-In is supported for students, and the backend issues **JWTs** that secure every protected API request.
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant C as Client App
-    participant CL as Clerk
+    participant G as Google
     participant API as Spotlight Backend
-    participant DB as PostgreSQL
+    participant DB as MySQL
 
-    U->>C: Sign up / Sign in
-    C->>CL: Authenticate
-    CL-->>C: Session + Clerk User ID
-    CL->>API: Webhook (user.created / user.updated)
-    API->>DB: Upsert Profile record
-    C->>API: Request with Clerk session token
-    API->>API: Verify token & attach JWT context
+    alt Email + password
+        U->>C: Enter email / password
+        C->>API: POST /api/auth/login
+        API->>DB: Find profile, bcrypt.compare
+    else Google Sign-In
+        U->>G: Sign in with Google
+        G-->>C: Google ID token
+        C->>API: POST /api/auth/google-student (ID token)
+        API->>G: Verify token (audience = our client ID)
+        API->>DB: Upsert Profile
+    end
+    API-->>C: JWT (signed with JWT_SECRET)
+    C->>API: Requests with Authorization: Bearer <JWT>
+    API->>API: requireAuth middleware verifies token
     API->>DB: Authorize & fetch resource
     API-->>C: Response
 ```
 
-1. A user signs up or logs in through Clerk on any client (Dashboard, Admin, or Flutter app).
-2. Clerk issues a session and fires a webhook to the backend.
-3. The backend **syncs** the Clerk user into the local `Profile` table, assigning a role.
-4. Every subsequent API request carries the Clerk session token, which the backend verifies and maps to an internal JWT-authorized context.
-5. Role-based middleware then authorizes access to student, organizer, or admin-only routes.
+1. Students sign up with email/password (stored as a bcrypt hash) or sign in with Google.
+2. For Google, the backend verifies the ID token against the app's Google Client ID before trusting it.
+3. The backend returns a signed JWT; clients send it as a `Bearer` token on every request.
+4. The `requireAuth` middleware verifies the token and attaches the user ID to the request.
+5. Clubs log in separately with their own credentials, and new clubs can only onboard with an admin-issued, single-use invite key.
 
 ---
 
@@ -495,7 +465,7 @@ sequenceDiagram
 
 | Router | Base Path | Responsibility |
 |---|---|---|
-| **auth** | `/api/auth` | Session verification, Clerk webhook handling, role assignment |
+| **auth** | `/api/auth` | Signup, login, club login, Google sign-in, password change |
 | **profiles** | `/api/profiles` | Fetch/update user profile data |
 | **clubs** | `/api/clubs` | Club creation, approval, and directory listing |
 | **events** | `/api/events` | Event creation, editing, discovery, and filtering |
@@ -503,7 +473,7 @@ sequenceDiagram
 | **notifications** | `/api/notifications` | Fetch, mark-as-read, and push notification triggers |
 
 ### `auth`
-Handles Clerk webhook ingestion, verifies incoming session tokens on protected routes, and issues role-scoped authorization context used by every downstream router.
+Handles student signup and login (bcrypt), club login, Google Sign-In token verification, and password changes. Issues the JWTs that every protected route checks via the `requireAuth` middleware.
 
 ### `profiles`
 Exposes endpoints to retrieve the logged-in user's profile, update display information, and allow admins to look up any profile by ID.
@@ -539,7 +509,7 @@ Delivers status-change notifications (registration approved, rejected, event rem
 
 | Screen | Purpose |
 |---|---|
-| **Onboarding** | Sign up / sign in via Clerk |
+| **Onboarding** | Sign up with email/password or Google Sign-In |
 | **Home** | Browse featured and upcoming events |
 | **Event Details** | View full event info, fee, capacity, and rules |
 | **Registration** | Solo or team registration with payment upload |
@@ -562,14 +532,14 @@ Delivers status-change notifications (registration approved, rejected, event rem
 
 ## 🔒 Security
 
-Spotlight is built with a security-first mindset across every layer:
+- 🔑 **JWT** — Protected routes require a valid token signed with a server-side secret; the server refuses to start without `JWT_SECRET`
+- 🔐 **Password Hashing** — Student and club passwords are stored only as bcrypt hashes
+- 🪪 **Google Sign-In** — ID tokens are verified against the app's Google Client ID
+- 🎟️ **Invite Keys** — Single-use codes gate which clubs may onboard onto the platform
+- 🧾 **Secrets in environment** — Database URL, JWT secret, admin and upload secrets come from environment variables, never from source code
+- ⚛️ **Transactions** — Capacity checks and registration inserts run inside a database transaction to avoid overbooking
 
-- 🔑 **JWT** — Every API request beyond public routes requires a valid, verified token
-- 🪪 **Clerk** — Delegated, industry-standard identity and session management
-- 🔐 **Password Hashing** — Credential handling is fully delegated to Clerk's secure infrastructure (no plaintext storage, ever)
-- 🎟️ **Invite Keys** — Single-use, expirable codes gate which clubs may onboard onto the platform
-- 🧑‍⚖️ **Authorization** — Role-based access control (Student / Organizer / Admin) enforced at the middleware layer
-- ✅ **Validation** — Strict request schema validation on every mutating endpoint to prevent malformed or malicious input
+**Known gaps / next steps:** schema-based request validation (e.g. Zod), rate limiting on auth routes, and restricting CORS to known origins.
 
 ---
 
@@ -603,11 +573,10 @@ Spotlight is built with a security-first mindset across every layer:
 ### Prerequisites
 
 - Node.js ≥ 20.x
-- PostgreSQL ≥ 15
+- MySQL 8 / MariaDB
 - Flutter SDK ≥ 3.x
 - pnpm / npm / yarn
-- A Clerk account
-- A Supabase project
+- A Google OAuth Client ID (for Google Sign-In)
 
 ### 1️⃣ Spotlight Backend
 
@@ -615,8 +584,8 @@ Spotlight is built with a security-first mindset across every layer:
 cd spotlight_backend
 npm install
 cp .env.example .env      # fill in your credentials
-npx prisma migrate dev
 npx prisma generate
+npx prisma db push      # create tables from schema.prisma
 npm run dev
 ```
 
@@ -645,42 +614,42 @@ flutter run
 
 ## 🔧 Environment Variables
 
-### `spotlight_backend/.env.example`
+### `spotlight_backend/.env`
 
 ```env
-# Server
-PORT=4000
-NODE_ENV=development
+# Database (MySQL / MariaDB)
+DATABASE_URL="mysql://user:password@localhost:3306/spotlight"
 
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/spotlight"
+PORT=5000
 
-# Clerk
-CLERK_SECRET_KEY="sk_test_xxxxxxxxxxxxxxxx"
-CLERK_WEBHOOK_SECRET="whsec_xxxxxxxxxxxxxxxx"
+# Required: the server will not start without it
+JWT_SECRET="a-long-random-string"
+ADMIN_SECRET="admin-console-secret"
 
-# JWT
-JWT_SECRET="your-super-secret-jwt-key"
-JWT_EXPIRES_IN="7d"
+GOOGLE_CLIENT_ID="your-google-oauth-client-id.apps.googleusercontent.com"
 
-# Supabase Storage
+# Image uploads (must match the secret configured on the upload endpoint)
+GODADDY_UPLOAD_URL="https://your-domain/upload.php"
+UPLOAD_SECRET="a-long-random-string"
+
+# Optional: Supabase Storage fallback for uploads
 SUPABASE_URL="https://xxxxxxxxxxxx.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="xxxxxxxxxxxxxxxx"
-SUPABASE_BUCKET="spotlight-uploads"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
-### `spotlight_dashboard/.env.example`
+### `spotlight_dashboard/.env` and `Spotlight_StudentWebApp/.env`
 
 ```env
-VITE_API_BASE_URL="http://localhost:4000/api"
-VITE_CLERK_PUBLISHABLE_KEY="pk_test_xxxxxxxxxxxxxxxx"
+VITE_API_URL="http://localhost:5000/api"
+VITE_GOOGLE_CLIENT_ID="your-google-oauth-client-id.apps.googleusercontent.com"
 ```
 
-### `spotlight_flutter/.env`
+### Flutter
 
-```env
-API_BASE_URL=http://localhost:4000/api
-CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxx
+The API URL is passed at build time:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:5000/api
 ```
 
 ---
