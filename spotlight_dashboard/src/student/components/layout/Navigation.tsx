@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { Home, Ticket, Users, User, Bell, Download, LogOut } from 'lucide-react';
+import { Home, Ticket, Users, User, Bell, Download, LogOut, Sun, Moon } from 'lucide-react';
 import { useNotificationsStore } from '@student/store/notificationsStore';
 import { usePWAInstall } from '@student/hooks/usePWAInstall';
 import { useSignOut } from '@student/hooks/useSignOut';
+import { useThemeStore } from '@student/store/themeStore';
 
 const NAV_ITEMS = [
   { icon: Home, label: 'Home', path: '/' },
-  { icon: Ticket, label: 'Events', path: '/tickets' },
+  { icon: Ticket, label: 'My Events', path: '/tickets' },
   { icon: Users, label: 'Clubs', path: '/clubs' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];
@@ -18,6 +19,7 @@ export function Sidebar() {
   const location = useLocation();
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
   const signOut = useSignOut();
+  const { isDark, toggle: toggleTheme } = useThemeStore();
 
   const items = [...NAV_ITEMS, { icon: Bell, label: 'Notifications', path: '/notifications', badge: unreadCount }];
 
@@ -43,6 +45,10 @@ export function Sidebar() {
       </nav>
 
       <div className="stu-sidebar-foot">
+        <button className="stu-nav-item" onClick={toggleTheme}>
+          {isDark ? <Sun size={17} strokeWidth={1.9} /> : <Moon size={17} strokeWidth={1.9} />}
+          <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
         <SidebarInstallBtn />
         <button className="stu-nav-item" onClick={signOut} style={{ color: 'var(--sk-danger)' }}>
           <LogOut size={17} strokeWidth={1.9} />

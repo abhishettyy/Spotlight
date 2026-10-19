@@ -174,7 +174,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
   Widget _buildClubTile(ClubModel club) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     return InkWell(

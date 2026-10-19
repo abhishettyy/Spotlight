@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, Bell, X, WifiOff, Users } from 'lucide-react';
+import { Search, Bell, X, WifiOff, Users, Download, Sun, Moon } from 'lucide-react';
+import { toast } from 'sonner';
+import { usePWAInstall } from '@student/hooks/usePWAInstall';
+import { IOSInstallModal } from '@student/components/ui/IOSInstallModal';
 import { useEventsStore } from '@student/store/eventsStore';
 import { useClubsStore } from '@student/store/clubsStore';
 import { useNotificationsStore } from '@student/store/notificationsStore';
 import { useUserStore } from '@student/store/userStore';
+import { useThemeStore } from '@student/store/themeStore';
 import { ClubModel } from '@student/types/club';
 import EventCard from '@student/components/ui/EventCard';
 import { LoadingSpinner } from '@student/components/ui/LoadingSpinner';
@@ -151,6 +155,9 @@ export default function HomePage() {
             {currentUser?.name ?? 'User'}
           </h1>
         </div>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+        <MobileInstallBtn />
+        <MobileThemeBtn />
         <button
           onClick={() => navigate('/notifications')}
           aria-label="Notifications"
@@ -193,6 +200,7 @@ export default function HomePage() {
             </span>
           )}
         </button>
+        </div>
       </div>
 
       {/* Search bar */}
@@ -299,5 +307,79 @@ function ClubAvatar({ club, onClick }: { club: ClubModel; onClick: () => void })
         {club.name}
       </p>
     </div>
+  );
+}
+
+// Mobile install button: the sidebar's Install App button only exists on desktop
+function MobileInstallBtn() {
+  const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
+  const [showIOSModal, setShowIOSModal] = useState(false);
+
+  if (isInstalled || (!canInstall && !isIOS)) return null;
+
+  const handleInstall = async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+    const outcome = await install();
+    if (outcome === 'accepted') {
+      toast.success('Spotlight installed! Launch it from your home screen.');
+    }
+  };
+
+  return (
+    <>
+      <button
+        className="stu-mobile-only"
+        onClick={handleInstall}
+        aria-label="Install app"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--sk-shadow)',
+          borderRadius: 99,
+          height: 44,
+          padding: '0 14px',
+          cursor: 'pointer',
+          color: 'var(--text)',
+          alignItems: 'center',
+          gap: 6,
+          fontFamily: 'var(--font-sans)',
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+      >
+        <Download size={18} />
+        Install
+      </button>
+      {showIOSModal && <IOSInstallModal onClose={() => setShowIOSModal(false)} />}
+    </>
+  );
+}
+
+// Mobile theme switch: the sidebar's theme button only exists on desktop
+function MobileThemeBtn() {
+  const { isDark, toggle } = useThemeStore();
+  return (
+    <button
+      className="stu-mobile-only"
+      onClick={toggle}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--sk-shadow)',
+        borderRadius: '50%',
+        width: 44,
+        height: 44,
+        cursor: 'pointer',
+        color: 'var(--text)',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {isDark ? <Sun size={20} /> : <Moon size={20} />}
+    </button>
   );
 }

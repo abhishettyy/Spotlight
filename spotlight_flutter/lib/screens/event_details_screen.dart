@@ -127,50 +127,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
   }
 
-  Map<String, String> _parseDate(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) {
-      return {'day': '01', 'month': 'JAN', 'weekday': 'Monday', 'year': '2026'};
-    }
-    try {
-      final parsed = DateTime.tryParse(dateStr)?.toLocal();
-      if (parsed != null) {
-        final months = [
-          'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-          'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
-        ];
-        final weekdays = [
-          'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-        ];
-        return {
-          'day': parsed.day.toString().padLeft(2, '0'),
-          'month': months[parsed.month - 1],
-          'weekday': weekdays[parsed.weekday - 1],
-          'year': parsed.year.toString(),
-        };
-      }
-    } catch (_) {}
-
-    final parts = dateStr.split('-');
-    if (parts.length == 3) {
-      final day = parts[2];
-      final monthIndex = int.tryParse(parts[1]);
-      if (monthIndex != null && monthIndex >= 1 && monthIndex <= 12) {
-        final months = [
-          'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-          'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
-        ];
-        return {
-          'day': day.padLeft(2, '0'),
-          'month': months[monthIndex - 1],
-          'weekday': 'Date',
-          'year': parts[0],
-        };
-      }
-    }
-
-    return {'day': '??', 'month': 'DATE', 'weekday': dateStr, 'year': ''};
-  }
-
   void _openFullPoster(String? url) {
     if (url == null || url.isEmpty) return;
     showDialog(
@@ -217,11 +173,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final pageBg = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF1F0EF);
+    final pageBg = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8);
     final cardBg = isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!;
-    final textPrimary = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
+    final textPrimary = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
     final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
-    final footerBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final footerBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
 
     final eventsProvider = Provider.of<EventsProvider>(context);
     final event = eventsProvider.events.firstWhere(

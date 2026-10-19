@@ -268,7 +268,6 @@ class ApiService {
 
   Future<Map<String, dynamic>> submitPayment({
     required String registrationId,
-    String? base64Image,
     required String transactionId,
   }) async {
     try {
@@ -277,18 +276,17 @@ class ApiService {
         '/registrations/$registrationId/payment',
         headers: headers,
         body: json.encode({
-          if (base64Image != null) 'paymentProof': base64Image,
           'transactionId': transactionId,
         }),
       );
 
       final data = json.decode(response.body);
       if (response.statusCode != 200) {
-        throw AppException(data['error'] ?? 'Failed to upload payment proof');
+        throw AppException(data['error'] ?? 'Failed to submit payment details');
       }
       return data as Map<String, dynamic>;
     } catch (e) {
-      throw AppException(formatExceptionMessage(e, 'Failed to upload payment proof. Please check your connection.'));
+      throw AppException(formatExceptionMessage(e, 'Failed to submit payment details. Please check your connection.'));
     }
   }
 

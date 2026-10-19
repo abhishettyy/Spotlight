@@ -123,7 +123,6 @@ class _SmartHttpImage extends StatefulWidget {
 class _SmartHttpImageState extends State<_SmartHttpImage> {
   static final Map<String, Uint8List> _cache = {};
   Uint8List? _bytes;
-  bool _isLoading = true;
   bool _hasError = false;
 
   @override
@@ -146,7 +145,6 @@ class _SmartHttpImageState extends State<_SmartHttpImage> {
       if (mounted) {
         setState(() {
           _bytes = _cache[cleanUriStr];
-          _isLoading = false;
           _hasError = false;
         });
       }
@@ -162,14 +160,12 @@ class _SmartHttpImageState extends State<_SmartHttpImage> {
         if (mounted) {
           setState(() {
             _bytes = response.bodyBytes;
-            _isLoading = false;
             _hasError = false;
           });
         }
       } else {
         if (mounted) {
           setState(() {
-            _isLoading = false;
             _hasError = true;
           });
         }
@@ -185,7 +181,6 @@ class _SmartHttpImageState extends State<_SmartHttpImage> {
             if (mounted) {
               setState(() {
                 _bytes = response.bodyBytes;
-                _isLoading = false;
                 _hasError = false;
               });
             }
@@ -196,7 +191,6 @@ class _SmartHttpImageState extends State<_SmartHttpImage> {
 
       if (mounted) {
         setState(() {
-          _isLoading = false;
           _hasError = true;
         });
       }

@@ -14,7 +14,7 @@ class TicketDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     final title = ticket['title'] ?? 'No Title';

@@ -7,7 +7,7 @@ import { STUDENT_LOGIN_URL, FC, F_LOGO, FM, FB } from "./shared";
 
 export const FEATURES = [
   { icon: Calendar, title: "Liquid Event Creation", desc: "Craft events with a fluid step-by-step builder. From concept to live in under two minutes."      },
-  { icon: Shield,   title: "Payment Moderation",    desc: "QR-based verification with screenshot uploads, manual approval pipelines, and audit trails."     },
+  { icon: Shield,   title: "Payment Moderation",    desc: "QR-based UPI payments verified by transaction ID, with manual approval and audit trails."     },
   { icon: Zap,      title: "Smart Publishing",      desc: "Free events go live instantly. Paid events enter the intelligent moderation stream automatically." },
 ];
 
@@ -230,7 +230,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
 
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Participant Information Available to Clubs</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, and UPI Transaction ID (UTR) with you to facilitate moderation.</p>
                     </div>
 
                     <div>
@@ -240,7 +240,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
 
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Third-Party Services</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We rely on secure authentication services, Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We rely on secure authentication services, Supabase Storage (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
                     </div>
                   </>
                 )}

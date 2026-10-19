@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../core/theme_provider.dart';
 import '../core/auth_provider.dart';
 import '../core/user_provider.dart';
 import '../core/api_service.dart';
@@ -151,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (sheetContext) {
         final cs = Theme.of(sheetContext).colorScheme;
         final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+        final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
         final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
         final labelColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
@@ -476,7 +475,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
+              backgroundColor: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Row(
                 children: [
@@ -638,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final theme = Theme.of(context);
             final cs = theme.colorScheme;
             final isDark = theme.brightness == Brightness.dark;
-            final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+            final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
             final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
             final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
@@ -924,11 +923,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final surfaceColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
 
     final tileColor = Theme.of(context).cardTheme.color ?? surfaceColor;
 
@@ -992,7 +989,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
+                                  color: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
                                   borderRadius: BorderRadius.circular(16),
                                   border: isDark ? null : Border.all(color: Colors.grey.shade300, width: 1),
                                   boxShadow: null,
@@ -1234,7 +1231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height: 128,
           constraints: const BoxConstraints(maxHeight: 128),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
+            color: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(20),
             border: isDark ? null : Border.all(color: Colors.grey.shade200),
             boxShadow: null,
@@ -1326,30 +1323,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildThemeTag(BuildContext context, String label, String value, bool isDark, ColorScheme cs) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            color: cs.primary,
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: cs.onBackground,
-          ),
-        ),
-      ],
-    );
-  }
 }

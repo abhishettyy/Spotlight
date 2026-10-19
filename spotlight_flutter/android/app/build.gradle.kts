@@ -48,12 +48,11 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-        }
-    }
-
-    packaging {
-        jniLibs {
-            keepDebugSymbols.add("**/*.so")
+            // Ship stripped native libraries; the symbols go into the AAB separately so
+            // Play Console can still symbolicate native crashes
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
     }
 }

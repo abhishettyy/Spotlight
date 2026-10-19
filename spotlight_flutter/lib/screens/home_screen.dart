@@ -2,15 +2,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'event_details_screen.dart';
-import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
 import '../core/user_provider.dart';
 import '../core/notifications_provider.dart';
 import '../core/clubs_provider.dart';
+import '../core/theme_provider.dart';
 import 'all_events_screen.dart';
-import 'club_events_screen.dart';
 import 'package:spotlight_flutter/models/models.dart';
 import '../core/smooth_route.dart';
 import '../core/custom_toast.dart';
@@ -74,9 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.colorScheme.primary;
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -131,6 +130,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
+                        GestureDetector(
+                          onTap: () => context.read<ThemeProvider>().toggleDarkMode(),
+                          child: Semantics(
+                            button: true,
+                            label: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.grey[200]!),
+                              ),
+                              child: Icon(
+                                  isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                                  color: textColor,
+                                  size: 20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -252,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ? primaryColor
                                     : (isDark
                                         ? const Color(0xFF161618)
-                                        : const Color(0xFFF9F9F8)),
+                                        : const Color(0xFFFFFFFF)),
                                 borderRadius: BorderRadius.circular(24),
                                 border: isActive || isDark
                                     ? null
@@ -429,7 +451,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   }
-                  final now = DateTime.now();
                   final filters = _buildFilters(provider.events);
                   final filteredEvents = provider.events.where((e) {
                     final isUpcoming = e.isUpcoming;
@@ -670,7 +691,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildEventCard(EventModel event) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String day = '01';
     String month = 'JAN';

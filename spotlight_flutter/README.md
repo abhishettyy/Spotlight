@@ -1,17 +1,15 @@
-# spotlight_flutter
+# Spotlight — Flutter app
 
-A new Flutter project.
+Student Android app for Spotlight ([Google Play](https://play.google.com/store/apps/details?id=com.spotlight.connect)).
 
-## Getting Started
+```bash
+flutter pub get
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api   # against a local API
+flutter build appbundle --release                                  # Play Store bundle
+```
 
-This project is a starting point for a Flutter application.
+Without `--dart-define` the app talks to the production API. Release signing reads `android/key.properties` and the upload keystore, which are kept out of git.
 
-A few resources to get you started if this is your first Flutter project:
+Code layout: `lib/core` (API client, providers, theme), `lib/models`, `lib/screens`, `lib/widgets`.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See the [root README](../README.md) for the full project overview.

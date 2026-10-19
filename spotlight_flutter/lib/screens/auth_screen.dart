@@ -7,8 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import '../core/auth_provider.dart';
-import 'main_layout.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import '../core/user_provider.dart';
 import '../core/api_service.dart';
@@ -88,21 +86,9 @@ class _AuthScreenState extends State<AuthScreen> {
     return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
   }
 
-  bool get _isPasswordValid {
-    return _passwordController.text.trim().isNotEmpty;
-  }
-
-  bool get _isNameValid {
-    return _nameController.text.trim().isNotEmpty;
-  }
-
   bool get _isUsnValid {
     final usn = _usnController.text.trim().toUpperCase();
     return usn.startsWith('1MS') && usn.length >= 5;
-  }
-
-  bool get _isBranchValid {
-    return _branchController.text.trim().isNotEmpty;
   }
 
   bool get _isYearValid {
@@ -125,80 +111,6 @@ class _AuthScreenState extends State<AuthScreen> {
   bool get _isPhoneValid {
     final phone = _phoneController.text.trim();
     return RegExp(r'^\d{10}$').hasMatch(phone);
-  }
-
-  bool get _isFormValid {
-    if (isLogin) {
-      return _isEmailValid && _isPasswordValid;
-    } else {
-      return _isNameValid &&
-          _isEmailValid &&
-          _isPasswordValid &&
-          _isUsnValid &&
-          _isBranchValid &&
-          _isYearValid &&
-          _isSemValid &&
-          _isPhoneValid;
-    }
-  }
-
-  Future<void> _handleAuthentication({String? token, String? userId, String? email, String? name}) async {
-    setState(() => _isLoading = true);
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
-      final apiService = ApiService();
-
-      if (token != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', token);
-        await authProvider.tryAutoLogin();
-      }
-
-      final user = await apiService.checkAndSyncProfile(
-        userId ?? authProvider.userId ?? 'temp_user',
-        email ?? _emailController.text.trim().toLowerCase(),
-        name ?? _nameController.text.trim(),
-        usn: !isLogin ? _usnController.text.trim().toUpperCase() : null,
-        branch: !isLogin ? _branchController.text.trim() : null,
-        phone: !isLogin ? _phoneController.text.trim() : null,
-      );
-
-      if (user != null) {
-        userProvider.setCurrentUser(user);
-
-        await eventsProvider.loadEvents();
-
-        Provider.of<NotificationsProvider>(context, listen: false).load();
-
-        if (mounted) {
-          showSpotlightToast(
-            context,
-            isLogin ? 'Signed in successfully!' : 'Account created successfully!',
-            icon: Icons.check_circle_rounded,
-          );
-
-          if (user.isProfileIncomplete) {
-            Navigator.pushReplacementNamed(context, '/onboarding');
-          } else {
-            Navigator.pushReplacementNamed(context, '/main');
-          }
-        }
-      } else {
-        throw AppException("Failed to sync profile with server.");
-      }
-    } catch (e) {
-      if (mounted) {
-        showSpotlightToast(
-          context,
-          '$e',
-          isError: true,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -794,25 +706,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _avatarCircle(double left, Color color) {
-    return Positioned(
-      left: left,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            width: 2.5,
-          ),
-        ),
-        child: Icon(Icons.person, color: Colors.white, size: 18),
-      ),
-    );
-  }
-
   Widget _benefitItem(
     BuildContext context, {
     required IconData icon,
@@ -1047,4 +940,4 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     );
   }
 }
-
+

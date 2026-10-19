@@ -10,20 +10,20 @@
    Brand colours: Spotlight crimson for primary actions and focus, Green for success, Yellow for warnings, neutral grey for info, thin borders instead of glows. */
 
 :root, .light {
-  --sk-canvas: #f5f5f6;     /* page background */
+  --sk-canvas: #f7f7f8;     /* page background */
   --sk-surface: #ffffff;    /* cards, panels, sidebars */
-  --sk-raised: #efeff1;     /* inputs, hover rows, segmented controls */
+  --sk-raised: #f1f1f3;     /* inputs, hover rows, segmented controls */
   --sk-line: #e4e4e7;       /* borders, dividers */
   --sk-line-strong: #d1d1d6;
   --sk-fg: #18181b;         /* primary text */
-  --sk-muted: #5b5b64;      /* secondary text */
-  --sk-faint: #8b8b94;      /* hints, meta */
+  --sk-muted: #52525b;      /* secondary text */
+  --sk-faint: #71717a;      /* hints, meta */
   --sk-brand: #e63946;
   --sk-brand-hover: #cf2c3a;
   --sk-brand-soft: rgba(230, 57, 70, 0.08);
   --sk-ok: #15803d;   --sk-ok-soft: rgba(22, 163, 74, 0.10);
   --sk-warn: #b45309; --sk-warn-soft: rgba(245, 158, 11, 0.14);
-  --sk-info: #5b5b64; --sk-info-soft: rgba(91, 91, 100, 0.08);
+  --sk-info: #52525b; --sk-info-soft: rgba(82, 82, 91, 0.08);
   --sk-shadow: 0 1px 2px rgba(24, 24, 27, 0.04), 0 1px 3px rgba(24, 24, 27, 0.05);
   --sk-shadow-hover: 0 2px 4px rgba(24, 24, 27, 0.04), 0 8px 20px -6px rgba(24, 24, 27, 0.10);
   --sk-shadow-lg: 0 12px 32px -10px rgba(24, 24, 27, 0.16), 0 2px 6px rgba(24, 24, 27, 0.05);
@@ -382,3 +382,7 @@ a { color: inherit; }
   display: inline-grid; place-items: center; background: var(--sk-brand); color: #fff; font: 600 11px/1 var(--font-sans);
 }
 .stu-sidebar-foot { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+
+/* Shown only below the desktop breakpoint, where the sidebar is hidden */
+.stu-mobile-only { display: flex; }
+@media (min-width: 1024px) { .stu-mobile-only { display: none; } }

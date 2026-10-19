@@ -33,10 +33,9 @@ class ClubEventsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
     final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
-    final now = DateTime.now();
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
 
     final eventsProvider = Provider.of<EventsProvider>(context);
 

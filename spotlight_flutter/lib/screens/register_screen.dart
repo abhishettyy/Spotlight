@@ -475,7 +475,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       validator: validator,
       style: GoogleFonts.inter(
         color: enabled 
-            ? (isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C))
+            ? (isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B))
             : (isDark ? Colors.white54 : Colors.grey[600]),
       ),
       decoration: InputDecoration(

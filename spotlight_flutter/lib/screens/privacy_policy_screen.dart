@@ -8,7 +8,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     Widget buildSubSection({required String title, required String body}) {
@@ -40,7 +40,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0E0E10) : const Color(0xFFF1F0EF),
+      backgroundColor: isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8),
       appBar: AppBar(
         title: Text(
           'Privacy Policy',
@@ -109,7 +109,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     ),
                     buildSubSection(
                       title: 'Payment & UTR Verification',
-                      body: 'For paid events, we collect your entered UPI Transaction ID (UTR) and an image upload of the payment proof/screenshot.',
+                      body: 'For paid events, we collect only the UPI Transaction ID (UTR) you enter. No payment screenshots are uploaded.',
                     ),
                   ],
                 ),
@@ -130,7 +130,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 title: '4. Information Shared With Clubs',
                 cardBg: cardBg,
                 child: Text(
-                  'When you register for an event, your profile data (Name, USN, Phone, Email), team name, and proof of payment are shared directly with the club organizing that specific event via their Club Dashboard so they can verify your entry.',
+                  'When you register for an event, your profile data (Name, USN, Phone, Email), team name, and payment Transaction ID are shared directly with the club organizing that specific event via their Club Dashboard so they can verify your entry.',
                   style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
                 ),
               ),
@@ -142,10 +142,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    buildSubSection(
-                      title: 'Camera & Photo Library',
-                      body: 'To select and upload screenshots of payment proofs during event registration.',
-                    ),
                     buildSubSection(
                       title: 'Clipboard Access',
                       body: 'To copy club UPI IDs and registration passkeys to your clipboard.',
@@ -255,29 +251,4 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBulletItem(String prefix, String body) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('• ', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: GoogleFonts.inter(fontSize: 12, height: 1.4, color: Colors.grey[600]),
-                children: [
-                  TextSpan(
-                    text: '$prefix ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: body),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

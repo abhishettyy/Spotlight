@@ -219,7 +219,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                     );
                   }
 
-                  final now = DateTime.now();
                   var events = provider.events.where((e) {
                     final isUpcoming = e.isUpcoming;
                     final matchesQuery = _query.isEmpty ||
@@ -310,7 +309,6 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
 
   Widget _buildEventTile(BuildContext context, EventModel event) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String day = '01';
     String month = 'JAN';

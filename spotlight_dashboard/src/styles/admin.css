@@ -15,5 +15,5 @@
 }
 
 @layer components {
-  .ad-card { @apply rounded-xl border border-ad-line bg-ad-surface; }
+  .ad-card { @apply rounded-xl border border-ad-line bg-ad-surface; box-shadow: var(--sk-shadow); }
 }

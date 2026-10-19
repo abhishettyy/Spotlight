@@ -34,18 +34,18 @@ const _pageTransitionsTheme = PageTransitionsTheme(
 );
 
 class SpotlightTheme {
-  // Skyline design tokens. Light: Radix "Sand"; dark: neutral near-black. Brand: Spotlight crimson.
+  // Skyline design tokens. Light: cool neutral greys on white (matches the web); dark: neutral near-black. Brand: Spotlight crimson.
   static const Color pureWhite    = Color(0xFFFFFFFF);
-  static const Color deepBlack    = Color(0xFF21201C); // light-mode foreground
-  static const Color subtleGray   = Color(0xFFE9E8E6); // light raised
+  static const Color deepBlack    = Color(0xFF18181B); // light-mode foreground
+  static const Color subtleGray   = Color(0xFFF1F1F3); // light raised
   static const Color darkGray     = Color(0xFF161618); // dark surface
   static const Color darkBg       = Color(0xFF0E0E10); // dark canvas
   static const Color lightGray    = Color(0xFFA0A0A8); // dark muted
   static const Color crimsonRed   = Color(0xFFE63946); // brand (name kept so existing call sites keep working)
 
-  static const Color _lightCanvas  = Color(0xFFF1F0EF);
-  static const Color _lightSurface = Color(0xFFF9F9F8);
-  static const Color _lightLine    = Color(0xFFE2E1DE);
+  static const Color _lightCanvas  = Color(0xFFF7F7F8);
+  static const Color _lightSurface = Color(0xFFFFFFFF);
+  static const Color _lightLine    = Color(0xFFE4E4E7);
   static const Color _darkRaised   = Color(0xFF1D1D20);
   static const Color _darkLine     = Color(0xFF2A2A2E);
   static const Color _darkFg       = Color(0xFFEDEDEF);
@@ -114,7 +114,7 @@ class SpotlightTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        hintStyle: GoogleFonts.inter(color: const Color(0xFF82827C)),
+        hintStyle: GoogleFonts.inter(color: const Color(0xFF71717A)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

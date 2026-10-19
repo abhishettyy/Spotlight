@@ -86,7 +86,7 @@ let rawBase = String((import.meta as any).env?.VITE_API_URL || 'http://localhost
 if (!rawBase.endsWith('/api')) {
   rawBase += '/api';
 }
-const BASE_URL = rawBase;
+export const BASE_URL = rawBase;
 
 function sanitizeImageUrls(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;

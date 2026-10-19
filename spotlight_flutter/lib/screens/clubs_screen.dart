@@ -281,7 +281,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8),
+                                        color: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
                                         borderRadius: BorderRadius.circular(16),
                                         border: isDark
                                             ? null

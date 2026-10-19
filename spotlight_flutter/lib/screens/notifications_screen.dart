@@ -246,7 +246,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildEmpty(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF21201C);
+    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
 
     return Center(
@@ -326,10 +326,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildCard(BuildContext context, NotificationModel n) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFF9F9F8);
+    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
     final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
     final timeText = isDark ? const Color(0xFF808080) : Colors.grey[400]!;
-    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
 
     final timeAgo = _formatTime(n.createdAt);
 

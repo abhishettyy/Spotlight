@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Eye, EyeOff, Check, Upload, X, Mail } from "lucide-react";
 import { updateClub, changePassword, sanitizeErrorMessage } from "../api";
-import { FC, FM, FB } from "./shared";
+import { FC, FM, FB, fileToBase64 } from "./shared";
 
 export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { club: any; profile: any; getToken: () => Promise<string | null>; onUpdate: () => void; onLogout: () => void }) {
   const user = profile;
@@ -90,50 +90,6 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
     } finally {
       setIsUpdatingPassword(false);
     }
-  };
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (!file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-        return;
-      }
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 1200;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(event.target?.result as string);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.75));
-        };
-        img.onerror = error => reject(error);
-      };
-      reader.onerror = error => reject(error);
-    });
   };
 
   const handleSaveInit = () => {
@@ -451,7 +407,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Participant Information Available to Clubs</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, UPI Transaction ID (UTR), and payment proof screenshot URL with you to facilitate moderation.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, and UPI Transaction ID (UTR) with you to facilitate moderation.</p>
                   </div>
 
                   <div>
@@ -461,7 +417,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Third-Party Services</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Clerk (authentication), Supabase Storage (storing logos, posters, and user payment proof screenshots), and PostgreSQL databases to run the infrastructure.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Clerk (authentication), Supabase Storage (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
                   </div>
 
                   <div>

@@ -347,7 +347,6 @@ class _TicketScreenState extends State<TicketScreen> {
 
   Widget _buildSavedEventCard(EventModel event) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String day = '01';
     String month = 'JAN';
@@ -809,7 +808,7 @@ class _TicketScreenState extends State<TicketScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161618) : const Color(0xFFE9E8E6),
+                        color: isDark ? const Color(0xFF161618) : const Color(0xFFF1F1F3),
                         borderRadius: BorderRadius.circular(12),
                         border: isDark ? null : Border.all(color: Colors.black.withOpacity(0.05)),
                       ),

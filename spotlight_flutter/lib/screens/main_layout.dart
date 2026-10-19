@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../core/theme.dart';
-import '../core/notifications_provider.dart';
 import 'home_screen.dart';
 import 'clubs_screen.dart';
 import 'ticket_screen.dart';
@@ -72,7 +70,7 @@ class _MainLayoutState extends State<MainLayout> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildNavItem(0, Icons.home_rounded, 'Home'),
-                  _buildNavItem(1, Icons.local_activity_outlined, 'Events'),
+                  _buildNavItem(1, Icons.local_activity_outlined, 'My Events'),
                   _buildNavItem(2, Icons.groups_outlined, 'Clubs'),
                   _buildNavItem(3, Icons.person_outline_rounded, 'Profile'),
                 ],
