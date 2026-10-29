@@ -178,9 +178,6 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId') ?? '';
-
       final response = await _post(
         '/register',
         headers: headers,
@@ -188,7 +185,6 @@ class ApiService {
           'eventId': eventId,
           'name': name,
           'usn': usn,
-          'clerkUserId': userId,
         }),
       );
 
@@ -210,9 +206,6 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId') ?? '';
-
       final response = await _post(
         '/teams/create',
         headers: headers,
@@ -220,7 +213,6 @@ class ApiService {
           'eventId': eventId,
           'teamName': teamName,
           'leaderUsn': leaderUsn,
-          'clerkUserId': userId,
         }),
       );
 
@@ -244,16 +236,12 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId') ?? '';
-
       final response = await _post(
         '/teams/join',
         headers: headers,
         body: json.encode({
           'eventId': eventId,
           'passkey': passkey,
-          'clerkUserId': userId,
         }),
       );
 
@@ -502,7 +490,7 @@ class ApiService {
     try {
       final response = await _get(
         '/profiles/$userId/stats',
-        headers: {'Content-Type': 'application/json'},
+        headers: await _getHeaders(),
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -521,7 +509,7 @@ class ApiService {
     try {
       final response = await _get(
         '/profiles/$userId',
-        headers: {'Content-Type': 'application/json'},
+        headers: await _getHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -536,45 +524,7 @@ class ApiService {
     }
   }
 
-  Future<UserModel?> checkAndSyncProfile(
-    String clerkUserId,
-    String email,
-    String name, {
-    String? usn,
-    String? branch,
-    String? phone,
-  }) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await _post(
-        '/auth/sync',
-        headers: headers,
-        body: json.encode({
-          'clerkUserId': clerkUserId,
-          'email': email,
-          'name': name,
-          'usn': usn,
-          'branch': branch,
-          'phone': phone,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-        return UserModel.fromJson(data['profile'] as Map<String, dynamic>);
-      } else {
-        final data = json.decode(response.body);
-        throw AppException(data['error'] ?? 'Failed to sync profile');
-      }
-    } catch (e) {
-
-      print('Profile sync error: $e');
-      throw AppException(formatExceptionMessage(e, 'Failed to sync profile.'));
-    }
-  }
-
   Future<UserModel?> updateProfile({
-    required String clerkUserId,
     required String usn,
     required String branch,
     required String phone,
@@ -585,7 +535,6 @@ class ApiService {
         '/profiles/update',
         headers: headers,
         body: json.encode({
-          'clerkUserId': clerkUserId,
           'usn': usn,
           'branch': branch,
           'phone': phone,

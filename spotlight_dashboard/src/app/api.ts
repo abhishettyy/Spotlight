@@ -31,11 +31,10 @@ export function sanitizeErrorMessage(err: any, fallback: string = "Something wen
     return msg;
   }
 
-  if (lower.includes("form_identifier_not_found") || lower.includes("user_not_found") || lower.includes("invalid_credentials") || lower.includes("invalid password") || lower.includes("wrong password") || lower.includes("invalid email or password")) {
+  if (lower.includes("user_not_found") || lower.includes("invalid_credentials") || lower.includes("invalid password") || lower.includes("wrong password") || lower.includes("invalid email or password")) {
     return "Invalid email address or password. Please try again.";
   }
   if (
-    lower.includes("form_identifier_exists") ||
     lower.includes("already_exists") ||
     lower.includes("email already in use") ||
     lower.includes("already registered") ||
@@ -143,23 +142,6 @@ export async function clubLogin(email: string, password: string) {
   });
 }
 
-export async function syncProfile(
-  clerkUserId: string,
-  email: string,
-  name: string,
-  token?: string
-) {
-  return request('/auth/sync', {
-    method: 'POST',
-    body: JSON.stringify({ clerkUserId, email, name }),
-  }, token);
-
-}
-
-export async function getProfile(userId: string) {
-  return request(`/profiles/${userId}`);
-}
-
 export async function changePassword(data: {
   oldPassword?: string;
   newPassword?: string;
@@ -250,7 +232,6 @@ export async function createClub(data: {
   name: string;
   email: string;
   logoUrl?: string;
-  clerkUserId: string;
   password?: string;
   registrationKey: string;
 }, token?: string) {

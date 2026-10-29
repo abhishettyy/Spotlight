@@ -125,7 +125,6 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
         email: email.trim(),
         password: password.trim(),
         registrationKey: registrationKey.trim(),
-        clerkUserId: "",
       });
 
       const loginData = await clubLogin(email.trim(), password.trim());

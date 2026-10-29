@@ -14,12 +14,10 @@ export async function registerSolo(params: {
   usn: string;
 }): Promise<string> {
   try {
-    const userId = localStorage.getItem('userId') ?? '';
     const res = await apiClient.post('/register', {
       eventId: params.eventId,
       name: params.name,
       usn: params.usn,
-      clerkUserId: userId,
     });
     return res.data.registration.id as string;
   } catch (e) {
@@ -33,12 +31,10 @@ export async function createTeam(params: {
   leaderUsn: string;
 }): Promise<{ passkey: string; registrationId: string }> {
   try {
-    const userId = localStorage.getItem('userId') ?? '';
     const res = await apiClient.post('/teams/create', {
       eventId: params.eventId,
       teamName: params.teamName,
       leaderUsn: params.leaderUsn,
-      clerkUserId: userId,
     });
     return {
       passkey: (res.data.passkey as string | null) ?? '',
@@ -54,11 +50,9 @@ export async function joinTeam(params: {
   passkey: string;
 }): Promise<void> {
   try {
-    const userId = localStorage.getItem('userId') ?? '';
     await apiClient.post('/teams/join', {
       eventId: params.eventId,
       passkey: params.passkey,
-      clerkUserId: userId,
     });
   } catch (e) {
     throw new Error(formatApiError(e, 'Failed to join team. Please check your connection.'));

@@ -1,21 +1,27 @@
 import { useState, useEffect } from "react";
-import { syncProfile, fetchClubs, fetchAllRegistrationsForEvents, fetchClubDashboardStats } from "../api";
+import { fetchClubs, fetchAllRegistrationsForEvents, fetchClubDashboardStats } from "../api";
 import { ClubEvent, Registration } from "./shared";
 
-export function useSpotlightData() {
-  const localToken = localStorage.getItem("spotlight_token");
-  const localProfileRaw = localStorage.getItem("spotlight_profile");
-  const localProfile = localProfileRaw ? JSON.parse(localProfileRaw) : null;
-  const isLocalSignedIn = !!localToken && !!localProfile;
+/** The signed-in club session, saved by the sign-in page. */
+function readSession(): { token: string | null; profile: any } {
+  const token = localStorage.getItem("spotlight_token");
+  try {
+    const raw = localStorage.getItem("spotlight_profile");
+    return { token, profile: raw ? JSON.parse(raw) : null };
+  } catch {
+    return { token, profile: null };
+  }
+}
 
-  const isSignedIn = isLocalSignedIn;
-  const userId = localProfile?.id;
+export function useSpotlightData() {
+  const session = readSession();
+  const localToken = session.token;
+  const userId = session.profile?.id;
 
   const getToken = async () => localToken;
 
   const [clubs, setClubs]                   = useState<any[]>([]);
-  const [profile, setProfile]               = useState<any>(localProfile);
-  const user = profile;
+  const [profile, setProfile]               = useState<any>(session.profile);
   const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading]               = useState(true);
 
@@ -47,78 +53,31 @@ export function useSpotlightData() {
 
   const refreshEvents = async () => {
     try {
-      const token = await getToken();
-      if (!token) return;
-
-      let freshProfile = profile;
-      if (!isLocalSignedIn) {
-        const email = user?.primaryEmailAddress?.emailAddress ?? '';
-        const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
-        const syncResult = await syncProfile(userId!, email, name, token);
-        freshProfile = syncResult.profile;
-        setProfile(freshProfile);
-      }
-
+      if (!localToken) return;
       const clubsData = await fetchClubs();
       setClubs(clubsData.clubs ?? []);
-
-      const clubId = freshProfile?.clubId;
-      if (clubId) {
-        await loadDashboardStats(clubId, token);
+      if (profile?.clubId) {
+        await loadDashboardStats(profile.clubId, localToken);
       }
     } catch (e) {
     }
   };
 
-  const refreshProfile = async (): Promise<any> => {
-    try {
-      if (isLocalSignedIn) return localProfile;
-      const token = await getToken();
-      if (!token || !userId) return profile;
-      const email = user?.primaryEmailAddress?.emailAddress ?? '';
-      const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
-      const syncResult = await syncProfile(userId, email, name, token);
-      const freshProfile = syncResult.profile;
-      setProfile(freshProfile);
-      return freshProfile;
-    } catch (e) {
-      return profile;
-    }
-  };
+  /** The profile saved at sign-in; club details are re-read with the clubs list. */
+  const refreshProfile = async (): Promise<any> => readSession().profile ?? profile;
 
   useEffect(() => {
-    if (!isSignedIn || !userId || (!isLocalSignedIn && !user)) return;
+    if (!localToken || !userId) return;
 
     async function load() {
       try {
-        const token = await getToken();
-        if (!token) return;
-
-        if (isLocalSignedIn) {
-          setProfile(localProfile);
-          const clubsData = await fetchClubs();
-          setClubs(clubsData.clubs ?? []);
-
-          if (localProfile?.clubId) {
-            await loadDashboardStats(localProfile.clubId, token);
-          }
-          return;
-        }
-
-        const email = user?.primaryEmailAddress?.emailAddress ?? '';
-        const name  = user?.fullName ?? user?.firstName ?? 'Club Admin';
-
-        const [syncResult, clubsData] = await Promise.all([
-          syncProfile(userId!, email, name, token),
-          fetchClubs()
-        ]);
-
-        let freshProfile = syncResult.profile;
-        setProfile(freshProfile);
+        const current = readSession().profile;
+        setProfile(current);
+        const clubsData = await fetchClubs();
         setClubs(clubsData.clubs ?? []);
 
-        if (freshProfile?.clubId) {
-          await loadDashboardStats(freshProfile.clubId, token);
+        if (current?.clubId) {
+          await loadDashboardStats(current.clubId, localToken!);
         }
       } catch (e) {
       } finally {
@@ -130,17 +89,14 @@ export function useSpotlightData() {
 
     const handleClubCreated = async () => {
       const freshProf = await refreshProfile();
-      if (freshProf?.clubId) {
-        const token = await getToken();
-        if (token) await loadDashboardStats(freshProf.clubId, token);
-      }
+      if (freshProf?.clubId && localToken) await loadDashboardStats(freshProf.clubId, localToken);
     };
     window.addEventListener('spotlight:club_created', handleClubCreated);
 
     return () => {
       window.removeEventListener('spotlight:club_created', handleClubCreated);
     };
-  }, [isSignedIn, userId, user]);
+  }, [localToken, userId]);
 
   return {
     clubEvents,

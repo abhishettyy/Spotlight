@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
+import { campusNow, campusTodayStart, campusEventHasEnded, campusScanWindowOpen } from '../utils/time';
 
 const router = Router();
 
@@ -141,24 +142,24 @@ router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Pr
 
 router.post('/register', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
-    const clerkUserId = req.auth!.userId;
+    const userId = req.auth!.userId;
     const { eventId, name, usn } = req.body;
     if (!eventId || !name || !usn) return res.status(400).json({ error: 'Missing fields.' });
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
-    if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
+    if (event.registrationDeadline && campusNow() > new Date(event.registrationDeadline)) {
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
     const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
     const registration = await prisma.$transaction(async (tx) => {
       await lockEvent(tx, eventId);
-      await assertNotRegistered(tx, eventId, clerkUserId);
+      await assertNotRegistered(tx, eventId, userId);
       await assertEventHasCapacity(tx, eventId, event.registrationLimit);
       return tx.registration.create({
-        data: { eventId: eventId, userId: clerkUserId, status }
+        data: { eventId: eventId, userId, status }
       });
     });
 
@@ -171,14 +172,14 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
 
 router.post('/teams/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
-    const clerkUserId = req.auth!.userId;
+    const userId = req.auth!.userId;
     const { eventId, teamName, leaderUsn } = req.body;
     if (!eventId || !teamName || !leaderUsn) return res.status(400).json({ error: 'Missing fields.' });
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
-    if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
+    if (event.registrationDeadline && campusNow() > new Date(event.registrationDeadline)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
     }
 
@@ -188,14 +189,14 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
 
     const result = await prisma.$transaction(async (tx) => {
       await lockEvent(tx, eventId);
-      await assertNotRegistered(tx, eventId, clerkUserId);
+      await assertNotRegistered(tx, eventId, userId);
       await assertEventHasCapacity(tx, eventId, event.registrationLimit);
       const team = await tx.team.create({
-        data: { eventId: eventId, teamName: teamName, passkey, leaderId: clerkUserId }
+        data: { eventId: eventId, teamName: teamName, passkey, leaderId: userId }
       });
       const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
       const registration = await tx.registration.create({
-        data: { eventId: eventId, userId: clerkUserId, teamId: team.id, status }
+        data: { eventId: eventId, userId, teamId: team.id, status }
       });
       return { team, registration };
     });
@@ -209,7 +210,7 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
 
 router.post('/teams/join', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
-    const clerkUserId = req.auth!.userId;
+    const userId = req.auth!.userId;
     const { eventId, passkey } = req.body;
     if (!eventId || !passkey || !passkey.trim()) return res.status(400).json({ error: 'Passkey is required.' });
 
@@ -224,7 +225,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
     });
     if (!leaderReg) return res.status(404).json({ error: 'Invalid passkey.' });
 
-    if (team.event?.registrationDeadline && new Date() > new Date(team.event.registrationDeadline)) {
+    if (team.event?.registrationDeadline && campusNow() > new Date(team.event.registrationDeadline)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
     }
 
@@ -233,7 +234,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
 
     const registration = await prisma.$transaction(async (tx) => {
       await lockEvent(tx, eventId);
-      await assertNotRegistered(tx, eventId, clerkUserId);
+      await assertNotRegistered(tx, eventId, userId);
 
       const currentMemberCount = await tx.registration.count({
         where: { teamId: team.id, status: { in: ['PENDING', 'CONFIRMED'] } }
@@ -241,11 +242,13 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       if (maxTeamSize && currentMemberCount >= maxTeamSize) {
         throw new RegistrationRejected('This team is already full.');
       }
+      // Venue capacity counts people, so every member who joins takes a place
+      await assertEventHasCapacity(tx, eventId, team.event.registrationLimit);
 
       return tx.registration.create({
         data: {
           eventId: eventId,
-          userId: clerkUserId,
+          userId,
           teamId: team.id,
           status,
           checkedInAt: null,
@@ -282,7 +285,7 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
       return res.status(403).json({ error: 'Forbidden: You cannot upload payment details for another user.' });
     }
 
-    if (registration.event?.registrationDeadline && new Date() > new Date(registration.event.registrationDeadline)) {
+    if (registration.event?.registrationDeadline && campusNow() > new Date(registration.event.registrationDeadline)) {
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
@@ -333,10 +336,9 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
     if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to approve registrations for this event.' });
     }
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (registration.event?.eventDate && new Date(registration.event.eventDate) < todayStart) {
-      return res.status(400).json({ error: 'Cannot approve registrations for an event that has already finished.' });
+    // Open until the event's end time, including every day of a multi-day event
+    if (registration.event && campusEventHasEnded(registration.event)) {
+      return res.status(400).json({ error: 'Cannot approve registrations after the event has ended.' });
     }
     if (registration.status === 'CONFIRMED') {
       return res.status(400).json({ error: 'Already confirmed.' });
@@ -448,10 +450,9 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
     if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to reject registrations for this event.' });
     }
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (registration.event?.eventDate && new Date(registration.event.eventDate) < todayStart) {
-      return res.status(400).json({ error: 'Cannot reject registrations for an event that has already finished.' });
+    // Open until the event's end time, including every day of a multi-day event
+    if (registration.event && campusEventHasEnded(registration.event)) {
+      return res.status(400).json({ error: 'Cannot reject registrations after the event has ended.' });
     }
 
     const eventName = registration.event?.name ?? 'an event';
@@ -614,6 +615,10 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
       return res.status(403).json({ error: 'Forbidden: You do not have permission to scan tickets for this event.' });
     }
 
+    if (!campusScanWindowOpen(registration.event)) {
+      return res.status(400).json({ error: 'Check-in is closed for this event right now.' });
+    }
+
     if (registration.teamId) {
       const alreadyCheckedIn = !!(registration as any).checkedInAt ||
         (registration.team?.registrations ?? []).some((r: any) => !!(r as any).checkedInAt);
@@ -721,8 +726,7 @@ router.post('/registrations/verify-ticket', requireAuth, async (req: Request, re
 
 router.get('/public/stats', async (req: Request, res: Response): Promise<any> => {
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todayStart = campusTodayStart();
 
     const [liveEvents, registrations, clubs, totalEvents, totalStudents] = await Promise.all([
       prisma.event.count({ where: { eventDate: { gte: todayStart } } }),

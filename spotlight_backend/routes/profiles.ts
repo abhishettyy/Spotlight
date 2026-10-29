@@ -4,9 +4,13 @@ import { requireAuth } from '../middlewares/auth';
 
 const router = Router();
 
-router.get('/:id', async (req: Request, res: Response): Promise<any> => {
+// Profiles hold email, phone and USN, so only the owner can read theirs
+router.get('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
+    if (id !== req.auth!.userId) {
+      return res.status(403).json({ error: 'Forbidden: You can only view your own profile.' });
+    }
     const profile = await prisma.profile.findUnique({ where: { id } });
 
     if (!profile) {

@@ -38,7 +38,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final apiService = ApiService();
 
       final updatedUser = await apiService.updateProfile(
-        clerkUserId: userProvider.currentUser!.id,
         usn: _usnController.text.trim().toUpperCase(),
         branch: _selectedBranch!,
         phone: _phoneController.text.trim(),

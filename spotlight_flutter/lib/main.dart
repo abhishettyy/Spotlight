@@ -18,11 +18,17 @@ import 'core/clubs_provider.dart';
 import 'core/notification_prefs_provider.dart';
 import 'screens/onboarding_screen.dart';
 
+// The image host (msritise.in) currently serves a self-signed certificate, so images only load if
+// it is let through. The exception is limited to that host: the API, which carries the session
+// token, is always verified. Remove this once the image host has a valid certificate again.
+const _selfSignedImageHosts = {'msritise.in', 'www.msritise.in', 'spotlight.msritise.in'};
+
 class SpotlightHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => _selfSignedImageHosts.contains(host);
   }
 }
 

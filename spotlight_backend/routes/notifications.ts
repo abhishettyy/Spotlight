@@ -1,13 +1,21 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
+import { campusNow, campusTodayStart } from '../utils/time';
 
 const router = Router();
+
+function secretsMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
 
 router.get('/', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const now = new Date();
+    const now = campusNow();
 
     const notifications = await prisma.notification.findMany({
       where: { 
@@ -109,11 +117,18 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<
   }
 });
 
+// Sends "event is today" reminders. Meant for a scheduled job, which must send the
+// X-Cron-Secret header matching CRON_SECRET; without CRON_SECRET set the endpoint is off.
 router.post('/event-reminders', async (req: Request, res: Response): Promise<any> => {
+  const cronSecret = process.env.CRON_SECRET;
+  const sentSecret = req.headers['x-cron-secret'];
+  if (!cronSecret || typeof sentSecret !== 'string' || !secretsMatch(sentSecret, cronSecret)) {
+    return res.status(401).json({ error: 'Unauthorized.' });
+  }
+
   try {
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-    const endOfDay   = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    const startOfDay = campusTodayStart();
+    const endOfDay   = new Date(startOfDay.getFullYear(), startOfDay.getMonth(), startOfDay.getDate(), 23, 59, 59);
 
     const todayEvents = await prisma.event.findMany({
       where: {
@@ -130,25 +145,33 @@ router.post('/event-reminders', async (req: Request, res: Response): Promise<any
 
     for (const event of todayEvents) {
 
-      const registrations = await prisma.registration.findMany({
-        where: { eventId: event.id, status: 'CONFIRMED' },
-      });
+      const [registrations, alreadyReminded] = await Promise.all([
+        prisma.registration.findMany({
+          where: { eventId: event.id, status: 'CONFIRMED' },
+          select: { userId: true },
+        }),
+        prisma.notification.findMany({
+          where: { eventId: event.id, type: 'event_reminder' },
+          select: { userId: true },
+        }),
+      ]);
 
-      if (registrations.length === 0) continue;
+      // A second run on the same day only reaches people not reminded yet
+      const remindedIds = new Set(alreadyReminded.map(n => n.userId));
+      const userIds = [...new Set(registrations.map(r => r.userId))].filter(id => !remindedIds.has(id));
+      if (userIds.length === 0) continue;
 
       const eventTime = event.eventDate
         ? event.eventDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
         : 'today';
 
-      const notifData = registrations
-        .filter(r => r.userId)
-        .map(r => ({
-          userId: r.userId!,
-          type: 'event_reminder',
-          title: `${event.name} is Today!`,
-          body: `Your event starts at ${eventTime}. Venue: ${event.club?.name ?? 'TBD'}.`,
-          eventId: event.id,
-        }));
+      const notifData = userIds.map(userId => ({
+        userId,
+        type: 'event_reminder',
+        title: `${event.name} is Today!`,
+        body: `Your event starts at ${eventTime}. Venue: ${event.venue || 'TBD'}.`,
+        eventId: event.id,
+      }));
 
       await prisma.notification.createMany({ data: notifData });
       totalSent += notifData.length;

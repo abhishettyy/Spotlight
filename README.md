@@ -97,7 +97,7 @@ npx prisma db push          # create tables (first time only)
 npm run dev                 # http://localhost:5000/api
 ```
 
-On first start the API creates the `admin` profile with password `admin@123`. **Change it straight away** from the admin console.
+On first start the API creates the `admin` profile. Its password is `ADMIN_INITIAL_PASSWORD` if set, otherwise a random one printed once in the server log. Change it from the admin console after signing in.
 
 ### Web app
 
@@ -135,6 +135,9 @@ flutter build appbundle --release   # build/app/outputs/bundle/release/app-relea
 | `UPLOAD_SECRET` | yes | Shared secret for the image upload endpoint |
 | `GODADDY_UPLOAD_URL` | yes | URL of `upload.php` on the file host |
 | `PORT` | no | Defaults to `5000` |
+| `ADMIN_INITIAL_PASSWORD` | no | First admin password; random and logged once if unset |
+| `CRON_SECRET` | no | Enables `POST /notifications/event-reminders` for a scheduled job (sent as `X-Cron-Secret`) |
+| `CAMPUS_TIME_ZONE` | no | Zone event times are entered in, default `Asia/Kolkata` |
 
 **Web app** (`spotlight_dashboard/.env`): `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, and optionally `VITE_BASE_PATH` when hosted under a sub-path.
 

@@ -4,11 +4,54 @@ import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/db';
 import { signToken, requireAuth } from '../middlewares/auth';
+import { claimRegistrationKey, KeyAlreadyUsed } from '../utils/registrationKeys';
 
 const router = Router();
 const SALT_ROUNDS = 10;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '614014299614-n10khe2om4g50ehpqb6h82tdtumkh5ot.apps.googleusercontent.com';
 const googleOAuthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+interface GoogleUser {
+  email: string;
+  sub: string | null;
+  name?: string;
+  picture?: string;
+}
+
+/**
+ * Checks a Google ID token or access token was issued to Spotlight's own client and belongs to a
+ * verified email. Returns that account, or null. A token issued to any other app is rejected.
+ */
+async function verifyGoogleUser(credential?: string, accessToken?: string): Promise<GoogleUser | null> {
+  if (credential) {
+    try {
+      const ticket = await googleOAuthClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+      const payload = ticket.getPayload();
+      if (!payload?.email || !payload.email_verified) return null;
+      return { email: payload.email, sub: payload.sub ?? null, name: payload.name || payload.given_name, picture: payload.picture };
+    } catch {
+      return null;
+    }
+  }
+
+  if (accessToken) {
+    const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`);
+    if (!infoRes.ok) return null;
+    const info = await infoRes.json() as any;
+    if (info.aud !== GOOGLE_CLIENT_ID && info.azp !== GOOGLE_CLIENT_ID) return null;
+    const emailVerified = info.email_verified === true || info.email_verified === 'true';
+    if (!info.email || !emailVerified) return null;
+
+    // tokeninfo carries no name or picture; userinfo does
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const userInfo = userRes.ok ? await userRes.json() as any : {};
+    return { email: info.email, sub: info.sub ?? userInfo.sub ?? null, name: userInfo.name || userInfo.given_name, picture: userInfo.picture };
+  }
+
+  return null;
+}
 
 function isBcryptHash(value: string): boolean {
   return value.startsWith('$2b$') || value.startsWith('$2a$');
@@ -203,44 +246,13 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
   }
 
   try {
-    let payload: any = null;
-    if (credential) {
-      try {
-        const ticket = await googleOAuthClient.verifyIdToken({
-          idToken: credential,
-          audience: GOOGLE_CLIENT_ID,
-        });
-        payload = ticket.getPayload();
-      } catch (verifyErr) {
-        const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-        if (tokenInfoRes.ok) {
-          payload = await tokenInfoRes.json();
-        }
-      }
-    }
-
-    if (!payload && req.body.access_token) {
-      const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${req.body.access_token}` },
-      });
-      if (userResponse.ok) {
-        const userInfo = await userResponse.json() as any;
-        payload = {
-          email: userInfo.email,
-          name: userInfo.name,
-          given_name: userInfo.given_name,
-          picture: userInfo.picture,
-          sub: userInfo.sub,
-        };
-      }
-    }
-
-    if (!payload || !payload.email) {
-      return res.status(400).json({ error: 'Invalid Google credential or missing email address.' });
+    const payload = await verifyGoogleUser(credential, access_token);
+    if (!payload) {
+      return res.status(401).json({ error: 'Google sign-in could not be verified. Please try again.' });
     }
 
     const email = payload.email.toLowerCase().trim();
-    const name = payload.name || payload.given_name || clubName || 'Spotlight User';
+    const name = payload.name || clubName || 'Spotlight User';
     const googleUserId = `google_${payload.sub || crypto.createHash('md5').update(email).digest('hex')}`;
 
     let club = await prisma.club.findUnique({ where: { email } });
@@ -256,7 +268,14 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
         return res.status(400).json({ error: 'Invalid or expired registration key.' });
       }
 
+      // A new club needs an email no account uses yet, as with email sign-up (/clubs/check-email)
+      if (profile) {
+        return res.status(400).json({ error: 'This email address is already registered to another account.' });
+      }
+
       club = await prisma.$transaction(async (tx) => {
+        await claimRegistrationKey(tx, keyRecord.id);
+
         const createdClub = await tx.club.create({
           data: {
             name: clubName?.trim() || name,
@@ -282,11 +301,7 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
 
         await tx.registrationKey.update({
           where: { id: keyRecord.id },
-          data: {
-            isUsed: true,
-            usedByClubId: createdClub.id,
-            usedAt: new Date(),
-          }
+          data: { usedByClubId: createdClub.id },
         });
 
         profile = createdProfile;
@@ -324,6 +339,9 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
       token
     });
   } catch (error: any) {
+    if (error instanceof KeyAlreadyUsed) {
+      return res.status(400).json({ error: 'This registration key has just been used. Please ask Spotlight admins for a new one.' });
+    }
     console.error('Google Auth Error:', error);
     return res.status(500).json({ error: 'Google authentication failed: ' + error.message });
   }
@@ -338,33 +356,12 @@ router.post('/google-student', async (req: Request, res: Response): Promise<any>
   }
 
   try {
-    let email: string | null = null;
-    let emailVerified = false;
-
-    if (credential) {
-      const ticket = await googleOAuthClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
-      const payload = ticket.getPayload();
-      email = payload?.email ?? null;
-      emailVerified = !!payload?.email_verified;
-    } else {
-      // The access token must have been issued to Spotlight's own client, not to another app
-      const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(access_token)}`);
-      if (!infoRes.ok) {
-        return res.status(401).json({ error: 'Google sign-in expired. Please try again.' });
-      }
-      const info = await infoRes.json() as any;
-      if (info.aud !== GOOGLE_CLIENT_ID && info.azp !== GOOGLE_CLIENT_ID) {
-        return res.status(401).json({ error: 'Invalid Google sign-in.' });
-      }
-      email = info.email ?? null;
-      emailVerified = info.email_verified === true || info.email_verified === 'true';
+    const googleUser = await verifyGoogleUser(credential, access_token);
+    if (!googleUser) {
+      return res.status(401).json({ error: 'Google sign-in could not be verified. Please try again.' });
     }
 
-    if (!email || !emailVerified) {
-      return res.status(400).json({ error: 'Your Google account email could not be verified.' });
-    }
-
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanEmail = googleUser.email.toLowerCase().trim();
     const profile = await prisma.profile.findFirst({ where: { email: cleanEmail, clubId: null } });
 
     if (!profile) {
@@ -486,126 +483,22 @@ router.post('/change-password', requireAuth, async (req: Request, res: Response)
   }
 });
 
+// Returns the signed-in user's own profile, replacing a placeholder name if a better one is sent.
+// The posted email is never used to find a profile: merging by email let any signed-in user
+// take over another account (password, club, registrations).
 router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
-    const clerkUserId = req.auth!.userId;
-    const { email, name, usn, branch, phone } = req.body;
+    const userId = req.auth!.userId;
+    const { name } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required to sync profile.' });
+    let profile = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile) {
+      return res.status(404).json({ error: 'User profile not found.' });
     }
 
-    let profile = await prisma.profile.findUnique({ where: { email: email.toLowerCase() } });
-    if (profile) {
-      if (profile.id !== clerkUserId) {
-        console.log(`[Sync] Profile with email ${email} already exists under different ID: ${profile.id}. Merging to new Clerk ID: ${clerkUserId}`);
-
-        const targetProfile = await prisma.profile.findUnique({ where: { id: clerkUserId } });
-
-        const existingClubId = targetProfile?.clubId || profile.clubId;
-        const finalUsn = usn || targetProfile?.usn || profile.usn;
-        const finalBranch = branch || targetProfile?.branch || profile.branch;
-        const finalPhone = phone || targetProfile?.phone || profile.phone;
-        const year = targetProfile?.year || profile.year;
-        const sem = targetProfile?.sem || profile.sem;
-        const passwordVal = targetProfile?.password || profile.password;
-
-        profile = await prisma.$transaction(async (tx) => {
-
-          await tx.profile.update({
-            where: { id: profile!.id },
-            data: {
-              email: `${profile!.id}@temp.local`,
-              usn: null,
-            }
-          });
-
-          const newProfile = await tx.profile.upsert({
-            where: { id: clerkUserId },
-            update: {
-              fullName: getPreferredName(targetProfile?.fullName || profile!.fullName, name),
-              email: email.toLowerCase(),
-              clubId: existingClubId,
-              usn: finalUsn,
-              branch: finalBranch,
-              phone: finalPhone,
-              year,
-              sem,
-              password: passwordVal,
-            },
-            create: {
-              id: clerkUserId,
-              fullName: getPreferredName(targetProfile?.fullName || profile!.fullName, name),
-              email: email.toLowerCase(),
-              clubId: existingClubId,
-              usn: finalUsn,
-              branch: finalBranch,
-              phone: finalPhone,
-              year,
-              sem,
-              password: passwordVal,
-            }
-          });
-
-          await tx.registration.updateMany({
-            where: { userId: profile!.id },
-            data: { userId: clerkUserId }
-          });
-
-          await tx.notification.updateMany({
-            where: { userId: profile!.id },
-            data: { userId: clerkUserId }
-          });
-
-          await tx.team.updateMany({
-            where: { leaderId: profile!.id },
-            data: { leaderId: clerkUserId }
-          });
-
-          await tx.profile.delete({ where: { id: profile!.id } });
-
-          return newProfile;
-        });
-      } else {
-
-        profile = await prisma.profile.update({
-          where: { id: clerkUserId },
-          data: { fullName: getPreferredName(profile.fullName, name) },
-        });
-      }
-    } else {
-
-      const existingProfileById = await prisma.profile.findUnique({ where: { id: clerkUserId } });
-      profile = await prisma.profile.upsert({
-        where: { id: clerkUserId },
-        update: { 
-          fullName: getPreferredName(existingProfileById?.fullName, name), 
-          email: email || undefined 
-        },
-        create: { 
-          id: clerkUserId, 
-          fullName: getPreferredName(null, name), 
-          email: email || '' 
-        },
-      });
-    }
-
-    if (!profile.clubId) {
-      const existingClub = await prisma.club.findUnique({
-        where: { email: email.toLowerCase() },
-      });
-
-      if (existingClub) {
-
-        profile = await prisma.profile.update({
-          where: { id: clerkUserId },
-          data: { 
-            clubId: existingClub.id,
-            fullName: getPreferredName(profile.fullName, existingClub.name),
-          },
-        });
-        console.log(`Auto-linked user ${profile.email} to existing club ID: ${existingClub.id}`);
-      }
+    const preferredName = getPreferredName(profile.fullName, name);
+    if (preferredName !== profile.fullName) {
+      profile = await prisma.profile.update({ where: { id: userId }, data: { fullName: preferredName } });
     }
 
     const { password: _pw, ...safeProfile } = profile as any;

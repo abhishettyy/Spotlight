@@ -38,7 +38,6 @@ export default function OnboardingPage() {
     if (!userId) return;
     try {
       const updated = await updateProfile({
-        clerkUserId: userId,
         usn: data.usn.toUpperCase(),
         branch: data.branch,
         phone: data.phone,

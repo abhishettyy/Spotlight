@@ -18,3 +18,7 @@ services:
         sync: false
       - key: UPLOAD_SECRET
         sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: CAMPUS_TIME_ZONE
+        value: Asia/Kolkata

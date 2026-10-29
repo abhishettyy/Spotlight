@@ -25,7 +25,6 @@ export async function fetchProfileStats(userId: string): Promise<{ eventsCount: 
 }
 
 export async function updateProfile(params: {
-  clerkUserId: string;
   usn: string;
   branch: string;
   phone: string;

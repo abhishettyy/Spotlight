@@ -401,8 +401,8 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
                   </div>
 
                   <div>
-                    <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Club Authentication (Clerk)</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We integrate with Clerk to provide administrator sign-in, session verification, and secure access. Access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
+                    <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Club Authentication</h4>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Clubs sign in with their email and password or with Google. Passwords are stored hashed, and access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
                   </div>
 
                   <div>
@@ -417,7 +417,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Third-Party Services</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Clerk (authentication), our file hosting (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Google Sign-In (optional sign-in), our file hosting (storing club logos, event posters and payment QR codes), and a MySQL database to run the infrastructure.</p>
                   </div>
 
                   <div>

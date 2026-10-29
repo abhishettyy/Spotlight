@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
+import { campusNow } from '../utils/time';
 import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
 
 const router = Router();
@@ -12,8 +13,9 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
     const events = await prisma.event.findMany({
       include: {
         club: true,
+        // Same places the capacity check counts; rejected registrations free their place
         _count: {
-          select: { registrations: true }
+          select: { registrations: { where: { status: { in: ['PENDING', 'CONFIRMED'] } } } }
         }
       },
       orderBy: { eventDate: 'asc' },
@@ -88,7 +90,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
       finalQrUrl = await uploadBase64Image(finalQrUrl, 'events/qrs');
     }
 
-    const startDate = eventDate ? new Date(eventDate) : new Date();
+    const startDate = eventDate ? new Date(eventDate) : campusNow();
     const defaultEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59, 999);
     const finalEndDate = eventEndDate ? new Date(eventEndDate) : defaultEndDate;
 
@@ -102,7 +104,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         minTeamSize: eventType === "Team" && minTeamSize !== undefined && minTeamSize !== null ? Math.max(1, parseInt(minTeamSize)) : (eventType === "Team" ? 1 : null),
         fee: parsedFee,
         registrationLimit: registrationLimit ? Math.max(2, parseInt(registrationLimit)) : 100,
-        registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : new Date(),
+        registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : campusNow(),
         eventDate: startDate,
         eventEndDate: finalEndDate,
         clubId,

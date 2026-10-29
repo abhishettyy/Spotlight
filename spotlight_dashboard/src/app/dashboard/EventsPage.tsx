@@ -131,15 +131,9 @@ export function EventsPage({
     : [];
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
-  const isEventFinished = activeEvent 
-    ? (getEventStatus(activeEvent) === "previous" || (() => {
-        if (!activeEvent.date && !activeEvent.eventDate) return false;
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const start = parseLocalDate(activeEvent.eventDate || activeEvent.date);
-        return start ? start < todayStart : false;
-      })())
-    : false;
+  // Approving and rejecting stay open until the event's end time (start + 3 h when no end is saved),
+  // matching the cutoff the API enforces
+  const isEventFinished = activeEvent ? getEventStatus(activeEvent) === "previous" : false;
   const pending = registrations.filter(r => r.status?.toLowerCase() === "pending");
   const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
   const rejected = registrations.filter(r => {
