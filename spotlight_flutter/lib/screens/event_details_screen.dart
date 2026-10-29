@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -170,14 +171,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sk = Sk.of(context);
 
-    final pageBg = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8);
-    final cardBg = isDark ? const Color(0xFF1E1C1C) : Colors.grey[100]!;
-    final textPrimary = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
-    final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
-    final footerBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
+    final pageBg = sk.canvas;
+    final cardBg = sk.raised; // icon circles in the info cards
+    final textPrimary = sk.fg;
+    final textSecondary = sk.muted;
+    final footerBg = sk.surface;
 
     final eventsProvider = Provider.of<EventsProvider>(context);
     final event = eventsProvider.events.firstWhere(
@@ -214,28 +214,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     String btnLabel;
 
     if (isChecking) {
-      btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-      btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+      btnBg = sk.raised;
+      btnTextColor = sk.faint;
       btnLabel = '';
     } else if (alreadyRegistered) {
-      btnBg = isDark ? const Color(0xFF1A2E1A) : const Color(0xFFE8F5E9);
-      btnTextColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+      btnBg = sk.okSoft;
+      btnTextColor = sk.ok;
       btnLabel = 'Already Registered';
     } else if (hasPendingPayment) {
       btnBg = const Color(0xFFF59E0B);
       btnTextColor = Colors.black;
       btnLabel = 'Complete Payment';
     } else if (isFull) {
-      btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-      btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+      btnBg = sk.raised;
+      btnTextColor = sk.faint;
       btnLabel = 'Registration Full';
     } else if (isClosed) {
-      btnBg = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-      btnTextColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+      btnBg = sk.raised;
+      btnTextColor = sk.faint;
       btnLabel = 'Registration Closed';
     } else {
-      btnBg = cs.primary;
-      btnTextColor = Colors.white;
+      btnBg = sk.brand;
+      btnTextColor = Sk.of(context).onBrand;
       btnLabel = 'Register Now';
     }    
     
@@ -254,14 +254,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   child: Container(
                     height: 320,
                     width: double.infinity,
-                    color: isDark ? const Color(0xFF0A0A0A) : Colors.black,
+                    color: sk.raised,
                     child: CustomImage(
                       url: imageUrl,
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                       width: double.infinity,
                       height: double.infinity,
-                      errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
+                      errorBuilder: (_, __, ___) => CustomImage.buildPlaceholder(),
                     ),
                   ),
                 ),
@@ -277,7 +277,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         children: [
                           Row(
                             children: [
-                              _glassPill(event.category, isDark: isDark),
+                              _glassPill(event.category, sk),
                               if (event.isLive) ...[
                                 const SizedBox(width: 8),
                                 _liveTag(),
@@ -287,7 +287,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                              color: sk.raised,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
@@ -295,7 +295,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : cs.primary,
+                                color: sk.fg,
                               ),
                             ),
                           ),
@@ -330,7 +330,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               'Hosted by: ${event.clubName}',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: cs.primary,
+                                color: sk.brand,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -342,14 +342,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 Icon(
                                   Icons.access_time_rounded,
                                   size: 13,
-                                  color: Colors.yellow[600],
+                                  color: Sk.of(context).warn,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
-                                    color: Colors.yellow[600],
+                                    color: Sk.of(context).warn,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -363,11 +363,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF161618) : Colors.grey[50]!,
+                          color: sk.surface,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                          ),
+                          border: Border.all(color: sk.line),
                         ),
                         child: Row(
                           children: [
@@ -416,11 +414,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF161618) : Colors.grey[50]!,
+                            color: sk.surface,
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                            ),
+                            border: Border.all(color: sk.line),
                           ),
                           child: Row(
                             children: [
@@ -523,7 +519,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
         decoration: BoxDecoration(
           color: footerBg,
-          
+          border: Border(top: BorderSide(color: sk.line)),
         ),
         child: Row(
             children: [
@@ -543,12 +539,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                        color: sk.raised,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         isSaved ? Icons.bookmark : Icons.bookmark_border,
-                        color: isSaved ? cs.primary : (isDark ? Colors.white : Colors.black87),
+                        color: isSaved ? sk.brand : sk.fg,
                         size: 22,
                       ),
                     ),
@@ -597,6 +593,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: btnBg,
+                    disabledBackgroundColor: btnBg,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -610,7 +607,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            isDark ? Colors.grey[400]! : Colors.grey[500]!,
+                            sk.faint,
                           ),
                         ),
                       )
@@ -642,27 +639,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
       );
 
-  Widget _glassPill(String text, {required bool isDark}) => ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
-              ),
-            ),
-            child: Text(
-              text,
-              style: GoogleFonts.inter(
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+  Widget _glassPill(String text, Sk sk) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: sk.raised,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: sk.line),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            color: sk.fg,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
         ),
       );
@@ -682,17 +671,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 Container(
                   width: 5,
                   height: 5,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFD93025),
+                  decoration: BoxDecoration(
+                    color: Sk.of(context).danger,
                     shape: BoxShape.circle,
-                    
                   ),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'LIVE NOW',
                   style: GoogleFonts.inter(
-                    color: const Color(0xFFD93025),
+                    color: Sk.of(context).danger,
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:flutter/services.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,8 +27,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     
-    return const Scaffold(
-      backgroundColor: Color(0xFF090909),
+    return Scaffold(
+      backgroundColor: Sk.of(context).canvas,
       body: SizedBox.shrink(),
     );
   }

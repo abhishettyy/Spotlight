@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 
 class OfflineBanner extends StatefulWidget {
   const OfflineBanner({Key? key}) : super(key: key);
@@ -54,12 +55,12 @@ class _OfflineBannerState extends State<OfflineBanner> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: const Center(
+        child: Center(
           child: Text(
             'You are offline, connect to internet',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.amber,
+              color: Sk.of(context).warn,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,

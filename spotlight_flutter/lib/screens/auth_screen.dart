@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -181,7 +182,7 @@ class _AuthScreenState extends State<AuthScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final subTextColor = Sk.of(context).muted;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -215,7 +216,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 height: 54,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF161618) : Colors.grey[200],
+                  color: Sk.of(context).raised,
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: Row(
@@ -234,7 +235,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: isLogin ? Colors.white : subTextColor,
+                              color: isLogin ? Sk.of(context).onBrand : subTextColor,
                             ),
                           ),
                         ),
@@ -254,7 +255,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: !isLogin ? Colors.white : subTextColor,
+                              color: !isLogin ? Sk.of(context).onBrand : subTextColor,
                             ),
                           ),
                         ),
@@ -544,13 +545,13 @@ class _AuthScreenState extends State<AuthScreen> {
                     elevation: 0,
                   ),
                   child: _isLoading 
-                    ? const JumpingDotsLoader(color: Colors.white)
+                    ? JumpingDotsLoader(color: Sk.of(context).onBrand)
                     : Text(
                         isLogin ? 'Sign In' : 'Create Account',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Sk.of(context).onBrand,
                         ),
                       ),
                 ),
@@ -576,8 +577,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: OutlinedButton(
                     onPressed: _isLoading ? null : _signInWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: isDark ? const Color(0xFF161618) : Colors.white,
-                      side: BorderSide(color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFD1D1D6)),
+                      backgroundColor: Sk.of(context).surface,
+                      side: BorderSide(color: Sk.of(context).lineStrong),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: Row(
@@ -590,7 +591,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF18181B),
+                            color: Sk.of(context).fg,
                           ),
                         ),
                       ],
@@ -642,9 +643,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161618) : Colors.grey[50],
+                    color: Sk.of(context).surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: isDark ? null : Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: Sk.of(context).line),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -667,7 +668,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: Sk.of(context).fg,
                     ),
                   ),
                 ),
@@ -715,7 +716,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final subTextColor = Sk.of(context).muted;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,7 +743,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: Sk.of(context).fg,
                 ),
               ),
               const SizedBox(height: 3),
@@ -779,7 +780,7 @@ class _AuthScreenState extends State<AuthScreen> {
           style: GoogleFonts.inter(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.grey[500],
+            color: Sk.of(context).faint,
             letterSpacing: 0.3,
           ),
         ),
@@ -791,7 +792,7 @@ class _AuthScreenState extends State<AuthScreen> {
     return Container(
       width: 1,
       height: 32,
-      color: isDark ? Colors.white12 : Colors.grey[300],
+      color: Sk.of(context).line,
     );
   }
 
@@ -811,8 +812,8 @@ class _AuthScreenState extends State<AuthScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final subTextColor = theme.brightness == Brightness.dark
-        ? const Color(0xFFA0A0A0)
-        : Colors.grey[600]!;
+        ? Sk.of(context).muted
+        : Sk.of(context).muted;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -840,15 +841,15 @@ class _AuthScreenState extends State<AuthScreen> {
             hintText: hintText,
             hintStyle: GoogleFonts.inter(color: subTextColor.withOpacity(0.6), fontSize: 15),
             helperText: helperText,
-            helperStyle: GoogleFonts.inter(color: Colors.amber[800], fontSize: 11, fontWeight: FontWeight.w500),
-            errorStyle: GoogleFonts.inter(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w500),
+            helperStyle: GoogleFonts.inter(color: Sk.of(context).warn, fontSize: 11, fontWeight: FontWeight.w500),
+            errorStyle: GoogleFonts.inter(color: Sk.of(context).danger, fontSize: 12, fontWeight: FontWeight.w500),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+              borderSide: BorderSide(color: Sk.of(context).danger, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+              borderSide: BorderSide(color: Sk.of(context).danger, width: 1.5),
             ),
             filled: true,
             fillColor: cs.surface,

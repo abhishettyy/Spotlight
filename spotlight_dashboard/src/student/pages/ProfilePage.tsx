@@ -156,7 +156,7 @@ export default function ProfilePage() {
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.5px' }}>
+          <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--sk-on-brand)', letterSpacing: '-0.5px' }}>
             {buildAvatarInitials(currentUser.name)}
           </span>
         </div>

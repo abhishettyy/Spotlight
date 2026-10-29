@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
+import '../core/custom_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_image.dart';
+import '../widgets/event_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'ticket_details_screen.dart';
-import 'event_details_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
@@ -96,9 +98,8 @@ class _TicketScreenState extends State<TicketScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
-    final toggleBg = isDark ? const Color(0xFF121214) : Colors.grey[200]!;
+    final subText = Sk.of(context).muted;
+    final toggleBg = Sk.of(context).raised;
 
     final upcomingCount = _upcoming.length;
     final pastCount = _past.length;
@@ -186,7 +187,7 @@ class _TicketScreenState extends State<TicketScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey[400]),
+            Icon(Icons.wifi_off_rounded, size: 48, color: Sk.of(context).faint),
             const SizedBox(height: 16),
             Text('Could not load tickets',
                 style: GoogleFonts.inter(
@@ -200,7 +201,7 @@ class _TicketScreenState extends State<TicketScreen> {
                             _error!.toLowerCase().contains('clientexception')))
                     ? 'Please check your internet connection and try again.'
                     : (_error ?? ''),
-                style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                style: GoogleFonts.inter(color: Sk.of(context).muted, fontSize: 12),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
             _isLoading
@@ -212,7 +213,7 @@ class _TicketScreenState extends State<TicketScreen> {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Sk.of(context).brand,
                         ),
                       ),
                     ),
@@ -254,7 +255,7 @@ class _TicketScreenState extends State<TicketScreen> {
             Text(
               _selectedTab == 0 ? 'No Upcoming Events' : 'No Past Events',
               style: GoogleFonts.inter(
-                  color: Colors.grey,
+                  color: Sk.of(context).muted,
                   fontSize: 16,
                   fontWeight: FontWeight.w600),
             ),
@@ -264,7 +265,7 @@ class _TicketScreenState extends State<TicketScreen> {
                   ? 'Your registered upcoming event passes will show up here'
                   : 'Events you attended previously will appear here',
               style: GoogleFonts.inter(
-                  color: Colors.grey[400], fontSize: 13),
+                  color: Sk.of(context).faint, fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],
@@ -304,7 +305,7 @@ class _TicketScreenState extends State<TicketScreen> {
             const SizedBox(height: 20),
             Text('No Saved Events Yet',
                 style: GoogleFonts.inter(
-                    color: Colors.grey,
+                    color: Sk.of(context).muted,
                     fontSize: 16,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
@@ -312,7 +313,7 @@ class _TicketScreenState extends State<TicketScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 32.0),
               child: Text('Tap the bookmark icon on any event to save it to your list',
                   style: GoogleFonts.inter(
-                      color: Colors.grey[400], fontSize: 13, height: 1.4),
+                      color: Sk.of(context).faint, fontSize: 13, height: 1.4),
                   textAlign: TextAlign.center),
             ),
           ],
@@ -340,195 +341,13 @@ class _TicketScreenState extends State<TicketScreen> {
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
       itemCount: savedEvents.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (context, index) =>
-          _buildSavedEventCard(savedEvents[index]),
-    );
-  }
-
-  Widget _buildSavedEventCard(EventModel event) {
-    final cs = Theme.of(context).colorScheme;
-
-    String day = '01';
-    String month = 'JAN';
-    final st = event.startDate;
-    if (st != null) {
-      day = st.day.toString().padLeft(2, '0');
-      final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-      month = months[st.month - 1];
-    }
-
-    final imageUrl = event.imageUrl;
-    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        SmoothRoute(builder: (_) => EventDetailsScreen(eventId: event.id)),
-      ),
-      child: Container(
-        height: 280,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: CustomImage(
-                  url: imageUrl,
-                  fit: BoxFit.cover,
-                ),
-              ),
-
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.85),
-                        Colors.black.withOpacity(0.2),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: 16,
-                right: 16,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            day,
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            month,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white70,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                bottom: 18,
-                left: 20,
-                right: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${event.category.toUpperCase()}${event.clubName != null && event.clubName!.isNotEmpty ? ' • ${event.clubName}' : ''}',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                        color: cs.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      event.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: Colors.white70,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              price,
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Consumer<SavedEventsProvider>(
-                              builder: (context, savedProvider, _) {
-                                final isSaved = savedProvider.isSaved(event.id);
-                                return GestureDetector(
-                                  onTap: () => savedProvider.toggleSave(event.id),
-                                  child: Icon(
-                                    isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                    color: isSaved ? cs.primary : Colors.white70,
-                                    size: 20,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      itemBuilder: (context, index) => EventCard(event: savedEvents[index]),
     );
   }
 
   Widget _buildTab(int index, String label) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sk = Sk.of(context);
     final isSelected = _selectedTab == index;
-    final inactiveText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
 
     return Expanded(
       child: GestureDetector(
@@ -536,13 +355,14 @@ class _TicketScreenState extends State<TicketScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? cs.primary : Colors.transparent,
+            color: isSelected ? (sk.isDark ? sk.lineStrong : sk.surface) : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
+            boxShadow: isSelected ? sk.shadow : null,
           ),
           alignment: Alignment.center,
           child: Text(label,
               style: GoogleFonts.inter(
-                  color: isSelected ? Colors.white : inactiveText,
+                  color: isSelected ? sk.fg : sk.muted,
                   fontWeight:
                       isSelected ? FontWeight.w600 : FontWeight.w500,
                   fontSize: 14)),
@@ -552,36 +372,17 @@ class _TicketScreenState extends State<TicketScreen> {
   }
 
   Widget _buildTicketCard(TicketModel ticket) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final dividerColor = isDark ? Colors.white12 : Colors.grey[200]!;
-    final mainText = isDark ? Colors.white : const Color(0xFF111111);
+    final subText = Sk.of(context).muted;
+    final dividerColor = Sk.of(context).line;
+    final mainText = Sk.of(context).fg;
 
-    final cardDecoration = isDark
-        ? BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF161618),
-                Color(0xFF0C0C0E),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: null,
-            
-          )
-        : BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.black.withOpacity(0.04),
-              width: 1.0,
-            ),
-            
-          );
+    final sk = Sk.of(context);
+    final cardDecoration = BoxDecoration(
+      color: sk.surface,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: sk.line),
+    );
 
     final event = ticket.event;
     final title = event?.title ?? 'Unknown Event';
@@ -634,19 +435,10 @@ class _TicketScreenState extends State<TicketScreen> {
       }
 
       if (isTeamIncomplete) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isFreeEvent
-                  ? 'A minimum of $minRequired members must join to get the ticket.'
-                  : 'A minimum of $minRequired members must be approved to get the ticket.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-            ),
-            backgroundColor: const Color(0xFFEAB308),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        showSpotlightToast(
+          context,
+          isFreeEvent ? 'A minimum of $minRequired members must join to get the ticket.' : 'A minimum of $minRequired members must be approved to get the ticket.',
+          isWarning: true,
         );
         return;
       }
@@ -681,18 +473,7 @@ class _TicketScreenState extends State<TicketScreen> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Your registration is pending organizer approval.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
-            ),
-            backgroundColor: const Color(0xFFF59E0B),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        showSpotlightToast(context, 'Your registration is pending organizer approval.', isWarning: true);
       }
     }
 
@@ -714,22 +495,6 @@ class _TicketScreenState extends State<TicketScreen> {
                         width: double.infinity,
                         height: 140,
                         fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(24)),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.5),
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -808,9 +573,8 @@ class _TicketScreenState extends State<TicketScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161618) : const Color(0xFFF1F1F3),
+                        color: sk.raised,
                         borderRadius: BorderRadius.circular(12),
-                        border: isDark ? null : Border.all(color: Colors.black.withOpacity(0.05)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -836,7 +600,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: (isDark ? const Color(0xFFE63946) : const Color(0xFFD32F2F)).withOpacity(0.12),
+                                    color: sk.brandSoft,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -844,7 +608,7 @@ class _TicketScreenState extends State<TicketScreen> {
                                     style: GoogleFonts.robotoMono(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? const Color(0xFFE63946) : const Color(0xFFD32F2F),
+                                      color: sk.brand,
                                       letterSpacing: 1.0,
                                     ),
                                   ),
@@ -856,31 +620,13 @@ class _TicketScreenState extends State<TicketScreen> {
                           InkWell(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: ticket.team!.passkey));
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 16),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Passkey copied: ${ticket.team!.passkey}',
-                                        style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                                      ),
-                                    ],
-                                  ),
-                                  duration: const Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF161618),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              );
+                              showSpotlightToast(context, 'Passkey copied: ${ticket.team!.passkey}');
                             },
                             borderRadius: BorderRadius.circular(8),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                                color: sk.surface,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -922,9 +668,7 @@ class _TicketScreenState extends State<TicketScreen> {
                             Text(
                               isFreeEvent ? '$joinedCount Joined' : '$confirmedCount Approved',
                               style: GoogleFonts.inter(
-                                color: isTeamIncomplete
-                                    ? const Color(0xFFFBBF24)
-                                    : (isDark ? const Color(0xFF81C995) : const Color(0xFF188038)),
+                                color: isTeamIncomplete ? const Color(0xFFFBBF24) : sk.ok,
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -936,13 +680,10 @@ class _TicketScreenState extends State<TicketScreen> {
                       ElevatedButton(
                         onPressed: isViewTicketDisabled ? null : openTicket,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: cs.primary,
-                          disabledBackgroundColor: isDark
-                              ? Colors.white.withOpacity(0.05)
-                              : Colors.grey.shade200,
-                          disabledForegroundColor: isDark
-                              ? Colors.white38
-                              : Colors.grey.shade400,
+                          backgroundColor: sk.brand,
+                          foregroundColor: Sk.of(context).onBrand,
+                          disabledBackgroundColor: sk.raised,
+                          disabledForegroundColor: sk.faint,
                           elevation: (ticket.isConfirmed && !isViewTicketDisabled) ? 2 : 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20)),
@@ -964,44 +705,39 @@ class _TicketScreenState extends State<TicketScreen> {
       );
   }
 
+  // Same pill as the web StatusBadge: fixed colours on a dark translucent fill in both themes
   Widget _statusBadge(TicketModel ticket) {
-    if (ticket.event != null && ticket.event!.isLive) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.redAccent.withOpacity(0.3), width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  'LIVE NOW',
-                  style: GoogleFonts.inter(
-                    color: Colors.redAccent,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
+    Widget pill(Color color, Widget icon, String label) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.33), width: 1),
           ),
-        ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              icon,
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        );
+
+    if (ticket.event != null && ticket.event!.isLive) {
+      const live = Color(0xFFFF5252);
+      return pill(
+        live,
+        Container(width: 6, height: 6, decoration: const BoxDecoration(color: live, shape: BoxShape.circle)),
+        'LIVE NOW',
       );
     }
 
@@ -1010,67 +746,19 @@ class _TicketScreenState extends State<TicketScreen> {
     final hasTeamPasskey = ticket.team != null && ticket.team!.passkey.trim().isNotEmpty;
     final isPaymentPending = isPaid && !ticket.hasPaid && !hasTeamPasskey && upper != 'CONFIRMED' && upper != 'APPROVED';
 
-    Color badgeBg;
-    Color borderColor;
-    Color textColor;
-    IconData icon;
-    String label;
-
     if (upper == 'CONFIRMED' || upper == 'APPROVED') {
-      badgeBg = const Color(0xFF188038).withOpacity(0.15);
-      borderColor = const Color(0xFF188038).withOpacity(0.35);
-      textColor = const Color(0xFF81C995);
-      icon = Icons.check_circle_rounded;
-      label = 'Confirmed';
-    } else if (upper == 'REJECTED') {
-      badgeBg = const Color(0xFFD93025).withOpacity(0.15);
-      borderColor = const Color(0xFFD93025).withOpacity(0.35);
-      textColor = const Color(0xFFF87171);
-      icon = Icons.cancel_rounded;
-      label = 'Rejected';
-    } else if (isPaymentPending) {
-      badgeBg = const Color(0xFFF59E0B).withOpacity(0.15);
-      borderColor = const Color(0xFFF59E0B).withOpacity(0.35);
-      textColor = const Color(0xFFFBBF24);
-      icon = Icons.payment_rounded;
-      label = 'Payment Pending';
-    } else {
-      badgeBg = const Color(0xFFA0A0A8).withOpacity(0.15);
-      borderColor = const Color(0xFFA0A0A8).withOpacity(0.35);
-      textColor = const Color(0xFFA0A0A8);
-      icon = Icons.hourglass_top_rounded;
-      label = 'Approval Pending';
+      const c = Color(0xFF81C995);
+      return pill(c, const Icon(Icons.check_circle_outline_rounded, size: 12, color: c), 'Confirmed');
     }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: badgeBg,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 12, color: textColor),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  color: textColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    if (upper == 'REJECTED') {
+      const c = Color(0xFFF87171);
+      return pill(c, const Icon(Icons.cancel_outlined, size: 12, color: c), 'Rejected');
+    }
+    if (isPaymentPending) {
+      const c = Color(0xFFFBBF24);
+      return pill(c, const Icon(Icons.credit_card_rounded, size: 12, color: c), 'Payment Pending');
+    }
+    const c = Color(0xFFA0A0A8);
+    return pill(c, const Icon(Icons.hourglass_empty_rounded, size: 12, color: c), 'Approval Pending');
   }
 }

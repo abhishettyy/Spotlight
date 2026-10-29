@@ -417,7 +417,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Third-Party Services</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Clerk (authentication), Supabase Storage (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Clerk (authentication), our file hosting (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
                   </div>
 
                   <div>

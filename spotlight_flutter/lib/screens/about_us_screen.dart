@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/custom_toast.dart';
@@ -30,12 +31,12 @@ class AboutUsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8);
-    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF161618);
-    final subTextColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A);
-    final borderColor = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E4E7);
-    const accentRed = Color(0xFFE63946);
+    final bgColor = Sk.of(context).canvas;
+    final cardColor = Sk.of(context).surface;
+    final textColor = Sk.of(context).fg;
+    final subTextColor = Sk.of(context).muted;
+    final borderColor = Sk.of(context).line;
+    final accentRed = Sk.of(context).brand;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -274,8 +275,8 @@ class AboutUsScreen extends StatelessWidget {
     required Color subTextColor,
     required bool isDark,
   }) {
-    final avatarBg = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFF1F1F3);
-    final badgeBg = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFF1F1F3);
+    final avatarBg = Sk.of(context).brandSoft;
+    final badgeBg = Sk.of(context).raised;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -378,17 +379,17 @@ class AboutUsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A66C2).withOpacity(0.12),
+                    color: Sk.of(context).brandSoft,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF0A66C2).withOpacity(0.3)),
+                    border: Border.all(color: Sk.of(context).brand.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.open_in_new_rounded,
                         size: 12,
-                        color: Color(0xFF0A66C2),
+                        color: Sk.of(context).brand,
                       ),
                       const SizedBox(width: 3),
                       Text(
@@ -396,7 +397,7 @@ class AboutUsScreen extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF0A66C2),
+                          color: Sk.of(context).brand,
                         ),
                       ),
                     ],

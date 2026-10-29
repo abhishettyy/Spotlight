@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,11 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  String _firstName(BuildContext context) {
+    final name = context.watch<UserProvider>().currentUser?.name.trim() ?? '';
+    return name.isEmpty ? 'there' : name.split(' ').first;
+  }
+
   final _formKey = GlobalKey<FormState>();
   final _usnController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -74,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   const SizedBox(height: 60),
                   Text(
-                    'Welcome to\nSpotlight!',
+                    'Complete Your Profile',
                     style: GoogleFonts.inter(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -84,10 +90,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Let's complete your profile to get started.",
+                    'Hi ${_firstName(context)}! A few more details to get you started.',
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      color: Colors.grey,
+                      color: Sk.of(context).muted,
                     ),
                   ),
                   const SizedBox(height: 48),
@@ -98,7 +104,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       _buildLabel('USN'),
                       Text(
                         'Cannot be edited later',
-                        style: GoogleFonts.inter(fontSize: 11, color: Colors.amber[800], fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(fontSize: 11, color: Sk.of(context).warn, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -157,13 +163,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: _isLoading 
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? CircularProgressIndicator(color: Sk.of(context).onBrand)
                         : Text(
                             'Complete Setup',
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Sk.of(context).onBrand,
                             ),
                           ),
                     ),
@@ -185,7 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         style: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Colors.grey[400],
+          color: Sk.of(context).faint,
         ),
       ),
     );
@@ -194,9 +200,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   InputDecoration _buildInputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[600]),
+      hintStyle: GoogleFonts.inter(color: Sk.of(context).muted),
       filled: true,
-      fillColor: Theme.of(context).cardColor,
+      fillColor: Sk.of(context).surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,

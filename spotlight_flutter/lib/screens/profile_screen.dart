@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../core/user_provider.dart';
 import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
 import '../core/notification_prefs_provider.dart';
+import '../core/theme_provider.dart';
 import 'auth_screen.dart';
 import 'ticket_screen.dart';
 import 'registered_clubs_screen.dart';
@@ -150,16 +152,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (sheetContext) {
         final cs = Theme.of(sheetContext).colorScheme;
         final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-        final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
-        final labelColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+        final sheetBg = Sk.of(context).surface;
+        final fieldBg = Sk.of(context).raised;
+        final labelColor = Sk.of(context).muted;
 
         InputDecoration fieldDecoration(String label, {String? hint, String? helperText}) {
           return InputDecoration(
             labelText: label,
             hintText: hint,
             helperText: helperText,
-            helperStyle: GoogleFonts.inter(color: Colors.amber[800], fontSize: 11, fontWeight: FontWeight.w500),
+            helperStyle: GoogleFonts.inter(color: Sk.of(context).warn, fontSize: 11, fontWeight: FontWeight.w500),
             labelStyle: GoogleFonts.inter(color: labelColor, fontSize: 13),
             hintStyle: GoogleFonts.inter(color: labelColor.withOpacity(0.5), fontSize: 14),
             filled: true,
@@ -182,11 +184,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              borderSide: BorderSide(color: Sk.of(context).danger, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              borderSide: BorderSide(color: Sk.of(context).danger, width: 1.5),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           );
@@ -246,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white24 : Colors.grey[300],
+                              color: Sk.of(context).lineStrong,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -425,11 +427,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               elevation: 0,
                             ),
                             child: isSaving
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 22,
                                     height: 22,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: Sk.of(context).onBrand,
                                       strokeWidth: 2.5,
                                     ),
                                   )
@@ -438,7 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     style: GoogleFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: Sk.of(context).onBrand,
                                     ),
                                   ),
                           ),
@@ -470,12 +472,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
+        final fieldBg = Sk.of(context).raised;
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
+              backgroundColor: Sk.of(context).surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Row(
                 children: [
@@ -505,7 +507,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     'Enter your current password to save changes.',
-                    style: GoogleFonts.inter(fontSize: 14, color: isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]),
+                    style: GoogleFonts.inter(fontSize: 14, color: Sk.of(context).muted),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -516,12 +518,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     decoration: InputDecoration(
                       hintText: 'Enter password',
                       hintStyle: GoogleFonts.inter(
-                        color: (isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!).withOpacity(0.6),
+                        color: (Sk.of(context).muted).withOpacity(0.6),
                       ),
                       filled: true,
                       fillColor: fieldBg,
                       errorText: errorText,
-                      errorStyle: GoogleFonts.inter(color: Colors.red, fontSize: 12),
+                      errorStyle: GoogleFonts.inter(color: Sk.of(context).danger, fontSize: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
@@ -529,20 +531,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: errorText != null
-                            ? const BorderSide(color: Colors.red, width: 1.5)
+                            ? BorderSide(color: Sk.of(context).danger, width: 1.5)
                             : BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide(
-                          color: errorText != null ? Colors.red : cs.primary,
+                          color: errorText != null ? Sk.of(context).danger : cs.primary,
                           width: 1.5,
                         ),
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          color: isDark ? const Color(0xFFA0A0A0) : Colors.grey[500],
+                          color: Sk.of(context).muted,
                           size: 20,
                         ),
                         onPressed: () => setDialogState(() => obscure = !obscure),
@@ -572,7 +574,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: Text('Cancel', style: GoogleFonts.inter(color: isDark ? const Color(0xFFA0A0A0) : Colors.grey[600])),
+                  child: Text('Cancel', style: GoogleFonts.inter(color: Sk.of(context).muted)),
                 ),
                 ElevatedButton(
                   onPressed: isVerifying
@@ -599,12 +601,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
                   child: isVerifying
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(color: Sk.of(context).onBrand, strokeWidth: 2),
                         )
-                      : Text('Confirm', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+                      : Text('Confirm', style: GoogleFonts.inter(color: Sk.of(context).onBrand, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -636,10 +638,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setModalState) {
             final theme = Theme.of(context);
             final cs = theme.colorScheme;
-            final isDark = theme.brightness == Brightness.dark;
-            final sheetBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-            final fieldBg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
-            final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+            final sheetBg = Sk.of(context).surface;
+            final fieldBg = Sk.of(context).raised;
+            final subText = Sk.of(context).muted;
 
             return AutofillGroup(
               child: Container(
@@ -663,7 +664,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white24 : Colors.grey[300],
+                            color: Sk.of(context).lineStrong,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -710,13 +711,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
+                            color: Sk.of(context).dangerSoft,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                            border: Border.all(color: Sk.of(context).danger.withOpacity(0.3)),
                           ),
                           child: Text(
                             errorText!,
-                            style: GoogleFonts.inter(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(color: Sk.of(context).danger, fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -894,17 +895,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           elevation: 0,
                         ),
                         child: isSaving
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                child: CircularProgressIndicator(color: Sk.of(context).onBrand, strokeWidth: 2.5),
                               )
                             : Text(
                                 'Save Changes',
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Sk.of(context).onBrand,
                                 ),
                               ),
                       ),
@@ -923,11 +924,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final subText = Sk.of(context).muted;
 
-    final tileColor = Theme.of(context).cardTheme.color ?? surfaceColor;
+    final tileColor = Sk.of(context).surface;
 
     return Scaffold(
       body: SafeArea(
@@ -956,7 +955,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             : name.trim().split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase();
                         return Text(initials,
                             style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: Sk.of(context).onBrand,
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold));
                       },
@@ -989,9 +988,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
+                                  color: Sk.of(context).surface,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: isDark ? null : Border.all(color: Colors.grey.shade300, width: 1),
+                                  border: Border.all(color: Sk.of(context).line, width: 1),
                                   boxShadow: null,
                                 ),
                                 child: Text(
@@ -1112,15 +1111,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 Icons.dark_mode_outlined,
                 'Dark Mode',
-                trailingText: 'On',
+                trailingText: context.watch<ThemeProvider>().isDarkMode ? 'On' : 'Off',
                 tileColor: tileColor,
-                onTap: () {
-                  showSpotlightToast(
-                    context,
-                    'Light mode coming soon',
-                    icon: Icons.wb_sunny_rounded,
-                  );
-                },
+                onTap: () => context.read<ThemeProvider>().toggleDarkMode(),
               ),
               _buildListTile(
                 context,
@@ -1188,26 +1181,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     }
                   },
-                  icon: const Icon(Icons.logout_rounded,
-                      size: 20, color: Color(0xFFD90429)),
+                  icon: Icon(Icons.logout_rounded,
+                      size: 20, color: Sk.of(context).danger),
                   label: Text('Sign Out',
                       style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFFD90429))),
+                          color: Sk.of(context).danger)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).cardTheme.color,
+                    backgroundColor: Sk.of(context).surface,
                     elevation: 0,
-                    shadowColor: isDark ? Colors.transparent : Colors.black.withOpacity(0.1),
+                    shadowColor: Colors.transparent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: isDark
-                            ? BorderSide.none
-                            : BorderSide(
-                                color: Colors.grey.shade200,
-                                width: 1.0,
-                              )),
+                        side: BorderSide(color: Sk.of(context).line, width: 1.0)),
                   ),
                 ),
               ),
@@ -1231,9 +1219,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height: 128,
           constraints: const BoxConstraints(maxHeight: 128),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
+            color: Sk.of(context).surface,
             borderRadius: BorderRadius.circular(20),
-            border: isDark ? null : Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: Sk.of(context).line),
             boxShadow: null,
           ),
           child: Column(
@@ -1242,7 +1230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100],
+                  color: Sk.of(context).raised,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: cs.primary, size: 20),
@@ -1259,8 +1247,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: isDark
-                          ? const Color(0xFFA0A0A0)
-                          : Colors.grey[500])),
+                          ? Sk.of(context).muted
+                          : Sk.of(context).faint)),
             ],
           ),
         ),
@@ -1277,8 +1265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     VoidCallback? onTap,
   }) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
+    final subText = Sk.of(context).muted;
 
     return GestureDetector(
       onTap: onTap,
@@ -1288,12 +1275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: tileColor,
           borderRadius: BorderRadius.circular(16),
-          border: isDark
-              ? null
-              : Border.all(
-                  color: Colors.grey.shade200,
-                  width: 1.0,
-                ),
+          border: Border.all(color: Sk.of(context).line, width: 1.0),
           boxShadow: null,
         ),
         child: Row(

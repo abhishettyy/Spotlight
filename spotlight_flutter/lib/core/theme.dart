@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'sk_colors.dart';
 
 class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
   const _SmoothPageTransitionsBuilder();
@@ -46,18 +47,52 @@ class SpotlightTheme {
   static const Color _lightCanvas  = Color(0xFFF7F7F8);
   static const Color _lightSurface = Color(0xFFFFFFFF);
   static const Color _lightLine    = Color(0xFFE4E4E7);
-  static const Color _darkRaised   = Color(0xFF1D1D20);
   static const Color _darkLine     = Color(0xFF2A2A2E);
   static const Color _darkFg       = Color(0xFFEDEDEF);
+
+  // Web .input-field: surface fill, line-strong border, brand border on focus, faint placeholder
+  static InputDecorationTheme _inputTheme(Sk sk) {
+    OutlineInputBorder border(Color c, [double w = 1]) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: c, width: w),
+        );
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: sk.surface,
+      border: border(Colors.transparent, 0),
+      enabledBorder: border(Colors.transparent, 0),
+      focusedBorder: border(sk.brand, 1.5),
+      errorBorder: border(sk.danger),
+      focusedErrorBorder: border(sk.danger, 1.5),
+      hintStyle: GoogleFonts.inter(color: sk.faint),
+      labelStyle: GoogleFonts.inter(color: sk.muted),
+      prefixIconColor: sk.muted,
+      suffixIconColor: sk.muted,
+      errorStyle: GoogleFonts.inter(color: sk.danger),
+    );
+  }
+
+  // Web toasts: surface background, primary text, thin border
+  static SnackBarThemeData _snackTheme(Sk sk) => SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: sk.surface,
+        contentTextStyle: GoogleFonts.inter(color: sk.fg, fontSize: 14, fontWeight: FontWeight.w500),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: sk.line, width: 1),
+        ),
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      );
 
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
-      primaryColor: crimsonRed,
+      primaryColor: deepBlack,
       scaffoldBackgroundColor: _lightCanvas,
       pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.light(
-        primary: crimsonRed,
+        primary: deepBlack,
         secondary: deepBlack,
         surface: _lightSurface,
         background: _lightCanvas,
@@ -65,6 +100,9 @@ class SpotlightTheme {
         onSecondary: pureWhite,
         onSurface: deepBlack,
         onBackground: deepBlack,
+        onSurfaceVariant: Color(0xFF52525B),
+        outline: Color(0xFFE4E4E7),
+        error: Color(0xFFD93025),
       ),
       textTheme: GoogleFonts.interTextTheme().apply(
         bodyColor: deepBlack,
@@ -90,8 +128,8 @@ class SpotlightTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: crimsonRed,
-          foregroundColor: pureWhite,
+          backgroundColor: Sk.light.brand,
+          foregroundColor: Sk.light.onBrand,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
@@ -103,50 +141,32 @@ class SpotlightTheme {
           ),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: subtleGray,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        hintStyle: GoogleFonts.inter(color: const Color(0xFF71717A)),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: deepBlack,
-        contentTextStyle: GoogleFonts.inter(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 0,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      ),
+      inputDecorationTheme: _inputTheme(Sk.light),
+      dividerColor: Sk.light.line,
+      dividerTheme: DividerThemeData(color: Sk.light.line, thickness: 1),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: Sk.light.brand, circularTrackColor: Sk.light.line),
+      iconTheme: IconThemeData(color: Sk.light.fg),
+      snackBarTheme: _snackTheme(Sk.light),
     );
   }
 
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: crimsonRed,
+      primaryColor: _darkFg,
       scaffoldBackgroundColor: darkBg,
       pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.dark(
-        primary: crimsonRed,
+        primary: _darkFg,
         secondary: darkGray,
         surface: darkGray,
         background: darkBg,
-        onPrimary: pureWhite,
+        onPrimary: darkBg,
         onSurface: _darkFg,
         onBackground: _darkFg,
+        onSurfaceVariant: lightGray,
+        outline: _darkLine,
+        error: Color(0xFFF28B82),
       ),
       textTheme: GoogleFonts.interTextTheme().apply(
         bodyColor: _darkFg,
@@ -172,8 +192,8 @@ class SpotlightTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: crimsonRed,
-          foregroundColor: pureWhite,
+          backgroundColor: Sk.dark.brand,
+          foregroundColor: Sk.dark.onBrand,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
@@ -185,34 +205,12 @@ class SpotlightTheme {
           ),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: _darkRaised,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        hintStyle: GoogleFonts.inter(color: lightGray),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: _darkRaised,
-        contentTextStyle: GoogleFonts.inter(
-          color: _darkFg,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: _darkLine, width: 1),
-        ),
-        elevation: 0,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      ),
+      inputDecorationTheme: _inputTheme(Sk.dark),
+      dividerColor: Sk.dark.line,
+      dividerTheme: DividerThemeData(color: Sk.dark.line, thickness: 1),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: Sk.dark.brand, circularTrackColor: Sk.dark.line),
+      iconTheme: IconThemeData(color: Sk.dark.fg),
+      snackBarTheme: _snackTheme(Sk.dark),
     );
   }
 }

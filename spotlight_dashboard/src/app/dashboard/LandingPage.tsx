@@ -23,6 +23,14 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
     totalStudents: 0
   });
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'contact' | null>(null);
+  const [leaving, setLeaving] = useState(false);
+
+  // Student and admin are separate apps (a full page load); fade out first so the switch isn't abrupt
+  const leaveTo = (url: string) => {
+    if (leaving) return;
+    setLeaving(true);
+    setTimeout(() => { window.location.href = url; }, 200);
+  };
 
   useEffect(() => {
     fetchPublicStats().then(data => {
@@ -52,7 +60,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
   }, []);
 
   return (
-    <div id="ls" className="h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden flex flex-col relative bg-background touch-pan-y overscroll-none transition-colors duration-300">
+    <motion.div id="ls" animate={{ opacity: leaving ? 0 : 1 }} transition={{ duration: 0.2 }} className="h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden flex flex-col relative bg-background touch-pan-y overscroll-none transition-colors duration-300">
       <div id="top-sentinel" className="absolute top-0 left-0 w-full h-10 pointer-events-none z-0" />
 
       <nav className="fixed top-0 left-0 right-0 z-30 transition-all duration-500"
@@ -146,7 +154,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => { window.location.href = STUDENT_LOGIN_URL; }}
+                  onClick={() => leaveTo(STUDENT_LOGIN_URL)}
                   className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-white bg-[color:var(--sk-brand)] hover:bg-[color:var(--sk-brand-hover)] rounded-full transition-all duration-300 active:scale-95"
                 >
                   <span>Login as Student</span>
@@ -162,7 +170,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => { window.location.href = "/admin"; }}
+                  onClick={() => leaveTo("/admin")}
                   className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-[color:var(--sk-fg)] bg-[color:var(--sk-raised)] hover:bg-[color:var(--sk-line)] border border-[color:var(--sk-line)] rounded-full transition-all duration-300 active:scale-95"
                 >
                   <span>Login as Admin</span>
@@ -240,7 +248,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
 
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Third-Party Services</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We rely on secure authentication services, Supabase Storage (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We rely on secure authentication services, our file hosting (storing club logos, event posters and payment QR codes), and PostgreSQL databases to run the infrastructure.</p>
                     </div>
                   </>
                 )}
@@ -294,6 +302,6 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
         )}
       </AnimatePresence>
 
-    </div>
+    </motion.div>
   );
 }

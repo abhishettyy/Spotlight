@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/api_service.dart';
@@ -112,7 +113,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final subText = Sk.of(context).muted;
     final eventsProvider = Provider.of<EventsProvider>(context);
 
     final filteredClubs = _searchQuery.isEmpty
@@ -156,12 +157,12 @@ class _ClubsScreenState extends State<ClubsScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search clubs...',
                     hintStyle: GoogleFonts.inter(
-                      color: isDark ? const Color(0xFF666666) : Colors.grey[500],
+                      color: Sk.of(context).faint,
                       fontSize: 15,
                     ),
                     prefixIcon: Icon(
                       Icons.search_rounded,
-                      color: isDark ? const Color(0xFF666666) : Colors.grey[500],
+                      color: Sk.of(context).faint,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -173,7 +174,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF161618) : Colors.grey[100],
+                    fillColor: Sk.of(context).surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -196,7 +197,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey[400]),
+                                Icon(Icons.wifi_off_rounded, size: 48, color: Sk.of(context).faint),
                                 const SizedBox(height: 12),
                                 Text(
                                   'Could not load clubs',
@@ -212,7 +213,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                             height: 24,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2.5,
-                                              color: Theme.of(context).colorScheme.primary,
+                                              color: Sk.of(context).brand,
                                             ),
                                           ),
                                         ),
@@ -241,7 +242,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                     Text(
                                       _searchQuery.isEmpty ? 'No clubs registered yet' : 'No clubs matching "$_searchQuery"',
                                       style: GoogleFonts.inter(
-                                        color: Colors.grey,
+                                        color: Sk.of(context).muted,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -281,12 +282,12 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF),
+                                        color: Sk.of(context).surface,
                                         borderRadius: BorderRadius.circular(16),
                                         border: isDark
                                             ? null
                                             : Border.all(
-                                                color: Colors.grey.shade200,
+                                                color: Sk.of(context).raised,
                                                 width: 1.0,
                                               ),
                                         
@@ -297,11 +298,9 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                             width: 52,
                                             height: 52,
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100],
+                                              color: Sk.of(context).raised,
                                               shape: BoxShape.circle,
-                                              border: isDark
-                                                  ? null
-                                                  : Border.all(color: Colors.grey[200]!),
+                                              border: Border.all(color: Sk.of(context).line),
                                             ),
                                             child: hasLogo
                                                 ? ClipOval(

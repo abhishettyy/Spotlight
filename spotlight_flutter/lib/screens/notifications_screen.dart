@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -29,7 +30,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[400]!;
+    final subText = isDark ? Sk.of(context).muted : Sk.of(context).faint;
 
     return Scaffold(
       body: SafeArea(
@@ -63,8 +64,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF1D1D20)
-                                    : Colors.grey[100],
+                                    ? Sk.of(context).raised
+                                    : Sk.of(context).raised,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -91,11 +92,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             const SizedBox(height: 28),
                             ElevatedButton.icon(
                               onPressed: () => prefs.toggle(),
-                              icon: const Icon(Icons.notifications_active_outlined,
-                                  size: 18, color: Colors.white),
+                              icon: Icon(Icons.notifications_active_outlined,
+                                  size: 18, color: Sk.of(context).onBrand),
                               label: Text('Enable Notifications',
                                   style: GoogleFonts.inter(
-                                      color: Colors.white,
+                                      color: Sk.of(context).onBrand,
                                       fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: cs.primary,
@@ -162,8 +163,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             decoration: BoxDecoration(
                               border: Border.all(
                                   color: isDark
-                                      ? Colors.white24
-                                      : Colors.grey[300]!),
+                                      ? Sk.of(context).lineStrong
+                                      : Sk.of(context).lineStrong),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text('Mark all read',
@@ -203,14 +204,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         background: Container(
                                           margin: const EdgeInsets.only(bottom: 14),
                                           decoration: BoxDecoration(
-                                            color: Colors.red.withOpacity(0.15),
+                                            color: Sk.of(context).dangerSoft,
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           alignment: Alignment.centerLeft,
                                           padding: const EdgeInsets.only(left: 20),
-                                          child: const Icon(
+                                          child: Icon(
                                             Icons.delete_outline_rounded,
-                                            color: Colors.redAccent,
+                                            color: Sk.of(context).danger,
                                             size: 24,
                                           ),
                                         ),
@@ -245,9 +246,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildEmpty(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final textColor = Sk.of(context).fg;
+    final subText = Sk.of(context).muted;
 
     return Center(
       child: Padding(
@@ -295,7 +295,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey[400]),
+          Icon(Icons.wifi_off_rounded, size: 48, color: Sk.of(context).faint),
           const SizedBox(height: 16),
           Text('Could not load notifications',
               style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -309,7 +309,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Sk.of(context).brand,
                       ),
                     ),
                   ),
@@ -325,10 +325,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildCard(BuildContext context, NotificationModel n) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
-    final timeText = isDark ? const Color(0xFF808080) : Colors.grey[400]!;
+    final cardColor = Sk.of(context).surface;
+    final subText = Sk.of(context).muted;
+    final timeText = Sk.of(context).faint;
 
     final timeAgo = _formatTime(n.createdAt);
 
@@ -337,7 +336,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: isDark ? null : Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Sk.of(context).line),
         
       ),
       child: Padding(
@@ -390,8 +389,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
+                    decoration: BoxDecoration(
+                      color: Sk.of(context).brand,
                       shape: BoxShape.circle,
                     ),
                   ),

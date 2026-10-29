@@ -136,7 +136,7 @@ export default function NotificationsPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
               <p style={{ flex: 1, fontSize: 13, color: 'var(--subtext)', lineHeight: 1.5 }}>{n.body}</p>
               {!n.isRead && (
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF5252', flexShrink: 0 }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--sk-brand)', flexShrink: 0 }} />
               )}
             </div>
           </div>

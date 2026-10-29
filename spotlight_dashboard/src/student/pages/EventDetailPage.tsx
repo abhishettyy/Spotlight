@@ -11,6 +11,7 @@ import {
   isEventLive, isEventFull, isTicketConfirmed, ticketHasPaid, TicketModel, EventModel,
 } from '@student/types/event';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
+import EventImage from '@student/components/ui/EventImage';
 import { ErrorState } from '@student/components/ui/States';
 import type { PaymentRouteState } from '@student/pages/PaymentPage';
 import { toast } from 'sonner';
@@ -74,6 +75,7 @@ export default function EventDetailPage() {
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [pendingPaymentTicket, setPendingPaymentTicket] = useState<TicketModel | null>(null);
   const [posterOpen, setPosterOpen] = useState(false);
+  const [posterOk, setPosterOk] = useState(false);
   const [, setTick] = useState(0);
 
   const event = events.find((e) => e.id === id);
@@ -171,7 +173,7 @@ export default function EventDetailPage() {
   // ── Bottom CTA state (mirrors Flutter) ───────────────────────────────────
   let btnLabel = 'Register Now';
   let btnColor = 'var(--sk-brand)';
-  let btnTextColor = '#ffffff';
+  let btnTextColor = 'var(--sk-on-brand)';
   const btnDisabled = isClosed || alreadyRegistered || checkingRegistration;
 
   if (checkingRegistration) {
@@ -204,31 +206,16 @@ export default function EventDetailPage() {
         {/* ── Poster ────────────────────────────────────────────────────── */}
         <div
           className="stu-ed-poster"
-          style={{ cursor: event.imageUrl ? 'zoom-in' : 'default' }}
-          onClick={() => event.imageUrl && setPosterOpen(true)}
+          style={{ cursor: posterOk ? 'zoom-in' : 'default' }}
+          onClick={() => posterOk && setPosterOpen(true)}
         >
-          {event.imageUrl ? (
-            <img
-              src={event.imageUrl}
-              alt={event.title}
-              className="stu-ed-poster-img"
-            />
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                background: 'var(--raised)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 64,
-                userSelect: 'none',
-              }}
-            >
-              🎪
-            </div>
-          )}
+          <EventImage
+            src={event.imageUrl}
+            alt={event.title}
+            className="stu-ed-poster-img"
+            style={{ objectFit: undefined }}
+            onStatusChange={setPosterOk}
+          />
 
           {/* Circle back button (top-left) */}
           <button
@@ -631,7 +618,7 @@ export default function EventDetailPage() {
         </div>
 
         {/* ── Full-screen poster overlay ───────────────────────────────────── */}
-        {posterOpen && event.imageUrl && (
+        {posterOpen && posterOk && event.imageUrl && (
           <div
             onClick={() => setPosterOpen(false)}
             style={{

@@ -10,6 +10,7 @@ import {
 import { useSavedEventsStore } from '@student/store/savedEventsStore';
 import { useEventsStore } from '@student/store/eventsStore';
 import EventCard from '@student/components/ui/EventCard';
+import EventImage from '@student/components/ui/EventImage';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
 import { formatDate, formatTime12H } from '@student/utils/dateUtils';
@@ -237,14 +238,7 @@ function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; cu
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden' }}>
       {/* Banner */}
       <div style={{ height: 140, background: 'var(--raised)', position: 'relative', overflow: 'hidden' }}>
-        {event?.imageUrl && (
-          <img
-            src={event.imageUrl}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-          />
-        )}
+        <EventImage src={event?.imageUrl} loading="lazy" />
         <div style={{ position: 'absolute', top: 14, right: 14 }}>
           <StatusBadge ticket={ticket} />
         </div>
@@ -317,7 +311,7 @@ function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; cu
             disabled={isViewDisabled}
             style={{
               background: isViewDisabled ? 'var(--raised)' : 'var(--color-crimson)',
-              color: isViewDisabled ? 'var(--sk-faint)' : '#fff',
+              color: isViewDisabled ? 'var(--sk-faint)' : 'var(--sk-on-brand)',
               border: 'none',
               borderRadius: 20,
               padding: '10px 20px',

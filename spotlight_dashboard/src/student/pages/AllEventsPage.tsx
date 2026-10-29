@@ -126,7 +126,7 @@ export default function AllEventsPage() {
               borderRadius: 20,
               border: 'none',
               background: formatFilter === f ? 'var(--color-crimson)' : 'var(--raised)',
-              color: formatFilter === f ? '#fff' : 'var(--subtext)',
+              color: formatFilter === f ? 'var(--sk-on-brand)' : 'var(--subtext)',
               fontFamily: 'var(--font-sans)',
               fontSize: 13,
               fontWeight: formatFilter === f ? 700 : 500,

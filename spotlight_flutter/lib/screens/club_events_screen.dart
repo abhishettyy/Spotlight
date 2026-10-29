@@ -1,9 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/events_provider.dart';
 import '../core/smooth_route.dart';
+import '../core/custom_toast.dart';
+import '../core/date_format.dart';
+import '../core/saved_events_provider.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
 import 'event_details_screen.dart';
@@ -20,22 +24,14 @@ class ClubEventsScreen extends StatelessWidget {
     this.clubLogoUrl,
   });
 
-  String _formatDeadline(DateTime deadline) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final hourInt = deadline.hour % 12 == 0 ? 12 : deadline.hour % 12;
-    final amPm = deadline.hour >= 12 ? 'PM' : 'AM';
-    final minStr = deadline.minute.toString().padLeft(2, '0');
-    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year} · $hourInt:$minStr $amPm';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
-    final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
+    final textColor = Sk.of(context).fg;
+    final subTextColor = Sk.of(context).muted;
+    final cardBg = Sk.of(context).surface;
 
     final eventsProvider = Provider.of<EventsProvider>(context);
 
@@ -46,8 +42,8 @@ class ClubEventsScreen extends StatelessWidget {
       return e.isUpcoming;
     }).toList()
       ..sort((a, b) {
-        final da = a.date != null ? DateTime.tryParse(a.date!) : null;
-        final db = b.date != null ? DateTime.tryParse(b.date!) : null;
+        final da = a.startDate;
+        final db = b.startDate;
         if (da == null && db == null) return 0;
         if (da == null) return 1;
         if (db == null) return -1;
@@ -76,8 +72,8 @@ class ClubEventsScreen extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100],
-                      border: isDark ? null : Border.all(color: Colors.grey[200]!),
+                      color: Sk.of(context).raised,
+                      border: Border.all(color: Sk.of(context).line),
                     ),
                     child: (clubLogoUrl != null && clubLogoUrl!.isNotEmpty)
                         ? ClipOval(
@@ -167,7 +163,6 @@ class ClubEventsScreen extends StatelessWidget {
                               textColor: textColor,
                               subTextColor: subTextColor,
                               primaryColor: cs.primary,
-                              formatDeadline: _formatDeadline,
                             );
                           },
                         ),
@@ -186,7 +181,6 @@ class _EventCard extends StatelessWidget {
   final Color textColor;
   final Color subTextColor;
   final Color primaryColor;
-  final String Function(DateTime) formatDeadline;
 
   const _EventCard({
     required this.event,
@@ -195,24 +189,11 @@ class _EventCard extends StatelessWidget {
     required this.textColor,
     required this.subTextColor,
     required this.primaryColor,
-    required this.formatDeadline,
   });
 
   @override
   Widget build(BuildContext context) {
-    String day = '??';
-    String month = 'DATE';
-    if (event.date != null) {
-      final parsed = DateTime.tryParse(event.date!);
-      if (parsed != null) {
-        day = parsed.day.toString().padLeft(2, '0');
-        const months = ['JAN','FEB','MAR','APR','MAY','JUN',
-                        'JUL','AUG','SEP','OCT','NOV','DEC'];
-        month = months[parsed.month - 1];
-      }
-    }
-
-    final price = event.price > 0 ? 'Paid' : 'Free';
+    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
     final imageUrl = event.imageUrl;
 
     return GestureDetector(
@@ -224,24 +205,25 @@ class _EventCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: isDark ? null : Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: Sk.of(context).line),
           boxShadow: null,
         ),
-        child: Row(
+        // The image fills the card's full height, however many detail lines it has
+        child: IntrinsicHeight(
+          child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            
             ClipRRect(
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
               child: SizedBox(
                 width: 90,
-                height: 100,
                 child: (imageUrl != null && imageUrl.isNotEmpty)
                     ? CustomImage(
                         url: imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholder(isDark),
+                        errorBuilder: (_, __, ___) => _placeholder(Sk.of(context)),
                       )
-                    : _placeholder(isDark),
+                    : _placeholder(Sk.of(context)),
               ),
             ),
 
@@ -266,12 +248,36 @@ class _EventCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (event.isLive) ...[
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Sk.of(context).danger,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LIVE',
+                                style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: Sk.of(context).danger,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: event.price > 0
-                                ? primaryColor.withOpacity(0.12)
-                                : Colors.green.withOpacity(0.12),
+                            color: Sk.of(context).raised,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -279,7 +285,7 @@ class _EventCard extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: event.price > 0 ? primaryColor : Colors.green,
+                              color: Sk.of(context).fg,
                             ),
                           ),
                         ),
@@ -307,9 +313,7 @@ class _EventCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            event.date != null
-                                ? '$day $month'
-                                : 'TBA',
+                            formatEventHeaderDate(event.startDate, event.eventEndDate),
                             style: GoogleFonts.inter(
                                 fontSize: 11, color: subTextColor),
                             maxLines: 1,
@@ -341,14 +345,14 @@ class _EventCard extends StatelessWidget {
                       Row(
                         children: [
                           Icon(Icons.access_time_rounded,
-                              size: 11, color: Colors.amber[600]),
+                              size: 11, color: Sk.of(context).warn),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               'Deadline: ${formatDeadline(event.registrationDeadline!)}',
                               style: GoogleFonts.inter(
                                 fontSize: 10,
-                                color: Colors.amber[600],
+                                color: Sk.of(context).warn,
                                 fontWeight: FontWeight.w600,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -357,21 +361,57 @@ class _EventCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: subTextColor,
+                                fontWeight: FontWeight.w500),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Consumer<SavedEventsProvider>(
+                          builder: (context, savedProvider, _) {
+                            final isSaved = savedProvider.isSaved(event.id);
+                            return GestureDetector(
+                              onTap: () {
+                                savedProvider.toggleSave(event.id);
+                                showSpotlightToast(
+                                  context,
+                                  isSaved ? 'Event removed from saved list' : 'Event saved to your list',
+                                  icon: isSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_added_rounded,
+                                );
+                              },
+                              child: Icon(
+                                isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                color: isSaved ? primaryColor : subTextColor,
+                                size: 18,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
           ],
         ),
+        ),
       ),
     );
   }
 
-  Widget _placeholder(bool isDark) => Container(
-        color: isDark ? const Color(0xFF161618) : Colors.grey[200],
+  Widget _placeholder(Sk sk) => Container(
+        color: sk.raised,
         child: Center(
-          child: Icon(Icons.image_outlined,
-              color: isDark ? Colors.white24 : Colors.grey[400], size: 28),
+          child: Icon(Icons.calendar_today_outlined, color: sk.faint, size: 28),
         ),
       );
 }

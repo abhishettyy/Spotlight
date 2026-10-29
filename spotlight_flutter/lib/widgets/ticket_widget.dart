@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/theme.dart';
@@ -54,7 +55,7 @@ class TicketWidget extends StatelessWidget {
                       child: Text(
                         isConfirmed ? 'CONFIRMED' : 'PENDING',
                         style: GoogleFonts.inter(
-                          color: isConfirmed ? SpotlightTheme.deepBlack : Colors.grey[600],
+                          color: isConfirmed ? SpotlightTheme.deepBlack : Sk.of(context).muted,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                           letterSpacing: 1,
@@ -63,7 +64,7 @@ class TicketWidget extends StatelessWidget {
                     ),
                     Icon(
                       isConfirmed ? Icons.verified_rounded : Icons.hourglass_empty_rounded,
-                      color: isConfirmed ? const Color(0xFFDAA520) : Colors.grey[400],
+                      color: isConfirmed ? const Color(0xFFDAA520) : Sk.of(context).faint,
                     )
                   ],
                 ),
@@ -80,17 +81,17 @@ class TicketWidget extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+                    Icon(Icons.calendar_today_outlined, size: 16, color: Sk.of(context).muted),
                     const SizedBox(width: 8),
-                    Text(dateStr, style: GoogleFonts.inter(color: Colors.grey[700])),
+                    Text(dateStr, style: GoogleFonts.inter(color: Sk.of(context).muted)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                    Icon(Icons.location_on_outlined, size: 16, color: Sk.of(context).muted),
                     const SizedBox(width: 8),
-                    Text(location, style: GoogleFonts.inter(color: Colors.grey[700])),
+                    Text(location, style: GoogleFonts.inter(color: Sk.of(context).muted)),
                   ],
                 ),
               ],
@@ -168,7 +169,7 @@ class TicketWidget extends StatelessWidget {
                       Text(
                         'Scan at entry',
                         style: GoogleFonts.inter(
-                          color: Colors.grey[500],
+                          color: Sk.of(context).faint,
                           fontSize: 14,
                         ),
                       ),
@@ -184,13 +185,13 @@ class TicketWidget extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.admin_panel_settings_outlined, color: Colors.grey),
+                            Icon(Icons.admin_panel_settings_outlined, color: Sk.of(context).muted),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Awaiting Admin Approval for payment. Check back soon.',
                                 style: GoogleFonts.inter(
-                                  color: Colors.grey[600],
+                                  color: Sk.of(context).muted,
                                   fontSize: 14,
                                 ),
                               ),

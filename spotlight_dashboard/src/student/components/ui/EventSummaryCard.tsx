@@ -1,6 +1,7 @@
 import { Calendar, MapPin } from 'lucide-react';
 import { EventModel } from '@student/types/event';
 import { formatEventHeaderDate } from '@student/utils/dateUtils';
+import EventImage from '@student/components/ui/EventImage';
 
 /** Compact event overview shown beside forms on desktop (register, payment). */
 export default function EventSummaryCard({ event }: { event: EventModel }) {
@@ -10,14 +11,7 @@ export default function EventSummaryCard({ event }: { event: EventModel }) {
   return (
     <div className="spotlight-card" style={{ overflow: 'hidden' }}>
       <div style={{ aspectRatio: '4 / 3', background: 'var(--raised)' }}>
-        {event.imageUrl && (
-          <img
-            src={event.imageUrl}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-          />
-        )}
+        <EventImage src={event.imageUrl} />
       </div>
       <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.6px', color: 'var(--sk-brand)' }}>

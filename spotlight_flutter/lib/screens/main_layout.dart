@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/theme.dart';
+import '../core/sk_colors.dart';
 import 'home_screen.dart';
 import 'clubs_screen.dart';
 import 'ticket_screen.dart';
@@ -37,6 +37,8 @@ class _MainLayoutState extends State<MainLayout> {
     // so the navbar is lifted 50% up and never collides with system buttons.
     final double navBottom = sysBottom >= 48 ? (sysBottom + 16) : 68.0;
 
+    final sk = Sk.of(context);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -53,18 +55,12 @@ class _MainLayoutState extends State<MainLayout> {
             right: 24,
             child: Container(
               height: 70,
+              // Web bottom nav: surface, line border, large shadow (light only)
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? SpotlightTheme.darkGray
-                    : SpotlightTheme.pureWhite,
+                color: sk.surface,
                 borderRadius: BorderRadius.circular(35),
-                border: Theme.of(context).brightness == Brightness.dark
-                    ? null
-                    : Border.all(
-                        color: Colors.black.withOpacity(0.04),
-                        width: 1.0,
-                      ),
-                boxShadow: null,
+                border: Border.all(color: sk.line),
+                boxShadow: sk.shadowLg,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -84,6 +80,9 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _buildNavItem(int index, IconData icon, String label, {int? badge}) {
     final isSelected = _currentIndex == index;
+    final sk = Sk.of(context);
+    // Active tab is an inverse pill (text colour fill, page colour content), like the web
+    final activeContent = sk.canvas;
 
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
@@ -94,7 +93,7 @@ class _MainLayoutState extends State<MainLayout> {
             : const EdgeInsets.all(12),
         decoration: isSelected
             ? BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: sk.fg,
                 borderRadius: BorderRadius.circular(24),
               )
             : const BoxDecoration(),
@@ -105,7 +104,7 @@ class _MainLayoutState extends State<MainLayout> {
               children: [
                 Icon(
                   icon,
-                  color: isSelected ? SpotlightTheme.pureWhite : SpotlightTheme.lightGray,
+                  color: isSelected ? activeContent : sk.muted,
                   size: 24,
                 ),
                 if (badge != null && !isSelected)
@@ -114,14 +113,14 @@ class _MainLayoutState extends State<MainLayout> {
                     top: -4,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: SpotlightTheme.deepBlack,
+                      decoration: BoxDecoration(
+                        color: sk.brand,
                         shape: BoxShape.circle,
                       ),
                       child: Text(
                         badge.toString(),
-                        style: const TextStyle(
-                          color: SpotlightTheme.pureWhite,
+                        style: TextStyle(
+                          color: Sk.of(context).onBrand,
                           fontSize: 8,
                           fontWeight: FontWeight.bold,
                         ),
@@ -134,8 +133,8 @@ class _MainLayoutState extends State<MainLayout> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
-                  color: SpotlightTheme.pureWhite,
+                style: TextStyle(
+                  color: activeContent,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -145,12 +144,12 @@ class _MainLayoutState extends State<MainLayout> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: sk.brand,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     badge.toString(),
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Sk.of(context).onBrand, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 )
               ]

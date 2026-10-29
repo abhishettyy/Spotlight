@@ -7,6 +7,8 @@ interface AuthState {
   token: string | null;
   userId: string | null;
   isAuthenticated: boolean;
+  /** Set by logout; the page is leaving for the landing page, so route guards must not redirect. */
+  signingOut: boolean;
   setSession: (token: string, userId: string) => void;
   logout: () => void;
   tryAutoLogin: () => boolean;
@@ -16,6 +18,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   userId: null,
   isAuthenticated: false,
+  signingOut: false,
 
   setSession: (token: string, userId: string) => {
     localStorage.setItem('auth_token', token);
@@ -28,7 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('userId');
     localStorage.removeItem('cached_user_profile_json');
     localStorage.removeItem('cached_user_tickets_json');
-    set({ token: null, userId: null, isAuthenticated: false });
+    set({ token: null, userId: null, isAuthenticated: false, signingOut: true });
   },
 
   tryAutoLogin: () => {

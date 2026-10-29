@@ -24,7 +24,7 @@ const labelStyle: React.CSSProperties = {
 // Focus ring and resting shadow come from `.stu-auth input` in student.css
 const inputStyle: React.CSSProperties = {
   background: 'var(--surface)',
-  border: '1px solid var(--sk-line-strong)',
+  border: '1px solid transparent',
   borderRadius: 'var(--sk-radius-lg)',
   padding: '13px 16px',
   fontSize: 15,
@@ -37,7 +37,7 @@ const inputStyle: React.CSSProperties = {
 
 const submitBtnStyle: React.CSSProperties = {
   background: 'var(--color-crimson)',
-  color: '#fff',
+  color: 'var(--sk-on-brand)',
   borderRadius: 'var(--sk-radius-lg)',
   padding: '14px 24px',
   fontWeight: 700,
@@ -216,8 +216,8 @@ export default function AuthPage() {
 
   const focusOn = (e: React.FocusEvent<HTMLInputElement>) => (e.currentTarget.style.borderColor = 'var(--color-crimson)');
   const focusOff = (key: keyof FormValues) => (e: React.FocusEvent<HTMLInputElement>) =>
-    (e.currentTarget.style.borderColor = errors[key] ? 'var(--sk-danger)' : 'var(--sk-line-strong)');
-  const borderFor = (key: keyof FormValues) => (errors[key] ? 'var(--sk-danger)' : 'var(--sk-line-strong)');
+    (e.currentTarget.style.borderColor = errors[key] ? 'var(--sk-danger)' : 'transparent');
+  const borderFor = (key: keyof FormValues) => (errors[key] ? 'var(--sk-danger)' : 'transparent');
 
   const field = (
     key: keyof FormValues,

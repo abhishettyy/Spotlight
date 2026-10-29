@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:http/http.dart' as http;
 
 class CustomImage extends StatelessWidget {
@@ -21,20 +22,18 @@ class CustomImage extends StatelessWidget {
     this.errorBuilder,
   });
 
-  static Widget buildPlaceholder({double? width, double? height, IconData icon = Icons.event_outlined}) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF1D1D20), Color(0xFF0E0E10), Color(0xFF161618)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Icon(icon, color: Colors.white24, size: 32),
-      ),
+  // Same as the web's missing-banner placeholder: raised fill, faint calendar icon
+  static Widget buildPlaceholder({double? width, double? height, IconData icon = Icons.calendar_today_outlined}) {
+    return Builder(
+      builder: (context) {
+        final sk = Sk.of(context);
+        return Container(
+          width: width,
+          height: height,
+          color: sk.raised,
+          child: Center(child: Icon(icon, color: sk.faint, size: 28)),
+        );
+      },
     );
   }
 

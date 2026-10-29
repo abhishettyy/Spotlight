@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
+import '../core/custom_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -14,10 +16,10 @@ class TicketDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final cardBg = Sk.of(context).surface;
+    final subText = Sk.of(context).muted;
 
-    final title = ticket['title'] ?? 'No Title';
+    final title = ticket['title'] ?? 'Event Pass';
     final dateStr = ticket['date'] ?? '';
     final eventDateRaw = ticket['eventDate'] ?? ticket['event_date'];
     final eventEndDateRaw = ticket['eventEndDate'] ?? ticket['event_end_date'];
@@ -115,31 +117,16 @@ class TicketDetailsScreen extends StatelessWidget {
                               final pk = team['passkey']?.toString() ?? '';
                               if (pk.isNotEmpty) {
                                 Clipboard.setData(ClipboardData(text: pk));
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Row(
-                                      children: [
-                                        const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 16),
-                                        const SizedBox(width: 8),
-                                        Text('Passkey copied: $pk', style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-                                      ],
-                                    ),
-                                    duration: const Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating,
-                                    backgroundColor: const Color(0xFF161618),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                );
+                                showSpotlightToast(context, 'Passkey copied: $pk');
                               }
                             },
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!,
+                                color: Sk.of(context).raised,
                                 borderRadius: BorderRadius.circular(20),
-                                border: isDark ? null : Border.all(color: Colors.grey[300]!),
+                                border: Border.all(color: Sk.of(context).line),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -169,9 +156,9 @@ class TicketDetailsScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1D1D20) : Colors.grey[50]!,
+                              color: Sk.of(context).raised,
                               borderRadius: BorderRadius.circular(12),
-                              border: isDark ? null : Border.all(color: Colors.grey[200]!),
+                              border: Border.all(color: Sk.of(context).line),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,25 +235,8 @@ class TicketDetailsScreen extends StatelessWidget {
                         InkWell(
                           onTap: () {
                             Clipboard.setData(ClipboardData(text: qrCodeString));
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 16),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      team != null ? 'Passkey copied to clipboard!' : 'Ticket ID copied to clipboard!',
-                                      style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: const Color(0xFF161618),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
+                            showSpotlightToast(context,
+                                team != null ? 'Passkey copied to clipboard!' : 'Ticket ID copied to clipboard!');
                           },
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
@@ -274,8 +244,8 @@ class TicketDetailsScreen extends StatelessWidget {
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.06)
-                                  : Colors.black.withOpacity(0.05),
+                                  ? Sk.of(context).raised
+                                  : Sk.of(context).raised,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -338,9 +308,8 @@ class TicketDetailsScreen extends StatelessWidget {
   }
 
   Widget _infoChip(BuildContext context, IconData icon, String text) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!;
-    final textColor = isDark ? Colors.white70 : Colors.grey[700]!;
+    final bg = Sk.of(context).raised;
+    final textColor = Sk.of(context).muted;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -402,7 +371,7 @@ class _DashPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = isDark ? Colors.white12 : Colors.grey.shade300
+      ..color = (isDark ? Sk.dark : Sk.light).lineStrong
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 

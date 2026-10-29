@@ -1,9 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'event_details_screen.dart';
 import 'notifications_screen.dart';
-import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
 import '../core/user_provider.dart';
 import '../core/notifications_provider.dart';
@@ -12,10 +10,11 @@ import '../core/theme_provider.dart';
 import 'all_events_screen.dart';
 import 'package:spotlight_flutter/models/models.dart';
 import '../core/smooth_route.dart';
-import '../core/custom_toast.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/custom_image.dart';
+import '../widgets/event_card.dart';
+import '../core/sk_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -60,22 +59,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ]);
   }
 
-  String _formatDeadline(DateTime deadline) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final hourInt = deadline.hour % 12 == 0 ? 12 : deadline.hour % 12;
-    final amPm = deadline.hour >= 12 ? 'PM' : 'AM';
-    final minStr = deadline.minute.toString().padLeft(2, '0');
-    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year} · $hourInt:$minStr $amPm';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = theme.colorScheme.primary;
-    final textColor = isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B);
-    final subTextColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
+    final sk = Sk.of(context);
+    final isDark = sk.isDark;
+    final primaryColor = sk.brand;
+    final textColor = sk.fg;
+    final subTextColor = sk.muted;
+    final cardBg = sk.surface;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -140,10 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: BoxDecoration(
                                 color: cardBg,
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: isDark
-                                        ? Colors.white12
-                                        : Colors.grey[200]!),
+                                border: Border.all(color: sk.line),
+                                boxShadow: sk.shadow,
                               ),
                               child: Icon(
                                   isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
@@ -170,11 +159,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     decoration: BoxDecoration(
                                       color: cardBg,
                                       shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: isDark
-                                              ? Colors.white12
-                                              : Colors.grey[200]!),
-                                      boxShadow: null,
+                                      border: Border.all(color: sk.line),
+                                      boxShadow: sk.shadow,
                                     ),
                                     child: Icon(Icons.notifications_outlined,
                                         color: textColor, size: 20),
@@ -186,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary,
+                                          color: sk.brand,
                                           shape: BoxShape.circle,
                                         ),
                                         constraints: const BoxConstraints(
@@ -196,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ? '99+'
                                               : '${notifProvider.unreadCount}',
                                           style: GoogleFonts.inter(
-                                              color: Colors.white,
+                                              color: Sk.of(context).onBrand,
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold),
                                           textAlign: TextAlign.center,
@@ -220,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (v) => setState(() => _searchQuery = v.toLowerCase().trim()),
                   decoration: InputDecoration(
                     hintText: 'Search events...',
-                    hintStyle: GoogleFonts.inter(color: subTextColor),
+                    hintStyle: GoogleFonts.inter(color: sk.faint),
                     prefixIcon: Icon(Icons.search, color: subTextColor),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -232,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF161618) : Colors.grey[100],
+                    fillColor: sk.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -240,6 +226,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: sk.brand, width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -270,25 +260,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isActive
-                                    ? primaryColor
-                                    : (isDark
-                                        ? const Color(0xFF161618)
-                                        : const Color(0xFFFFFFFF)),
+                                color: isActive ? sk.fg : sk.surface,
                                 borderRadius: BorderRadius.circular(24),
-                                border: isActive || isDark
-                                    ? null
-                                    : Border.all(color: Colors.grey[300]!),
-                                boxShadow: null,
+                                border: Border.all(color: isActive ? sk.fg : sk.line),
                               ),
                               child: Text(filters[i],
                                   style: GoogleFonts.inter(
-                                      color: isActive
-                                          ? Colors.white
-                                          : (isDark
-                                              ? const Color(0xFFA0A0A0)
-                                              : Colors.black),
-                                      fontWeight: FontWeight.w600,
+                                      color: isActive ? sk.canvas : sk.muted,
+                                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                                       fontSize: 14)),
                             ),
                           ),
@@ -316,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         SmoothRoute(
                             builder: (_) => const AllEventsScreen()),
                       ),
-                      child: Text('See all >',
+                      child: Text('See all →',
                           style: GoogleFonts.inter(
                               fontSize: 14,
                               color: primaryColor,
@@ -330,10 +309,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Consumer<EventsProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading) {
-                    return const SizedBox(
+                    return SizedBox(
                       height: 280,
                       child: Center(
-                        child: CircularProgressIndicator(color: Colors.black),
+                        child: CircularProgressIndicator(color: primaryColor),
                       ),
                     );
                   }
@@ -402,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Text(
                                         'Retry',
                                         style: GoogleFonts.inter(
-                                          color: Colors.white,
+                                          color: Sk.of(context).onBrand,
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -512,14 +491,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.only(left: 24.0, right: 8.0),
                       itemCount: filteredEvents.length,
                       itemBuilder: (context, index) {
-                        final event = filteredEvents[index];
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                              context,
-                              SmoothRoute(
-                                  builder: (_) =>
-                                      EventDetailsScreen(eventId: event.id))),
-                          child: _buildEventCard(event),
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        return EventCard(
+                          event: filteredEvents[index],
+                          width: (screenWidth * 0.80).clamp(270.0, 340.0),
+                          margin: const EdgeInsets.only(right: 16),
                         );
                       },
                     ),
@@ -541,9 +517,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Consumer<ClubsProvider>(
                 builder: (context, clubsProvider, _) {
                   if (clubsProvider.isLoading) {
-                    return const SizedBox(
+                    return SizedBox(
                       height: 90,
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator(color: primaryColor)),
                     );
                   }
                   if (clubsProvider.error.isNotEmpty) {
@@ -638,13 +614,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 width: 64,
                                 height: 64,
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF1D1D20)
-                                      : Colors.grey[100],
+                                  color: sk.raised,
                                   shape: BoxShape.circle,
-                                  border: isDark
-                                      ? null
-                                      : Border.all(color: Colors.grey[200]!),
+                                  border: Border.all(color: sk.line),
                                 ),
                                 child: (club.logoUrl != null &&
                                         club.logoUrl!.isNotEmpty)
@@ -686,331 +658,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     ),
-    );
-  }
-
-  Widget _buildEventCard(EventModel event) {
-    final cs = Theme.of(context).colorScheme;
-
-    String day = '01';
-    String month = 'JAN';
-    final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-
-    final st = event.startDate;
-    if (st != null) {
-      day = st.day.toString().padLeft(2, '0');
-      month = months[st.month - 1];
-    } else if (event.date != null && event.date!.trim().isNotEmpty) {
-      final parsed = DateTime.tryParse(event.date!);
-      if (parsed != null) {
-        day = parsed.day.toString().padLeft(2, '0');
-        month = months[parsed.month - 1];
-      } else {
-        final parts = event.date!.split(RegExp(r'[-/\s]'));
-        if (parts.length >= 3) {
-          if (parts[0].length == 4) {
-            day = parts[2].padLeft(2, '0');
-            final mIndex = int.tryParse(parts[1]);
-            if (mIndex != null && mIndex >= 1 && mIndex <= 12) month = months[mIndex - 1];
-          } else {
-            day = parts[0].padLeft(2, '0');
-            final mIndex = int.tryParse(parts[1]);
-            if (mIndex != null && mIndex >= 1 && mIndex <= 12) month = months[mIndex - 1];
-          }
-        }
-      }
-    } else if (event.registrationDeadline != null) {
-      day = event.registrationDeadline!.day.toString().padLeft(2, '0');
-      month = months[event.registrationDeadline!.month - 1];
-    }
-
-    month = month.length > 3 ? month.substring(0, 3).toUpperCase() : month.toUpperCase();
-
-    final imageUrl = event.imageUrl;
-    final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = (screenWidth * 0.80).clamp(270.0, 340.0);
-
-    return Container(
-      width: cardWidth,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomImage(
-                url: imageUrl,
-                fit: BoxFit.cover,
-              ),
-            ),
-
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.85),
-                      Colors.black.withOpacity(0.2),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-              ),
-            ),
-
-            Positioned(
-              top: 14,
-              right: 14,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 52, maxWidth: 64),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            day,
-                            style: GoogleFonts.inter(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.1,
-                            ),
-                            maxLines: 1,
-                            softWrap: false,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            month,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white70,
-                              letterSpacing: 0.5,
-                              height: 1.1,
-                            ),
-                            maxLines: 1,
-                            softWrap: false,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            Positioned(
-              top: 14,
-              left: 14,
-              right: 86,
-              child: Row(
-                children: [
-                  if (event.clubName != null && event.clubName!.isNotEmpty)
-                    Flexible(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              event.clubName!,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: 0.8,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (event.isLive) ...[
-                    if (event.clubName != null && event.clubName!.isNotEmpty)
-                      const SizedBox(width: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFD93025),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'LIVE',
-                                style: GoogleFonts.inter(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFD93025),
-                                  letterSpacing: 0.6,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            Positioned(
-              bottom: 18,
-              left: 18,
-              right: 18,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event.category.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      color: cs.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    event.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: -0.4,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (event.registrationDeadline != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time_rounded, size: 11, color: Color(0xFFF59E0B)),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              color: const Color(0xFFF59E0B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            price,
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Consumer<SavedEventsProvider>(
-                            builder: (context, savedProvider, _) {
-                              final isSaved = savedProvider.isSaved(event.id);
-                              return GestureDetector(
-                                onTap: () {
-                                  final wasSaved = savedProvider.isSaved(event.id);
-                                  savedProvider.toggleSave(event.id);
-                                  showSpotlightToast(
-                                    context,
-                                    wasSaved ? 'Event removed from saved list' : 'Event saved to your list',
-                                    icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_added_rounded,
-                                  );
-                                },
-                                child: Icon(
-                                  isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                  color: isSaved ? cs.primary : Colors.white70,
-                                  size: 19,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

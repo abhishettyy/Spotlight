@@ -36,9 +36,17 @@
         margin: 0;
         padding: 0;
       }
+      /* Page colour before the app's CSS arrives, so moving between the student,
+         club and admin apps (full page loads) never flashes white */
+      html.dark { background: #0e0e10; }
+      html.light { background: #f7f7f8; }
       #root {
         min-height: 100%;
       }
+      /* Each app fades in when it mounts. Opacity only: a transform would break position: fixed inside */
+      #root > * { animation: page-in 0.35s ease both; }
+      @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { #root > * { animation: none; } }
     </style>
   </head>
   <body>

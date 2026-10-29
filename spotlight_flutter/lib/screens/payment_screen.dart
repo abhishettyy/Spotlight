@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -84,7 +85,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             context: context,
             barrierDismissible: false,
             builder: (dialogContext) => AlertDialog(
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161618) : Colors.white,
+              backgroundColor: Sk.of(context).surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: const Text('Team Passkey Unlocked!'),
               content: Column(
@@ -105,10 +106,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Sk.of(context).brand.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          color: Sk.of(context).brand.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
@@ -126,7 +127,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           const SizedBox(width: 12),
                           Icon(
                             Icons.copy_rounded,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Sk.of(context).brand,
                             size: 22,
                           ),
                         ],
@@ -138,7 +139,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     'Tap to copy passkey',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Sk.of(context).muted,
                     ),
                   ),
                 ],
@@ -178,7 +179,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -197,12 +197,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161618) : cs.surfaceVariant,
+                    color: Sk.of(context).surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
                     children: [
-                      Text('Paying for', style: GoogleFonts.inter(color: Colors.grey)),
+                      Text('Paying for', style: GoogleFonts.inter(color: Sk.of(context).muted)),
                       const SizedBox(height: 8),
                       Text(widget.eventName, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                       if (widget.teamSizeLimit != null) ...[
@@ -230,7 +230,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF161618) : Colors.grey[100]!,
+                      color: Sk.of(context).surface,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -239,7 +239,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('UPI ID', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                            Text('UPI ID', style: GoogleFonts.inter(fontSize: 12, color: Sk.of(context).muted)),
                             const SizedBox(height: 4),
                             Text(widget.upiId!, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
                           ],
@@ -263,7 +263,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     '⚠️ Make sure you enter a valid Transaction ID. If incorrect, your registration request will not be approved.',
                     style: GoogleFonts.inter(
                       fontSize: 11,
-                      color: const Color(0xFFE63946),
+                      color: Sk.of(context).brand,
                       fontWeight: FontWeight.w500,
                       height: 1.4,
                     ),
@@ -282,14 +282,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: Sk.of(context).line),
                         ),
                         child: widget.qrUrl != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
                                 child: CustomImage(url: widget.qrUrl!, fit: BoxFit.cover),
                               )
-                            : Icon(Icons.qr_code_2, size: 150, color: Colors.grey[800]),
+                            : Icon(Icons.qr_code_2, size: 150, color: Sk.of(context).fg),
                       ),
                     ],
                   ),
@@ -306,7 +306,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!,
+                    fillColor: Sk.of(context).surface,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -318,7 +318,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     backgroundColor: cs.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: Text('Submit Payment', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: Text('Submit Payment', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Sk.of(context).onBrand)),
                 ),
               ],
             ),
@@ -353,7 +353,7 @@ class PaymentPendingScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+              Icon(Icons.check_circle_outline, size: 80, color: Sk.of(context).ok),
               const SizedBox(height: 24),
               Text('Payment Pending', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
@@ -362,7 +362,7 @@ class PaymentPendingScreen extends StatelessWidget {
                 child: Text(
                   'Your payment details have been submitted. It will be verified by the organizers shortly.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(fontSize: 16, color: Colors.grey, height: 1.5),
+                  style: GoogleFonts.inter(fontSize: 16, color: Sk.of(context).muted, height: 1.5),
                 ),
               ),
               const SizedBox(height: 40),

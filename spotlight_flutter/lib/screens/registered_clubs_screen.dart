@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/api_service.dart';
@@ -58,8 +59,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final subText = Sk.of(context).muted;
 
     return Scaffold(
       body: SafeArea(
@@ -102,7 +102,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.wifi_off_rounded,
-                                  size: 48, color: Colors.grey[400]),
+                                  size: 48, color: Sk.of(context).faint),
                               const SizedBox(height: 12),
                               Text('Could not load clubs',
                                   style: GoogleFonts.inter(
@@ -118,7 +118,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
                                                 _error!.toLowerCase().contains('clientexception')))
                                         ? 'Please check your internet connection and try again.'
                                         : (_error ?? ''),
-                                    style: GoogleFonts.inter(color: Colors.grey, fontSize: 12),
+                                    style: GoogleFonts.inter(color: Sk.of(context).muted, fontSize: 12),
                                     textAlign: TextAlign.center),
                               ),
                               const SizedBox(height: 24),
@@ -144,14 +144,14 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
                                   const SizedBox(height: 20),
                                   Text('No Clubs Yet',
                                       style: GoogleFonts.inter(
-                                          color: Colors.grey,
+                                          color: Sk.of(context).muted,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 8),
                                   Text(
                                       'Register for events to see clubs here',
                                       style: GoogleFonts.inter(
-                                          color: Colors.grey[400],
+                                          color: Sk.of(context).faint,
                                           fontSize: 13)),
                                 ],
                               ),
@@ -174,8 +174,8 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
   Widget _buildClubTile(ClubModel club) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final cardColor = Sk.of(context).surface;
+    final subText = Sk.of(context).muted;
 
     return InkWell(
       onTap: () {
@@ -199,7 +199,7 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
           border: isDark
               ? null
               : Border.all(
-                  color: Colors.grey.shade200,
+                  color: Sk.of(context).raised,
                   width: 1.0,
                 ),
           
@@ -210,9 +210,9 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1D1D20) : Colors.grey[100],
+                color: Sk.of(context).raised,
                 shape: BoxShape.circle,
-                border: isDark ? null : Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: Sk.of(context).line),
               ),
               child: (club.logoUrl != null &&
                       club.logoUrl!.isNotEmpty)

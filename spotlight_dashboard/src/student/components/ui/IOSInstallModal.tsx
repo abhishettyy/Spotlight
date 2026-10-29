@@ -69,7 +69,7 @@ export function IOSInstallModal({ onClose }: IOSInstallModalProps) {
               flexShrink: 0,
             }}
           >
-            <span style={{ color: '#fff', fontSize: 22, fontWeight: 900 }}>S</span>
+            <span style={{ color: 'var(--sk-on-brand)', fontSize: 22, fontWeight: 900 }}>S</span>
           </div>
           <div>
             <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-sans)' }}>

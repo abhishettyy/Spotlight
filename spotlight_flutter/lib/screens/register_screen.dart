@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -129,10 +130,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          color: Sk.of(context).brand.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            color: Sk.of(context).brand.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
@@ -150,7 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             const SizedBox(width: 12),
                             Icon(
                               Icons.copy_rounded,
-                              color: Theme.of(context).colorScheme.primary,
+                              color: Sk.of(context).brand,
                               size: 22,
                             ),
                           ],
@@ -162,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       'Tap to copy passkey',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: Sk.of(context).muted,
                       ),
                     ),
                   ],
@@ -180,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               context: context,
               barrierDismissible: false,
               builder: (dialogContext) => AlertDialog(
-                backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161618) : Colors.white,
+                backgroundColor: Sk.of(context).surface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 title: const Text('Team Created!'),
                 content: const Column(
@@ -254,8 +255,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final warningBg = isDark ? const Color(0xFF161618) : Colors.red[50]!;
-    final warningText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
+    final warningBg = Sk.of(context).dangerSoft;
+    final warningText = isDark ? Sk.of(context).muted : Sk.of(context).muted;
 
     return Scaffold(
       appBar: AppBar(
@@ -278,7 +279,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 54,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161618) : Colors.grey[200],
+                        color: Sk.of(context).raised,
                         borderRadius: BorderRadius.circular(28),
                       ),
                       child: Row(
@@ -305,8 +306,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: _selectedType == RegistrationType.createTeam
-                                        ? Colors.white
-                                        : (isDark ? Colors.grey[400] : Colors.grey[700]),
+                                        ? Sk.of(context).onBrand
+                                        : (isDark ? Sk.of(context).faint : Sk.of(context).muted),
                                   ),
                                 ),
                               ),
@@ -334,8 +335,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: _selectedType == RegistrationType.joinTeam
-                                        ? Colors.white
-                                        : (isDark ? Colors.grey[400] : Colors.grey[700]),
+                                        ? Sk.of(context).onBrand
+                                        : (isDark ? Sk.of(context).faint : Sk.of(context).muted),
                                   ),
                                 ),
                               ),
@@ -395,11 +396,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: BoxDecoration(
                         color: warningBg,
                         borderRadius: BorderRadius.circular(16),
-                        border: isDark ? null : Border.all(color: Colors.red[100]!),
+                        border: Border.all(color: Sk.of(context).danger.withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary, size: 22),
+                          Icon(Icons.info_outline, color: Sk.of(context).brand, size: 22),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Text(
@@ -439,7 +440,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       backgroundColor: cs.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: Text('Confirm Registration', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                    child: Text('Confirm Registration', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Sk.of(context).onBrand)),
                   ),
                 ],
               ),
@@ -466,8 +467,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary = isDark ? const Color(0xFFA09B9B) : Colors.grey[600]!;
+    final textSecondary = Sk.of(context).muted;
     return TextFormField(
       controller: controller,
       enabled: enabled,
@@ -475,8 +475,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       validator: validator,
       style: GoogleFonts.inter(
         color: enabled 
-            ? (isDark ? const Color(0xFFEDEDEF) : const Color(0xFF18181B))
-            : (isDark ? Colors.white54 : Colors.grey[600]),
+            ? (Sk.of(context).fg)
+            : (Sk.of(context).muted),
       ),
       decoration: InputDecoration(
         labelText: label,
@@ -496,8 +496,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         filled: true,
         fillColor: enabled
-            ? (isDark ? const Color(0xFF1D1D20) : Colors.grey[100]!)
-            : (isDark ? const Color(0xFF161618) : Colors.grey[200]!),
+            ? (Sk.of(context).raised)
+            : (Sk.of(context).raised),
       ),
     );
   }

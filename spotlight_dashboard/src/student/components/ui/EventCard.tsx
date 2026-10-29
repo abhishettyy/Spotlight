@@ -4,6 +4,7 @@ import { EventModel, isEventLive, getEventStartDate } from '@student/types/event
 import { formatEventHeaderDate, formatDeadline } from '@student/utils/dateUtils';
 import { useSavedEventsStore } from '@student/store/savedEventsStore';
 import { toast } from 'sonner';
+import EventImage from '@student/components/ui/EventImage';
 
 interface EventCardProps {
   event: EventModel;
@@ -37,19 +38,7 @@ export default function EventCard({ event, compact = false }: EventCardProps) {
       style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}
     >
       <div style={{ position: 'relative', height: compact ? 150 : 180, width: '100%', overflow: 'hidden', flexShrink: 0, background: 'var(--raised)' }}>
-        {event.imageUrl ? (
-          <img
-            src={event.imageUrl}
-            alt=""
-            loading="lazy"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-          />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--sk-faint)' }}>
-            <Calendar size={28} />
-          </div>
-        )}
+        <EventImage src={event.imageUrl} loading="lazy" />
         {day && month && (
           <div
             aria-hidden

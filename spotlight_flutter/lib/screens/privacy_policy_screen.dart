@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/sk_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
@@ -7,9 +8,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF161618) : const Color(0xFFFFFFFF);
-    final subText = isDark ? const Color(0xFFA0A0A0) : Colors.grey[600]!;
+    final cardBg = Sk.of(context).surface;
+    final subText = Sk.of(context).muted;
 
     Widget buildSubSection({required String title, required String body}) {
       return Padding(
@@ -31,7 +31,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 12,
                 height: 1.4,
-                color: isDark ? const Color(0xFFA0A0A0) : Colors.grey[600],
+                color: Sk.of(context).muted,
               ),
             ),
           ],
@@ -40,7 +40,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8),
+      backgroundColor: Sk.of(context).canvas,
       appBar: AppBar(
         title: Text(
           'Privacy Policy',
@@ -178,7 +178,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.email_outlined, size: 16, color: Color(0xFF188038)),
+                        Icon(Icons.email_outlined, size: 16, color: Sk.of(context).ok),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -186,7 +186,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF188038),
+                              color: Sk.of(context).ok,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -212,7 +212,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
     required Widget child,
   }) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -221,7 +220,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: isDark ? null : Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Sk.of(context).line),
         boxShadow: null,
       ),
       child: Column(

@@ -189,7 +189,7 @@ export default function HomePage() {
                 padding: '0 4px',
                 borderRadius: 99,
                 background: 'var(--color-crimson)',
-                color: '#fff',
+                color: 'var(--sk-on-brand)',
                 fontSize: 10,
                 fontWeight: 700,
                 display: 'grid',

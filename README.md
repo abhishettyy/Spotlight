@@ -135,7 +135,6 @@ flutter build appbundle --release   # build/app/outputs/bundle/release/app-relea
 | `UPLOAD_SECRET` | yes | Shared secret for the image upload endpoint |
 | `GODADDY_UPLOAD_URL` | yes | URL of `upload.php` on the file host |
 | `PORT` | no | Defaults to `5000` |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | no | Fallback image storage |
 
 **Web app** (`spotlight_dashboard/.env`): `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, and optionally `VITE_BASE_PATH` when hosted under a sub-path.
 
