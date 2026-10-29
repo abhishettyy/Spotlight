@@ -652,9 +652,10 @@ export default function EventDetailPage() {
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.2)',
+                // Theme chip, same as the club dashboard's banner viewer: dark X in light theme, light X in dark
+                background: 'var(--sk-raised)',
                 border: 'none',
-                color: '#ffffff',
+                color: 'var(--sk-fg)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

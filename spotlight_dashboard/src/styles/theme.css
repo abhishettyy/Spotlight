@@ -663,7 +663,7 @@ html.light .bg-primary * {
   color: #ffffff !important;
 }
 
-/* Full banner modal close button in both light and dark themes */
+/* Full banner modal close button: a raised chip in the current theme (dark X in light, light X in dark) */
 .banner-modal-close-btn {
   border: none !important;
   outline: none !important;
@@ -673,8 +673,8 @@ html.light .bg-primary * {
 .banner-modal-close-btn *,
 .banner-modal-close-btn svg,
 .banner-modal-close-btn path {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+  color: var(--sk-fg) !important;
+  stroke: var(--sk-fg) !important;
 }
 
 /* Hide browser default password reveal and clear buttons (Edge, IE, Chrome) */

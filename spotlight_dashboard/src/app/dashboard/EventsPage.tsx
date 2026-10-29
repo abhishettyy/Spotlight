@@ -1024,7 +1024,7 @@ export function EventsPage({
                           onClick={() => setShowFullBannerModal(false)}
                           className="banner-modal-close-btn fixed top-4 right-4 sm:top-6 sm:right-6 z-[100000] w-8 h-8 sm:w-9 sm:h-9 rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center p-0"
                           style={{
-                            color: "#ffffff",
+                            color: "var(--sk-fg)",
                             backgroundColor: "var(--sk-raised)",
                             border: "none",
                             outline: "none",
@@ -1033,7 +1033,7 @@ export function EventsPage({
                             WebkitBackdropFilter: "blur(12px)",
                           }}
                           onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
+                            e.currentTarget.style.backgroundColor = "var(--sk-surface)";
                             e.currentTarget.style.transform = "scale(1.06)";
                           }}
                           onMouseLeave={e => {
@@ -1043,7 +1043,7 @@ export function EventsPage({
                           title="Close banner view"
                           aria-label="Close banner view"
                         >
-                          <X size={18} color="#ffffff" strokeWidth={2.2} style={{ stroke: "#ffffff", color: "#ffffff" }} />
+                          <X size={18} strokeWidth={2.2} />
                         </button>
                         <div 
                           className="relative max-w-5xl max-h-[88vh] flex items-center justify-center p-2 rounded-2xl"

@@ -1,22 +1,36 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./App.tsx";
 import AdminConsole from "./AdminConsole.tsx";
 import { ThemeProvider } from "./theme.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
+import { isAdminPath } from "./siteNavigation.ts";
 import "../styles/index.css";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-/** Renders the club dashboard, or the admin console on /admin. */
-export function mountDashboard(root: Root, isAdminRoute: boolean) {
+/** The admin console on /admin, the club site everywhere else; follows Back/Forward without reloading. */
+function SiteRoot() {
+  const [isAdmin, setIsAdmin] = useState(isAdminPath);
+
+  useEffect(() => {
+    const onPopState = () => setIsAdmin(isAdminPath());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  return isAdmin ? <AdminConsole /> : <App />;
+}
+
+/** Renders the club dashboard and admin console. */
+export function mountDashboard(root: Root) {
   root.render(
     <StrictMode>
       <ErrorBoundary>
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <ThemeProvider>
-            {isAdminRoute ? <AdminConsole /> : <App />}
+            <SiteRoot />
           </ThemeProvider>
         </GoogleOAuthProvider>
       </ErrorBoundary>

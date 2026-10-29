@@ -4,6 +4,7 @@ import { Calendar, Zap, Shield, X, Mail } from "lucide-react";
 import { fetchPublicStats } from "../api";
 import { useTheme, ThemeToggle } from "../theme";
 import { STUDENT_LOGIN_URL, FC, F_LOGO, FM, FB } from "./shared";
+import { openAdminConsole } from "../siteNavigation";
 
 export const FEATURES = [
   { icon: Calendar, title: "Liquid Event Creation", desc: "Craft events with a fluid step-by-step builder. From concept to live in under two minutes."      },
@@ -25,12 +26,20 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'contact' | null>(null);
   const [leaving, setLeaving] = useState(false);
 
-  // Student and admin are separate apps (a full page load); fade out first so the switch isn't abrupt
+  // The student site is a separate app (a full page load); fade out first so the switch isn't abrupt
   const leaveTo = (url: string) => {
     if (leaving) return;
     setLeaving(true);
     setTimeout(() => { window.location.href = url; }, 200);
   };
+
+  // Back from the student site can restore this page from the browser's back/forward cache exactly as
+  // it was left, faded out; show it again
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) setLeaving(false); };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   useEffect(() => {
     fetchPublicStats().then(data => {
@@ -170,7 +179,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => leaveTo("/admin")}
+                  onClick={openAdminConsole}
                   className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-[color:var(--sk-fg)] bg-[color:var(--sk-raised)] hover:bg-[color:var(--sk-line)] border border-[color:var(--sk-line)] rounded-full transition-all duration-300 active:scale-95"
                 >
                   <span>Login as Admin</span>

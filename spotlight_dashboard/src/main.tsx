@@ -15,5 +15,5 @@ const root = createRoot(document.getElementById("root")!);
 if (/^\/student(\/|$)/.test(path)) {
   import("./student/main.tsx").then((m) => m.mountStudentApp(root));
 } else {
-  import("./app/mountDashboard.tsx").then((m) => m.mountDashboard(root, /^\/admin(\/|$)/.test(path)));
+  import("./app/mountDashboard.tsx").then((m) => m.mountDashboard(root));
 }
