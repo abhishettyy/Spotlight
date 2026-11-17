@@ -8,6 +8,7 @@ import '../core/notifications_provider.dart';
 import '../core/notification_prefs_provider.dart';
 import '../core/custom_toast.dart';
 import '../models/models.dart';
+import '../widgets/paged_list_view.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -187,17 +188,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               ? _buildEmpty(context)
                               : RefreshIndicator(
                                   onRefresh: provider.load,
-                                  child: ListView.builder(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 24.0),
-                                    itemCount:
-                                        provider.notifications.length + 1,
-                                    itemBuilder: (context, index) {
-                                      if (index ==
-                                          provider.notifications.length) {
-                                        return const SizedBox(height: 100);
-                                      }
-                                      final n = provider.notifications[index];
+                                  child: PagedListView(
+                                    items: provider.notifications,
+                                    pageSize: 15,
+                                    spacing: 0,
+                                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                                    itemBuilder: (context, n) {
                                       return Dismissible(
                                         key: Key(n.id),
                                         direction: DismissDirection.startToEnd,

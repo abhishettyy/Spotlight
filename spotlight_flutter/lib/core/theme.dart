@@ -88,12 +88,12 @@ class SpotlightTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
-      primaryColor: deepBlack,
+      primaryColor: crimsonRed,
       scaffoldBackgroundColor: _lightCanvas,
       pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.light(
-        primary: deepBlack,
-        secondary: deepBlack,
+        primary: crimsonRed,
+        secondary: crimsonRed,
         surface: _lightSurface,
         background: _lightCanvas,
         onPrimary: pureWhite,
@@ -153,15 +153,15 @@ class SpotlightTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: _darkFg,
+      primaryColor: crimsonRed,
       scaffoldBackgroundColor: darkBg,
       pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.dark(
-        primary: _darkFg,
+        primary: crimsonRed,
         secondary: darkGray,
         surface: darkGray,
         background: darkBg,
-        onPrimary: darkBg,
+        onPrimary: pureWhite,
         onSurface: _darkFg,
         onBackground: _darkFg,
         onSurfaceVariant: lightGray,

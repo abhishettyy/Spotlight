@@ -11,6 +11,7 @@ import '../core/saved_events_provider.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
 import 'event_details_screen.dart';
+import '../widgets/paged_list_view.dart';
 
 class ClubEventsScreen extends StatelessWidget {
   final String clubId;
@@ -150,12 +151,12 @@ class ClubEventsScreen extends StatelessWidget {
                             ],
                           ),
                         )
-                      : ListView.separated(
+                      : PagedListView(
+                          items: clubEvents,
+                          pageSize: 12,
+                          spacing: 16,
                           padding: const EdgeInsets.fromLTRB(24, 4, 24, 100),
-                          itemCount: clubEvents.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final event = clubEvents[index];
+                          itemBuilder: (context, event) {
                             return _EventCard(
                               event: event,
                               isDark: isDark,

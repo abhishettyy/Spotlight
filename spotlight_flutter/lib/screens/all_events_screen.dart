@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../core/events_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/event_card.dart';
+import '../widgets/paged_list_view.dart';
 
 class AllEventsScreen extends StatefulWidget {
   const AllEventsScreen({super.key});
@@ -280,12 +281,13 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
 
                   return RefreshIndicator(
                     onRefresh: provider.loadEvents,
-                    child: ListView.separated(
+                    child: PagedListView(
+                      items: events,
+                      pageSize: 12,
+                      spacing: 14,
+                      resetKey: '$_query|$_selectedFormatFilter',
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                      itemCount: events.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 14),
-                      itemBuilder: (context, i) => EventCard(event: events[i]),
+                      itemBuilder: (context, e) => EventCard(event: e),
                     ),
                   );
                 },

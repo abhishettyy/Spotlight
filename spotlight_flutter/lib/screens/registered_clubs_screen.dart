@@ -9,6 +9,7 @@ import '../widgets/custom_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../core/smooth_route.dart';
 import 'club_events_screen.dart';
+import '../widgets/paged_list_view.dart';
 
 class RegisteredClubsScreen extends StatefulWidget {
   const RegisteredClubsScreen({super.key});
@@ -156,13 +157,12 @@ class _RegisteredClubsScreenState extends State<RegisteredClubsScreen> {
                                 ],
                               ),
                             )
-                          : ListView.separated(
+                          : PagedListView(
+                              items: _clubs,
+                              pageSize: 12,
+                              spacing: 12,
                               padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                              itemCount: _clubs.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, i) =>
-                                  _buildClubTile(_clubs[i]),
+                              itemBuilder: (context, club) => _buildClubTile(club),
                             ),
             ),
           ],

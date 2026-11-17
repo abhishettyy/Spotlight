@@ -68,7 +68,9 @@ export async function submitClubApplication(input: {
     throw new ClubApplicationError('This email address is already registered to a club. Please sign in instead.');
   }
   if (!existingClub && existingProfile) {
-    throw new ClubApplicationError('This email address is already registered to another account.');
+    throw new ClubApplicationError(existingProfile.clubId === null
+      ? 'This email address is already registered to a student account. Please use a different email for the club.'
+      : 'This email address is already registered to another account.');
   }
   if (existingClub && existingProfile && existingProfile.clubId !== existingClub.id) {
     throw new ClubApplicationError('This email address is already registered to another account.');
@@ -87,51 +89,63 @@ export async function submitClubApplication(input: {
     reviewedAt: null,
   };
 
-  // Re-application after a rejection: same club row, fresh details, back in the queue
-  if (existingClub) {
-    return prisma.$transaction(async (tx) => {
-      const club = await tx.club.update({
-        where: { id: existingClub.id },
-        data: {
-          ...clubData,
-          createdAt: new Date(),
-          ...(logoUrl && { logoUrl }),
-          ...(input.passwordHash && { password: input.passwordHash }),
-        },
-      });
-      if (existingProfile) {
-        await tx.profile.update({
-          where: { id: existingProfile.id },
-          data: { fullName: details.name, ...(input.passwordHash && { password: input.passwordHash }) },
-        });
-      } else {
-        await tx.profile.create({
+  try {
+    return await saveApplication();
+  } catch (err: any) {
+    // Two sign-ups with the same email at the same moment: the second hits the unique email index
+    if (err?.code === 'P2002') {
+      throw new ClubApplicationError('This email address is already registered.');
+    }
+    throw err;
+  }
+
+  async function saveApplication(): Promise<Club> {
+    // Re-application after a rejection: same club row, fresh details, back in the queue
+    if (existingClub) {
+      return prisma.$transaction(async (tx) => {
+        const club = await tx.club.update({
+          where: { id: existingClub.id },
           data: {
-            id: input.profileId || `user_${crypto.randomBytes(6).toString('hex')}`,
-            fullName: details.name,
-            email,
-            password: input.passwordHash,
-            clubId: club.id,
+            ...clubData,
+            createdAt: new Date(),
+            ...(logoUrl && { logoUrl }),
+            ...(input.passwordHash && { password: input.passwordHash }),
           },
         });
-      }
+        if (existingProfile) {
+          await tx.profile.update({
+            where: { id: existingProfile.id },
+            data: { fullName: details.name, ...(input.passwordHash && { password: input.passwordHash }) },
+          });
+        } else {
+          await tx.profile.create({
+            data: {
+              id: input.profileId || `user_${crypto.randomBytes(6).toString('hex')}`,
+              fullName: details.name,
+              email,
+              password: input.passwordHash,
+              clubId: club.id,
+            },
+          });
+        }
+        return club;
+      });
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const club = await tx.club.create({
+        data: { ...clubData, email, logoUrl, password: input.passwordHash },
+      });
+      await tx.profile.create({
+        data: {
+          id: input.profileId || `user_${crypto.randomBytes(6).toString('hex')}`,
+          fullName: details.name,
+          email,
+          password: input.passwordHash,
+          clubId: club.id,
+        },
+      });
       return club;
     });
   }
-
-  return prisma.$transaction(async (tx) => {
-    const club = await tx.club.create({
-      data: { ...clubData, email, logoUrl, password: input.passwordHash },
-    });
-    await tx.profile.create({
-      data: {
-        id: input.profileId || `user_${crypto.randomBytes(6).toString('hex')}`,
-        fullName: details.name,
-        email,
-        password: input.passwordHash,
-        clubId: club.id,
-      },
-    });
-    return club;
-  });
 }

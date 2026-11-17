@@ -221,7 +221,9 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
 
     let club = await prisma.club.findUnique({ where: { email } });
 
-    if (signup && (!club || club.status === 'REJECTED')) {
+    // Sign-up always goes through the application checks, so an email that already belongs to a
+    // pending or approved club, or to a student, gets a clear message instead of a sign-in
+    if (signup) {
       const details = readApplicationDetails(signup);
       if (!details.logoUrl && payload.picture) details.logoUrl = payload.picture;
       const created = await submitClubApplication({ email, passwordHash: null, details, profileId: googleUserId });

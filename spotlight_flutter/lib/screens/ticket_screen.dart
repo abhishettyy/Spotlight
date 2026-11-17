@@ -17,6 +17,7 @@ import '../core/api_service.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
 import '../models/models.dart';
+import '../widgets/paged_list_view.dart';
 
 class TicketScreen extends StatefulWidget {
   final int initialTab;
@@ -275,11 +276,13 @@ class _TicketScreenState extends State<TicketScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadTickets,
-      child: ListView.separated(
+      child: PagedListView(
+        key: ValueKey('tickets-$_selectedTab'),
+        items: list,
+        pageSize: 10,
+        spacing: 20,
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
-        itemCount: list.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 20),
-        itemBuilder: (context, index) => _buildTicketCard(list[index]),
+        itemBuilder: (context, ticket) => _buildTicketCard(ticket),
       ),
     );
   }
@@ -337,11 +340,12 @@ class _TicketScreenState extends State<TicketScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return ListView.separated(
+    return PagedListView(
+      items: savedEvents,
+      pageSize: 12,
+      spacing: 16,
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
-      itemCount: savedEvents.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (context, index) => EventCard(event: savedEvents[index]),
+      itemBuilder: (context, event) => EventCard(event: event),
     );
   }
 

@@ -10,6 +10,7 @@ import '../models/models.dart';
 import '../widgets/custom_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'club_events_screen.dart';
+import '../widgets/paged_list_view.dart';
 
 class ClubsScreen extends StatefulWidget {
   const ClubsScreen({super.key});
@@ -250,12 +251,13 @@ class _ClubsScreenState extends State<ClubsScreen> {
                                   ],
                                 ),
                               )
-                            : ListView.separated(
+                            : PagedListView(
+                                items: filteredClubs,
+                                pageSize: 12,
+                                spacing: 12,
+                                resetKey: _searchQuery,
                                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 160),
-                                itemCount: filteredClubs.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, i) {
-                                  final club = filteredClubs[i];
+                                itemBuilder: (context, club) {
                                   final clubEventsCount = eventsProvider.events.where((e) {
                                     final cid = e.clubId ?? e.clubName;
                                     final isThisClub = cid == club.id ||

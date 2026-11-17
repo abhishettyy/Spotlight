@@ -33,8 +33,8 @@ class Sk {
   /// Hints, placeholders, disabled text (--sk-faint)
   final Color faint;
 
-  /// Buttons, links, accents (--sk-brand): the inverse of the page, black on light and
-  /// white on dark. Red is kept for errors only (danger).
+  /// Buttons, links, accents (--sk-brand): Spotlight crimson in both themes, as in the
+  /// club dashboard and the student website.
   final Color brand;
   final Color brandSoft;
 
@@ -90,8 +90,8 @@ class Sk {
     fg: Color(0xFF18181B),
     muted: Color(0xFF52525B),
     faint: Color(0xFF71717A),
-    brand: Color(0xFF18181B),
-    brandSoft: Color(0x0F18181B), // 6%
+    brand: Color(0xFFE63946),
+    brandSoft: Color(0x14E63946), // 8%
     onBrand: Color(0xFFFFFFFF),
     ok: Color(0xFF15803D),
     okSoft: Color(0x1A16A34A), // 10%
@@ -113,9 +113,9 @@ class Sk {
     fg: Color(0xFFEDEDEF),
     muted: Color(0xFFA0A0A8),
     faint: Color(0xFF74747C),
-    brand: Color(0xFFEDEDEF),
-    brandSoft: Color(0x1AEDEDEF), // 10%
-    onBrand: Color(0xFF0E0E10),
+    brand: Color(0xFFE63946),
+    brandSoft: Color(0x29E63946), // 16%
+    onBrand: Color(0xFFFFFFFF),
     ok: Color(0xFF81C995),
     okSoft: Color(0x2481C995), // 14%
     warn: Color(0xFFFDD663),

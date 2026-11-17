@@ -15,6 +15,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/custom_image.dart';
 import '../widgets/event_card.dart';
 import '../core/sk_colors.dart';
+import 'clubs_screen.dart';
+
+// The home page shows a preview; "See all" opens the full, paged lists
+const int _homeEventLimit = 8;
+const int _homeClubLimit = 12;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -260,13 +265,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isActive ? sk.fg : sk.surface,
+                                color: isActive ? sk.brand : sk.surface,
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: isActive ? sk.fg : sk.line),
+                                border: Border.all(color: isActive ? sk.brand : sk.line),
                               ),
                               child: Text(filters[i],
                                   style: GoogleFonts.inter(
-                                      color: isActive ? sk.canvas : sk.muted,
+                                      color: isActive ? sk.onBrand : sk.muted,
                                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                                       fontSize: 14)),
                             ),
@@ -489,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.only(left: 24.0, right: 8.0),
-                      itemCount: filteredEvents.length,
+                      itemCount: filteredEvents.length < _homeEventLimit ? filteredEvents.length : _homeEventLimit,
                       itemBuilder: (context, index) {
                         final screenWidth = MediaQuery.of(context).size.width;
                         return EventCard(
@@ -506,11 +511,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text('Active Clubs',
-                    style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: textColor)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Active Clubs',
+                        style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor)),
+                    Consumer<ClubsProvider>(
+                      builder: (context, clubsProvider, _) => clubsProvider.clubs.length > _homeClubLimit
+                          ? GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                SmoothRoute(builder: (_) => const ClubsScreen()),
+                              ),
+                              child: Text('See all →',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.w600)),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -604,7 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Row(
-                      children: allClubs.map((club) {
+                      children: allClubs.take(_homeClubLimit).map((club) {
                         return Container(
                           margin: const EdgeInsets.only(right: 20),
                           width: 80,

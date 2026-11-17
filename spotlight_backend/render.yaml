@@ -24,6 +24,10 @@ services:
         value: Asia/Kolkata
       - key: ADMIN_EMAIL
         value: spotlightapp.help@gmail.com
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_EMAIL
+        value: spotlightapp.help@gmail.com
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
