@@ -6,21 +6,34 @@ import { prisma } from '../config/db';
 import { JWT_SECRET } from '../middlewares/auth';
 
 export const ADMIN_PROFILE_ID = 'admin';
+/** The admin signs in with this email (password or Google). Stored on the admin profile. */
+export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'spotlightapp.help@gmail.com').trim().toLowerCase();
 const SALT_ROUNDS = 10;
 
 /**
- * Makes sure the built-in "admin" profile exists. The first password comes from
- * ADMIN_INITIAL_PASSWORD, or is generated and printed to the log once. It is only set
- * when the row is first created, so changing it later is never overwritten.
+ * Makes sure the built-in "admin" profile exists and carries ADMIN_EMAIL. The first password comes
+ * from ADMIN_INITIAL_PASSWORD, or is generated and printed to the log once. It is only set when the
+ * row is first created, so changing it later is never overwritten.
  */
 export async function ensureAdminProfile(): Promise<void> {
   try {
     const existing = await prisma.profile.findUnique({ where: { id: ADMIN_PROFILE_ID } });
-    if (existing) return;
+    if (existing) {
+      if (existing.email !== ADMIN_EMAIL) {
+        const taken = await prisma.profile.findUnique({ where: { email: ADMIN_EMAIL } });
+        if (taken) {
+          console.error(`[Admin] Cannot set the admin email to ${ADMIN_EMAIL}: another account already uses it.`);
+        } else {
+          await prisma.profile.update({ where: { id: ADMIN_PROFILE_ID }, data: { email: ADMIN_EMAIL } });
+          console.log(`[Admin] Admin email set to ${ADMIN_EMAIL}.`);
+        }
+      }
+      return;
+    }
     const initialPassword = process.env.ADMIN_INITIAL_PASSWORD || crypto.randomBytes(12).toString('base64url');
     const hashed = await bcrypt.hash(initialPassword, SALT_ROUNDS);
     await prisma.profile.create({
-      data: { id: ADMIN_PROFILE_ID, fullName: 'admin', email: 'admin', password: hashed },
+      data: { id: ADMIN_PROFILE_ID, fullName: 'admin', email: ADMIN_EMAIL, password: hashed },
     });
     if (process.env.ADMIN_INITIAL_PASSWORD) {
       console.log('[Admin] Created admin profile with the password from ADMIN_INITIAL_PASSWORD.');

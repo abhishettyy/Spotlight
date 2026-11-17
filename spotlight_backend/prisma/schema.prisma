@@ -32,9 +32,18 @@ model Club {
   password         String?
   qrUrl            String?           @map("qr_url") @db.Text
   upiId            String?           @map("upi_id")
+  description      String?           @db.Text
+  department       String?
+  coordinatorName  String?           @map("coordinator_name")
+  coordinatorPhone String?           @map("coordinator_phone")
+  status           ClubStatus        @default(PENDING)
+  rejectionReason  String?           @map("rejection_reason") @db.Text
+  createdAt        DateTime          @default(now()) @map("created_at")
+  reviewedAt       DateTime?         @map("reviewed_at")
   events           Event[]
   admins           Profile[]
-  registrationKeys RegistrationKey[]
+
+  @@index([status], map: "idx_club_status")
 }
 
 model Event {
@@ -110,16 +119,11 @@ model Notification {
   @@index([userId, createdAt], map: "idx_notification_user_created")
 }
 
-model RegistrationKey {
-  id           String    @id @default(uuid())
-  code         String    @unique(map: "code")
-  isUsed       Boolean   @default(false) @map("is_used")
-  usedByClubId String?   @map("used_by_club_id")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  usedAt       DateTime? @map("used_at")
-  usedByClub   Club?     @relation(fields: [usedByClubId], references: [id], map: "fk_registrationkey_club")
-
-  @@index([usedByClubId], map: "fk_registrationkey_club")
+/// A club signs up as PENDING and can sign in only once the admin approves it.
+enum ClubStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum RegistrationStatus {

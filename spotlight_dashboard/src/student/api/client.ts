@@ -6,7 +6,7 @@ import { studentUrl } from '@student/basePath';
 
 // Same backend as the club dashboard (and the Flutter app); normalised to end in /api like dashboard api.ts
 const BASE_URL = (() => {
-  let base = String(import.meta.env.VITE_API_URL || 'https://spotlight-c5je.onrender.com/api')
+  let base = String(import.meta.env.VITE_API_URL || 'https://spotlight-backend-x0q7.onrender.com/api')
     .replace(/\s+/g, '')
     .replace(/\/+$/, '');
   if (!base.endsWith('/api')) base += '/api';

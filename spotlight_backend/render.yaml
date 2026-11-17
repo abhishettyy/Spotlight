@@ -22,3 +22,13 @@ services:
         sync: false
       - key: CAMPUS_TIME_ZONE
         value: Asia/Kolkata
+      - key: ADMIN_EMAIL
+        value: spotlightapp.help@gmail.com
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: CLUB_LOGIN_URL
+        sync: false

@@ -254,7 +254,7 @@ export function GlassSelect({
               boxShadow: "none",
             }}
           >
-            <div className="space-y-1">
+            <div className="space-y-1 max-h-72 overflow-y-auto">
               {options.map((opt) => {
                 const isSelected = opt.value === value;
                 return (

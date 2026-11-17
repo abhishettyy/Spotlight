@@ -1,57 +1,15 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/db';
 import { signToken, requireAuth } from '../middlewares/auth';
-import { claimRegistrationKey, KeyAlreadyUsed } from '../utils/registrationKeys';
+import { verifyGoogleUser } from '../utils/google';
+import { ADMIN_PROFILE_ID } from '../utils/admin';
+import { clubSignInBlock } from '../utils/clubStatus';
+import { submitClubApplication, readApplicationDetails, ClubApplicationError } from '../utils/clubApplications';
 
 const router = Router();
 const SALT_ROUNDS = 10;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '614014299614-n10khe2om4g50ehpqb6h82tdtumkh5ot.apps.googleusercontent.com';
-const googleOAuthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
-
-interface GoogleUser {
-  email: string;
-  sub: string | null;
-  name?: string;
-  picture?: string;
-}
-
-/**
- * Checks a Google ID token or access token was issued to Spotlight's own client and belongs to a
- * verified email. Returns that account, or null. A token issued to any other app is rejected.
- */
-async function verifyGoogleUser(credential?: string, accessToken?: string): Promise<GoogleUser | null> {
-  if (credential) {
-    try {
-      const ticket = await googleOAuthClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
-      const payload = ticket.getPayload();
-      if (!payload?.email || !payload.email_verified) return null;
-      return { email: payload.email, sub: payload.sub ?? null, name: payload.name || payload.given_name, picture: payload.picture };
-    } catch {
-      return null;
-    }
-  }
-
-  if (accessToken) {
-    const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`);
-    if (!infoRes.ok) return null;
-    const info = await infoRes.json() as any;
-    if (info.aud !== GOOGLE_CLIENT_ID && info.azp !== GOOGLE_CLIENT_ID) return null;
-    const emailVerified = info.email_verified === true || info.email_verified === 'true';
-    if (!info.email || !emailVerified) return null;
-
-    // tokeninfo carries no name or picture; userinfo does
-    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const userInfo = userRes.ok ? await userRes.json() as any : {};
-    return { email: info.email, sub: info.sub ?? userInfo.sub ?? null, name: userInfo.name || userInfo.given_name, picture: userInfo.picture };
-  }
-
-  return null;
-}
 
 function isBcryptHash(value: string): boolean {
   return value.startsWith('$2b$') || value.startsWith('$2a$');
@@ -156,7 +114,8 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
     let profile = await prisma.profile.findFirst({
       where: {
         email: email.toLowerCase(),
-        clubId: null
+        clubId: null,
+        NOT: { id: ADMIN_PROFILE_ID },
       }
     });
 
@@ -213,6 +172,9 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
       return res.status(401).json({ error: 'Incorrect password. Please check your password and try again.' });
     }
 
+    const blocked = clubSignInBlock(club);
+    if (blocked) return res.status(403).json(blocked);
+
     let profile = await prisma.profile.findFirst({ where: { clubId: club.id } });
     if (!profile) {
       const userId = `user_${crypto.randomBytes(6).toString('hex')}`;
@@ -238,8 +200,10 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
   }
 });
 
+// Club sign-in with Google, and Google sign-up: with `signup` details and an email no club uses yet
+// (or whose sign-up was rejected), it files a pending registration for the admin to review.
 router.post('/google', async (req: Request, res: Response): Promise<any> => {
-  const { credential, access_token, registrationKey, clubName } = req.body;
+  const { credential, access_token, signup } = req.body;
 
   if (!credential && !access_token) {
     return res.status(400).json({ error: 'Google credential or access token is required.' });
@@ -252,67 +216,27 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
     }
 
     const email = payload.email.toLowerCase().trim();
-    const name = payload.name || clubName || 'Spotlight User';
+    const name = payload.name || 'Spotlight User';
     const googleUserId = `google_${payload.sub || crypto.createHash('md5').update(email).digest('hex')}`;
 
     let club = await prisma.club.findUnique({ where: { email } });
-    let profile = await prisma.profile.findFirst({ where: { email } });
 
-    if (!club && registrationKey) {
-      const cleanKey = registrationKey.trim().toUpperCase();
-      const keyRecord = await prisma.registrationKey.findFirst({
-        where: { code: cleanKey, isUsed: false },
-      });
-
-      if (!keyRecord) {
-        return res.status(400).json({ error: 'Invalid or expired registration key.' });
-      }
-
-      // A new club needs an email no account uses yet, as with email sign-up (/clubs/check-email)
-      if (profile) {
-        return res.status(400).json({ error: 'This email address is already registered to another account.' });
-      }
-
-      club = await prisma.$transaction(async (tx) => {
-        await claimRegistrationKey(tx, keyRecord.id);
-
-        const createdClub = await tx.club.create({
-          data: {
-            name: clubName?.trim() || name,
-            email: email,
-            logoUrl: payload.picture || null,
-          }
-        });
-
-        const createdProfile = await tx.profile.upsert({
-          where: { id: googleUserId },
-          update: {
-            fullName: name,
-            email: email,
-            clubId: createdClub.id,
-          },
-          create: {
-            id: googleUserId,
-            fullName: name,
-            email: email,
-            clubId: createdClub.id,
-          }
-        });
-
-        await tx.registrationKey.update({
-          where: { id: keyRecord.id },
-          data: { usedByClubId: createdClub.id },
-        });
-
-        profile = createdProfile;
-        return createdClub;
-      });
+    if (signup && (!club || club.status === 'REJECTED')) {
+      const details = readApplicationDetails(signup);
+      if (!details.logoUrl && payload.picture) details.logoUrl = payload.picture;
+      const created = await submitClubApplication({ email, passwordHash: null, details, profileId: googleUserId });
+      console.log(`Club registration submitted with Google: "${created.name}" (${created.id})`);
+      return res.status(202).json({ pending: true, message: 'Registration submitted. You can sign in once an admin approves your club.' });
     }
 
     if (!club) {
       return res.status(404).json({ error: 'No club exists with this email address. Please register your club first.' });
     }
 
+    const blocked = clubSignInBlock(club);
+    if (blocked) return res.status(403).json(blocked);
+
+    let profile = await prisma.profile.findFirst({ where: { email } });
     if (!profile) {
       profile = await prisma.profile.create({
         data: {
@@ -322,6 +246,8 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
           clubId: club.id,
         }
       });
+    } else if (profile.id === ADMIN_PROFILE_ID) {
+      return res.status(403).json({ error: 'This account cannot sign in here.' });
     } else if (profile.clubId !== club.id) {
       profile = await prisma.profile.update({
         where: { id: profile.id },
@@ -339,8 +265,8 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
       token
     });
   } catch (error: any) {
-    if (error instanceof KeyAlreadyUsed) {
-      return res.status(400).json({ error: 'This registration key has just been used. Please ask Spotlight admins for a new one.' });
+    if (error instanceof ClubApplicationError) {
+      return res.status(400).json({ error: error.message });
     }
     console.error('Google Auth Error:', error);
     return res.status(500).json({ error: 'Google authentication failed: ' + error.message });
@@ -362,7 +288,7 @@ router.post('/google-student', async (req: Request, res: Response): Promise<any>
     }
 
     const cleanEmail = googleUser.email.toLowerCase().trim();
-    const profile = await prisma.profile.findFirst({ where: { email: cleanEmail, clubId: null } });
+    const profile = await prisma.profile.findFirst({ where: { email: cleanEmail, clubId: null, NOT: { id: ADMIN_PROFILE_ID } } });
 
     if (!profile) {
       const club = await prisma.club.findUnique({ where: { email: cleanEmail } });

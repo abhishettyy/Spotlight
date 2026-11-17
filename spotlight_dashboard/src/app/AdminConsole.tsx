@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Copy,
   Check,
   RefreshCw,
-  Plus,
   LogOut,
   Search,
   AlertCircle,
@@ -14,23 +12,33 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Phone,
+  Mail,
+  Building2,
+  User,
 } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { ThemeToggle } from './theme';
 import { BASE_URL } from './api';
 
-const FM = 'var(--sk-mono)';
+type ClubStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-interface RegistrationKeyRecord {
+interface ClubApplication {
   id: string;
-  code: string;
-  isUsed: boolean;
-  usedByClubId?: string | null;
-  usedByClub?: { id: string; name: string; email: string } | null;
+  name: string;
+  email: string;
+  logoUrl?: string | null;
+  description?: string | null;
+  department?: string | null;
+  coordinatorName?: string | null;
+  coordinatorPhone?: string | null;
+  status: ClubStatus;
+  rejectionReason?: string | null;
   createdAt: string;
-  usedAt?: string | null;
+  reviewedAt?: string | null;
 }
 
-type StatusFilter = 'all' | 'active' | 'used';
+type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'all';
 
 const API_BASE = BASE_URL;
 const LOGO_SRC = `${import.meta.env.BASE_URL}logo.png`;
@@ -66,6 +74,7 @@ const btnBase =
 const btnPrimary = `${btnBase} bg-ad-brand text-white hover:bg-[var(--sk-brand-hover)]`;
 const btnSecondary = `${btnBase} bg-ad-surface text-ad-fg border border-ad-line hover:bg-ad-raised`;
 const btnGhost = `${btnBase} text-ad-muted hover:text-ad-fg hover:bg-ad-raised`;
+const btnDanger = `${btnBase} bg-ad-surface text-ad-danger border border-ad-danger/30 hover:bg-ad-danger/10`;
 
 function Notice({ tone, children, onDismiss }: { tone: 'error' | 'success'; children: React.ReactNode; onDismiss?: () => void }) {
   const isError = tone === 'error';
@@ -87,24 +96,51 @@ function Notice({ tone, children, onDismiss }: { tone: 'error' | 'success'; chil
   );
 }
 
-function StatusBadge({ used }: { used: boolean }) {
-  return used ? (
-    <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border border-ad-line bg-ad-raised text-ad-muted">
-      <span className="w-1.5 h-1.5 rounded-full bg-ad-faint" /> Used
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border border-ad-ok/25 bg-ad-ok/10 text-ad-ok">
-      <span className="w-1.5 h-1.5 rounded-full bg-ad-ok" /> Available
+function StatusBadge({ status }: { status: ClubStatus }) {
+  const styles: Record<ClubStatus, { cls: string; dot: string; label: string }> = {
+    PENDING: { cls: 'border-ad-warn/30 bg-ad-warn/10 text-ad-warn', dot: 'bg-ad-warn', label: 'Pending' },
+    APPROVED: { cls: 'border-ad-ok/25 bg-ad-ok/10 text-ad-ok', dot: 'bg-ad-ok', label: 'Approved' },
+    REJECTED: { cls: 'border-ad-danger/25 bg-ad-danger/10 text-ad-danger', dot: 'bg-ad-danger', label: 'Rejected' },
+  };
+  const s = styles[status];
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${s.cls}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} /> {s.label}
     </span>
   );
 }
 
-function CopyButton({ code, copied, onCopy, label = 'Copy' }: { code: string; copied: boolean; onCopy: (c: string) => void; label?: string }) {
+function ClubLogo({ club, size = 44 }: { club: ClubApplication; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  if (club.logoUrl && !failed) {
+    return (
+      <img
+        src={club.logoUrl}
+        alt=""
+        onError={() => setFailed(true)}
+        className="rounded-lg border border-ad-line bg-ad-raised object-cover shrink-0"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
-    <button onClick={() => onCopy(code)} className={btnSecondary} aria-label={`Copy ${code}`}>
-      {copied ? <Check size={15} className="text-ad-ok" /> : <Copy size={15} />}
-      {copied ? 'Copied' : label}
-    </button>
+    <div
+      className="rounded-lg border border-ad-line bg-ad-raised flex items-center justify-center text-sm font-semibold text-ad-muted shrink-0"
+      style={{ width: size, height: size }}
+    >
+      {club.name.trim().charAt(0).toUpperCase() || '?'}
+    </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+    </svg>
   );
 }
 
@@ -168,6 +204,7 @@ function Pagination({
 // ── Console ──────────────────────────────────────────────────────────────────
 
 export default function AdminConsole() {
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPasscode, setAdminPasscode] = useState('');
   const [showPasscode, setShowPasscode] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
@@ -176,19 +213,21 @@ export default function AdminConsole() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
 
-  const [keys, setKeys] = useState<RegistrationKeyRecord[]>([]);
+  const [clubs, setClubs] = useState<ClubApplication[]>([]);
   const [loading, setLoading] = useState(false);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const [customCodeInput, setCustomCodeInput] = useState('');
-  const [generating, setGenerating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('PENDING');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const [rejecting, setRejecting] = useState<ClubApplication | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const [showPwModal, setShowPwModal] = useState(false);
   const [oldPw, setOldPw] = useState('');
@@ -203,25 +242,30 @@ export default function AdminConsole() {
     localStorage.removeItem(TOKEN_KEY);
     setIsAuthenticated(false);
     setAdminPasscode('');
-    setKeys([]);
+    setClubs([]);
   }, []);
 
   const closePwModal = () => {
     setShowPwModal(false);
     setOldPw(''); setNewPw(''); setConfirmPw(''); setShowPw(false); setPwError(null);
   };
+  const closeRejectModal = () => { setRejecting(null); setRejectReason(''); };
 
   useEffect(() => {
-    if (!showPwModal) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closePwModal(); };
+    if (!showPwModal && !rejecting) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      closePwModal();
+      closeRejectModal();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showPwModal]);
+  }, [showPwModal, rejecting]);
 
   // Success messages clear themselves; errors stay until dismissed
   useEffect(() => {
     if (!actionSuccess) return;
-    const t = setTimeout(() => setActionSuccess(null), 4000);
+    const t = setTimeout(() => setActionSuccess(null), 6000);
     return () => clearTimeout(t);
   }, [actionSuccess]);
 
@@ -249,18 +293,18 @@ export default function AdminConsole() {
     }
   };
 
-  const fetchKeys = useCallback(async () => {
+  const fetchClubs = useCallback(async () => {
     setLoading(true);
     setActionError(null);
     try {
-      const res = await adminFetch('/clubs/registration-keys');
+      const res = await adminFetch('/clubs/applications');
       if (res.status === 401 || res.status === 403) {
         signOut();
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch registration keys');
-      setKeys(data.keys || []);
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch club registrations');
+      setClubs(data.clubs || []);
     } catch (err: any) {
       const msg = err.message === 'Failed to fetch'
         ? `Cannot reach the server at ${API_BASE}. Check that the backend is running.`
@@ -272,13 +316,20 @@ export default function AdminConsole() {
   }, [signOut]);
 
   useEffect(() => {
-    if (isAuthenticated) fetchKeys();
-  }, [isAuthenticated, fetchKeys]);
+    if (isAuthenticated) fetchClubs();
+  }, [isAuthenticated, fetchClubs]);
+
+  const finishSignIn = (token: string) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(AUTH_KEY, 'true');
+    setIsAuthenticated(true);
+    setAuthError(null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminPasscode.trim()) {
-      setAuthError('Enter the admin password.');
+    if (!adminEmail.trim() || !adminPasscode.trim()) {
+      setAuthError('Enter the admin email and password.');
       return;
     }
     setSigningIn(true);
@@ -286,73 +337,121 @@ export default function AdminConsole() {
       const res = await fetch(`${API_BASE}/clubs/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ password: adminPasscode }),
+        body: JSON.stringify({ email: adminEmail.trim(), password: adminPasscode }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Incorrect admin password.');
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(AUTH_KEY, 'true');
-      setIsAuthenticated(true);
-      setAuthError(null);
+      if (!res.ok) throw new Error(data.error || 'Incorrect admin email or password.');
+      finishSignIn(data.token);
     } catch (err: any) {
-      setAuthError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Incorrect admin password.'));
+      setAuthError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Incorrect admin email or password.'));
     } finally {
       setSigningIn(false);
     }
   };
 
-  const handleGenerateKey = async (codeToUse?: string) => {
-    setGenerating(true);
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setSigningIn(true);
+      try {
+        const res = await fetch(`${API_BASE}/clubs/admin/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Google sign-in failed.');
+        finishSignIn(data.token);
+      } catch (err: any) {
+        setAuthError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Google sign-in failed.'));
+      } finally {
+        setSigningIn(false);
+      }
+    },
+    onError: () => setAuthError('Google sign-in failed. Please try again.'),
+  });
+
+  const replaceClub = (updated: ClubApplication) =>
+    setClubs(prev => prev.map(c => (c.id === updated.id ? updated : c)));
+
+  const handleApprove = async (club: ClubApplication) => {
+    setBusyId(club.id);
     setActionError(null);
     setActionSuccess(null);
     try {
-      const res = await adminFetch('/clubs/registration-keys/generate', {
-        method: 'POST',
-        body: JSON.stringify({ customCode: codeToUse }),
-      });
+      const res = await adminFetch(`/clubs/${club.id}/approve`, { method: 'POST' });
+      if (res.status === 401) { signOut(); return; }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate key');
-      setActionSuccess(`Created key ${data.key.code}`);
-      setCustomCodeInput('');
-      fetchKeys();
+      if (!res.ok) throw new Error(data.error || 'Could not approve the club.');
+      replaceClub(data.club);
+      if (data.emailSent) {
+        setActionSuccess(`Approved ${club.name}. An approval email was sent to ${club.email}.`);
+      } else {
+        setActionError(`Approved ${club.name}, but the approval email could not be sent. Let them know at ${club.email}.`);
+      }
     } catch (err: any) {
-      setActionError(err.message || 'Could not generate registration key');
+      setActionError(err.message || 'Could not approve the club.');
     } finally {
-      setGenerating(false);
+      setBusyId(null);
     }
   };
 
-  const handleCopy = useCallback((code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
-  }, []);
+  const handleReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejecting) return;
+    const club = rejecting;
+    setBusyId(club.id);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const res = await adminFetch(`/clubs/${club.id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: rejectReason.trim() }),
+      });
+      if (res.status === 401) { signOut(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not reject the club.');
+      replaceClub(data.club);
+      closeRejectModal();
+      setActionSuccess(`Rejected ${club.name}. They will see the reason when they try to sign in.`);
+    } catch (err: any) {
+      setActionError(err.message || 'Could not reject the club.');
+      closeRejectModal();
+    } finally {
+      setBusyId(null);
+    }
+  };
 
-  const activeKey = useMemo(() => keys.find(k => !k.isUsed), [keys]);
-  const counts = useMemo(() => {
-    const used = keys.filter(k => k.isUsed).length;
-    return { all: keys.length, active: keys.length - used, used };
-  }, [keys]);
-
-  const filteredKeys = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    return keys.filter(k => {
-      if (statusFilter === 'active' && k.isUsed) return false;
-      if (statusFilter === 'used' && !k.isUsed) return false;
-      return !query ||
-        k.code.toLowerCase().includes(query) ||
-        (k.usedByClubId ?? '').toLowerCase().includes(query) ||
-        (k.usedByClub?.name ?? '').toLowerCase().includes(query) ||
-        (k.usedByClub?.email ?? '').toLowerCase().includes(query);
+  const toggleExpanded = (id: string) =>
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
     });
-  }, [keys, searchQuery, statusFilter]);
+
+  const counts = useMemo(() => {
+    const c = { all: clubs.length, PENDING: 0, APPROVED: 0, REJECTED: 0 };
+    for (const club of clubs) c[club.status]++;
+    return c;
+  }, [clubs]);
+
+  const filteredClubs = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return clubs.filter(c => {
+      if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+      return !query ||
+        c.name.toLowerCase().includes(query) ||
+        c.email.toLowerCase().includes(query) ||
+        (c.department ?? '').toLowerCase().includes(query) ||
+        (c.coordinatorName ?? '').toLowerCase().includes(query);
+    });
+  }, [clubs, searchQuery, statusFilter]);
 
   // Back to the first page whenever the visible set changes shape
   useEffect(() => { setPage(1); }, [searchQuery, statusFilter, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredKeys.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredClubs.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageKeys = filteredKeys.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageClubs = filteredClubs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // ── Sign-in ────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
@@ -369,9 +468,22 @@ export default function AdminConsole() {
 
           <div className="ad-card p-6">
             <h1 className="text-lg font-semibold">Sign in</h1>
-            <p className="text-sm text-ad-muted mt-1">Manage club registration keys.</p>
+            <p className="text-sm text-ad-muted mt-1">Review and approve club registrations.</p>
 
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="admin-email" className="text-sm font-medium block">Email</label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  autoComplete="username"
+                  autoFocus
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
               <div className="space-y-1.5">
                 <label htmlFor="admin-password" className="text-sm font-medium block">Password</label>
                 <div className="relative">
@@ -379,7 +491,6 @@ export default function AdminConsole() {
                     id="admin-password"
                     type={showPasscode ? 'text' : 'password'}
                     autoComplete="current-password"
-                    autoFocus
                     value={adminPasscode}
                     onChange={(e) => setAdminPasscode(e.target.value)}
                     className={`${inputCls} pr-10`}
@@ -401,6 +512,21 @@ export default function AdminConsole() {
                 {signingIn ? 'Signing in…' : 'Sign in'}
               </button>
             </form>
+
+            <div className="flex items-center gap-3 my-5">
+              <div className="h-px flex-1 bg-ad-line" />
+              <span className="text-xs text-ad-faint">or</span>
+              <div className="h-px flex-1 bg-ad-line" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setAuthError(null); loginWithGoogle(); }}
+              disabled={signingIn}
+              className={`${btnSecondary} w-full h-10`}
+            >
+              <GoogleIcon /> Continue with Google
+            </button>
           </div>
         </div>
       </div>
@@ -409,9 +535,10 @@ export default function AdminConsole() {
 
   // ── Console ────────────────────────────────────────────────────────────────
   const filterTabs: { id: StatusFilter; label: string }[] = [
+    { id: 'PENDING', label: 'Pending' },
+    { id: 'APPROVED', label: 'Approved' },
+    { id: 'REJECTED', label: 'Rejected' },
     { id: 'all', label: 'All' },
-    { id: 'active', label: 'Available' },
-    { id: 'used', label: 'Used' },
   ];
 
   return (
@@ -440,10 +567,10 @@ export default function AdminConsole() {
         {/* Page heading */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Registration keys</h1>
-            <p className="text-sm text-ad-muted mt-1">Single-use invite codes that let a new club create its dashboard account.</p>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Club registrations</h1>
+            <p className="text-sm text-ad-muted mt-1">New clubs can sign in only after you approve them. Approved clubs get an email.</p>
           </div>
-          <button onClick={fetchKeys} disabled={loading} className={btnSecondary}>
+          <button onClick={fetchClubs} disabled={loading} className={btnSecondary}>
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
         </div>
@@ -454,72 +581,28 @@ export default function AdminConsole() {
         {/* Stats */}
         <div className="ad-card grid grid-cols-3 divide-x divide-ad-line">
           {[
-            { label: 'Total keys', value: counts.all },
-            { label: 'Available', value: counts.active },
-            { label: 'Redeemed', value: counts.used },
+            { label: 'Awaiting review', value: counts.PENDING },
+            { label: 'Approved', value: counts.APPROVED },
+            { label: 'Rejected', value: counts.REJECTED },
           ].map(s => (
             <div key={s.label} className="px-4 py-4 sm:px-6 sm:py-5">
               <p className="text-xs text-ad-muted">{s.label}</p>
-              <p className="text-2xl font-semibold mt-1 tabular">{loading && keys.length === 0 ? '–' : s.value}</p>
+              <p className="text-2xl font-semibold mt-1 tabular">{loading && clubs.length === 0 ? '–' : s.value}</p>
             </div>
           ))}
         </div>
 
-        {/* Issue keys */}
-        <section className="ad-card grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-ad-line">
-          <div className="p-5 sm:p-6">
-            <h2 className="text-sm font-semibold">Next key to share</h2>
-            <p className="text-sm text-ad-muted mt-1">Send this to the next club that signs up. It stops working once used.</p>
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-              <code
-                className="flex-1 min-w-0 h-11 px-3.5 flex items-center rounded-lg bg-ad-raised border border-ad-line text-base font-semibold tracking-wider select-all truncate"
-                style={{ fontFamily: FM }}
-              >
-                {activeKey ? activeKey.code : <span className="text-ad-faint font-normal">{loading ? 'Loading…' : 'No key available'}</span>}
-              </code>
-              <div className="flex gap-2">
-                {activeKey && <CopyButton code={activeKey.code} copied={copiedCode === activeKey.code} onCopy={handleCopy} />}
-                <button onClick={() => handleGenerateKey()} disabled={generating} className={btnPrimary}>
-                  <RefreshCw size={15} className={generating ? 'animate-spin' : ''} /> New key
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <form
-            className="p-5 sm:p-6 border-t lg:border-t-0 border-ad-line"
-            onSubmit={(e) => { e.preventDefault(); if (customCodeInput.trim()) handleGenerateKey(customCodeInput.trim()); }}
-          >
-            <h2 className="text-sm font-semibold">Custom code</h2>
-            <p className="text-sm text-ad-muted mt-1">Create a readable code for a specific club.</p>
-            <div className="mt-4 flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="e.g. ROTARACT-2026"
-                value={customCodeInput}
-                onChange={e => setCustomCodeInput(e.target.value.toUpperCase())}
-                className={`${inputCls} h-11 tracking-wider`}
-                style={{ fontFamily: FM }}
-                aria-label="Custom code"
-              />
-              <button type="submit" disabled={generating || !customCodeInput.trim()} className={`${btnSecondary} h-11`}>
-                <Plus size={15} /> Create
-              </button>
-            </div>
-          </form>
-        </section>
-
-        {/* Key list */}
+        {/* Registration list */}
         <section className="ad-card overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 border-b border-ad-line">
-            <div className="inline-flex p-0.5 rounded-lg bg-ad-raised border border-ad-line self-start" role="tablist">
+            <div className="inline-flex p-0.5 rounded-lg bg-ad-raised border border-ad-line self-start overflow-x-auto max-w-full" role="tablist">
               {filterTabs.map(t => (
                 <button
                   key={t.id}
                   role="tab"
                   aria-selected={statusFilter === t.id}
                   onClick={() => setStatusFilter(t.id)}
-                  className={`h-8 px-3 rounded-md text-sm transition-colors cursor-pointer ${
+                  className={`h-8 px-3 rounded-md text-sm transition-colors cursor-pointer whitespace-nowrap ${
                     statusFilter === t.id ? 'bg-ad-surface text-ad-fg font-medium shadow-sm' : 'text-ad-muted hover:text-ad-fg'
                   }`}
                 >
@@ -531,111 +614,101 @@ export default function AdminConsole() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ad-faint pointer-events-none" />
               <input
                 type="search"
-                placeholder="Search code or club"
+                placeholder="Search club, email, department"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className={`${inputCls} h-9 pl-9`}
-                aria-label="Search keys"
+                aria-label="Search clubs"
               />
             </div>
           </div>
 
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-ad-muted">
-                <tr className="border-b border-ad-line">
-                  <th className="px-4 py-2.5 font-medium">Code</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5 font-medium">Club</th>
-                  <th className="px-4 py-2.5 font-medium">Created</th>
-                  <th className="px-4 py-2.5 font-medium">Redeemed</th>
-                  <th className="px-4 py-2.5 font-medium w-24"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ad-line">
-                {pageKeys.map(k => (
-                  <tr key={k.id} className="hover:bg-ad-raised/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <code className="font-semibold tracking-wide select-all" style={{ fontFamily: FM }}>{k.code}</code>
-                    </td>
-                    <td className="px-4 py-3"><StatusBadge used={k.isUsed} /></td>
-                    <td className="px-4 py-3">
-                      {k.usedByClub ? (
-                        <div className="leading-tight">
-                          <p className="font-medium">{k.usedByClub.name}</p>
-                          <p className="text-xs text-ad-faint mt-0.5">{k.usedByClub.email}</p>
+          <ul className="divide-y divide-ad-line">
+            {pageClubs.map(c => {
+              const isOpen = expanded.has(c.id);
+              const longDescription = (c.description?.length ?? 0) > 180;
+              return (
+                <li key={c.id} className="px-4 py-4 sm:px-5 flex flex-col md:flex-row md:items-start gap-4">
+                  <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                    <ClubLogo club={c} />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold truncate">{c.name}</p>
+                        <StatusBadge status={c.status} />
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ad-muted">
+                        <span className="inline-flex items-center gap-1.5 min-w-0"><Mail size={13} className="shrink-0" /><span className="truncate">{c.email}</span></span>
+                        {c.department && <span className="inline-flex items-center gap-1.5"><Building2 size={13} className="shrink-0" />{c.department}</span>}
+                      </div>
+                      {(c.coordinatorName || c.coordinatorPhone) && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ad-muted">
+                          {c.coordinatorName && <span className="inline-flex items-center gap-1.5"><User size={13} className="shrink-0" />{c.coordinatorName}</span>}
+                          {c.coordinatorPhone && (
+                            <a href={`tel:${c.coordinatorPhone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1.5 hover:text-ad-fg">
+                              <Phone size={13} className="shrink-0" />{c.coordinatorPhone}
+                            </a>
+                          )}
                         </div>
-                      ) : k.usedByClubId ? (
-                        <span className="text-xs text-ad-warn" title={k.usedByClubId}>Club removed</span>
-                      ) : (
-                        <span className="text-ad-faint">—</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-ad-muted tabular whitespace-nowrap">
-                      {formatDate(k.createdAt)} <span className="text-ad-faint">{formatTime(k.createdAt)}</span>
-                    </td>
-                    <td className="px-4 py-3 text-ad-muted tabular whitespace-nowrap">
-                      {k.usedAt ? <>{formatDate(k.usedAt)} <span className="text-ad-faint">{formatTime(k.usedAt)}</span></> : <span className="text-ad-faint">—</span>}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      {!k.isUsed && (
+                      {c.description && (
+                        <div className="text-sm text-ad-fg/90 pt-0.5">
+                          <p className={`whitespace-pre-line break-words ${isOpen ? '' : 'line-clamp-2'}`}>{c.description}</p>
+                          {longDescription && (
+                            <button onClick={() => toggleExpanded(c.id)} className="text-xs text-ad-brand hover:underline mt-1 cursor-pointer">
+                              {isOpen ? 'Show less' : 'Show more'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {c.status === 'REJECTED' && c.rejectionReason && (
+                        <p className="text-xs text-ad-danger">Reason: {c.rejectionReason}</p>
+                      )}
+                      <p className="text-xs text-ad-faint tabular">
+                        Applied {formatDate(c.createdAt)} {formatTime(c.createdAt)}
+                        {c.reviewedAt && <> · Reviewed {formatDate(c.reviewedAt)}</>}
+                      </p>
+                    </div>
+                  </div>
+
+                  {c.status !== 'APPROVED' && (
+                    <div className="flex gap-2 md:flex-col md:w-32 shrink-0">
+                      <button
+                        onClick={() => handleApprove(c)}
+                        disabled={busyId === c.id}
+                        className={`${btnPrimary} flex-1 md:flex-none`}
+                      >
+                        <Check size={15} /> {busyId === c.id ? 'Working…' : 'Approve'}
+                      </button>
+                      {c.status === 'PENDING' && (
                         <button
-                          onClick={() => handleCopy(k.code)}
-                          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs text-ad-muted hover:text-ad-fg hover:bg-ad-raised cursor-pointer"
+                          onClick={() => setRejecting(c)}
+                          disabled={busyId === c.id}
+                          className={`${btnDanger} flex-1 md:flex-none`}
                         >
-                          {copiedCode === k.code ? <Check size={14} className="text-ad-ok" /> : <Copy size={14} />}
-                          {copiedCode === k.code ? 'Copied' : 'Copy'}
+                          <X size={15} /> Reject
                         </button>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile list */}
-          <ul className="md:hidden divide-y divide-ad-line">
-            {pageKeys.map(k => (
-              <li key={k.id} className="px-4 py-3.5 space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <code className="text-sm font-semibold tracking-wide break-all select-all" style={{ fontFamily: FM }}>{k.code}</code>
-                  <StatusBadge used={k.isUsed} />
-                </div>
-                {k.usedByClub && (
-                  <p className="text-sm">
-                    {k.usedByClub.name} <span className="text-xs text-ad-faint block truncate">{k.usedByClub.email}</span>
-                  </p>
-                )}
-                <div className="flex items-center justify-between gap-3 text-xs text-ad-faint">
-                  <span>
-                    Created {formatDate(k.createdAt)}
-                    {k.usedAt && <> · Redeemed {formatDate(k.usedAt)}</>}
-                  </span>
-                  {!k.isUsed && (
-                    <button onClick={() => handleCopy(k.code)} className="inline-flex items-center gap-1 text-ad-muted hover:text-ad-fg cursor-pointer">
-                      {copiedCode === k.code ? <Check size={13} className="text-ad-ok" /> : <Copy size={13} />}
-                      {copiedCode === k.code ? 'Copied' : 'Copy'}
-                    </button>
+                    </div>
                   )}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
 
-          {pageKeys.length === 0 && (
+          {pageClubs.length === 0 && (
             <div className="px-4 py-12 text-center">
-              <p className="text-sm font-medium">{loading ? 'Loading keys…' : 'No keys found'}</p>
-              {!loading && (searchQuery || statusFilter !== 'all') && (
+              <p className="text-sm font-medium">
+                {loading ? 'Loading registrations…' : statusFilter === 'PENDING' && !searchQuery ? 'No registrations waiting for review' : 'No clubs found'}
+              </p>
+              {!loading && searchQuery && (
                 <p className="text-sm text-ad-muted mt-1">Try a different search or filter.</p>
               )}
             </div>
           )}
 
-          {filteredKeys.length > 0 && (
+          {filteredClubs.length > 0 && (
             <Pagination
-              total={filteredKeys.length}
+              total={filteredClubs.length}
               page={currentPage}
               pageSize={pageSize}
               onPage={setPage}
@@ -644,6 +717,51 @@ export default function AdminConsole() {
           )}
         </section>
       </main>
+
+      {/* Reject dialog */}
+      {rejecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeRejectModal}>
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-title"
+            onSubmit={handleReject}
+            onClick={e => e.stopPropagation()}
+            className="ad-card w-full max-w-md p-6 space-y-4 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="reject-title" className="text-base font-semibold">Reject {rejecting.name}?</h2>
+                <p className="text-sm text-ad-muted mt-1">The club sees this reason when it tries to sign in, and can sign up again with corrected details.</p>
+              </div>
+              <button type="button" onClick={closeRejectModal} aria-label="Close" className="p-1 rounded-md text-ad-faint hover:text-ad-fg cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="reject-reason" className="text-sm font-medium block">Reason <span className="text-ad-faint font-normal">(optional)</span></label>
+              <textarea
+                id="reject-reason"
+                rows={3}
+                maxLength={500}
+                autoFocus
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder="e.g. Please register with the club's official email"
+                className="w-full px-3 py-2 rounded-lg bg-ad-raised border border-ad-line text-sm text-ad-fg placeholder:text-ad-faint outline-none focus:border-ad-brand transition-colors resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={closeRejectModal} className={btnSecondary}>Cancel</button>
+              <button type="submit" disabled={busyId === rejecting.id} className={`${btnBase} bg-ad-danger text-white hover:opacity-90`}>
+                {busyId === rejecting.id ? 'Rejecting…' : 'Reject club'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Change password dialog */}
       {showPwModal && (

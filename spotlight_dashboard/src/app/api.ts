@@ -123,11 +123,18 @@ async function request(path: string, options: RequestInit = {}, token?: string) 
     }
     if (!res.ok) {
       const rawError = data.error || data.message || `Request failed (${res.status})`;
-      throw new Error(sanitizeErrorMessage(rawError));
+      const apiErr: any = new Error(sanitizeErrorMessage(rawError));
+      apiErr.code = data.code;
+      apiErr.status = res.status;
+      throw apiErr;
     }
     return sanitizeImageUrls(data);
   } catch (err: any) {
-    throw new Error(sanitizeErrorMessage(err));
+    // Keep the server's error code (e.g. CLUB_PENDING) so pages can show the matching screen
+    const wrapped: any = new Error(sanitizeErrorMessage(err));
+    wrapped.code = err?.code;
+    wrapped.status = err?.status;
+    throw wrapped;
   }
 }
 
@@ -207,13 +214,6 @@ export async function fetchClubs() {
   return request('/clubs');
 }
 
-export async function verifyRegistrationKey(key: string) {
-  return request('/clubs/verify-key', {
-    method: 'POST',
-    body: JSON.stringify({ key }),
-  });
-}
-
 export async function checkClubEmail(email: string) {
   return request('/clubs/check-email', {
     method: 'POST',
@@ -221,19 +221,27 @@ export async function checkClubEmail(email: string) {
   });
 }
 
-export async function googleAuth(authPayload: { credential?: string; access_token?: string; registrationKey?: string; clubName?: string }) {
+/** The details a club fills in on the sign-up page; the admin reviews them before the club can sign in. */
+export interface ClubSignupDetails {
+  name: string;
+  description: string;
+  department: string;
+  coordinatorName: string;
+  coordinatorPhone: string;
+  logoUrl?: string;
+}
+
+/** Club Google sign-in; with `signup`, files a pending registration instead (answers { pending: true }). */
+export async function googleAuth(authPayload: { credential?: string; access_token?: string; signup?: ClubSignupDetails }) {
   return request('/auth/google', {
     method: 'POST',
     body: JSON.stringify(authPayload),
   });
 }
 
-export async function createClub(data: {
-  name: string;
+export async function createClub(data: ClubSignupDetails & {
   email: string;
-  logoUrl?: string;
-  password?: string;
-  registrationKey: string;
+  password: string;
 }, token?: string) {
   return request('/clubs', {
     method: 'POST',

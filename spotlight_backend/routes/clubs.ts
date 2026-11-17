@@ -1,20 +1,23 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
 import { campusNow, campusEventHasEnded } from '../utils/time';
 import { ADMIN_PROFILE_ID, requireAdmin, signAdminToken, isThrottled, recordFailure, clearFailures } from '../utils/admin';
-import { claimRegistrationKey, KeyAlreadyUsed } from '../utils/registrationKeys';
+import { verifyGoogleUser } from '../utils/google';
+import { sendClubApprovedEmail } from '../utils/mailer';
+import { submitClubApplication, readApplicationDetails, ClubApplicationError } from '../utils/clubApplications';
 
 const router = Router();
 const SALT_ROUNDS = 10;
 
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
+    // Students only ever see approved clubs
     const clubs = await prisma.club.findMany({
+      where: { status: 'APPROVED' },
       orderBy: { name: 'asc' },
     });
 
@@ -34,58 +37,6 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-const KEY_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-/** A random key like SPOTLIGHT-7KQM-X2PD, from a cryptographic source so it can't be predicted. */
-function generateRegistrationKeyCode(): string {
-  const part = () => Array.from(crypto.randomBytes(4), b => KEY_CHARS[b % KEY_CHARS.length]).join('');
-  return `SPOTLIGHT-${part()}-${part()}`;
-}
-
-async function ensureActiveRegistrationKey(): Promise<string> {
-  try {
-    const active = await prisma.registrationKey.findFirst({
-      where: { isUsed: false },
-    });
-    if (active) return active.code;
-
-    const newCode = generateRegistrationKeyCode();
-
-    const created = await prisma.registrationKey.create({
-      data: { code: newCode },
-    });
-    console.log(`[RegistrationKey] Auto-generated fresh active key: ${created.code}`);
-    return created.code;
-  } catch (err) {
-    console.error('[RegistrationKey] Auto-generation failed:', err);
-    return 'SPOTLIGHT-KEY-FAIL';
-  }
-}
-
-ensureActiveRegistrationKey();
-
-router.post('/verify-key', async (req: Request, res: Response): Promise<any> => {
-  try {
-    const { key } = req.body;
-    if (!key || typeof key !== 'string') {
-      return res.status(400).json({ error: 'Registration key is required.' });
-    }
-
-    const cleanKey = key.trim().toUpperCase();
-    const record = await prisma.registrationKey.findFirst({
-      where: { code: cleanKey, isUsed: false },
-    });
-
-    if (!record) {
-      return res.status(400).json({ error: 'Invalid or expired registration key. Please contact Spotlight admins for an authorization code.' });
-    }
-
-    return res.status(200).json({ valid: true, message: 'Authorization key verified successfully.' });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-
 router.post('/check-email', async (req: Request, res: Response): Promise<any> => {
   try {
     const { email } = req.body;
@@ -95,17 +46,24 @@ router.post('/check-email', async (req: Request, res: Response): Promise<any> =>
 
     const cleanEmail = email.trim().toLowerCase();
 
-    const existingProfile = await prisma.profile.findUnique({ where: { email: cleanEmail } });
-    if (existingProfile) {
+    const [existingClub, existingProfile] = await Promise.all([
+      prisma.club.findUnique({ where: { email: cleanEmail } }),
+      prisma.profile.findUnique({ where: { email: cleanEmail } }),
+    ]);
+
+    if (existingClub?.status === 'PENDING') {
+      return res.status(400).json({ exists: true, error: 'A registration for this email is already awaiting admin approval.' });
+    }
+    if (existingClub?.status === 'APPROVED') {
+      return res.status(400).json({ exists: true, error: 'This email address is already registered to a club.' });
+    }
+
+    // A rejected club may sign up again with the same email (its own club-admin profile included)
+    if (existingProfile && !(existingClub && existingProfile.clubId === existingClub.id)) {
       if (existingProfile.clubId === null && existingProfile.password !== null) {
         return res.status(400).json({ exists: true, error: 'This email address is already registered to a student account.' });
       }
       return res.status(400).json({ exists: true, error: 'This email address is already registered.' });
-    }
-
-    const existingClub = await prisma.club.findUnique({ where: { email: cleanEmail } });
-    if (existingClub) {
-      return res.status(400).json({ exists: true, error: 'This email address is already registered to a club.' });
     }
 
     return res.status(200).json({ exists: false, message: 'Email is available.' });
@@ -118,15 +76,41 @@ router.post('/admin/login', async (req: Request, res: Response): Promise<any> =>
   try {
     const key = req.ip || 'unknown';
     if (isThrottled(key)) return res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' });
-    const { password } = req.body;
-    if (!password || typeof password !== 'string') {
-      return res.status(400).json({ error: 'Password is required.' });
+    const { email, password } = req.body;
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Email and password are required.' });
     }
     const admin = await prisma.profile.findUnique({ where: { id: ADMIN_PROFILE_ID } });
-    const ok = !!admin?.password && await bcrypt.compare(password, admin.password);
+    const emailOk = !!admin && admin.email.toLowerCase() === email.trim().toLowerCase();
+    const ok = emailOk && !!admin?.password && await bcrypt.compare(password, admin.password);
     if (!ok) {
       recordFailure(key);
-      return res.status(401).json({ error: 'Incorrect admin password.' });
+      return res.status(401).json({ error: 'Incorrect admin email or password.' });
+    }
+    clearFailures(key);
+    return res.status(200).json({ token: signAdminToken() });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin sign-in with the Google account whose email is the admin profile's email
+router.post('/admin/google', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const key = req.ip || 'unknown';
+    if (isThrottled(key)) return res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' });
+    const { credential, access_token } = req.body;
+    if (!credential && !access_token) {
+      return res.status(400).json({ error: 'Google credential or access token is required.' });
+    }
+    const googleUser = await verifyGoogleUser(credential, access_token);
+    if (!googleUser) {
+      return res.status(401).json({ error: 'Google sign-in could not be verified. Please try again.' });
+    }
+    const admin = await prisma.profile.findUnique({ where: { id: ADMIN_PROFILE_ID } });
+    if (!admin || admin.email.toLowerCase() !== googleUser.email.toLowerCase()) {
+      recordFailure(key);
+      return res.status(403).json({ error: 'This Google account is not the Spotlight admin.' });
     }
     clearFailures(key);
     return res.status(200).json({ token: signAdminToken() });
@@ -158,123 +142,95 @@ router.post('/admin/change-password', requireAdmin, async (req: Request, res: Re
   }
 });
 
-router.get('/registration-keys', requireAdmin, async (req: Request, res: Response): Promise<any> => {
-  try {
-    await ensureActiveRegistrationKey();
+const applicationSelect = {
+  id: true,
+  name: true,
+  email: true,
+  logoUrl: true,
+  description: true,
+  department: true,
+  coordinatorName: true,
+  coordinatorPhone: true,
+  status: true,
+  rejectionReason: true,
+  createdAt: true,
+  reviewedAt: true,
+} as const;
 
-    const keys = await prisma.registrationKey.findMany({
+// Every club with its sign-up details and approval state, newest first, for the admin console
+router.get('/applications', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const clubs = await prisma.club.findMany({
+      select: applicationSelect,
       orderBy: { createdAt: 'desc' },
-      include: { usedByClub: { select: { id: true, name: true, email: true } } },
     });
-
-    return res.status(200).json({ keys });
+    return res.status(200).json({ clubs });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/registration-keys/generate', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+router.post('/:id/approve', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
-    const { customCode } = req.body;
-    let codeToUse = '';
+    const id = req.params.id as string;
+    const club = await prisma.club.findUnique({ where: { id } });
+    if (!club) return res.status(404).json({ error: 'Club not found.' });
+    if (club.status === 'APPROVED') return res.status(400).json({ error: 'This club is already approved.' });
 
-    if (customCode && typeof customCode === 'string' && customCode.trim()) {
-      codeToUse = customCode.trim().toUpperCase();
-      const existing = await prisma.registrationKey.findUnique({ where: { code: codeToUse } });
-      if (existing) {
-        return res.status(400).json({ error: 'This registration code already exists.' });
-      }
-    } else {
-      codeToUse = generateRegistrationKeyCode();
-    }
-
-    const key = await prisma.registrationKey.create({
-      data: { code: codeToUse },
+    const updated = await prisma.club.update({
+      where: { id },
+      data: { status: 'APPROVED', rejectionReason: null, reviewedAt: new Date() },
+      select: applicationSelect,
     });
+    console.log(`[Admin] Approved club "${updated.name}" (${updated.id})`);
 
-    return res.status(201).json({ key });
+    const emailSent = await sendClubApprovedEmail(updated);
+    return res.status(200).json({ club: updated, emailSent });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-// Registers a new club with a single-use key. It only ever creates a new club and a new club-admin
-// profile: an email that already belongs to a club or any profile is refused, so a spare key can't be
-// used to reset an existing club's password or take over someone's account.
+router.post('/:id/reject', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = req.params.id as string;
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim().slice(0, 500) : '';
+    const club = await prisma.club.findUnique({ where: { id } });
+    if (!club) return res.status(404).json({ error: 'Club not found.' });
+    if (club.status !== 'PENDING') return res.status(400).json({ error: 'Only pending registrations can be rejected.' });
+
+    const updated = await prisma.club.update({
+      where: { id },
+      data: { status: 'REJECTED', rejectionReason: reason || null, reviewedAt: new Date() },
+      select: applicationSelect,
+    });
+    console.log(`[Admin] Rejected club "${updated.name}" (${updated.id})`);
+    return res.status(200).json({ club: updated });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Club sign-up. Files the registration as PENDING; the club can sign in once the admin approves it.
 router.post('/', async (req: Request, res: Response): Promise<any> => {
   try {
-    const { name, email, logoUrl, password, registrationKey } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Club name, email and password are required.' });
+    const { email, password } = req.body;
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Email and password are required.' });
     }
+    const details = readApplicationDetails(req.body);
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const club = await submitClubApplication({ email, passwordHash, details });
 
-    if (!registrationKey || typeof registrationKey !== 'string') {
-      return res.status(400).json({ error: 'Registration key is required to register a club.' });
-    }
-
-    const cleanKey = registrationKey.trim().toUpperCase();
-    const keyRecord = await prisma.registrationKey.findFirst({
-      where: { code: cleanKey, isUsed: false },
+    console.log(`Club registration submitted: "${club.name}" (${club.id})`);
+    return res.status(201).json({
+      pending: true,
+      message: 'Registration submitted. You can sign in once an admin approves your club.',
+      club: { id: club.id, name: club.name, email: club.email, status: club.status },
     });
-
-    if (!keyRecord) {
-      return res.status(400).json({ error: 'Invalid or expired registration key. Please enter a valid key provided by Spotlight admins.' });
-    }
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const [existingClub, existingProfile] = await Promise.all([
-      prisma.club.findUnique({ where: { email: cleanEmail } }),
-      prisma.profile.findUnique({ where: { email: cleanEmail } }),
-    ]);
-    if (existingClub) {
-      return res.status(400).json({ error: 'This email address is already registered to a club. Please sign in instead.' });
-    }
-    if (existingProfile) {
-      return res.status(400).json({ error: 'This email address is already registered.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const finalLogoUrl = logoUrl ? await uploadBase64Image(logoUrl, 'clubs/logos') : null;
-    const userId = `user_${crypto.randomBytes(6).toString('hex')}`;
-
-    const club = await prisma.$transaction(async (tx) => {
-      await claimRegistrationKey(tx, keyRecord.id);
-
-      const newClub = await tx.club.create({
-        data: {
-          name,
-          email: cleanEmail,
-          logoUrl: finalLogoUrl,
-          password: hashedPassword,
-        },
-      });
-
-      await tx.profile.create({
-        data: {
-          id: userId,
-          fullName: name,
-          email: cleanEmail,
-          password: hashedPassword,
-          clubId: newClub.id,
-        },
-      });
-
-      await tx.registrationKey.update({
-        where: { id: keyRecord.id },
-        data: { usedByClubId: newClub.id },
-      });
-
-      return newClub;
-    });
-
-    console.log(`Club created: "${club.name}" (${club.id}) using key ${keyRecord.code}`);
-
-    await ensureActiveRegistrationKey();
-
-    return res.status(201).json({ club });
   } catch (error: any) {
-    if (error instanceof KeyAlreadyUsed) {
-      return res.status(400).json({ error: 'This registration key has just been used. Please ask Spotlight admins for a new one.' });
+    if (error instanceof ClubApplicationError) {
+      return res.status(400).json({ error: error.message });
     }
     console.error('Create club error:', error);
     return res.status(500).json({ error: error.message });

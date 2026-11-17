@@ -29,7 +29,7 @@ The web app serves:
 | Path | Area | Who uses it |
 |---|---|---|
 | `/student` | Student web app (installable PWA, same features as the Flutter app) | Students |
-| `/admin` | Admin console: issue club registration keys | Platform admin |
+| `/admin` | Admin console: approve or reject club registrations | Platform admin |
 | everything else | Club dashboard: create events, review registrations, scan tickets | Club organisers |
 
 ## Features
@@ -42,14 +42,15 @@ The web app serves:
 - In-app notifications, light and dark themes
 
 **Clubs** (dashboard)
-- Sign up with a single-use registration key from the admin
+- Sign up with club details (department, description, coordinator); sign-in opens once the admin approves
 - Create free or paid events with banner, deadline, team size and UPI details
 - Approve or reject paid registrations after checking the Transaction ID
 - Scan student QR tickets at the venue to check them in
 - Overview stats per event
 
 **Admin** (`/admin`)
-- Generate random or custom registration keys and see which club used each one
+- Sign in with email and password or Google
+- Review pending club registrations, approve (the club gets an email) or reject with a reason
 
 ## Architecture
 
@@ -68,7 +69,7 @@ flowchart LR
 
 ### Data model
 
-`Profile` (students, plus the built-in `admin`) · `Club` · `Event` · `Team` · `Registration` (status `PENDING` / `CONFIRMED` / `REJECTED`, Transaction ID, check-in time) · `Notification` · `RegistrationKey`. See [`schema.prisma`](spotlight_backend/prisma/schema.prisma).
+`Profile` (students, plus the built-in `admin`) · `Club` (status `PENDING` / `APPROVED` / `REJECTED`) · `Event` · `Team` · `Registration` (status `PENDING` / `CONFIRMED` / `REJECTED`, Transaction ID, check-in time) · `Notification`. See [`schema.prisma`](spotlight_backend/prisma/schema.prisma).
 
 ### API
 
@@ -78,7 +79,7 @@ All routes are served under `/api` (and also at the root, for hosts that strip t
 |---|---|
 | `/auth` | Student sign-up and login, Google sign-in, club login, password change |
 | `/profiles` | Read and edit profiles, profile stats |
-| `/clubs` | Club list and sign-up, admin login, registration keys, club registrations and stats |
+| `/clubs` | Club list and sign-up, admin login, club approvals, club registrations and stats |
 | `/events` | Event list, create and edit events, deadlines, an event's registrations |
 | `/notifications` | List, mark read, delete |
 | `/` (registrations) | Register, teams, payment submission, approve or reject, ticket verification, public stats |
@@ -138,6 +139,9 @@ flutter build appbundle --release   # build/app/outputs/bundle/release/app-relea
 | `ADMIN_INITIAL_PASSWORD` | no | First admin password; random and logged once if unset |
 | `CRON_SECRET` | no | Enables `POST /notifications/event-reminders` for a scheduled job (sent as `X-Cron-Secret`) |
 | `CAMPUS_TIME_ZONE` | no | Zone event times are entered in, default `Asia/Kolkata` |
+| `ADMIN_EMAIL` | no | Admin console sign-in email, default `spotlightapp.help@gmail.com` |
+| `SMTP_USER` / `SMTP_PASS` | no | Mail account for club approval emails (Gmail: an App Password); emails are skipped if unset |
+| `SMTP_HOST` / `SMTP_PORT` / `MAIL_FROM` / `CLUB_LOGIN_URL` | no | Mail server (default Gmail, 465), sender, and the sign-in link in the email |
 
 **Web app** (`spotlight_dashboard/.env`): `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, and optionally `VITE_BASE_PATH` when hosted under a sub-path.
 

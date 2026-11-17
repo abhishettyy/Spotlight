@@ -242,7 +242,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                   <>
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Information We Collect From Clubs</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We collect and store your Club Name, Email Address, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New accounts are verified via single-use registration keys.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We collect and store your Club Name, Email Address, department, club description, coordinator name and phone number, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New club accounts are reviewed and approved by the Spotlight admin before they can sign in.</p>
                     </div>
 
                     <div>

@@ -8,7 +8,6 @@ DROP TABLE IF EXISTS `Notification`;
 DROP TABLE IF EXISTS `Registration`;
 DROP TABLE IF EXISTS `Team`;
 DROP TABLE IF EXISTS `Event`;
-DROP TABLE IF EXISTS `RegistrationKey`;
 DROP TABLE IF EXISTS `Profile`;
 DROP TABLE IF EXISTS `Club`;
 
@@ -20,7 +19,16 @@ CREATE TABLE `Club` (
   `password` VARCHAR(191) NULL,
   `qr_url` TEXT NULL,
   `upi_id` VARCHAR(191) NULL,
-  PRIMARY KEY (`id`)
+  `description` TEXT NULL,
+  `department` VARCHAR(191) NULL,
+  `coordinator_name` VARCHAR(191) NULL,
+  `coordinator_phone` VARCHAR(191) NULL,
+  `status` ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+  `rejection_reason` TEXT NULL,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `reviewed_at` DATETIME(3) NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_club_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `Profile` (
@@ -96,17 +104,6 @@ CREATE TABLE `Notification` (
   `event_id` VARCHAR(191) NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_notification_event` FOREIGN KEY (`event_id`) REFERENCES `Event` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `RegistrationKey` (
-  `id` VARCHAR(191) NOT NULL,
-  `code` VARCHAR(191) NOT NULL UNIQUE,
-  `is_used` BOOLEAN NOT NULL DEFAULT FALSE,
-  `used_by_club_id` VARCHAR(191) NULL,
-  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  `used_at` DATETIME(3) NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_registrationkey_club` FOREIGN KEY (`used_by_club_id`) REFERENCES `Club` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
