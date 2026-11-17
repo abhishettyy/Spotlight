@@ -5,6 +5,7 @@ import { fetchUserTickets } from '@student/api/registrations';
 import { ClubModel } from '@student/types/club';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
+import Paginated from '@student/components/ui/Paginated';
 
 // Ported from registered_clubs_screen.dart: clubs the user has registered events with
 export default function MyClubsPage() {
@@ -61,8 +62,9 @@ export default function MyClubsPage() {
       );
     }
     return (
+      <Paginated items={clubs} pageSize={12}>{(pageClubs) => (
       <div className="stu-list stu-list--grid">
-        {clubs.map((club) => (
+        {pageClubs.map((club) => (
           <ClubTile
             key={club.id}
             club={club}
@@ -70,6 +72,7 @@ export default function MyClubsPage() {
           />
         ))}
       </div>
+      )}</Paginated>
     );
   };
 

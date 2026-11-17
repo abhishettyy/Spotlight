@@ -6,6 +6,7 @@ import { useEventsStore } from '@student/store/eventsStore';
 import EventCard from '@student/components/ui/EventCard';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { getEventStartDate, isEventUpcoming } from '@student/types/event';
+import Paginated from '@student/components/ui/Paginated';
 
 /** Name/logo passed by the caller, for clubs that only exist on an event or ticket. */
 export interface ClubRouteState {
@@ -83,9 +84,11 @@ export default function ClubEventsPage() {
           <p style={{ fontSize: 13, color: 'var(--subtext)', opacity: 0.7 }}>Check back later for new events from {clubName}</p>
         </div>
       ) : (
+        <Paginated items={clubEvents} pageSize={12}>{(pageEvents) => (
         <div className="stu-card-grid">
-          {clubEvents.map((e) => <EventCard key={e.id} event={e} />)}
+          {pageEvents.map((e) => <EventCard key={e.id} event={e} />)}
         </div>
+        )}</Paginated>
       )}
     </div>
   );

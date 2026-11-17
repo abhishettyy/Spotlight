@@ -16,6 +16,10 @@ import { EmptyState } from '@student/components/ui/States';
 import { getGreeting } from '@student/utils/dateUtils';
 import { isEventUpcoming } from '@student/types/event';
 
+// The home page shows a preview; "See all" opens the full, paged lists
+const HOME_EVENT_LIMIT = 8;
+const HOME_CLUB_LIMIT = 12;
+
 function isConnectionError(message: string) {
   const m = message.toLowerCase();
   return m.includes('connection') || m.includes('timeout') || m.includes('network');
@@ -103,7 +107,7 @@ export default function HomePage() {
     }
     return (
       <div className="stu-scroller">
-        {filteredEvents.map((e) => (
+        {filteredEvents.slice(0, HOME_EVENT_LIMIT).map((e) => (
           <div key={e.id} className="stu-scroller-item">
             <EventCard event={e} compact />
           </div>
@@ -136,7 +140,7 @@ export default function HomePage() {
     }
     return (
       <div className="stu-club-row">
-        {clubs.map((club) => (
+        {clubs.slice(0, HOME_CLUB_LIMIT).map((club) => (
           <ClubAvatar key={club.id} club={club} onClick={() => navigate(`/clubs/${club.id}`)} />
         ))}
       </div>
@@ -252,7 +256,17 @@ export default function HomePage() {
 
       {/* Active Clubs */}
       <section style={{ marginBottom: 32 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>Active Clubs</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Active Clubs</h2>
+          {clubs.length > HOME_CLUB_LIMIT && (
+            <button
+              onClick={() => navigate('/clubs')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-crimson)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-sans)' }}
+            >
+              See all →
+            </button>
+          )}
+        </div>
         {renderClubs()}
       </section>
     </div>

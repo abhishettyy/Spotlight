@@ -5,6 +5,54 @@ import { createEvent } from "../api";
 import { FC, FM, FB, fileToBase64 } from "./shared";
 import { GlassDatePicker, GlassSelect } from "./GlassFields";
 
+type EventForm = {
+  title: string; desc: string; date: string; endDate: string; deadline: string; type: string; capacity: string;
+  venue: string; amount: string; qrCode: string; useDefaultQr: boolean; customUpiId: string;
+  eventType: string; minTeamSize: string; teamSizeLimit: string; qrFile: File | null;
+};
+
+/** Every problem with the form, keyed by field. Runs on each change, so errors show as soon as a field is edited. */
+function validateEventForm(formData: EventForm): Record<string, string> {
+  const errors: Record<string, string> = {};
+  const now = new Date();
+  if (!formData.title.trim()) errors.title = "Event name is required.";
+  if (!formData.date) errors.date = "Event start date & time is required.";
+  else if (new Date(formData.date) <= now) errors.date = "Event start date must be in the future.";
+  if (!formData.endDate) errors.endDate = "Event end date & time is required.";
+  else if (formData.date && new Date(formData.endDate) < new Date(formData.date)) errors.endDate = "End date & time must be at or after start date & time.";
+  if (!formData.deadline) errors.deadline = "Registration deadline is required.";
+  else if (new Date(formData.deadline) <= now) errors.deadline = "Registration deadline must be in the future.";
+  else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event start date.";
+  if (!formData.desc.trim()) errors.desc = "Description is required.";
+  if (!formData.venue.trim()) errors.venue = "Venue is required.";
+  if (!formData.capacity) errors.capacity = "Venue capacity is required.";
+  else if (formData.eventType === "Team" && formData.teamSizeLimit && parseInt(formData.capacity) < parseInt(formData.teamSizeLimit)) {
+    errors.capacity = `Venue capacity cannot be less than max team size (${formData.teamSizeLimit}).`;
+  } else if (parseInt(formData.capacity) < 2) errors.capacity = "Venue capacity must be at least 2.";
+  if (formData.type === "paid") {
+    if (!formData.amount) errors.amount = "Amount is required for paid events.";
+    else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
+
+    if (!formData.useDefaultQr) {
+      if (!formData.customUpiId.trim()) errors.customUpiId = "Custom UPI ID is required for custom payment setup.";
+      if (!formData.qrFile && !formData.qrCode) errors.qrCode = "Custom QR code image is required.";
+    }
+  }
+  if (formData.eventType === "Team") {
+    if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
+    else if (parseInt(formData.minTeamSize) < 1) errors.minTeamSize = "Min team size must be at least 1.";
+    else if (formData.teamSizeLimit && parseInt(formData.minTeamSize) > parseInt(formData.teamSizeLimit)) {
+      errors.minTeamSize = `Min team size cannot exceed max team size (${formData.teamSizeLimit}).`;
+    }
+
+    if (!formData.teamSizeLimit) errors.teamSizeLimit = "Max team size is required.";
+    else if (parseInt(formData.teamSizeLimit) < parseInt(formData.minTeamSize || "1")) {
+      errors.teamSizeLimit = `Max team size must be at least ${formData.minTeamSize || "1"}.`;
+    }
+  }
+  return errors;
+}
+
 export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; clubUpiId?: string | null; refreshProfile?: () => Promise<any> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
@@ -13,50 +61,22 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // A field shows its error once it has been edited, and every field does after a publish attempt
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const touch = (field: string) => setTouched(t => (t[field] ? t : { ...t, [field]: true }));
+  const allErrors = validateEventForm(formData);
+  const fieldErrors: Record<string, string> = submitAttempted
+    ? allErrors
+    : Object.fromEntries(Object.entries(allErrors).filter(([field]) => touched[field]));
 
   const handleSubmit = async () => {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
 
-    const errors: Record<string, string> = {};
-    const now = new Date();
-    if (!formData.title.trim()) errors.title = "Event name is required.";
-    if (!formData.date) errors.date = "Event start date & time is required.";
-    else if (new Date(formData.date) <= now) errors.date = "Event start date must be in the future.";
-    if (!formData.endDate) errors.endDate = "Event end date & time is required.";
-    else if (formData.date && new Date(formData.endDate) < new Date(formData.date)) errors.endDate = "End date & time must be at or after start date & time.";
-    if (!formData.deadline) errors.deadline = "Registration deadline is required.";
-    else if (new Date(formData.deadline) <= now) errors.deadline = "Registration deadline must be in the future.";
-    else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event start date.";
-    if (!formData.desc.trim()) errors.desc = "Description is required.";
-    if (!formData.venue.trim()) errors.venue = "Venue is required.";
-    if (!formData.capacity) errors.capacity = "Venue capacity is required.";
-    else if (formData.eventType === "Team" && formData.teamSizeLimit && parseInt(formData.capacity) < parseInt(formData.teamSizeLimit)) {
-      errors.capacity = `Venue capacity cannot be less than max team size (${formData.teamSizeLimit}).`;
-    } else if (parseInt(formData.capacity) < 2) errors.capacity = "Venue capacity must be at least 2.";
-    if (formData.type === "paid") {
-      if (!formData.amount) errors.amount = "Amount is required for paid events.";
-      else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
-
-      if (!formData.useDefaultQr) {
-        if (!formData.customUpiId.trim()) errors.customUpiId = "Custom UPI ID is required for custom payment setup.";
-        if (!formData.qrFile && !formData.qrCode) errors.qrCode = "Custom QR code image is required.";
-      }
-    }
-    if (formData.eventType === "Team") {
-      if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
-      else if (parseInt(formData.minTeamSize) < 1) errors.minTeamSize = "Min team size must be at least 1.";
-      else if (formData.teamSizeLimit && parseInt(formData.minTeamSize) > parseInt(formData.teamSizeLimit)) {
-        errors.minTeamSize = `Min team size cannot exceed max team size (${formData.teamSizeLimit}).`;
-      }
-
-      if (!formData.teamSizeLimit) errors.teamSizeLimit = "Max team size is required.";
-      else if (parseInt(formData.teamSizeLimit) < parseInt(formData.minTeamSize || "1")) {
-        errors.teamSizeLimit = `Max team size must be at least ${formData.minTeamSize || "1"}.`;
-      }
-    }
+    const errors = validateEventForm(formData);
+    setSubmitAttempted(true);
     if (formData.type === "paid" && formData.useDefaultQr) {
       if (!clubQrUrl && !clubUpiId) {
         setError("Default payment QR code and UPI ID are not configured in Club Settings. Please update Settings or choose Custom QR & UPI.");
@@ -73,11 +93,9 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
       }
     }
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
       setSubmitting(false);
       return;
     }
-    setFieldErrors({});
 
     try {
       const token = await getToken();
@@ -160,7 +178,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
 
         <div className="space-y-1.5">
           <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Event Name</label>
-          <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.title ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.title} onChange={e => { setFormData(p => ({...p, title: e.target.value})); setFieldErrors(fe => ({...fe, title: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.title ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.title ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
+          <input type="text" placeholder="e.g. CodeFest 2026" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.title ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.title} onChange={e => { setFormData(p => ({...p, title: e.target.value})); touch("title"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.title ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.title ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
           {fieldErrors.title && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.title}</p>}
         </div>
 
@@ -169,13 +187,13 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
             <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Start Date &amp; Time</label>
             <GlassDatePicker value={formData.date} onChange={v => {
               setFormData(p => ({...p, date: v}));
-              setFieldErrors(fe => ({...fe, date: ""}));
+              touch("date");
             }} />
             {fieldErrors.date && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.date}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>End Date &amp; Time</label>
-            <GlassDatePicker value={formData.endDate} onChange={v => { setFormData(p => ({...p, endDate: v})); setFieldErrors(fe => ({...fe, endDate: ""})); }} defaultTime="23:59" />
+            <GlassDatePicker value={formData.endDate} onChange={v => { setFormData(p => ({...p, endDate: v})); touch("endDate"); }} defaultTime="23:59" />
             {fieldErrors.endDate && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.endDate}</p>}
           </div>
         </div>
@@ -183,26 +201,26 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Registration Deadline</label>
-            <GlassDatePicker value={formData.deadline} onChange={v => { setFormData(p => ({...p, deadline: v})); setFieldErrors(fe => ({...fe, deadline: ""})); }} defaultTime="23:59" />
+            <GlassDatePicker value={formData.deadline} onChange={v => { setFormData(p => ({...p, deadline: v})); touch("deadline"); }} defaultTime="23:59" />
             {fieldErrors.deadline && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.deadline}</p>}
           </div>
         </div>
 
         <div className="space-y-1.5">
           <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Description</label>
-          <textarea placeholder="Describe your event..." className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[100px]" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.desc ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.desc} onChange={e => { setFormData(p => ({...p, desc: e.target.value})); setFieldErrors(fe => ({...fe, desc: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.desc ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.desc ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
+          <textarea placeholder="Describe your event..." className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all min-h-[100px]" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.desc ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.desc} onChange={e => { setFormData(p => ({...p, desc: e.target.value})); touch("desc"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.desc ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.desc ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
           {fieldErrors.desc && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.desc}</p>}
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Venue</label>
-            <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.venue} onChange={e => { setFormData(p => ({...p, venue: e.target.value})); setFieldErrors(fe => ({...fe, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
+            <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.venue} onChange={e => { setFormData(p => ({...p, venue: e.target.value})); touch("venue"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
             {fieldErrors.venue && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.venue}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Venue Capacity</label>
-            <input type="number" placeholder="e.g. 200" min={formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : 2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); setFieldErrors(fe => ({...fe, capacity: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
+            <input type="number" placeholder="e.g. 200" min={formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : 2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); touch("capacity"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
             {formData.eventType === "Team" && formData.teamSizeLimit && (
               <p className="text-[10px] text-[color:var(--sk-muted)] mt-0.5" style={{ fontFamily: FM }}>Minimum venue capacity is {formData.teamSizeLimit} (Max Team Size).</p>
             )}
@@ -260,7 +278,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
                     onChange={e => {
                       const v = e.target.value;
                       setFormData(p => ({ ...p, minTeamSize: v }));
-                      setFieldErrors(fe => ({ ...fe, minTeamSize: "" }));
+                      touch("minTeamSize");
                     }}
                     onFocus={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"}
                     onBlur={e => e.currentTarget.style.borderColor = fieldErrors.minTeamSize ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}
@@ -280,7 +298,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
                     onChange={e => {
                       const v = e.target.value;
                       setFormData(p => ({ ...p, teamSizeLimit: v }));
-                      setFieldErrors(fe => ({ ...fe, teamSizeLimit: "" }));
+                      touch("teamSizeLimit");
                     }}
                     onFocus={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"}
                     onBlur={e => e.currentTarget.style.borderColor = fieldErrors.teamSizeLimit ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}
@@ -303,7 +321,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
               <div className="p-6 rounded-2xl grid md:grid-cols-2 gap-6" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
                 <div className="space-y-1.5">
                   <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Amount (INR)</label>
-                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.amount} onChange={e => { setFormData(p => ({...p, amount: e.target.value})); setFieldErrors(fe => ({...fe, amount: ""})); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
+                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.amount} onChange={e => { setFormData(p => ({...p, amount: e.target.value})); touch("amount"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
                   {fieldErrors.amount && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.amount}</p>}
                 </div>
 
@@ -322,7 +340,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
                           const file = e.target.files?.[0];
                           if (file) {
                             setFormData(p => ({...p, qrFile: file, qrCode: file.name}));
-                            setFieldErrors(fe => ({...fe, qrCode: ""}));
+                            touch("qrCode");
                           }
                         }} />
                         <label htmlFor="qr-upload" className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-muted)] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.qrCode ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }}>
@@ -340,7 +358,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
                           className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
                           style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.customUpiId ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }}
                           value={formData.customUpiId}
-                          onChange={e => { setFormData(p => ({...p, customUpiId: e.target.value})); setFieldErrors(fe => ({...fe, customUpiId: ""})); }}
+                          onChange={e => { setFormData(p => ({...p, customUpiId: e.target.value})); touch("customUpiId"); }}
                           onFocus={e => e.currentTarget.style.borderColor = fieldErrors.customUpiId ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"}
                           onBlur={e => e.currentTarget.style.borderColor = fieldErrors.customUpiId ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}
                         />

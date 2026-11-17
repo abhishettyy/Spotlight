@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss" source(none); /* base reset only: the student pages use no utility classes */
 
-/* Spotlight design system: shared Skyline tokens (Sand light / near-black dark, Spotlight crimson brand, Inter). */
+/* Spotlight design system: shared Skyline tokens (zinc light / near-black dark, Spotlight crimson brand, Inter). */
 /* Light palette: Radix Colors "Sand" (warm, low-glare). Dark palette: neutral near-black.
    SkylineOS design tokens: the single source of colour, type and shape for all three areas
    (student site, club dashboard, admin console). Every area's own variables alias these.
@@ -10,24 +10,24 @@
    Brand colours: Spotlight crimson for primary actions and focus, Green for success, Yellow for warnings, neutral grey for info, thin borders instead of glows. */
 
 :root, .light {
-  --sk-canvas: #f7f7f8;     /* page background */
+  --sk-canvas: #f4f4f5;     /* page background: light grey so white cards stand apart */
   --sk-surface: #ffffff;    /* cards, panels, sidebars */
   --sk-raised: #f1f1f3;     /* inputs, hover rows, segmented controls */
   --sk-line: #e4e4e7;       /* borders, dividers */
-  --sk-line-strong: #d1d1d6;
+  --sk-line-strong: #d4d4d8;
   --sk-fg: #18181b;         /* primary text */
   --sk-muted: #52525b;      /* secondary text */
   --sk-faint: #71717a;      /* hints, meta */
-  --sk-brand: #18181b;       /* buttons, links, accents: inverse of the page */
-  --sk-brand-hover: #3f3f46;
-  --sk-brand-soft: rgba(24, 24, 27, 0.06);
+  --sk-brand: #e63946;       /* buttons, links, accents: Spotlight crimson, as in the club dashboard */
+  --sk-brand-hover: #cc2a3a;
+  --sk-brand-soft: rgba(230, 57, 70, 0.08);
   --sk-on-brand: #ffffff;    /* text and icons on a brand fill */
   --sk-ok: #15803d;   --sk-ok-soft: rgba(22, 163, 74, 0.10);
   --sk-warn: #b45309; --sk-warn-soft: rgba(245, 158, 11, 0.14);
   --sk-info: #52525b; --sk-info-soft: rgba(82, 82, 91, 0.08);
-  --sk-shadow: 0 1px 2px rgba(24, 24, 27, 0.04), 0 1px 3px rgba(24, 24, 27, 0.05);
-  --sk-shadow-hover: 0 2px 4px rgba(24, 24, 27, 0.04), 0 8px 20px -6px rgba(24, 24, 27, 0.10);
-  --sk-shadow-lg: 0 12px 32px -10px rgba(24, 24, 27, 0.16), 0 2px 6px rgba(24, 24, 27, 0.05);
+  --sk-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --sk-shadow-hover: 0 2px 4px rgba(16, 24, 40, 0.06), 0 8px 20px -6px rgba(16, 24, 40, 0.12);
+  --sk-shadow-lg: 0 12px 24px -6px rgba(16, 24, 40, 0.10), 0 4px 8px -2px rgba(16, 24, 40, 0.05);
   --sk-skeleton-hi: rgba(255, 255, 255, 0.7);
   --sk-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --sk-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, monospace;
@@ -46,10 +46,10 @@
   --sk-fg: #ededef;
   --sk-muted: #a0a0a8;
   --sk-faint: #74747c;
-  --sk-brand: #ededef;
-  --sk-brand-hover: #ffffff;
-  --sk-brand-soft: rgba(237, 237, 239, 0.10);
-  --sk-on-brand: #0e0e10;
+  --sk-brand: #e63946;
+  --sk-brand-hover: #ec5a65;
+  --sk-brand-soft: rgba(230, 57, 70, 0.16);
+  --sk-on-brand: #ffffff;
   --sk-ok: #81c995;   --sk-ok-soft: rgba(129, 201, 149, 0.14);
   --sk-warn: #fdd663; --sk-warn-soft: rgba(253, 214, 99, 0.14);
   --sk-info: #a0a0a8; --sk-info-soft: rgba(160, 160, 168, 0.14);
@@ -228,7 +228,7 @@ a { color: inherit; }
   font: 500 14px var(--font-sans); transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .stu-chip:hover { color: var(--text); border-color: var(--sk-line-strong); }
-.stu-chip[aria-pressed='true'] { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 600; }
+.stu-chip[aria-pressed='true'] { background: var(--sk-brand); border-color: var(--sk-brand); color: var(--sk-on-brand); font-weight: 600; }
 
 /* Segmented control (tickets tabs, sign-in tabs) */
 .stu-seg { display: flex; padding: 4px; border-radius: 12px; background: var(--raised); }
@@ -264,6 +264,20 @@ a { color: inherit; }
 .stu-scroller { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
 .stu-scroller > .stu-scroller-item { min-width: 280px; max-width: 300px; flex-shrink: 0; }
 .stu-club-row { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+/* Page bar under long lists */
+.stu-paginated { scroll-margin-top: 16px; }
+.stu-pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.stu-pager-count { font-size: 13px; color: var(--subtext); font-variant-numeric: tabular-nums; }
+.stu-pager-pages { display: flex; align-items: center; gap: 6px; }
+.stu-pager-btn {
+  min-width: 36px; height: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--sk-radius); border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font: 600 13px var(--font-sans); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.stu-pager-btn:hover:not(:disabled) { background: var(--raised); border-color: var(--sk-line-strong); }
+.stu-pager-btn[aria-current='page'] { background: var(--sk-brand); border-color: var(--sk-brand); color: var(--sk-on-brand); }
+.stu-pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.stu-pager-gap { padding: 0 4px; color: var(--subtext); }
 
 /* Event details */
 .stu-ed { padding-bottom: 110px; }
@@ -388,3 +402,7 @@ a { color: inherit; }
 /* Shown only below the desktop breakpoint, where the sidebar is hidden */
 .stu-mobile-only { display: flex; }
 @media (min-width: 1024px) { .stu-mobile-only { display: none; } }
+
+/* Light theme: inputs get a visible border instead of a near-invisible shadow */
+.light .input-field { border-color: var(--sk-line-strong); box-shadow: none; }
+.light .input-field:focus { border-color: var(--color-crimson); box-shadow: 0 0 0 3px var(--sk-brand-soft); }

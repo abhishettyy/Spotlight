@@ -7,6 +7,7 @@ import { ClubModel } from '@student/types/club';
 import { isEventUpcoming } from '@student/types/event';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
+import Paginated from '@student/components/ui/Paginated';
 
 export default function ClubsPage() {
   const navigate = useNavigate();
@@ -97,8 +98,9 @@ export default function ClubsPage() {
           title={query ? `No clubs matching "${query}"` : 'No clubs registered yet'}
         />
       ) : (
+        <Paginated items={filteredClubs} pageSize={12} resetKey={query}>{(pageClubs) => (
         <div className="stu-list stu-list--grid">
-          {filteredClubs.map((club) => (
+          {pageClubs.map((club) => (
             <ClubRow
               key={club.id}
               club={club}
@@ -107,6 +109,7 @@ export default function ClubsPage() {
             />
           ))}
         </div>
+        )}</Paginated>
       )}
     </div>
   );

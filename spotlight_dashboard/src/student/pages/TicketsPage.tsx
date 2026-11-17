@@ -15,6 +15,7 @@ import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
 import { formatDate, formatTime12H } from '@student/utils/dateUtils';
 import { toast } from 'sonner';
+import Paginated from '@student/components/ui/Paginated';
 
 const TABS = ['Upcoming', 'Saved', 'Past'] as const;
 type TabType = typeof TABS[number];
@@ -95,9 +96,11 @@ export default function TicketsPage() {
       }
       if (savedEvents.length === 0) return <PageLoader />;
       return (
+        <Paginated items={savedEvents} pageSize={12}>{(pageSaved) => (
         <div className="stu-card-grid">
-          {savedEvents.map((e) => <EventCard key={e.id} event={e} />)}
+          {pageSaved.map((e) => <EventCard key={e.id} event={e} />)}
         </div>
+        )}</Paginated>
       );
     }
 
@@ -116,8 +119,9 @@ export default function TicketsPage() {
     }
 
     return (
+      <Paginated items={displayed} pageSize={10} resetKey={activeTab}>{(pageTickets) => (
       <div className="stu-list stu-list--tickets">
-        {displayed.map((ticket) => (
+        {pageTickets.map((ticket) => (
           <TicketCard
             key={ticket.id}
             ticket={ticket}
@@ -126,6 +130,7 @@ export default function TicketsPage() {
           />
         ))}
       </div>
+      )}</Paginated>
     );
   };
 

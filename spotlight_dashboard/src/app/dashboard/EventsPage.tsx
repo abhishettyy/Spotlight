@@ -10,6 +10,7 @@ import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, L
 const TicketScannerModal = lazy(() => import("./TicketScannerModal").then(m => ({ default: m.TicketScannerModal })));
 import { EventsTable } from "./EventsTable";
 import { GlassDatePicker } from "./GlassFields";
+import { Paginated } from "./Paginated";
 
 export const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: string | null) => {
   if (!eventDateStr) {
@@ -53,6 +54,43 @@ export const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: 
 };
 
 
+type EditEventForm = { date: string; endDate: string; deadline: string; venue: string; capacity: string; minTeamSize: string; teamSizeLimit: string };
+
+/** Problems with the Edit Event form, keyed by field. Dates left unchanged may already be in the past. */
+function validateEditForm(editForm: EditEventForm, editOriginal: EditEventForm, isTeam: boolean): Record<string, string> {
+  const now = new Date();
+  const errs: Record<string, string> = {};
+
+  if (!editForm.date) errs.date = "Event start date is required.";
+  else if (editForm.date !== editOriginal.date && new Date(editForm.date) <= now) errs.date = "Event start date must be in the future.";
+  if (!editForm.endDate) errs.endDate = "Event end date is required.";
+  else if (editForm.date && new Date(editForm.endDate) < new Date(editForm.date)) errs.endDate = "End date & time must be at or after start date.";
+  if (!editForm.deadline) errs.deadline = "Registration deadline is required.";
+  else if (editForm.deadline !== editOriginal.deadline && new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
+  else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event start date.";
+  if (!editForm.venue.trim()) errs.venue = "Venue is required.";
+  
+  if (isTeam) {
+    if (!editForm.minTeamSize || parseInt(editForm.minTeamSize) < 1) {
+      errs.minTeamSize = "Minimum team size must be at least 1.";
+    } else if (editForm.teamSizeLimit && parseInt(editForm.minTeamSize) > parseInt(editForm.teamSizeLimit)) {
+      errs.minTeamSize = `Min team size cannot exceed max team size (${editForm.teamSizeLimit}).`;
+    }
+
+    if (!editForm.teamSizeLimit) {
+      errs.teamSizeLimit = "Max team size is required.";
+    } else if (parseInt(editForm.teamSizeLimit) < parseInt(editForm.minTeamSize || "1")) {
+      errs.teamSizeLimit = `Max team size must be at least ${editForm.minTeamSize || "1"}.`;
+    }
+  }
+
+  if (!editForm.capacity) errs.capacity = "Venue capacity is required.";
+  else if (isTeam && editForm.teamSizeLimit && parseInt(editForm.capacity) < parseInt(editForm.teamSizeLimit)) {
+    errs.capacity = `Venue capacity cannot be less than max team size (${editForm.teamSizeLimit}).`;
+  } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Venue capacity must be at least 1.";
+  return errs;
+}
+
 export function EventsPage({ 
   EVENTS, 
   allRegistrations, 
@@ -82,7 +120,10 @@ export function EventsPage({
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "", minTeamSize: "1", teamSizeLimit: "" });
   const [editOriginal, setEditOriginal] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "", minTeamSize: "1", teamSizeLimit: "" });
-  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  // An edited field shows its error immediately; every field does after a save attempt
+  const [editTouched, setEditTouched] = useState<Record<string, boolean>>({});
+  const [editSubmitAttempted, setEditSubmitAttempted] = useState(false);
+  const touchEdit = (...fields: string[]) => setEditTouched(t => ({ ...t, ...Object.fromEntries(fields.map(f => [f, true])) }));
   const [showEditPasswordModal, setShowEditPasswordModal] = useState(false);
   const [editPassword, setEditPassword] = useState("");
   const [showEditPasswordText, setShowEditPasswordText] = useState(false);
@@ -131,6 +172,11 @@ export function EventsPage({
     : [];
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
+  const activeIsTeam = !!activeEvent && (activeEvent.eventType === 'Team' || (!!activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team');
+  const allEditErrors = validateEditForm(editForm, editOriginal, activeIsTeam);
+  const editErrors: Record<string, string> = editSubmitAttempted
+    ? allEditErrors
+    : Object.fromEntries(Object.entries(allEditErrors).filter(([field]) => editTouched[field]));
   // Approving and rejecting stay open until the event's end time (start + 3 h when no end is saved),
   // matching the cutoff the API enforces
   const isEventFinished = activeEvent ? getEventStatus(activeEvent) === "previous" : false;
@@ -291,8 +337,9 @@ export function EventsPage({
               <h1 className="text-[13px] tracking-[0.4em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Manage Teams ({teamsList.length})</h1>
             </div>
 
+            <Paginated items={teamsList} pageSize={12} pageSizes={[12, 24, 48]} variant="plain">{pageTeams => (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {teamsList.map(team => (
+              {pageTeams.map(team => (
                 <div key={team.id} className="p-6 rounded-2xl flex flex-col" style={{
                   background: isDark ? "var(--sk-surface)" : "#ffffff",
                   border: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)",
@@ -325,6 +372,7 @@ export function EventsPage({
                 </div>
               ))}
             </div>
+            )}</Paginated>
           </div>
         ) : showApprovals ? (
           <div className="mt-4 space-y-8">
@@ -349,7 +397,8 @@ export function EventsPage({
               {pending.length === 0 ? (
                 <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No pending requests — you're all caught up.</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                  <Paginated items={pending}>{pagePending => (<div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
@@ -366,7 +415,7 @@ export function EventsPage({
                     </thead>
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
                       <AnimatePresence>
-                        {pending.map((req) => {
+                        {pagePending.map((req) => {
                           const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                           return (
                             <motion.tr key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
@@ -448,6 +497,7 @@ export function EventsPage({
                       </AnimatePresence>
                     </tbody>
                   </table>
+                  </div>)}</Paginated>
                 </div>
               )}
             </div>
@@ -457,7 +507,8 @@ export function EventsPage({
               {approved.length === 0 ? (
                 <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No approved registrations yet.</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                  <Paginated items={approved}>{pageApproved => (<div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
@@ -473,7 +524,7 @@ export function EventsPage({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {approved.map((req) => {
+                      {pageApproved.map((req) => {
                         const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                         return (
                           <tr key={req.id} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
@@ -516,6 +567,7 @@ export function EventsPage({
                       })}
                     </tbody>
                   </table>
+                  </div>)}</Paginated>
                 </div>
               )}
             </div>
@@ -525,7 +577,8 @@ export function EventsPage({
               {rejected.length === 0 ? (
                 <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No rejected registrations.</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                  <Paginated items={rejected}>{pageRejected => (<div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
@@ -541,7 +594,7 @@ export function EventsPage({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {rejected.map((req) => {
+                      {pageRejected.map((req) => {
                         const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
                         return (
                           <tr key={req.id} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
@@ -595,6 +648,7 @@ export function EventsPage({
                       })}
                     </tbody>
                   </table>
+                  </div>)}</Paginated>
                 </div>
               )}
             </div>
@@ -628,6 +682,19 @@ export function EventsPage({
             }
           });
           const combinedAttendanceList = Array.from(combinedAttendanceMap.values());
+          const attendanceQuery = searchQuery.toLowerCase().trim();
+          const filteredAttendance = combinedAttendanceList.filter(s => {
+            if (!attendanceQuery) return true;
+            const a = s.attendee || {};
+            const t = s.team || {};
+            return (
+              (a.name ?? '').toLowerCase().includes(attendanceQuery) ||
+              (a.email ?? '').toLowerCase().includes(attendanceQuery) ||
+              (a.usn ?? '').toLowerCase().includes(attendanceQuery) ||
+              (a.branch ?? '').toLowerCase().includes(attendanceQuery) ||
+              (t.name ?? '').toLowerCase().includes(attendanceQuery)
+            );
+          });
 
           return (
             <div className="mt-4 space-y-6">
@@ -788,7 +855,8 @@ export function EventsPage({
                 />
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+              <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                <Paginated items={filteredAttendance} resetKey={searchQuery}>{pageAttendance => (<div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
@@ -802,19 +870,7 @@ export function EventsPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                    {combinedAttendanceList.filter(s => {
-                      const q = searchQuery.toLowerCase().trim();
-                      if (!q) return true;
-                      const a = s.attendee || {};
-                      const t = s.team || {};
-                      return (
-                        (a.name ?? '').toLowerCase().includes(q) ||
-                        (a.email ?? '').toLowerCase().includes(q) ||
-                        (a.usn ?? '').toLowerCase().includes(q) ||
-                        (a.branch ?? '').toLowerCase().includes(q) ||
-                        (t.name ?? '').toLowerCase().includes(q)
-                      );
-                    }).map(s => {
+                    {pageAttendance.map(s => {
                       const attendee = s.attendee || {};
                       const team = s.team || null;
                       return (
@@ -892,6 +948,7 @@ export function EventsPage({
                     )}
                   </tbody>
                 </table>
+                </div>)}</Paginated>
               </div>
             </div>
           );
@@ -1223,7 +1280,8 @@ export function EventsPage({
                      minTeamSize: activeEvent.minTeamSize ? String(activeEvent.minTeamSize) : "1",
                      teamSizeLimit: activeEvent.teamSizeLimit ? String(activeEvent.teamSizeLimit) : "",
                    });
-                   setEditErrors({});
+                   setEditTouched({});
+                   setEditSubmitAttempted(false);
                    setEditPassword("");
                    setEditPasswordError(null);
                    setShowEditPasswordModal(false);
@@ -1383,32 +1441,32 @@ export function EventsPage({
                         <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Event Start Date &amp; Time</label>
                         <GlassDatePicker value={editForm.date} onChange={v => {
                           setEditForm(p => ({...p, date: v}));
-                          setEditErrors(e => ({...e, date: ""}));
+                          touchEdit("date");
                         }} />
                         {editErrors.date && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{editErrors.date}</p>}
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Event End Date &amp; Time</label>
-                        <GlassDatePicker value={editForm.endDate} onChange={v => { setEditForm(p => ({...p, endDate: v})); setEditErrors(e => ({...e, endDate: ""})); }} defaultTime="23:59" />
+                        <GlassDatePicker value={editForm.endDate} onChange={v => { setEditForm(p => ({...p, endDate: v})); touchEdit("endDate"); }} defaultTime="23:59" />
                         {editErrors.endDate && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{editErrors.endDate}</p>}
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Registration Deadline</label>
-                        <GlassDatePicker value={editForm.deadline} onChange={v => { setEditForm(p => ({...p, deadline: v})); setEditErrors(e => ({...e, deadline: ""})); }} defaultTime="23:59" />
+                        <GlassDatePicker value={editForm.deadline} onChange={v => { setEditForm(p => ({...p, deadline: v})); touchEdit("deadline"); }} defaultTime="23:59" />
                         {editErrors.deadline && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{editErrors.deadline}</p>}
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Venue</label>
-                        <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: isDark ? "var(--sk-surface)" : "var(--sk-raised)", border: `1px solid ${editErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}`, fontFamily: FB }} value={editForm.venue} onChange={e => { setEditForm(p => ({...p, venue: e.target.value})); setEditErrors(er => ({...er, venue: ""})); }} onFocus={e => e.currentTarget.style.borderColor = editErrors.venue ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")} />
+                        <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: isDark ? "var(--sk-surface)" : "var(--sk-raised)", border: `1px solid ${editErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}`, fontFamily: FB }} value={editForm.venue} onChange={e => { setEditForm(p => ({...p, venue: e.target.value})); touchEdit("venue"); }} onFocus={e => e.currentTarget.style.borderColor = editErrors.venue ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")} />
                         {editErrors.venue && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{editErrors.venue}</p>}
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Venue Capacity</label>
-                        <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: isDark ? "var(--sk-surface)" : "var(--sk-raised)", border: `1px solid ${editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); setEditErrors(er => ({...er, capacity: ""})); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")} />
+                        <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: isDark ? "var(--sk-surface)" : "var(--sk-raised)", border: `1px solid ${editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); touchEdit("capacity"); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")} />
                         {editErrors.capacity && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{editErrors.capacity}</p>}
                       </div>
 
@@ -1428,7 +1486,7 @@ export function EventsPage({
                               onChange={e => {
                                 const v = e.target.value;
                                 setEditForm(p => ({ ...p, minTeamSize: v }));
-                                setEditErrors(er => ({ ...er, minTeamSize: "", teamSizeLimit: "" }));
+                                touchEdit("minTeamSize", "teamSizeLimit");
                               }}
                               onFocus={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"}
                               onBlur={e => e.currentTarget.style.borderColor = editErrors.minTeamSize ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}
@@ -1449,7 +1507,7 @@ export function EventsPage({
                               onChange={e => {
                                 const v = e.target.value;
                                 setEditForm(p => ({ ...p, teamSizeLimit: v }));
-                                setEditErrors(er => ({ ...er, teamSizeLimit: "", minTeamSize: "", capacity: "" }));
+                                touchEdit("teamSizeLimit", "minTeamSize", "capacity");
                               }}
                               onFocus={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"}
                               onBlur={e => e.currentTarget.style.borderColor = editErrors.teamSizeLimit ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}
@@ -1462,41 +1520,9 @@ export function EventsPage({
 
                     <button
                       onClick={() => {
-                        const now = new Date();
-                        const errs: Record<string, string> = {};
-                        const isTeam = activeEvent && (activeEvent.eventType === 'Team' || (activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team');
+                        setEditSubmitAttempted(true);
+                        if (Object.keys(allEditErrors).length > 0) return;
 
-                        if (!editForm.date) errs.date = "Event start date is required.";
-                        else if (editForm.date !== editOriginal.date && new Date(editForm.date) <= now) errs.date = "Event start date must be in the future.";
-                        if (!editForm.endDate) errs.endDate = "Event end date is required.";
-                        else if (editForm.date && new Date(editForm.endDate) < new Date(editForm.date)) errs.endDate = "End date & time must be at or after start date.";
-                        if (!editForm.deadline) errs.deadline = "Registration deadline is required.";
-                        else if (editForm.deadline !== editOriginal.deadline && new Date(editForm.deadline) <= now) errs.deadline = "Deadline must be in the future.";
-                        else if (editForm.date && new Date(editForm.deadline) >= new Date(editForm.date)) errs.deadline = "Deadline must be before the event start date.";
-                        if (!editForm.venue.trim()) errs.venue = "Venue is required.";
-                        
-                        if (isTeam) {
-                          if (!editForm.minTeamSize || parseInt(editForm.minTeamSize) < 1) {
-                            errs.minTeamSize = "Minimum team size must be at least 1.";
-                          } else if (editForm.teamSizeLimit && parseInt(editForm.minTeamSize) > parseInt(editForm.teamSizeLimit)) {
-                            errs.minTeamSize = `Min team size cannot exceed max team size (${editForm.teamSizeLimit}).`;
-                          }
-
-                          if (!editForm.teamSizeLimit) {
-                            errs.teamSizeLimit = "Max team size is required.";
-                          } else if (parseInt(editForm.teamSizeLimit) < parseInt(editForm.minTeamSize || "1")) {
-                            errs.teamSizeLimit = `Max team size must be at least ${editForm.minTeamSize || "1"}.`;
-                          }
-                        }
-
-                        if (!editForm.capacity) errs.capacity = "Venue capacity is required.";
-                        else if (isTeam && editForm.teamSizeLimit && parseInt(editForm.capacity) < parseInt(editForm.teamSizeLimit)) {
-                          errs.capacity = `Venue capacity cannot be less than max team size (${editForm.teamSizeLimit}).`;
-                        } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Venue capacity must be at least 1.";
-                        
-                        if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
-
-                        setEditErrors({});
                         setEditPassword("");
                         setEditPasswordError(null);
                         setShowEditPasswordModal(true);

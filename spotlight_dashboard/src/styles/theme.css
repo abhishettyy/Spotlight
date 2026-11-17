@@ -724,3 +724,49 @@ html.light .password-toggle-btn svg {
   stroke: currentColor !important;
 }
 
+/* ==========================================================================
+   Light theme: standard form styling (dark theme unaffected)
+   ========================================================================== */
+
+/* Inputs: white with a clear border, crimson focus ring */
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+html.light textarea,
+html.light select,
+html.light .glass-select-trigger {
+  background-color: var(--sk-surface) !important;
+  border-color: var(--sk-line-strong) !important;
+  color: var(--sk-fg) !important;
+}
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: var(--sk-brand) !important;
+  box-shadow: 0 0 0 3px var(--sk-brand-soft) !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--sk-faint) !important;
+}
+
+/* Form labels: sentence case instead of tiny spaced-out capitals */
+html.light label.uppercase.tracking-widest {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* File upload buttons: white like the inputs, light grey on hover */
+html.light label[for*="upload"],
+html.light label[for*="logo"],
+html.light label[for*="qr"],
+html.light label.cursor-pointer[class*="rounded-xl"] {
+  background-color: var(--sk-surface) !important;
+  border: 1px solid var(--sk-line-strong) !important;
+}
+html.light label[for*="upload"]:hover,
+html.light label[for*="logo"]:hover,
+html.light label[for*="qr"]:hover,
+html.light label.cursor-pointer[class*="rounded-xl"]:hover {
+  background-color: var(--sk-raised) !important;
+}

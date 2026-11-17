@@ -6,6 +6,7 @@ import EventCard from '@student/components/ui/EventCard';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
 import { EventModel, isEventUpcoming } from '@student/types/event';
+import Paginated from '@student/components/ui/Paginated';
 
 const FORMAT_FILTERS = ['All', 'Solo', 'Team'] as const;
 type FormatFilter = typeof FORMAT_FILTERS[number];
@@ -69,9 +70,11 @@ export default function AllEventsPage() {
       );
     }
     return (
+      <Paginated items={filteredEvents} pageSize={12} resetKey={`${query}|${formatFilter}`}>{(pageEvents) => (
       <div className="stu-card-grid">
-        {filteredEvents.map((e) => <EventCard key={e.id} event={e} />)}
+        {pageEvents.map((e) => <EventCard key={e.id} event={e} />)}
       </div>
+      )}</Paginated>
     );
   };
 

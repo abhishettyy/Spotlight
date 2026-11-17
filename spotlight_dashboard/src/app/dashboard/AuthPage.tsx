@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, Eye, EyeOff, ChevronLeft, Upload, Clock, XCircle } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, ChevronLeft, Upload } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { createClub, clubLogin, sanitizeErrorMessage, checkClubEmail, googleAuth, ClubSignupDetails } from "../api";
 import { useTheme, ThemeToggle } from "../theme";
@@ -207,7 +207,6 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
 
   const statusCard = status && (() => {
     const rejected = status.kind === "rejected";
-    const Icon = rejected ? XCircle : Clock;
     const title = status.kind === "submitted" ? "Registration Submitted"
       : status.kind === "pending" ? "Awaiting Approval" : "Registration Not Approved";
     const body = status.kind === "submitted"
@@ -218,17 +217,11 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
         key="status"
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col items-center text-center"
+        className="text-center"
       >
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{
-          background: rejected ? "color-mix(in srgb, var(--sk-danger) 10%, transparent)" : "color-mix(in srgb, var(--sk-brand) 10%, transparent)",
-          border: rejected ? "1px solid color-mix(in srgb, var(--sk-danger) 20%, transparent)" : "1px solid color-mix(in srgb, var(--sk-brand) 20%, transparent)",
-        }}>
-          <Icon size={24} className={rejected ? "text-[color:var(--sk-danger)]" : "text-[color:var(--sk-brand)]"} />
-        </div>
         <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: FC, color: isDark ? "#ffffff" : "var(--sk-fg)" }}>{title}</h2>
-        <p className="text-sm leading-relaxed text-[color:var(--sk-muted)] max-w-sm" style={{ fontFamily: FB }}>{body}</p>
-        <p className="text-xs text-[color:var(--sk-muted)] mt-5" style={{ fontFamily: FB }}>
+        <p className="text-sm leading-relaxed text-[color:var(--sk-muted)]" style={{ fontFamily: FB }}>{body}</p>
+        <p className="text-xs text-[color:var(--sk-muted)] mt-6" style={{ fontFamily: FB }}>
           Questions? Mail us at{" "}
           <a href="mailto:spotlightapp.help@gmail.com" className="text-[color:var(--sk-brand)] hover:text-[color:var(--sk-brand-hover)] font-medium underline underline-offset-2">
             spotlightapp.help@gmail.com
@@ -297,9 +290,9 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
         )}
 
         <div className="w-full p-8 md:p-10 rounded-3xl" style={{
-          background: isDark ? "var(--sk-surface)" : "var(--sk-canvas)",
-          border: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)",
-          boxShadow: isDark ? "none" : "0 20px 40px -15px var(--sk-raised)",
+          background: "var(--sk-surface)",
+          border: "1px solid var(--sk-line)",
+          boxShadow: isDark ? "none" : "var(--sk-shadow-lg)",
           backdropFilter: "blur(24px)"
         }}>
           <AnimatePresence mode="popLayout">

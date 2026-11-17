@@ -6,6 +6,7 @@ import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
 import { formatDate } from '@student/utils/dateUtils';
 import { toast } from 'sonner';
+import Paginated from '@student/components/ui/Paginated';
 
 // Same buckets as NotificationsScreen._formatTime
 function formatTime(dt?: Date | null): string {
@@ -101,8 +102,9 @@ export default function NotificationsPage() {
       );
     }
     return (
+      <Paginated items={notifications} pageSize={15}>{(pageNotifications) => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {notifications.map((n) => (
+        {pageNotifications.map((n) => (
           <div
             key={n.id}
             onClick={() => { if (!n.isRead) markOneRead(n.id).catch(() => {}); }}
@@ -142,6 +144,7 @@ export default function NotificationsPage() {
           </div>
         ))}
       </div>
+      )}</Paginated>
     );
   };
 
