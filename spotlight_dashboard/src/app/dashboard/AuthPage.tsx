@@ -37,6 +37,18 @@ type StatusScreen = { kind: "submitted" | "pending" | "rejected"; message?: stri
 const inputCls = "w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30";
 const inputStyle = { background: "var(--sk-surface)", border: "1px solid var(--sk-line)", fontFamily: FB };
 const labelCls = "text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block";
+const errorBorder = "1px solid color-mix(in srgb, var(--sk-danger) 70%, transparent)";
+
+type SignupField = "clubName" | "department" | "description" | "coordinatorName" | "coordinatorPhone" | "email" | "password";
+type SignupErrors = Partial<Record<SignupField, string>>;
+/** Fields in the order they appear on the form, so the first problem is the one scrolled to. */
+const SIGNUP_FIELDS: SignupField[] = ["clubName", "department", "description", "coordinatorName", "coordinatorPhone", "email", "password"];
+const DETAIL_FIELDS: SignupField[] = ["clubName", "department", "description", "coordinatorName", "coordinatorPhone"];
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{message}</p>;
+}
 
 export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError }: {
   tab: AuthTab; onTabChange: (t: AuthTab) => void; onBack: () => void;
@@ -62,11 +74,13 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
   const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+  // Which sign-up fields to show errors for: none until a submit, only the club details for Google sign-up
+  const [checkFields, setCheckFields] = useState<SignupField[]>([]);
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setClubName(""); setDepartment(""); setDescription("");
     setCoordinatorName(""); setCoordinatorPhone(""); setLogoFile(null);
-    setError(null); setShowPassword(false); setStatus(null);
+    setError(null); setShowPassword(false); setStatus(null); setCheckFields([]);
   };
 
   /** Pending / rejected sign-in answers become a status screen; anything else is an inline error. */
@@ -80,15 +94,42 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
     }
   };
 
-  /** Checks the club details (everything but email and password); returns an error message or null. */
-  const validateDetails = (): string | null => {
-    if (!clubName.trim() || !department || !description.trim() || !coordinatorName.trim() || !coordinatorPhone.trim()) {
-      return "Please fill in Club Name, Department, Description, Coordinator Name and Coordinator Phone.";
-    }
+  /** Every sign-up field with a problem, and what to fix. */
+  const signupErrors = ((): SignupErrors => {
+    const errors: SignupErrors = {};
+    if (!clubName.trim()) errors.clubName = "Enter the club name.";
+    if (!department) errors.department = "Choose the department the club comes under.";
+    if (!description.trim()) errors.description = "Describe what the club does.";
+    if (!coordinatorName.trim()) errors.coordinatorName = "Enter the coordinator's name.";
     const digits = coordinatorPhone.replace(/\D/g, "");
-    if (digits.length < 10 || digits.length > 13) return "Please enter a valid coordinator phone number.";
-    return null;
+    if (!coordinatorPhone.trim()) errors.coordinatorPhone = "Enter the coordinator's phone number.";
+    else if (digits.length < 10 || digits.length > 13) errors.coordinatorPhone = "Enter a valid phone number (10 to 13 digits).";
+    if (!email.trim()) errors.email = "Enter an email address.";
+    else if (!email.includes("@") || !email.includes(".")) errors.email = "Enter a valid email address.";
+    if (!password.trim()) errors.password = "Create a password.";
+    else {
+      const pwdCheck = validatePasswordStrength(password);
+      if (!pwdCheck.valid) errors.password = pwdCheck.message;
+    }
+    return errors;
+  })();
+
+  // Errors shown under the fields; they clear as each field is fixed
+  const shownErrors: SignupErrors = {};
+  for (const f of checkFields) if (signupErrors[f]) shownErrors[f] = signupErrors[f];
+
+  /** Shows errors for the given fields and scrolls to the first one; returns whether they are all valid. */
+  const checkSignupFields = (fields: SignupField[]): boolean => {
+    setCheckFields(fields);
+    const first = SIGNUP_FIELDS.find(f => fields.includes(f) && signupErrors[f]);
+    if (!first) return true;
+    const el = document.getElementById(`signup-${first}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.querySelector<HTMLElement>("input, textarea")?.focus({ preventScroll: true });
+    return false;
   };
+
+  const fieldBorder = (f: SignupField) => (shownErrors[f] ? { ...inputStyle, border: errorBorder } : inputStyle);
 
   const buildDetails = async (): Promise<ClubSignupDetails> => ({
     name: clubName.trim(),
@@ -126,14 +167,11 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
   });
 
   const handleGoogle = () => {
-    if (tab === "register") {
-      const detailsError = validateDetails();
-      if (detailsError) {
-        setError(`${detailsError} Then continue with Google.`);
-        return;
-      }
-    }
     setError(null);
+    if (tab === "register" && !checkSignupFields(DETAIL_FIELDS)) {
+      setError("Fill in the club details above, then continue with Google.");
+      return;
+    }
     loginWithGoogle();
   };
 
@@ -166,25 +204,8 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const detailsError = validateDetails();
-    if (detailsError) {
-      setError(detailsError);
-      return;
-    }
-    if (!email.trim() || !password.trim()) {
-      setError("Please fill in Email ID and Password.");
-      return;
-    }
-    if (!email.includes("@") || !email.includes(".")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    const pwdCheck = validatePasswordStrength(password);
-    if (!pwdCheck.valid) {
-      setError(pwdCheck.message);
-      return;
-    }
+    setError(null);
+    if (!checkSignupFields(SIGNUP_FIELDS)) return;
 
     setLoading(true);
     setError(null);
@@ -318,7 +339,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
               <form noValidate onSubmit={tab === "login" ? handleSignIn : handleSignUp} className="space-y-6">
                 {tab === "register" && (
                   <>
-                    <div className="space-y-1.5">
+                    <div id="signup-clubName" className="space-y-1.5">
                       <label className={labelCls} style={{ fontFamily: FM }}>Club Name</label>
                       <input
                         type="text"
@@ -326,23 +347,27 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                         required
                         maxLength={120}
                         className={inputCls}
-                        style={inputStyle}
+                        style={fieldBorder("clubName")}
+                        aria-invalid={!!shownErrors.clubName}
                         value={clubName}
                         onChange={e => setClubName(e.target.value)}
                       />
+                      <FieldError message={shownErrors.clubName} />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div id="signup-department" className="space-y-1.5">
                       <label className={labelCls} style={{ fontFamily: FM }}>Department</label>
                       <GlassSelect
                         value={department}
                         onChange={setDepartment}
                         options={DEPARTMENTS}
                         placeholder="Which department does the club come under?"
+                        error={shownErrors.department}
                       />
+                      <FieldError message={shownErrors.department} />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div id="signup-description" className="space-y-1.5">
                       <label className={labelCls} style={{ fontFamily: FM }}>Description</label>
                       <textarea
                         placeholder="What does your club do?"
@@ -350,26 +375,30 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                         rows={3}
                         maxLength={2000}
                         className={`${inputCls} resize-none`}
-                        style={inputStyle}
+                        style={fieldBorder("description")}
+                        aria-invalid={!!shownErrors.description}
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                       />
+                      <FieldError message={shownErrors.description} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
-                      <div className="space-y-1.5">
+                      <div id="signup-coordinatorName" className="space-y-1.5">
                         <label className={labelCls} style={{ fontFamily: FM }}>Coordinator Name</label>
                         <input
                           type="text"
                           placeholder="Faculty / club coordinator"
                           required
                           className={inputCls}
-                          style={inputStyle}
+                          style={fieldBorder("coordinatorName")}
+                          aria-invalid={!!shownErrors.coordinatorName}
                           value={coordinatorName}
                           onChange={e => setCoordinatorName(e.target.value)}
                         />
+                        <FieldError message={shownErrors.coordinatorName} />
                       </div>
-                      <div className="space-y-1.5">
+                      <div id="signup-coordinatorPhone" className="space-y-1.5">
                         <label className={labelCls} style={{ fontFamily: FM }}>Coordinator Phone</label>
                         <input
                           type="tel"
@@ -378,10 +407,12 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                           required
                           maxLength={16}
                           className={inputCls}
-                          style={inputStyle}
+                          style={fieldBorder("coordinatorPhone")}
+                          aria-invalid={!!shownErrors.coordinatorPhone}
                           value={coordinatorPhone}
                           onChange={e => setCoordinatorPhone(e.target.value.replace(/[^\d+\s-]/g, ""))}
                         />
+                        <FieldError message={shownErrors.coordinatorPhone} />
                       </div>
                     </div>
 
@@ -399,20 +430,22 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                   </>
                 )}
 
-                <div className="space-y-1.5">
+                <div id="signup-email" className="space-y-1.5">
                   <label className={labelCls} style={{ fontFamily: FM }}>Email ID</label>
                   <input
                     type="email"
                     placeholder={tab === "register" ? "Official club or student email" : "Enter email address"}
                     required
                     className={inputCls}
-                    style={inputStyle}
+                    style={fieldBorder("email")}
+                    aria-invalid={!!shownErrors.email}
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                   />
+                  <FieldError message={shownErrors.email} />
                 </div>
 
-                <div className="space-y-1.5 relative">
+                <div id="signup-password" className="space-y-1.5 relative">
                   <label className={labelCls} style={{ fontFamily: FM }}>Password</label>
                   <div className="relative">
                     <input
@@ -420,7 +453,8 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                       placeholder={tab === "register" ? "Create a password" : "Enter password"}
                       required
                       className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all focus:border-white/30"
-                      style={inputStyle}
+                      style={fieldBorder("password")}
+                      aria-invalid={!!shownErrors.password}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                     />
@@ -434,6 +468,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                  <FieldError message={shownErrors.password} />
                 </div>
 
                 {error && (

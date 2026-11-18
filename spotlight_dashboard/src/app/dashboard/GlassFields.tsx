@@ -206,10 +206,11 @@ export function GlassSelect({
           }
         }}
         className="glass-select-trigger w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between transition-all outline-none select-none"
+        aria-invalid={!!error}
         style={{
           background: isDark ? "var(--sk-surface)" : "var(--sk-raised)",
           border: error
-            ? "1px solid color-mix(in srgb, var(--sk-brand) 70%, transparent)"
+            ? "1px solid color-mix(in srgb, var(--sk-danger) 70%, transparent)"
             : open
               ? (isDark ? "1px solid var(--sk-line-strong)" : "1px solid var(--sk-brand)")
               : (isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)"),

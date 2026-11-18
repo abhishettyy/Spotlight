@@ -770,3 +770,12 @@ html.light label[for*="qr"]:hover,
 html.light label.cursor-pointer[class*="rounded-xl"]:hover {
   background-color: var(--sk-raised) !important;
 }
+
+/* Light theme: keep the red border on fields with an error */
+html.light input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+html.light input[style*="sk-danger"]:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+html.light textarea[aria-invalid="true"],
+html.light textarea[style*="sk-danger"],
+html.light .glass-select-trigger[aria-invalid="true"] {
+  border-color: var(--sk-danger) !important;
+}
