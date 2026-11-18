@@ -24,6 +24,10 @@ services:
         value: Asia/Kolkata
       - key: ADMIN_EMAIL
         value: spotlightapp.help@gmail.com
+      - key: MAIL_RELAY_URL
+        sync: false
+      - key: MAIL_RELAY_SECRET
+        sync: false
       - key: BREVO_API_KEY
         sync: false
       - key: MAIL_FROM_EMAIL

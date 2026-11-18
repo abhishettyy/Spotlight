@@ -28,8 +28,15 @@ export function readApplicationDetails(body: any): ClubApplicationDetails {
     coordinatorPhone: clean(body?.coordinatorPhone),
     logoUrl: typeof body?.logoUrl === 'string' && body.logoUrl ? body.logoUrl : null,
   };
-  if (!details.name || !details.description || !details.department || !details.coordinatorName || !details.coordinatorPhone) {
-    throw new ClubApplicationError('Club name, description, department, coordinator name and coordinator phone are required.');
+  const missing = ([
+    ['club name', details.name],
+    ['department', details.department],
+    ['description', details.description],
+    ['coordinator name', details.coordinatorName],
+    ['coordinator phone', details.coordinatorPhone],
+  ] as const).filter(([, value]) => !value).map(([label]) => label);
+  if (missing.length > 0) {
+    throw new ClubApplicationError(`Please fill in the ${missing.join(', ')}.`);
   }
   if (details.name.length > 120) throw new ClubApplicationError('Club name is too long.');
   if (details.description.length > 2000) throw new ClubApplicationError('Description must be under 2000 characters.');
