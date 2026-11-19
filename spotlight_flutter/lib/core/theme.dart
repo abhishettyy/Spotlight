@@ -37,16 +37,16 @@ const _pageTransitionsTheme = PageTransitionsTheme(
 class SpotlightTheme {
   // Skyline design tokens. Light: cool neutral greys on white (matches the web); dark: neutral near-black. Brand: Spotlight crimson.
   static const Color pureWhite    = Color(0xFFFFFFFF);
-  static const Color deepBlack    = Color(0xFF18181B); // light-mode foreground
-  static const Color subtleGray   = Color(0xFFF1F1F3); // light raised
+  static const Color deepBlack    = Color(0xFF1C1917); // light-mode foreground
+  static const Color subtleGray   = Color(0xFFF0EFEC); // light raised
   static const Color darkGray     = Color(0xFF161618); // dark surface
   static const Color darkBg       = Color(0xFF0E0E10); // dark canvas
   static const Color lightGray    = Color(0xFFA0A0A8); // dark muted
   static const Color crimsonRed   = Color(0xFFE63946); // brand (name kept so existing call sites keep working)
 
-  static const Color _lightCanvas  = Color(0xFFF7F7F8);
-  static const Color _lightSurface = Color(0xFFFFFFFF);
-  static const Color _lightLine    = Color(0xFFE4E4E7);
+  static const Color _lightCanvas  = Color(0xFFF5F4F2); // warm cream, as on the website
+  static const Color _lightSurface = Color(0xFFFDFCFA);
+  static const Color _lightLine    = Color(0xFFE7E5E1);
   static const Color _darkLine     = Color(0xFF2A2A2E);
   static const Color _darkFg       = Color(0xFFEDEDEF);
 
@@ -100,8 +100,8 @@ class SpotlightTheme {
         onSecondary: pureWhite,
         onSurface: deepBlack,
         onBackground: deepBlack,
-        onSurfaceVariant: Color(0xFF52525B),
-        outline: Color(0xFFE4E4E7),
+        onSurfaceVariant: Color(0xFF57534E),
+        outline: Color(0xFFE7E5E1),
         error: Color(0xFFD93025),
       ),
       textTheme: GoogleFonts.interTextTheme().apply(

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/auth_provider.dart';
 import 'core/theme.dart';
@@ -32,9 +34,37 @@ class SpotlightHttpOverrides extends HttpOverrides {
   }
 }
 
+/// Widest the app content gets; on tablets and foldables it stays centred at this width.
+const double kMaxContentWidth = 600;
+
+/// Largest system font scale the layout follows; above this text stops growing so cards don't overflow.
+const double kMaxTextScale = 1.3;
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = SpotlightHttpOverrides();
+  // Portrait only: the layouts are designed for a tall screen
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(const SpotlightApp());
+}
+
+/// Applies the app-wide size limits: caps the font scale and, on wide screens, centres the content
+/// at [kMaxContentWidth] (screens see that width through MediaQuery, so their maths stays correct).
+Widget _responsiveFrame(BuildContext context, Widget? child) {
+  final mq = MediaQuery.of(context);
+  final width = math.min(mq.size.width, kMaxContentWidth);
+  final content = MediaQuery(
+    data: mq.copyWith(
+      size: Size(width, mq.size.height),
+      textScaler: mq.textScaler.clamp(maxScaleFactor: kMaxTextScale),
+    ),
+    child: child!,
+  );
+  if (mq.size.width <= kMaxContentWidth) return content;
+  return ColoredBox(
+    color: Theme.of(context).scaffoldBackgroundColor,
+    child: Center(child: SizedBox(width: width, child: content)),
+  );
 }
 
 class SpotlightApp extends StatelessWidget {
@@ -67,7 +97,7 @@ class SpotlightApp extends StatelessWidget {
               '/onboarding': (context) => const OnboardingScreen(),
             },
 
-            builder: (context, child) => child!,
+            builder: _responsiveFrame,
           );
         },
       ),

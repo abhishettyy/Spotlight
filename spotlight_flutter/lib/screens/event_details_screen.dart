@@ -252,7 +252,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 GestureDetector(
                   onTap: () => _openFullPoster(imageUrl),
                   child: Container(
-                    height: 320,
+                    // About 4:3.5 of the screen width, so small phones keep room for the details
+                    height: (MediaQuery.sizeOf(context).width * 0.85).clamp(240.0, 420.0),
                     width: double.infinity,
                     color: sk.raised,
                     child: CustomImage(

@@ -382,7 +382,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-semibold text-[color:var(--sk-fg)] dark:text-white" style={{ fontFamily: FC }}>Dashboard Privacy Policy</h3>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] mt-1" style={{ fontFamily: FB }}>Last Updated: July 26, 2026</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] mt-1" style={{ fontFamily: FB }}>Last Updated: November 19, 2026</p>
                   </div>
                   <button onClick={() => setShowPrivacyModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-[color:var(--sk-raised)] dark:bg-white/5 hover:bg-[color:var(--sk-raised)] dark:hover:bg-white/10 text-[color:var(--sk-muted)] dark:text-white/60 hover:text-[color:var(--sk-fg)] dark:hover:text-white transition-colors">
                     <X size={16} />
@@ -392,22 +392,22 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-[color:var(--sk-fg)] dark:text-[#ccc] leading-relaxed border-t border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] py-6" style={{ fontFamily: FB }}>
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">About the Spotlight Club Dashboard</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">The Spotlight Club Dashboard allows authorized clubs to create, publish, and manage events. Once published, these events are visible to users of the Spotlight mobile application. Clubs can review, manage, approve, or deny participant registrations, including verifying payment proofs.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">The Spotlight Club Dashboard lets approved clubs create, publish and manage events. Published events appear in the Spotlight app and on the Spotlight student website. Clubs review registrations, check payment transaction IDs, and scan entry tickets.</p>
                   </div>
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Information We Collect From Clubs</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We collect and store your Club Name, Email Address, department, club description, coordinator name and phone number, UPI ID, UPI QR Code graphics, custom club logos, and event details (title, description, venue, price, capacity limits, banner graphics). New club accounts are reviewed and approved by the Spotlight admin before they can sign in.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We collect your club name, email address, password (stored only as a secure hash, or Google Sign-In instead), department, description, coordinator name and phone number, and logo. You can also add a UPI ID and payment QR code, and event details such as title, description, venue, dates, fee, capacity and banner image. New clubs can sign in only after the Spotlight admin approves their registration; the admin sees these details to decide.</p>
                   </div>
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Club Authentication</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Clubs sign in with their email and password or with Google. Passwords are stored hashed, and access is restricted using secure JSON Web Tokens. Clubs must maintain credential confidentiality.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Clubs sign in with their email and password or with Google, only after admin approval. Passwords are stored only as secure hashes and sessions use signed tokens. Keep your credentials private.</p>
                   </div>
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Participant Information Available to Clubs</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">When users register for your events, we share their Name, USN/Roll Number, Email, Phone, Year, Semester, Branch, and UPI Transaction ID (UTR) with you to facilitate moderation.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">When students register for your events, you see their name, email, phone number, USN, branch, year, semester, team name, UPI Transaction ID (UTR), and registration and check-in status.</p>
                   </div>
 
                   <div>
@@ -417,7 +417,12 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Third-Party Services</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We rely on Google Sign-In (optional sign-in), our file hosting (storing club logos, event posters and payment QR codes), and a MySQL database to run the infrastructure.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Render hosts the Spotlight server; GoDaddy hosts the database, website and uploaded images; Google provides optional Google Sign-In; and Gmail sends your approval email. Club logos, event banners and payment QR codes are public images that anyone with the link can view.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Deleting Your Club Account</h4>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">To delete your club account and its data, email spotlightapp.help@gmail.com from your registered club email with the subject "Account Deletion Request". The club, its events, registrations and uploaded images are permanently deleted within 7 business days.</p>
                   </div>
 
                   <div>
@@ -463,13 +468,6 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
            </div>
            <button onClick={() => setShowPrivacyModal(true)} className="px-6 py-2.5 bg-[color:var(--sk-raised)] dark:bg-white/5 hover:bg-[color:var(--sk-raised)] dark:hover:bg-white/10 text-[color:var(--sk-fg)] dark:text-white text-xs font-semibold rounded-lg transition-all border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ fontFamily: FB }}>View Policy</button>
          </div>
-
-        <div className="p-8 rounded-3xl flex items-center justify-between" style={{ background: "color-mix(in srgb, var(--sk-brand) 5%, transparent)", border: "1px solid color-mix(in srgb, var(--sk-brand) 10%, transparent)" }}>
-          <div>
-            <p className="text-sm font-medium text-[color:var(--sk-brand)]" style={{ fontFamily: FB }}>Sign Out</p>
-          </div>
-          <button onClick={onLogout} className="px-6 py-2.5 bg-[color:var(--sk-danger)]/10 hover:bg-[color:var(--sk-danger)]/20 text-[color:var(--sk-danger)] text-xs font-semibold rounded-lg transition-all" style={{ border: "1px solid color-mix(in srgb, var(--sk-danger) 20%, transparent)", fontFamily: FB }}>Sign Out</button>
-        </div>
       </div>
     </div>
   );

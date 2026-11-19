@@ -506,7 +506,7 @@ export default function AdminConsole() {
                 </div>
               </div>
 
-              {authError && <Notice tone="error">{authError}</Notice>}
+              {authError && <p role="alert" className="text-sm font-normal text-[#dc2626] text-center">{authError}</p>}
 
               <button type="submit" disabled={signingIn} className={`${btnPrimary} w-full h-10`}>
                 {signingIn ? 'Signing in…' : 'Sign in'}
@@ -808,7 +808,7 @@ export default function AdminConsole() {
               Show passwords
             </label>
 
-            {pwError && <Notice tone="error">{pwError}</Notice>}
+            {pwError && <p role="alert" className="text-sm font-normal text-[#dc2626] text-center">{pwError}</p>}
 
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={closePwModal} className={btnSecondary}>Cancel</button>

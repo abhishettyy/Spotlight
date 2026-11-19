@@ -10,63 +10,70 @@ const sections: Section[] = [
   {
     title: '1. Information We Collect',
     content: [
-      'Account Information: When you register, we collect your name, email address, college/university affiliation, branch, year, and semester.',
-      'Profile Data: Optional profile picture and academic details you choose to provide.',
-      'Event & Registration Data: Details of events you register for, team information, and payment proof images you upload.',
-      'Usage Data: Pages visited, features used, and interactions within the app to improve your experience.',
-      'Device Information: Browser type, operating system, and IP address for security and analytics purposes.',
+      'Account: your name, email address, phone number, USN, branch, year and semester.',
+      'Sign-in: if you sign up with email, your password is stored only as a secure hash. With Google Sign-In we receive your name and email from Google and store no password.',
+      'Registrations: the events you register for, their status, your team name, team members and team passkey, and the time your ticket is scanned at the event.',
+      'Payments: Spotlight does not process payments. You pay the club directly through UPI, and we store only the UPI Transaction ID (UTR) you enter. No bank, card or UPI PIN details, and no payment screenshots.',
+      'Notifications: in-app messages about your registrations and upcoming events.',
+      'Technical: our servers and hosting providers keep standard request logs (such as IP address and time) for security. We do not use analytics, advertising or tracking tools.',
     ],
   },
   {
-    title: '2. How We Use Your Information',
+    title: '2. Stored Only on Your Device',
+    content:
+      'Your sign-in session, a cached copy of your profile, tickets and clubs, your saved events and your theme choice are kept in your browser\'s local storage. Saved events are never sent to our servers. Signing out or clearing your browser data removes them. We do not use cookies for advertising or tracking.',
+  },
+  {
+    title: '3. How We Use Your Information',
     content: [
-      'To create and manage your Spotlight account.',
-      'To process your event registrations and team formations.',
-      'To send you notifications about events, registrations, and updates.',
-      'To display your profile to other members within the same campus community.',
-      'To verify payment proofs submitted for paid events.',
-      'To improve and personalize your app experience.',
-      'To ensure the security and integrity of the platform.',
+      'To create your account and keep your sign-in secure.',
+      'To register you for events and teams, issue QR entry tickets and check you in.',
+      'To let the organizing club confirm your payment using your transaction ID.',
+      'To show in-app notifications about your registrations and events. We do not send push notifications or marketing emails.',
+      'To prevent duplicate registrations, misuse and unauthorized access.',
     ],
   },
   {
-    title: '3. Information Sharing',
+    title: '4. Who Can See Your Information',
     content:
-      'We do not sell, rent, or trade your personal information to third parties. Your information may be shared with:\n\n• Club Organizers: Event organizers and club admins can see registration details for their events.\n• Campus Administrators: Platform administrators may access data for moderation and support.\n• Service Providers: We use trusted third-party services (e.g., Firebase by Google) to operate the platform. These providers are bound by confidentiality agreements.',
+      'We do not sell, rent or share your personal information with advertisers or data brokers.\n\n• The club running an event you register for sees your name, email, phone, USN, branch, year, semester, team name, transaction ID, and registration and check-in status. Clubs may use this only to run that event.\n• The Spotlight admin may access data for support and moderation.\n• Service providers: Render hosts our server, GoDaddy hosts our database, website and images, and Google provides Google Sign-In.\n• We may disclose information if required by law or by college authorities.',
   },
   {
-    title: '4. Data Storage & Security',
+    title: '5. Data Security',
     content:
-      'Your data is stored securely using Firebase (Google Cloud infrastructure). We implement industry-standard security measures including encrypted data transmission (HTTPS), secure authentication, and restricted database access rules. However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.',
+      'All data travels over HTTPS, passwords are stored only as secure hashes, and sign-in sessions use signed tokens. Each club can see registrations for its own events only. No system is completely secure, but we work to protect your information.',
   },
   {
-    title: '5. Your Rights & Choices',
+    title: '6. Your Rights & Account Deletion',
     content: [
-      'Access & Update: You can view and update your profile information at any time from the Profile section.',
-      'Delete Account: You may request account deletion by contacting us. This will permanently remove your data from our systems.',
-      'Notifications: You can manage notification preferences within the app settings.',
-      'Data Portability: You may request a copy of your personal data by contacting our support team.',
+      'View and update your profile any time from the Profile page.',
+      'To delete your account, email spotlightapp.help@gmail.com with the subject "Account Deletion Request" from your registered email and include your USN. Your account, profile, registrations and team memberships are permanently deleted within 7 business days.',
+      'To get a copy of your data, email us from your registered address.',
     ],
   },
   {
-    title: '6. Cookies & Local Storage',
-    content:
-      'Spotlight uses browser local storage to maintain your login session and store preferences (such as dark/light mode). We do not use third-party advertising cookies. You can clear this data at any time through your browser settings.',
+    title: '7. Using Spotlight',
+    content: [
+      'Give accurate details when you sign up and register; clubs rely on them to verify you.',
+      'Events, fees, refunds and entry rules are set by the organizing club. Contact the club for questions about a specific event or payment.',
+      'Keep your password and team passkeys private; you are responsible for activity on your account.',
+      'Do not create fake registrations, enter false transaction IDs or misuse the platform. We may suspend accounts that do.',
+    ],
   },
   {
-    title: "7. Children's Privacy",
+    title: "8. Children's Privacy",
     content:
-      'Spotlight is intended for college and university students (18 years and older). We do not knowingly collect personal information from individuals under 18. If you believe a minor has provided us with their information, please contact us immediately.',
+      'Spotlight is meant for college students. We do not knowingly collect personal information from children under 13, and we delete it if we learn that we have.',
   },
   {
-    title: '8. Changes to This Policy',
+    title: '9. Changes to This Policy',
     content:
-      'We may update this Privacy Policy from time to time. We will notify you of significant changes via email or an in-app notification. Continued use of Spotlight after changes constitutes acceptance of the updated policy.',
+      'We may update this policy when Spotlight changes. The new version will appear on this page with an updated date. Continuing to use Spotlight after an update means you accept it.',
   },
   {
-    title: '9. Contact Us',
+    title: '10. Contact Us',
     content:
-      'If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us at:\n\nSpotlight Support Team\nEmail: support@spotlight.app\n\nWe aim to respond to all inquiries within 48 hours.',
+      'For questions, privacy concerns or deletion requests, email the Spotlight team:\n\nspotlightapp.help@gmail.com',
   },
 ];
 
@@ -119,7 +126,7 @@ export default function PrivacyPolicyPage() {
             fontFamily: 'var(--font-sans)',
           }}
         >
-          Privacy Policy
+          Terms &amp; Privacy Policy
         </h1>
       </div>
 
@@ -171,9 +178,8 @@ export default function PrivacyPolicyPage() {
                 fontFamily: 'var(--font-sans)',
               }}
             >
-              This Privacy Policy explains how Spotlight collects, uses, and
-              protects your personal information when you use our campus event
-              discovery platform.
+              This page explains what Spotlight collects, how it is used, who
+              can see it, and the terms for using Spotlight.
             </p>
             <p
               style={{
@@ -184,7 +190,7 @@ export default function PrivacyPolicyPage() {
                 opacity: 0.7,
               }}
             >
-              Last updated: October 2026
+              Last updated: November 19, 2026
             </p>
           </div>
         </div>

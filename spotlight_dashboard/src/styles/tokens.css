@@ -7,17 +7,17 @@
    Brand colours: Spotlight crimson for primary actions and focus, Green for success, Yellow for warnings, neutral grey for info, thin borders instead of glows. */
 
 :root, .light {
-  --sk-canvas: #f4f4f5;     /* page background: light grey so white cards stand apart */
-  --sk-surface: #ffffff;    /* cards, panels, sidebars */
-  --sk-raised: #f1f1f3;     /* inputs, hover rows, segmented controls */
-  --sk-line: #e4e4e7;       /* borders, dividers */
-  --sk-line-strong: #d4d4d8;
-  --sk-fg: #18181b;         /* primary text, 17:1 on white */
-  --sk-muted: #52525b;      /* secondary text, 7.7:1 */
-  --sk-faint: #71717a;      /* hints, meta, 4.8:1 (still AA) */
+  --sk-canvas: #f5f4f2;     /* page background: warm light grey so white cards stand apart */
+  --sk-surface: #fdfcfa;    /* cards, panels, sidebars */
+  --sk-raised: #f0efec;     /* inputs, hover rows, segmented controls */
+  --sk-line: #e7e5e1;       /* borders, dividers */
+  --sk-line-strong: #d6d3cd;
+  --sk-fg: #1c1917;         /* primary text, 17:1 on white */
+  --sk-muted: #57534e;      /* secondary text, 7.7:1 */
+  --sk-faint: #78716c;      /* hints, meta, 4.8:1 (still AA) */
   --sk-brand: #e63946;      /* college crimson */
   --sk-brand-hover: #cc2a3a;
-  --sk-brand-soft: rgba(230, 57, 70, 0.08);
+  --sk-brand-soft: rgba(230, 57, 70, 0.10);
   --sk-ok: #15803d;   --sk-ok-soft: rgba(22, 163, 74, 0.10);
   --sk-warn: #b45309; --sk-warn-soft: rgba(245, 158, 11, 0.14);
   --sk-info: #52525b; --sk-info-soft: rgba(82, 82, 91, 0.08);

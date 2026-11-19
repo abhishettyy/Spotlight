@@ -15,7 +15,7 @@ class AppException implements Exception {
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://spotlight-c5je.onrender.com/api',
+    defaultValue: 'https://spotlight-backend-x0q7.onrender.com/api',
   );
 
   static Future<http.Response> _get(String path, {Map<String, String>? headers}) {

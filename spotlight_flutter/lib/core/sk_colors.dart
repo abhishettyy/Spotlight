@@ -82,16 +82,17 @@ class Sk {
 
   static const light = Sk._(
     isDark: false,
-    canvas: Color(0xFFF7F7F8),
-    surface: Color(0xFFFFFFFF),
-    raised: Color(0xFFF1F1F3),
-    line: Color(0xFFE4E4E7),
-    lineStrong: Color(0xFFD1D1D6),
-    fg: Color(0xFF18181B),
-    muted: Color(0xFF52525B),
-    faint: Color(0xFF71717A),
+    // Warm cream, matching the student website's light theme
+    canvas: Color(0xFFF5F4F2),
+    surface: Color(0xFFFDFCFA),
+    raised: Color(0xFFF0EFEC),
+    line: Color(0xFFE7E5E1),
+    lineStrong: Color(0xFFD6D3CD),
+    fg: Color(0xFF1C1917),
+    muted: Color(0xFF57534E),
+    faint: Color(0xFF78716C),
     brand: Color(0xFFE63946),
-    brandSoft: Color(0x14E63946), // 8%
+    brandSoft: Color(0x1AE63946), // 10%
     onBrand: Color(0xFFFFFFFF),
     ok: Color(0xFF15803D),
     okSoft: Color(0x1A16A34A), // 10%

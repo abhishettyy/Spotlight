@@ -10,17 +10,17 @@
    Brand colours: Spotlight crimson for primary actions and focus, Green for success, Yellow for warnings, neutral grey for info, thin borders instead of glows. */
 
 :root, .light {
-  --sk-canvas: #f4f4f5;     /* page background: light grey so white cards stand apart */
-  --sk-surface: #ffffff;    /* cards, panels, sidebars */
-  --sk-raised: #f1f1f3;     /* inputs, hover rows, segmented controls */
-  --sk-line: #e4e4e7;       /* borders, dividers */
-  --sk-line-strong: #d4d4d8;
-  --sk-fg: #18181b;         /* primary text */
-  --sk-muted: #52525b;      /* secondary text */
-  --sk-faint: #71717a;      /* hints, meta */
+  --sk-canvas: #f5f4f2;     /* page background: warm light grey so white cards stand apart */
+  --sk-surface: #fdfcfa;    /* cards, panels, sidebars */
+  --sk-raised: #f0efec;     /* inputs, hover rows, segmented controls */
+  --sk-line: #e7e5e1;       /* borders, dividers */
+  --sk-line-strong: #d6d3cd;
+  --sk-fg: #1c1917;         /* primary text */
+  --sk-muted: #57534e;      /* secondary text */
+  --sk-faint: #78716c;      /* hints, meta */
   --sk-brand: #e63946;       /* buttons, links, accents: Spotlight crimson, as in the club dashboard */
   --sk-brand-hover: #cc2a3a;
-  --sk-brand-soft: rgba(230, 57, 70, 0.08);
+  --sk-brand-soft: rgba(230, 57, 70, 0.10);
   --sk-on-brand: #ffffff;    /* text and icons on a brand fill */
   --sk-ok: #15803d;   --sk-ok-soft: rgba(22, 163, 74, 0.10);
   --sk-warn: #b45309; --sk-warn-soft: rgba(245, 158, 11, 0.14);
@@ -406,3 +406,20 @@ a { color: inherit; }
 /* Light theme: inputs get a visible border instead of a near-invisible shadow */
 .light .input-field { border-color: var(--sk-line-strong); box-shadow: none; }
 .light .input-field:focus { border-color: var(--color-crimson); box-shadow: 0 0 0 3px var(--sk-brand-soft); }
+
+/* Light theme: a soft crimson glow behind the page so it isn't flat white */
+.light body {
+  background-color: var(--sk-canvas);
+  background-image: radial-gradient(1100px 560px at -5% -15%, rgba(230, 57, 70, 0.10), transparent 60%), radial-gradient(900px 520px at 105% -10%, rgba(230, 57, 70, 0.06), transparent 62%), radial-gradient(1000px 600px at 50% 120%, rgba(230, 57, 70, 0.04), transparent 60%);
+  background-attachment: fixed;
+}
+.light .stu-auth { background: transparent; }
+.light .stu-sidebar { background: transparent; }
+.light .stu-nav-item[aria-current='page'] { background: var(--sk-brand-soft); color: var(--sk-brand); }
+.light .stu-nav-item[aria-current='page'] svg { color: var(--sk-brand); }
+.light .stu-auth-side {
+  background:
+    radial-gradient(700px 420px at 0% 0%, rgba(230, 57, 70, 0.12), transparent 65%),
+    radial-gradient(600px 420px at 100% 100%, rgba(230, 57, 70, 0.07), transparent 65%),
+    var(--sk-canvas);
+}

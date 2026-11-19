@@ -779,3 +779,9 @@ html.light textarea[style*="sk-danger"],
 html.light .glass-select-trigger[aria-invalid="true"] {
   border-color: var(--sk-danger) !important;
 }
+
+/* Light theme: a soft crimson glow behind the page so it isn't flat white (page roots use bg-background) */
+html.light .bg-background {
+  background-image: radial-gradient(1100px 560px at -5% -15%, rgba(230, 57, 70, 0.10), transparent 60%), radial-gradient(900px 520px at 105% -10%, rgba(230, 57, 70, 0.06), transparent 62%), radial-gradient(1000px 600px at 50% 120%, rgba(230, 57, 70, 0.04), transparent 60%) !important;
+  background-attachment: fixed !important;
+}

@@ -272,7 +272,7 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
       
       <aside className="hidden xl:flex w-56 flex-shrink-0 flex-col h-screen"
         style={{
-          background: isDark ? "rgba(5,5,5,0.97)" : "var(--sk-canvas)",
+          background: isDark ? "rgba(5,5,5,0.97)" : "transparent",
           borderRight: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)",
           backdropFilter: "blur(24px)"
         }}
@@ -349,7 +349,7 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
         
         <header className="xl:hidden flex items-center justify-between px-4 sm:px-6 py-3.5 flex-shrink-0"
           style={{
-            background: isDark ? "rgba(5,5,5,0.97)" : "var(--sk-canvas)",
+            background: isDark ? "rgba(5,5,5,0.97)" : "rgba(245,244,242,0.85)",
             borderBottom: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)",
             backdropFilter: "blur(16px)"
           }}

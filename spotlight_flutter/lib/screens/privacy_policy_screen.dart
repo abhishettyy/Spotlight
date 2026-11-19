@@ -11,6 +11,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
     final cardBg = Sk.of(context).surface;
     final subText = Sk.of(context).muted;
 
+    Widget para(String text) => Text(
+          text,
+          style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
+        );
+
     Widget buildSubSection({required String title, required String body}) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12.0),
@@ -43,7 +48,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       backgroundColor: Sk.of(context).canvas,
       appBar: AppBar(
         title: Text(
-          'Privacy Policy',
+          'Terms & Privacy Policy',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -64,7 +69,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Last Updated: July 26, 2026',
+                'Last Updated: November 19, 2026',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -73,7 +78,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Spotlight respects your privacy. This policy explains what information we collect, how it is used, and the third-party integrations we rely on to run the platform.',
+                'This page explains what Spotlight collects, how it is used, who can see it, and the terms for using Spotlight.',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   height: 1.5,
@@ -86,9 +91,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 icon: Icons.info_outline_rounded,
                 title: '1. About Spotlight',
                 cardBg: cardBg,
-                child: Text(
-                  'Spotlight is a college event discovery and registration platform. Events are created and managed by authorized college clubs through the Spotlight Club Dashboard. General users use this mobile app to search, browse, and register for events.',
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
+                child: para(
+                  'Spotlight is a college event discovery and registration platform. Clubs create and manage events through the Spotlight Club Dashboard after the Spotlight admin approves them. Students use this app or the Spotlight website to browse events, register and get entry tickets.',
                 ),
               ),
               _buildSectionCard(
@@ -100,16 +104,24 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     buildSubSection(
-                      title: 'Account & Profile Data',
-                      body: 'Full name, email, phone number, and academic details (USN/Roll number, Branch, Year, and Semester). Password hashes are securely stored if registered manually.',
+                      title: 'Account & Profile',
+                      body: 'Your name, email address, phone number, USN, branch, year and semester. If you sign up with email, your password is stored only as a secure hash. With Google Sign-In we receive your name and email from Google and store no password.',
                     ),
                     buildSubSection(
-                      title: 'Event Registrations & Teams',
-                      body: 'Metadata showing which events you join, generated team passkeys, and team member relationships.',
+                      title: 'Registrations, Teams & Tickets',
+                      body: 'The events you register for and their status, your team name, team members and team passkey, the time your ticket is scanned at the event, and in-app notifications about your registrations.',
                     ),
                     buildSubSection(
-                      title: 'Payment & UTR Verification',
-                      body: 'For paid events, we collect only the UPI Transaction ID (UTR) you enter. No payment screenshots are uploaded.',
+                      title: 'Payments',
+                      body: 'Spotlight does not process payments. You pay the club directly through UPI, and we store only the UPI Transaction ID (UTR) you enter. No bank, card or UPI PIN details, and no payment screenshots.',
+                    ),
+                    buildSubSection(
+                      title: 'Stored Only on Your Phone',
+                      body: 'Your sign-in session, a cached copy of your profile, tickets and clubs, your saved events and your theme choice. Saved events are never sent to our servers. Signing out or clearing app data removes them.',
+                    ),
+                    buildSubSection(
+                      title: 'Technical',
+                      body: 'Our servers and hosting providers keep standard request logs (such as IP address and time) for security. We do not use analytics, advertising or tracking tools.',
                     ),
                   ],
                 ),
@@ -119,36 +131,56 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 icon: Icons.insights_outlined,
                 title: '3. How We Use Data',
                 cardBg: cardBg,
-                child: Text(
-                  'We process your information to create your account, process registrations, confirm payments, send internal notifications, combat spam/abuse, and verify academic eligibility for student events.',
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
+                child: para(
+                  'To create your account and keep your sign-in secure, register you for events and teams, issue QR entry tickets and check you in, let the organizing club confirm your payment using your transaction ID, show in-app notifications about your registrations and events, and prevent duplicate registrations and misuse. We do not send push notifications or marketing emails.',
                 ),
               ),
               _buildSectionCard(
                 context,
                 icon: Icons.share_outlined,
-                title: '4. Information Shared With Clubs',
-                cardBg: cardBg,
-                child: Text(
-                  'When you register for an event, your profile data (Name, USN, Phone, Email), team name, and payment Transaction ID are shared directly with the club organizing that specific event via their Club Dashboard so they can verify your entry.',
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
-                ),
-              ),
-              _buildSectionCard(
-                context,
-                icon: Icons.phonelink_setup_rounded,
-                title: '5. Device Permissions',
+                title: '4. Who Can See Your Information',
                 cardBg: cardBg,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     buildSubSection(
-                      title: 'Clipboard Access',
-                      body: 'To copy club UPI IDs and registration passkeys to your clipboard.',
+                      title: 'The Club Running the Event',
+                      body: 'Your name, email, phone, USN, branch, year, semester, team name, transaction ID, and registration and check-in status. Clubs may use this only to run that event.',
                     ),
                     buildSubSection(
-                      title: 'External App Launch',
-                      body: 'To open external UPI payment apps (Google Pay, PhonePe, Paytm) and web links.',
+                      title: 'The Spotlight Admin',
+                      body: 'May access data for support and moderation.',
+                    ),
+                    buildSubSection(
+                      title: 'Service Providers',
+                      body: 'Render hosts our server, GoDaddy hosts our database, website and images, and Google provides Google Sign-In.',
+                    ),
+                    buildSubSection(
+                      title: 'No Selling of Data',
+                      body: 'We never sell, rent or share your information with advertisers or data brokers. We may disclose it only if required by law or by college authorities.',
+                    ),
+                  ],
+                ),
+              ),
+              _buildSectionCard(
+                context,
+                icon: Icons.phonelink_setup_rounded,
+                title: '5. App Permissions',
+                cardBg: cardBg,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSubSection(
+                      title: 'Internet Access',
+                      body: 'The only permission the app asks for. It does not access your camera, location, contacts, files or photos.',
+                    ),
+                    buildSubSection(
+                      title: 'Copy to Clipboard',
+                      body: 'When you tap copy, a club UPI ID or team passkey is copied. The app does not read your clipboard.',
+                    ),
+                    buildSubSection(
+                      title: 'Opening Other Apps',
+                      body: 'Links can open your UPI payment app (Google Pay, PhonePe, Paytm), email app or browser.',
                     ),
                   ],
                 ),
@@ -158,23 +190,37 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 icon: Icons.security_outlined,
                 title: '6. Data Security & Retention',
                 cardBg: cardBg,
-                child: Text(
-                  'We use secure JWT authentication and encrypted HTTPS endpoints. We retain account and event registration data while your account remains active as required for college event verification and record-keeping.',
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: subText),
+                child: para(
+                  'All data travels over HTTPS, passwords are stored only as secure hashes, and sign-in sessions use signed tokens. Each club can see registrations for its own events only. We keep your account, registrations and tickets while your account is active.',
+                ),
+              ),
+              _buildSectionCard(
+                context,
+                icon: Icons.delete_outline_rounded,
+                title: '7. Account Deletion',
+                cardBg: cardBg,
+                child: para(
+                  'Email spotlightapp.help@gmail.com with the subject "Account Deletion Request" from your registered email and include your USN. Your account, profile, registrations and team memberships are permanently deleted within 7 business days.',
+                ),
+              ),
+              _buildSectionCard(
+                context,
+                icon: Icons.gavel_rounded,
+                title: '8. Using Spotlight',
+                cardBg: cardBg,
+                child: para(
+                  'Give accurate details; clubs rely on them to verify you. Events, fees, refunds and entry rules are set by the organizing club, so contact the club about a specific event or payment. Keep your password and team passkeys private. Do not create fake registrations or enter false transaction IDs; we may suspend accounts that do. Spotlight is meant for college students and does not knowingly collect data from children under 13.',
                 ),
               ),
               _buildSectionCard(
                 context,
                 icon: Icons.mail_outline_rounded,
-                title: '7. Contact Us',
+                title: '9. Contact Us',
                 cardBg: cardBg,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'If you have any questions regarding this Privacy Policy or need assistance, contact our support team:',
-                      style: GoogleFonts.inter(fontSize: 13, height: 1.4, color: subText),
-                    ),
+                    para('For questions, privacy concerns or deletion requests, email the Spotlight team:'),
                     const SizedBox(height: 8),
                     Row(
                       children: [
