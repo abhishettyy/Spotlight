@@ -73,9 +73,9 @@ export function OverviewPage({
       {/* Key metrics — single divided strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 rounded-xl overflow-hidden" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
         {[
-          { label: "Total Events",        value: totalEvents,        sub: `${clubEvents.filter(e => getEventStatus(e) !== 'previous').length} active`, tab: "events", warn: false },
+          { label: "Total Events",        value: totalEvents,        sub: `${clubEvents.filter(e => !e.isDraft && getEventStatus(e) !== 'previous').length} active${clubEvents.some(e => e.isDraft) ? ` · ${clubEvents.filter(e => e.isDraft).length} draft` : ''}`, tab: "events", warn: false },
           { label: "Total Registrations", value: totalRegistrations, sub: "Across all events",                                                        tab: "events", warn: false },
-          { label: "Live Now",            value: clubEvents.filter(e => getEventStatus(e) === 'live').length, sub: "Happening right now",                     tab: "events", warn: false },
+          { label: "Live Now",            value: clubEvents.filter(e => !e.isDraft && getEventStatus(e) === 'live').length, sub: "Happening right now",                     tab: "events", warn: false },
         ].map((k, i) => (
           <div key={k.label} className={`px-6 py-5 ${i === 0 ? "" : "border-t sm:border-t-0 sm:border-l"}`}
             style={{ borderColor: "var(--sk-line)" }}>
@@ -114,7 +114,8 @@ export function OverviewPage({
           <div className="rounded-xl overflow-hidden" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
             {[...clubEvents.filter(e => getEventStatus(e) !== 'previous')]
               .sort((x, y) => {
-                const r = (e: ClubEvent) => (getEventStatus(e) === 'live' ? 0 : 1);
+                // Live events first, drafts last
+                const r = (e: ClubEvent) => (e.isDraft ? 2 : getEventStatus(e) === 'live' ? 0 : 1);
                 if (r(x) !== r(y)) return r(x) - r(y);
                 return (parseLocalDate(x.eventDate || x.date)?.getTime() ?? 0) - (parseLocalDate(y.eventDate || y.date)?.getTime() ?? 0);
               })
@@ -134,7 +135,9 @@ export function OverviewPage({
                   <span className="hidden sm:inline-flex text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ color: "var(--sk-muted)", borderColor: "var(--sk-line)", fontFamily: FM }}>
                     {(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"} · {ev.capacity > 0 ? `${ev.capacity} ${(ev.type ?? '').toLowerCase() === "team" ? 'teams' : 'cap'}` : 'Open'}
                   </span>
-                  {getEventStatus(ev) === 'live' ? (
+                  {ev.isDraft ? (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ color: "var(--sk-warn)", borderColor: "color-mix(in srgb, var(--sk-warn) 35%, transparent)", background: "color-mix(in srgb, var(--sk-warn) 12%, transparent)", fontFamily: FM }}>Draft</span>
+                  ) : getEventStatus(ev) === 'live' ? (
                     <LiveTag />
                   ) : (
                     <span className="text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ color: "var(--sk-brand)", borderColor: "color-mix(in srgb, var(--sk-brand) 30%, transparent)", background: "color-mix(in srgb, var(--sk-brand) 10%, transparent)", fontFamily: FM }}>Upcoming</span>

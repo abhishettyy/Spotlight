@@ -9,7 +9,7 @@ import { FC, FM, FB, parseLocalDate, ClubEvent } from "./shared";
  * opens the browser's print dialog with the finished letter (choose "Save as PDF").
  */
 
-type Field = { key: string; label: string; placeholder?: string; multiline?: boolean; half?: boolean };
+type Field = { key: string; label: string; placeholder?: string; multiline?: boolean; half?: boolean; rows?: number };
 type Section = { title: string; hint?: string; fields: Field[] };
 
 // What the club is asked (event and club details are listed separately, as "From your event")
@@ -48,7 +48,6 @@ const ASKED: Section[] = [
     title: "About the Event",
     fields: [
       { key: "event_purpose_summary", label: "Purpose (one or two lines for the opening paragraph)", multiline: true, placeholder: "e.g. The event aims to give students hands-on experience with…" },
-      { key: "event_objectives", label: "Objectives", multiline: true },
       { key: "guests_and_speakers", label: "Chief Guest / Speakers" },
     ],
   },
@@ -67,26 +66,20 @@ const ASKED: Section[] = [
   {
     title: "Logistics and Requirements",
     fields: [
-      { key: "venue_requirements", label: "Venue" },
-      { key: "seating_stage_furniture", label: "Seating, stage and furniture" },
-      { key: "av_power_internet", label: "Audio-visual, power and internet" },
-      { key: "refreshments", label: "Refreshments and hospitality" },
-      { key: "security_housekeeping_medical", label: "Security, housekeeping and medical support" },
-      { key: "parking_transport_accommodation", label: "Parking, transport and accommodation" },
-      { key: "printing_signage_media", label: "Printing, signage and media" },
-      { key: "other_requirements", label: "Any other requirements" },
+      { key: "logistics", label: "Describe what you need", multiline: true, rows: 6, placeholder: "e.g. Apex Auditorium from 11 AM, 120 chairs and a stage, projector and two mics, Wi-Fi for 30 laptops, water for participants, security at the entrance…" },
     ],
   },
   {
     title: "Budget and Permissions",
     fields: [
-      { key: "estimated_budget", label: "Estimated Budget", placeholder: "e.g. ₹15,000", half: true },
-      { key: "funding_source", label: "Funding Source", placeholder: "e.g. Club funds", half: true },
-      { key: "additional_permissions", label: "Additional permissions sought" },
-      { key: "setup_time", label: "Setup / access time required", half: true },
-      { key: "teardown_time", label: "Teardown completion", half: true },
-      { key: "enclosures", label: "Enclosures" },
-      { key: "copy_to", label: "Copy to" },
+      { key: "budget_permissions", label: "Budget, funding and any other permissions", multiline: true, rows: 5, placeholder: "e.g. Estimated budget ₹15,000 from club funds. Permission to use the auditorium until 7 PM and to put up posters in the main block…" },
+    ],
+  },
+  {
+    title: "Closing",
+    fields: [
+      { key: "enclosures", label: "Enclosures", placeholder: "e.g. Event poster, schedule", half: true },
+      { key: "copy_to", label: "Copy to", placeholder: "e.g. HOD, Security Office", half: true },
     ],
   },
 ];
@@ -218,28 +211,18 @@ export function buildLetterHtml(v: Record<string, string>): string {
   ${row("Expected Teams", f("expected_teams"))}
   ${row("Chief Guest / Speakers", f("guests_and_speakers"))}
 
-  <h3>2. Event Overview and Objectives</h3>
+  <h3>2. Event Overview</h3>
   <p class="body">${f("event_description")}</p>
-  ${row("Objectives", f("event_objectives"))}
 
   <h3>3. Proposed Schedule</h3>
   ${schedule}
 
   <h3>4. Logistics and Requirements</h3>
   <p>We kindly request the following arrangements and support for the event.</p>
-  ${row("Venue", f("venue_requirements"))}
-  ${row("Seating, stage and furniture", f("seating_stage_furniture"))}
-  ${row("Audio-visual, power and internet", f("av_power_internet"))}
-  ${row("Refreshments and hospitality", f("refreshments"))}
-  ${row("Security, housekeeping and medical support", f("security_housekeeping_medical"))}
-  ${row("Parking, transport and accommodation", f("parking_transport_accommodation"))}
-  ${row("Printing, signage and media", f("printing_signage_media"))}
-  ${row("Any other requirements", f("other_requirements"))}
+  <p class="body">${f("logistics")}</p>
 
   <h3>5. Budget and Additional Permissions</h3>
-  <p class="row"><b>Estimated budget:</b> ${f("estimated_budget")} | <b>Funding source:</b> ${f("funding_source")}</p>
-  ${row("Additional permissions sought", f("additional_permissions"))}
-  <p class="row"><b>Setup / access time required:</b> ${f("setup_time")} | <b>Teardown completion:</b> ${f("teardown_time")}</p>
+  <p class="body">${f("budget_permissions")}</p>
   <p class="body" style="margin-top:10px">We assure you that the event will be conducted with full discipline, and that the venue and all borrowed equipment will be handed back in good condition. We kindly request your approval and support at the earliest, and would be glad to provide any further details you need.</p>
 
   <div class="sign keep">
@@ -350,7 +333,7 @@ export function RequestLetterModal({ event, getToken, onClose }: {
         {fromEvent && <Sparkles size={11} className="text-[color:var(--sk-brand)]" aria-label="Filled from your event" />}
       </label>
       {fl.multiline ? (
-        <textarea id={`rl-${fl.key}`} rows={3} value={values[fl.key] ?? ""} onChange={set(fl.key)} placeholder={fl.placeholder}
+        <textarea id={`rl-${fl.key}`} rows={fl.rows ?? 3} value={values[fl.key] ?? ""} onChange={set(fl.key)} placeholder={fl.placeholder}
           className={`${inputCls} resize-y`} style={inputStyle(fl.key)} />
       ) : (
         <input id={`rl-${fl.key}`} value={values[fl.key] ?? ""} onChange={set(fl.key)} placeholder={fl.placeholder}
