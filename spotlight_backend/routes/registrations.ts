@@ -5,6 +5,7 @@ import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 import { campusNow, campusTodayStart, campusEventHasEnded, campusScanWindowOpen } from '../utils/time';
+import { countTakenPlaces } from '../utils/registrations';
 
 const router = Router();
 
@@ -43,12 +44,11 @@ async function assertNotRegistered(tx: Prisma.TransactionClient, eventId: string
   if (alreadyRegistered) throw new RegistrationRejected('You are already registered for this event.');
 }
 
+/** Capacity is in places: one per solo student, one per team (see countTakenPlaces). */
 async function assertEventHasCapacity(tx: Prisma.TransactionClient, eventId: string, registrationLimit: number | null) {
   if (!registrationLimit) return;
-  const activeCount = await tx.registration.count({
-    where: { eventId, status: { in: ['PENDING', 'CONFIRMED'] } },
-  });
-  if (activeCount >= registrationLimit) throw new RegistrationRejected('Registration full. Capacity reached for this event.');
+  const taken = await countTakenPlaces(tx, eventId);
+  if (taken >= registrationLimit) throw new RegistrationRejected('Registration full. Capacity reached for this event.');
 }
 
 router.get('/user/tickets', requireAuth, async (req: Request, res: Response): Promise<any> => {
@@ -242,8 +242,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       if (maxTeamSize && currentMemberCount >= maxTeamSize) {
         throw new RegistrationRejected('This team is already full.');
       }
-      // Venue capacity counts people, so every member who joins takes a place
-      await assertEventHasCapacity(tx, eventId, team.event.registrationLimit);
+      // No capacity check here: the team already holds its place, so members joining it take no more
 
       return tx.registration.create({
         data: {

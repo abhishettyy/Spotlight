@@ -22,6 +22,8 @@ class RegisterScreen extends StatefulWidget {
   final String? eventType;
   final int? teamSizeLimit;
   final String? upiId;
+  /// Every team place is taken: only joining an existing team is offered
+  final bool joinOnly;
 
   const RegisterScreen({
     super.key,
@@ -32,6 +34,7 @@ class RegisterScreen extends StatefulWidget {
     this.eventType = 'Solo',
     this.teamSizeLimit,
     this.upiId,
+    this.joinOnly = false,
   });
 
   @override
@@ -54,7 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void initState() {
     super.initState();
     if (widget.eventType == 'Team') {
-      _selectedType = RegistrationType.createTeam;
+      _selectedType = widget.joinOnly ? RegistrationType.joinTeam : RegistrationType.createTeam;
     } else {
       _selectedType = RegistrationType.solo;
     }
@@ -275,7 +278,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
 
                   if (widget.eventType == 'Team') ...[
-                    Container(
+                    // The Create/Join switcher is hidden when only joining is possible
+                    if (!widget.joinOnly) Container(
                       height: 54,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -284,7 +288,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       child: Row(
                         children: [
-                          Expanded(
+                          if (!widget.joinOnly) Expanded(
                             child: GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -345,6 +349,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                     ),
+                    if (widget.joinOnly) ...[
+                      Text(
+                        "All team places for this event are taken, so new teams can't be created. "
+                        "You can still join a team that's already registered using its passkey.",
+                        style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: Sk.of(context).muted),
+                      ),
+                    ],
                     const SizedBox(height: 32),
                   ],
 
@@ -440,7 +451,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       backgroundColor: cs.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: Text('Confirm Registration', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Sk.of(context).onBrand)),
+                    child: Text(_selectedType == RegistrationType.joinTeam ? 'Join Now' : 'Confirm Registration', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Sk.of(context).onBrand)),
                   ),
                 ],
               ),

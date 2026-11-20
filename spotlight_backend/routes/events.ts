@@ -3,23 +3,22 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
-import { campusNow } from '../utils/time';
-import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
+import { campusNow, campusEventHasEnded } from '../utils/time';
+import { filterVisibleRegistrations, mapClubRegistration, countTakenPlaces, placesByEvent, ACTIVE_STATUSES } from '../utils/registrations';
 
 const router = Router();
 
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
     const events = await prisma.event.findMany({
-      include: {
-        club: true,
-        // Same places the capacity check counts; rejected registrations free their place
-        _count: {
-          select: { registrations: { where: { status: { in: ['PENDING', 'CONFIRMED'] } } } }
-        }
-      },
+      include: { club: true },
       orderBy: { eventDate: 'asc' },
     });
+    // Places taken, as the capacity check counts them: one per solo student, one per team
+    const places = placesByEvent(await prisma.registration.findMany({
+      where: { status: { in: ACTIVE_STATUSES } },
+      select: { eventId: true, teamId: true },
+    }));
 
     const mapped = events.map((e) => {
       const normalizedType = e.eventType === 'Individual' ? 'Solo' : (e.eventType ?? 'Solo');
@@ -44,7 +43,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         qrUrl: e.qrUrl ?? (e.fee > 0 && e.club ? e.club.qrUrl : null),
         bannerUrl: e.bannerUrl ?? null,
         clubLogoUrl: e.club?.logoUrl ?? null,
-        registrationCount: e._count?.registrations ?? 0,
+        registrationCount: places.get(e.id) ?? 0,
       };
     });
 
@@ -103,7 +102,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         teamSizeLimit: eventType === "Team" && teamSizeLimit ? parseInt(teamSizeLimit) : null,
         minTeamSize: eventType === "Team" && minTeamSize !== undefined && minTeamSize !== null ? Math.max(1, parseInt(minTeamSize)) : (eventType === "Team" ? 1 : null),
         fee: parsedFee,
-        registrationLimit: registrationLimit ? Math.max(2, parseInt(registrationLimit)) : 100,
+        registrationLimit: registrationLimit ? Math.max(1, parseInt(registrationLimit)) : 100,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : campusNow(),
         eventDate: startDate,
         eventEndDate: finalEndDate,
@@ -137,6 +136,23 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
 
     if (!profile || !profile.clubId || profile.clubId !== existingEvent.clubId) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to modify this event.' });
+    }
+    // An event can be updated before and during it, never after it has ended
+    if (campusEventHasEnded({ eventDate: existingEvent.eventDate, eventEndDate: existingEvent.eventEndDate })) {
+      return res.status(400).json({ error: 'This event has ended and can no longer be updated.' });
+    }
+    // Capacity counts places (a solo student or a whole team), as at registration. Only a changed
+    // capacity is checked, so an event that is already over-full can still get other updates.
+    if (registrationLimit !== undefined) {
+      const newLimit = parseInt(registrationLimit, 10);
+      if (!Number.isFinite(newLimit) || newLimit < 1) {
+        return res.status(400).json({ error: 'Venue capacity must be at least 1.' });
+      }
+      const registered = await countTakenPlaces(prisma, existingEvent.id);
+      if (newLimit !== existingEvent.registrationLimit && newLimit < registered) {
+        const what = existingEvent.eventType === 'Team' ? (registered === 1 ? 'team' : 'teams') : (registered === 1 ? 'student' : 'students');
+        return res.status(400).json({ error: `Capacity can't be less than the ${registered} ${what} already registered.` });
+      }
     }
     const club = existingEvent.club || (profile?.clubId ? await prisma.club.findUnique({ where: { id: profile.clubId } }) : null);
     const clubPassword = club?.password || profile?.password;

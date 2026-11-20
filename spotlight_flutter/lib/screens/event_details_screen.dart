@@ -201,7 +201,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final imageUrl = event.imageUrl;
 
     final bool isFull = event.isFull;
-    final bool isClosed = (event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!)) || isFull;
+    final bool deadlinePassed = event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!);
+    // A full team event takes no new teams, but members can still join a team that already holds a place
+    final bool joinOnly = isFull && event.eventType == 'Team' && !deadlinePassed;
+    final bool isClosed = deadlinePassed || (isFull && !joinOnly);
 
     final bool isChecking = _isRegistered == null;
     final bool alreadyRegistered = _isRegistered == true;
@@ -225,6 +228,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       btnBg = const Color(0xFFF59E0B);
       btnTextColor = Colors.black;
       btnLabel = 'Complete Payment';
+    } else if (joinOnly) {
+      btnBg = sk.brand;
+      btnTextColor = Sk.of(context).onBrand;
+      btnLabel = 'Join a Team';
     } else if (isFull) {
       btnBg = sk.raised;
       btnTextColor = sk.faint;
@@ -587,6 +594,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             eventType: event.eventType,
                             teamSizeLimit: event.teamSizeLimit,
                             upiId: event.upiId,
+                            joinOnly: joinOnly,
                           ),
                         ),
                       ).then((_) => _checkRegistration());

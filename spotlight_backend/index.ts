@@ -23,6 +23,9 @@ declare global {
 }
 
 const app = express();
+// Render (and cPanel) sit behind a proxy: use the visitor's address from X-Forwarded-For, so the
+// admin sign-in throttle counts each visitor separately instead of everyone as the proxy
+app.set('trust proxy', 1);
 app.use(cors({
   origin: true,
   credentials: true

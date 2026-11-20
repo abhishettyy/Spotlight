@@ -1,4 +1,41 @@
-import { Registration, Profile, Team } from '@prisma/client';
+import { Registration, Profile, Team, Prisma } from '@prisma/client';
+
+const ACTIVE_STATUSES: Array<'PENDING' | 'CONFIRMED'> = ['PENDING', 'CONFIRMED'];
+
+/**
+ * Places taken at an event, which is what venue capacity limits: each solo registration is one
+ * place and each team is one place, however many members it has. Rejected registrations free
+ * their place; a team stops counting once none of its members is pending or confirmed.
+ */
+export async function countTakenPlaces(db: Prisma.TransactionClient, eventId: string): Promise<number> {
+  const solo = await db.registration.count({
+    where: { eventId, teamId: null, status: { in: ACTIVE_STATUSES } },
+  });
+  const teams = await db.team.count({
+    where: { eventId, registrations: { some: { status: { in: ACTIVE_STATUSES } } } },
+  });
+  return solo + teams;
+}
+
+/** The same count for many events at once, from their pending and confirmed registrations. */
+export function placesByEvent(rows: Array<{ eventId: string; teamId: string | null }>): Map<string, number> {
+  const solo = new Map<string, number>();
+  const teams = new Map<string, Set<string>>();
+  for (const r of rows) {
+    if (r.teamId === null) solo.set(r.eventId, (solo.get(r.eventId) ?? 0) + 1);
+    else {
+      if (!teams.has(r.eventId)) teams.set(r.eventId, new Set());
+      teams.get(r.eventId)!.add(r.teamId);
+    }
+  }
+  const places = new Map<string, number>();
+  for (const id of new Set([...solo.keys(), ...teams.keys()])) {
+    places.set(id, (solo.get(id) ?? 0) + (teams.get(id)?.size ?? 0));
+  }
+  return places;
+}
+
+export { ACTIVE_STATUSES };
 
 type RegistrationWithEventFee = Registration & { event: { fee: number } };
 

@@ -219,7 +219,9 @@ class EventCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
+                            event.eventType == 'Team'
+                                ? '${event.registrationCount} ${event.registrationCount == 1 ? 'team' : 'teams'}'
+                                : '${event.registrationCount} ${event.registrationCount == 1 ? 'registration' : 'registrations'}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: onImage.muted,
