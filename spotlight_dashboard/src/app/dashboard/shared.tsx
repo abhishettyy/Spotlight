@@ -150,6 +150,7 @@ export interface ClubEvent {
   pendingCount?: number;
   /** Saved but not published: hidden from students until the club publishes it */
   isDraft?: boolean;
+  description?: string | null;
   teamSizeLimit?: number | null;
   minTeamSize?: number | null;
 }

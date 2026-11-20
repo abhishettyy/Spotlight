@@ -39,6 +39,23 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
+// The signed-in club's own details, including the coordinator (used to prefill letters).
+// Only the club itself gets these; the public list above leaves them out.
+router.get('/mine', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const profile = await prisma.profile.findUnique({ where: { id: req.auth!.userId }, select: { clubId: true } });
+    if (!profile?.clubId) return res.status(404).json({ error: 'No club is linked to this account.' });
+    const club = await prisma.club.findUnique({
+      where: { id: profile.clubId },
+      select: { id: true, name: true, email: true, department: true, coordinatorName: true, coordinatorPhone: true, logoUrl: true },
+    });
+    if (!club) return res.status(404).json({ error: 'Club not found.' });
+    return res.status(200).json({ club });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/check-email', async (req: Request, res: Response): Promise<any> => {
   try {
     const { email } = req.body;
@@ -541,6 +558,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
         capacity: e.registrationLimit ?? 0,
         allowedBranches: readAllowedBranches(e.allowedBranches),
         isDraft: e.isDraft,
+        description: e.description ?? '',
         type: e.eventType ?? 'Solo',
         eventType: e.eventType ?? 'Solo',
         teamSizeLimit: e.teamSizeLimit,

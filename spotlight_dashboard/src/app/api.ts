@@ -149,6 +149,11 @@ export async function clubLogin(email: string, password: string) {
   });
 }
 
+/** The signed-in club's own details, including the coordinator (for prefilling letters) */
+export async function fetchMyClub(token?: string) {
+  return request('/clubs/mine', {}, token);
+}
+
 // Drafts: publish one (students can see it and register), or delete one that's no longer needed
 export async function publishEvent(id: string, token?: string) {
   return request(`/events/${encodeURIComponent(id)}/publish`, { method: 'POST' }, token);

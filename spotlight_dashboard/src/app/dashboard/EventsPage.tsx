@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Calendar, Users, MapPin, Eye, EyeOff, CheckCircle, ChevronLeft, Check, Upload, X, AlertTriangle, Image as ImageIcon, Camera } from "lucide-react";
 import { fetchEventRegistrations, updateEvent, sanitizeErrorMessage, publishEvent, deleteDraftEvent } from "../api";
+import { RequestLetterModal } from "./RequestLetter";
 import { useTheme } from "../theme";
 import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration, countPlaces } from "./shared";
 // The QR scanner library is large and only needed when a club opens the scanner
@@ -186,6 +187,7 @@ export function EventsPage({
   const [draftBusy, setDraftBusy] = useState<"publish" | "delete" | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [confirmDeleteDraft, setConfirmDeleteDraft] = useState(false);
+  const [showLetter, setShowLetter] = useState(false);
   useEffect(() => { setDraftError(null); setConfirmDeleteDraft(false); }, [selectedEventId]);
 
   const handlePublishDraft = async () => {
@@ -927,6 +929,8 @@ export function EventsPage({
               );
             })()}
 
+            {showLetter && <RequestLetterModal event={activeEvent} getToken={getToken} onClose={() => setShowLetter(false)} />}
+
             {/* Draft: not visible to students yet */}
             {activeEvent.isDraft && (
               <div className="p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4"
@@ -951,6 +955,10 @@ export function EventsPage({
                     </>
                   ) : (
                     <>
+                      <button onClick={() => setShowLetter(true)} disabled={!!draftBusy}
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[color:var(--sk-line)] text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] cursor-pointer disabled:opacity-50" style={{ fontFamily: FB }}>
+                        Generate Letter
+                      </button>
                       <button onClick={() => setConfirmDeleteDraft(true)} disabled={!!draftBusy}
                         className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[color:var(--sk-line)] text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] cursor-pointer disabled:opacity-50" style={{ fontFamily: FB }}>
                         Delete Draft
