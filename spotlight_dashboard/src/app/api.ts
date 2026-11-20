@@ -149,6 +149,15 @@ export async function clubLogin(email: string, password: string) {
   });
 }
 
+// Drafts: publish one (students can see it and register), or delete one that's no longer needed
+export async function publishEvent(id: string, token?: string) {
+  return request(`/events/${encodeURIComponent(id)}/publish`, { method: 'POST' }, token);
+}
+
+export async function deleteDraftEvent(id: string, token?: string) {
+  return request(`/events/${encodeURIComponent(id)}`, { method: 'DELETE' }, token);
+}
+
 // Forgot password: email a 6-digit code, then set a new password with it (replaces the old one)
 export async function requestPasswordReset(email: string) {
   return request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
@@ -187,6 +196,8 @@ export async function createEvent(data: {
   clubId?: string;
   /** Branches allowed to register; leave out for open to all */
   allowedBranches?: string[];
+  /** Save without publishing: hidden from students until published */
+  draft?: boolean;
   bannerUrl?: string;
   qrUrl?: string;
   upiId?: string;

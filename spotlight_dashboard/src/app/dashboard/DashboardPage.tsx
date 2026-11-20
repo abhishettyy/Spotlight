@@ -448,7 +448,7 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
             {activeTab === "create" && (
               <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
                 <Suspense fallback={<PageFallback />}>
-                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async () => { await refreshEvents(); setActiveTab("overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} clubUpiId={currentClub?.upiId} refreshProfile={refreshProfile} />
+                  <CreateEventPage clubId={profile?.clubId ?? ""} onCreated={async (asDraft) => { await refreshEvents(); setActiveTab(asDraft ? "events" : "overview"); }} getToken={getToken} clubQrUrl={currentClub?.qrUrl} clubUpiId={currentClub?.upiId} refreshProfile={refreshProfile} />
                 </Suspense>
               </motion.div>
             )}

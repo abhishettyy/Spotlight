@@ -148,6 +148,8 @@ export interface ClubEvent {
   qrUrl?: string | null;
   registrationDeadline?: string | null;
   pendingCount?: number;
+  /** Saved but not published: hidden from students until the club publishes it */
+  isDraft?: boolean;
   teamSizeLimit?: number | null;
   minTeamSize?: number | null;
 }

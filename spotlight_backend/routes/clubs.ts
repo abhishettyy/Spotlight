@@ -540,6 +540,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
         venue: e.venue ?? 'TBD',
         capacity: e.registrationLimit ?? 0,
         allowedBranches: readAllowedBranches(e.allowedBranches),
+        isDraft: e.isDraft,
         type: e.eventType ?? 'Solo',
         eventType: e.eventType ?? 'Solo',
         teamSizeLimit: e.teamSizeLimit,

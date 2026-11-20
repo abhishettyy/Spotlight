@@ -166,7 +166,8 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
     if (!eventId || !name || !usn) return res.status(400).json({ error: 'Missing fields.' });
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    // Drafts aren't published yet, so students can't register for them
+    if (!event || event.isDraft) return res.status(404).json({ error: 'Event not found.' });
 
     if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed.' });
@@ -200,7 +201,8 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
     if (!eventId || !teamName || !leaderUsn) return res.status(400).json({ error: 'Missing fields.' });
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    // Drafts aren't published yet, so students can't register for them
+    if (!event || event.isDraft) return res.status(404).json({ error: 'Event not found.' });
 
     if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
@@ -245,7 +247,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       where: { eventId: eventId, passkey: passkey.trim().toUpperCase() },
       include: { event: true }
     });
-    if (!team || !team.passkey) return res.status(404).json({ error: 'Invalid passkey.' });
+    if (!team || !team.passkey || team.event?.isDraft) return res.status(404).json({ error: 'Invalid passkey.' });
 
     const leaderReg = await prisma.registration.findFirst({
       where: { teamId: team.id, userId: team.leaderId, status: { in: ['PENDING', 'CONFIRMED'] } }

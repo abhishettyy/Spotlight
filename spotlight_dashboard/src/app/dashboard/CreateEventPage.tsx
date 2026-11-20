@@ -58,7 +58,7 @@ function validateEventForm(formData: EventForm): Record<string, string> {
   return errors;
 }
 
-export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, refreshProfile }: { clubId: string; onCreated: () => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; clubUpiId?: string | null; refreshProfile?: () => Promise<any> }) {
+export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUpiId, refreshProfile }: { clubId: string; onCreated: (asDraft: boolean) => void; getToken: () => Promise<string | null>; clubQrUrl?: string | null; clubUpiId?: string | null; refreshProfile?: () => Promise<any> }) {
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
     eventType: "Solo", minTeamSize: "1", teamSizeLimit: "",
@@ -76,9 +76,13 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
     ? allErrors
     : Object.fromEntries(Object.entries(allErrors).filter(([field]) => touched[field]));
 
-  const handleSubmit = async () => {
+  // Which button is working: publish now, or save as a draft to publish later
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  const handleSubmit = async (asDraft = false) => {
     if (submitting) return;
     setSubmitting(true);
+    setSavingDraft(asDraft);
     setError(null);
 
     const errors = validateEventForm(formData);
@@ -144,8 +148,9 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
         qrUrl,
         upiId: (!formData.useDefaultQr && formData.customUpiId.trim()) ? formData.customUpiId.trim() : undefined,
         registrationDeadline: formData.deadline || undefined,
+        draft: asDraft,
       }, token ?? undefined);
-      onCreated();
+      onCreated(asDraft);
     } catch (e: any) {
       setError(e.message ?? "Failed to create event.");
       setSubmitting(false);
@@ -368,18 +373,18 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
         {error && (
           <p className="text-xs text-[color:var(--sk-danger)] px-1" style={{ fontFamily: FM }}>{error}</p>
         )}
-        <div className="pt-4 mt-8">
+        <div className="pt-4 mt-8 flex flex-wrap items-center gap-3">
           <motion.button 
             whileHover={submitting ? undefined : { scale: 1.02 }} 
             whileTap={submitting ? undefined : { scale: 0.98 }} 
-            onClick={handleSubmit} 
+            onClick={() => handleSubmit(false)} 
             disabled={submitting} 
             className={`px-8 py-3.5 bg-[color:var(--sk-brand)] text-white text-sm font-semibold rounded-xl transition-all ${submitting ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer"}`} 
             style={{ fontFamily: FB }} 
             onMouseEnter={e => !submitting && (e.currentTarget.style.boxShadow = "none")} 
             onMouseLeave={e => !submitting && (e.currentTarget.style.boxShadow = "none")}
           >
-            {submitting ? (
+            {submitting && !savingDraft ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                 <span>Publishing...</span>
@@ -388,6 +393,27 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
               "Publish Event"
             )}
           </motion.button>
+          {/* Draft: saved for the club only; publish it later from the event page */}
+          <motion.button
+            whileHover={submitting ? undefined : { scale: 1.02 }}
+            whileTap={submitting ? undefined : { scale: 0.98 }}
+            onClick={() => handleSubmit(true)}
+            disabled={submitting}
+            className={`px-8 py-3.5 text-sm font-semibold rounded-xl transition-all border border-[color:var(--sk-line)] bg-[color:var(--sk-surface)] text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] ${submitting ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer"}`}
+            style={{ fontFamily: FB }}
+          >
+            {submitting && savingDraft ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full border-2 border-[color:var(--sk-fg)] border-t-transparent animate-spin" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              "Save as Draft"
+            )}
+          </motion.button>
+          <p className="w-full text-[11px] text-[color:var(--sk-muted)]" style={{ fontFamily: FM }}>
+            Drafts are visible only to your club. Publish them later from the Events page.
+          </p>
         </div>
       </div>
     </div>

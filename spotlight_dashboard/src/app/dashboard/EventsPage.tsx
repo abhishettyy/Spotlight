@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Calendar, Users, MapPin, Eye, EyeOff, CheckCircle, ChevronLeft, Check, Upload, X, AlertTriangle, Image as ImageIcon, Camera } from "lucide-react";
-import { fetchEventRegistrations, updateEvent, sanitizeErrorMessage } from "../api";
+import { fetchEventRegistrations, updateEvent, sanitizeErrorMessage, publishEvent, deleteDraftEvent } from "../api";
 import { useTheme } from "../theme";
 import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration, countPlaces } from "./shared";
 // The QR scanner library is large and only needed when a club opens the scanner
@@ -181,6 +181,44 @@ export function EventsPage({
     ? allEditErrors
     : Object.fromEntries(Object.entries(allEditErrors).filter(([field]) => editTouched[field]));
   const isEventFinished = activeEvent ? getEventStatus(activeEvent) === "previous" : false;
+
+  // Drafts: publish (students can see it and register) or delete
+  const [draftBusy, setDraftBusy] = useState<"publish" | "delete" | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [confirmDeleteDraft, setConfirmDeleteDraft] = useState(false);
+  useEffect(() => { setDraftError(null); setConfirmDeleteDraft(false); }, [selectedEventId]);
+
+  const handlePublishDraft = async () => {
+    if (!activeEvent || draftBusy) return;
+    setDraftBusy("publish");
+    setDraftError(null);
+    try {
+      const token = await getToken();
+      await publishEvent(activeEvent.id, token ?? undefined);
+      await refreshEvents();
+    } catch (e: any) {
+      setDraftError(e?.message || "Could not publish the event.");
+    } finally {
+      setDraftBusy(null);
+    }
+  };
+
+  const handleDeleteDraft = async () => {
+    if (!activeEvent || draftBusy) return;
+    setDraftBusy("delete");
+    setDraftError(null);
+    try {
+      const token = await getToken();
+      await deleteDraftEvent(activeEvent.id, token ?? undefined);
+      setSelectedEventId(null);
+      await refreshEvents();
+    } catch (e: any) {
+      setDraftError(e?.message || "Could not delete the draft.");
+    } finally {
+      setDraftBusy(null);
+      setConfirmDeleteDraft(false);
+    }
+  };
   // All events are free, so every registration is confirmed straight away: no approval or rejection step
   const activeRegistrations = registrations.filter(r => {
     const s = r.status?.toLowerCase();
@@ -889,9 +927,52 @@ export function EventsPage({
               );
             })()}
 
+            {/* Draft: not visible to students yet */}
+            {activeEvent.isDraft && (
+              <div className="p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4"
+                style={{ background: "color-mix(in srgb, var(--sk-warn) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--sk-warn) 30%, transparent)" }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[color:var(--sk-fg)]" style={{ fontFamily: FB }}>This event is a draft</p>
+                  <p className="text-xs text-[color:var(--sk-muted)] mt-1" style={{ fontFamily: FB }}>
+                    Only your club can see it. Students can't see it or register until you publish it.
+                  </p>
+                  {draftError && <p className="text-xs text-[color:var(--sk-danger)] mt-2" style={{ fontFamily: FB }}>{draftError}</p>}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {confirmDeleteDraft ? (
+                    <>
+                      <span className="text-xs text-[color:var(--sk-muted)]" style={{ fontFamily: FB }}>Delete this draft?</span>
+                      <button onClick={() => setConfirmDeleteDraft(false)} disabled={!!draftBusy}
+                        className="px-3 py-2 rounded-xl text-xs font-semibold border border-[color:var(--sk-line)] text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] cursor-pointer" style={{ fontFamily: FB }}>Cancel</button>
+                      <button onClick={handleDeleteDraft} disabled={!!draftBusy}
+                        className="px-3 py-2 rounded-xl text-xs font-semibold text-white bg-[color:var(--sk-danger)] hover:opacity-90 cursor-pointer disabled:opacity-50" style={{ fontFamily: FB }}>
+                        {draftBusy === "delete" ? "Deleting..." : "Delete"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setConfirmDeleteDraft(true)} disabled={!!draftBusy}
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[color:var(--sk-line)] text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] cursor-pointer disabled:opacity-50" style={{ fontFamily: FB }}>
+                        Delete Draft
+                      </button>
+                      <button onClick={handlePublishDraft} disabled={!!draftBusy}
+                        className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[color:var(--sk-brand)] hover:bg-[color:var(--sk-brand-hover)] cursor-pointer disabled:opacity-50" style={{ fontFamily: FB }}>
+                        {draftBusy === "publish" ? "Publishing..." : "Publish Event"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div>
               <div className="flex items-center gap-3 mb-2">
-                {getEventStatus(activeEvent) === "live" ? (
+                {activeEvent.isDraft ? (
+                  <span className="text-[11px] tracking-[0.3em] uppercase px-3 py-1 rounded-full"
+                    style={{ background: "color-mix(in srgb, var(--sk-warn) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--sk-warn) 35%, transparent)", color: "var(--sk-warn)", fontFamily: FM }}>
+                    Draft
+                  </span>
+                ) : getEventStatus(activeEvent) === "live" ? (
                   <LiveTag size="large" />
                 ) : (
                   <span className="text-[11px] tracking-[0.3em] uppercase px-3 py-1 rounded-full"

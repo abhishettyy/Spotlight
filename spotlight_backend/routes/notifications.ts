@@ -133,6 +133,7 @@ router.post('/event-reminders', async (req: Request, res: Response): Promise<any
     const todayEvents = await prisma.event.findMany({
       where: {
         eventDate: { gte: startOfDay, lte: endOfDay },
+        isDraft: false,
       },
       include: { club: true },
     });

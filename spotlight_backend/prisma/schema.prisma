@@ -65,6 +65,8 @@ model Event {
   upiId                String?        @map("upi_id")
   /// JSON array of branch names allowed to register; null = open to all branches
   allowedBranches      String?        @map("allowed_branches") @db.Text
+  /// Saved but not published: hidden from students and closed to registration until published
+  isDraft              Boolean        @default(false) @map("is_draft")
   club                 Club           @relation(fields: [clubId], references: [id], onDelete: Cascade, map: "fk_event_club")
   notifications        Notification[]
   registrations        Registration[]

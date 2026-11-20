@@ -62,6 +62,9 @@ export function EventsTable({
   const gridCols = "md:grid-cols-[minmax(0,2.4fr)_minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)_24px]";
 
   const statusCell = (ev: ClubEvent) => {
+    if (ev.isDraft) {
+      return <span className={pill} style={{ color: "var(--sk-warn)", borderColor: "color-mix(in srgb, var(--sk-warn) 35%, transparent)", background: "color-mix(in srgb, var(--sk-warn) 12%, transparent)", fontFamily: FM }}>Draft</span>;
+    }
     const st = getEventStatus(ev);
     if (st === "live") return <LiveTag />;
     if (st === "upcoming") {

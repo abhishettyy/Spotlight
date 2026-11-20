@@ -11,13 +11,15 @@ const router = Router();
 
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
+    // Students only ever see published events; drafts stay with their club
     const events = await prisma.event.findMany({
+      where: { isDraft: false },
       include: { club: true },
       orderBy: { eventDate: 'asc' },
     });
     // Places taken, as the capacity check counts them: one per solo student, one per team
     const places = placesByEvent(await prisma.registration.findMany({
-      where: { status: { in: ACTIVE_STATUSES } },
+      where: { status: { in: ACTIVE_STATUSES }, event: { isDraft: false } },
       select: { eventId: true, teamId: true },
     }));
 
@@ -60,7 +62,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, bannerUrl, qrUrl, upiId, allowedBranches } = req.body;
+    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, bannerUrl, qrUrl, upiId, allowedBranches, draft } = req.body;
     let { clubId } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
@@ -119,6 +121,8 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         qrUrl: finalQrUrl,
         upiId: null,
         allowedBranches: eligibleBranches ? JSON.stringify(eligibleBranches) : null,
+        // Saved as a draft: the club publishes it later from the event page
+        isDraft: draft === true,
       },
 
       include: { club: true },
@@ -127,6 +131,51 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
     return res.status(201).json({ event });
   } catch (error: any) {
     console.error('Create event error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/** The event, if it belongs to the signed-in user's club; otherwise an error response to send. */
+async function ownedEvent(req: Request, id: string): Promise<{ event: any } | { status: number; error: string }> {
+  const event = await prisma.event.findUnique({ where: { id } });
+  if (!event) return { status: 404, error: 'Event not found.' };
+  const profile = await prisma.profile.findUnique({ where: { id: req.auth!.userId } });
+  if (!profile?.clubId || profile.clubId !== event.clubId) {
+    return { status: 403, error: 'Forbidden: You do not have permission to modify this event.' };
+  }
+  return { event };
+}
+
+// Publishes a draft: students can see it and register from now on
+router.post('/:id/publish', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const found = await ownedEvent(req, req.params.id as string);
+    if ('error' in found) return res.status(found.status).json({ error: found.error });
+    const { event } = found;
+    if (!event.isDraft) return res.status(400).json({ error: 'This event is already published.' });
+    if (campusNow() > new Date(event.registrationDeadline)) {
+      return res.status(400).json({ error: 'The registration deadline has already passed. Update the dates before publishing.' });
+    }
+    const updated = await prisma.event.update({ where: { id: event.id }, data: { isDraft: false } });
+    return res.status(200).json({ success: true, event: updated });
+  } catch (error: any) {
+    console.error('Publish event error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Deletes a draft. Only drafts can be deleted: a published event may already have registrations.
+router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const found = await ownedEvent(req, req.params.id as string);
+    if ('error' in found) return res.status(found.status).json({ error: found.error });
+    const { event } = found;
+    if (!event.isDraft) return res.status(400).json({ error: 'Only draft events can be deleted.' });
+    await prisma.event.delete({ where: { id: event.id } });
+    if (event.bannerUrl) await deleteImage(event.bannerUrl).catch(() => {});
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('Delete draft error:', error);
     return res.status(500).json({ error: error.message });
   }
 });
