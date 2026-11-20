@@ -506,9 +506,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     for (final b in event.allowedBranches!)
                                       Padding(
                                         padding: const EdgeInsets.only(bottom: 3),
-                                        child: Text(
-                                          b,
-                                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('•  ', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary)),
+                                            Expanded(
+                                              child: Text(
+                                                '$b students only',
+                                                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                 ],

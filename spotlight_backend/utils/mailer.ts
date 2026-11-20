@@ -100,8 +100,11 @@ async function sendWithSmtp(mailer: Transporter, mail: Mail): Promise<void> {
   });
 }
 
-/** Emails the club that it can now sign in. Returns whether the mail was sent; never throws. */
-export async function sendClubApprovedEmail(club: { name: string; email: string }): Promise<boolean> {
+/**
+ * Sends one email through the first configured service: the Gmail relay, then Brevo, then SMTP.
+ * Returns whether it was sent; never throws. `what` names the email in the logs.
+ */
+async function deliverMail(mail: Mail, what: string): Promise<boolean> {
   const relayUrl = process.env.MAIL_RELAY_URL;
   const relaySecret = process.env.MAIL_RELAY_SECRET;
   const useRelay = Boolean(relayUrl && relaySecret);
@@ -109,20 +112,39 @@ export async function sendClubApprovedEmail(club: { name: string; email: string 
   const mailer = useRelay || brevoKey ? null : getTransporter();
   const via = useRelay ? 'Gmail relay' : brevoKey ? 'Brevo' : 'SMTP';
   if (!useRelay && !brevoKey && !mailer) {
-    console.warn('[Mail] No mail service configured (MAIL_RELAY_URL + MAIL_RELAY_SECRET, BREVO_API_KEY, or SMTP_USER + SMTP_PASS); approval email not sent to', club.email);
+    console.warn(`[Mail] No mail service configured (MAIL_RELAY_URL + MAIL_RELAY_SECRET, BREVO_API_KEY, or SMTP_USER + SMTP_PASS); ${what} not sent to`, mail.to);
     return false;
   }
+  try {
+    if (useRelay) await sendWithRelay(relayUrl!, relaySecret!, mail);
+    else if (brevoKey) await sendWithBrevo(brevoKey, mail);
+    else await sendWithSmtp(mailer!, mail);
+    console.log(`[Mail] ${what} sent to ${mail.to} via ${via}`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Mail] Could not send ${what} to ${mail.to} via ${via}:`, err.message);
+    return false;
+  }
+}
 
+/** Emails the club that it can now sign in. Returns whether the mail was sent; never throws. */
+export async function sendClubApprovedEmail(club: { name: string; email: string }): Promise<boolean> {
   const loginUrl = process.env.CLUB_LOGIN_URL || 'https://spotlight.msritise.in/?view=auth&authTab=login';
   const name = escapeHtml(club.name);
-  const mail: Mail = {
+  return deliverMail({
     to: club.email,
     toName: club.name,
     subject: 'Your club is approved on Spotlight',
     text:
-      `Hi ${club.name},\n\n` +
+      `Hi ${club.name},
+
+` +
       `Your club registration on Spotlight has been approved. You can now sign in to your club dashboard ` +
-      `with the email and password (or Google account) you registered with:\n\n${loginUrl}\n\n` +
+      `with the email and password (or Google account) you registered with:
+
+${loginUrl}
+
+` +
       `- Team Spotlight`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
@@ -135,16 +157,36 @@ export async function sendClubApprovedEmail(club: { name: string; email: string 
         </p>
         <p style="color:#666;font-size:13px">- Team Spotlight</p>
       </div>`,
-  };
+  }, 'Approval email');
+}
 
-  try {
-    if (useRelay) await sendWithRelay(relayUrl!, relaySecret!, mail);
-    else if (brevoKey) await sendWithBrevo(brevoKey, mail);
-    else await sendWithSmtp(mailer!, mail);
-    console.log(`[Mail] Approval email sent to ${club.email} via ${via}`);
-    return true;
-  } catch (err: any) {
-    console.error(`[Mail] Could not send approval email to ${club.email} via ${via}:`, err.message);
-    return false;
-  }
+/** Emails a forgot-password code. Returns whether the mail was sent; never throws. */
+export async function sendPasswordResetCode(to: { email: string; name: string }, code: string, minutes: number): Promise<boolean> {
+  const name = escapeHtml(to.name);
+  return deliverMail({
+    to: to.email,
+    toName: to.name,
+    subject: `${code} is your Spotlight password reset code`,
+    text:
+      `Hi ${to.name},
+
+` +
+      `Your Spotlight password reset code is: ${code}
+
+` +
+      `It expires in ${minutes} minutes and can be used once. If you didn't ask to reset your password, ` +
+      `you can ignore this email; your password stays the same.
+
+- Team Spotlight`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
+        <h2 style="margin:0 0 16px">Reset your password</h2>
+        <p>Hi ${name},</p>
+        <p>Use this code to reset your Spotlight password:</p>
+        <p style="margin:24px 0;font-size:32px;font-weight:700;letter-spacing:8px;color:#e63946">${code}</p>
+        <p>It expires in ${minutes} minutes and can be used once.</p>
+        <p style="color:#666;font-size:13px">If you didn't ask to reset your password, you can ignore this email; your password stays the same.</p>
+        <p style="color:#666;font-size:13px">- Team Spotlight</p>
+      </div>`,
+  }, 'Password reset code');
 }

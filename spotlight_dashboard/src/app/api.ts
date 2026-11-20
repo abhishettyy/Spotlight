@@ -149,6 +149,15 @@ export async function clubLogin(email: string, password: string) {
   });
 }
 
+// Forgot password: email a 6-digit code, then set a new password with it (replaces the old one)
+export async function requestPasswordReset(email: string) {
+  return request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+}
+
+export async function resetPasswordWithCode(data: { email: string; code: string; newPassword: string }) {
+  return request('/auth/reset-password', { method: 'POST', body: JSON.stringify(data) });
+}
+
 export async function changePassword(data: {
   oldPassword?: string;
   newPassword?: string;

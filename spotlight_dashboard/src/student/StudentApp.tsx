@@ -27,6 +27,7 @@ import HomePage from '@student/pages/HomePage';
 // page is its own small file, fetched in the background once the first screen is up (see App below).
 const pageLoaders = {
   OnboardingPage: () => import('@student/pages/OnboardingPage'),
+  ForgotPasswordPage: () => import('@student/pages/ForgotPasswordPage'),
   AllEventsPage: () => import('@student/pages/AllEventsPage'),
   EventDetailPage: () => import('@student/pages/EventDetailPage'),
   RegisterPage: () => import('@student/pages/RegisterPage'),
@@ -42,6 +43,7 @@ const pageLoaders = {
   PrivacyPolicyPage: () => import('@student/pages/PrivacyPolicyPage'),
 };
 const OnboardingPage = lazy(pageLoaders.OnboardingPage);
+const ForgotPasswordPage = lazy(pageLoaders.ForgotPasswordPage);
 const AllEventsPage = lazy(pageLoaders.AllEventsPage);
 const EventDetailPage = lazy(pageLoaders.EventDetailPage);
 const RegisterPage = lazy(pageLoaders.RegisterPage);
@@ -111,6 +113,7 @@ export default function App() {
           {/* Public routes */}
           <Route path="/login" element={<PublicRoute><AuthPage /></PublicRoute>} />
           <Route path="/login/:tab" element={<PublicRoute><AuthPage /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
           {/* Onboarding — protected but pre-main */}
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

@@ -122,6 +122,16 @@ model Notification {
 }
 
 /// A club signs up as PENDING and can sign in only once the admin approves it.
+/// Forgot-password codes: at most one live code per email. The code itself is never stored, only
+/// a keyed hash of it. The row is deleted once the password is reset (or after too many wrong tries).
+model PasswordReset {
+  email     String   @id
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
 enum ClubStatus {
   PENDING
   APPROVED

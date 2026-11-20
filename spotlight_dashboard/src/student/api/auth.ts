@@ -92,3 +92,35 @@ export async function changePassword(oldPassword: string, newPassword: string): 
     throw new Error(formatApiError(e, 'Failed to update password.'));
   }
 }
+
+// ── Forgot password (POST /auth/forgot-password, /auth/reset-password) ─────────
+
+/** Emails a 6-digit reset code. Resolves with the server's message (same whether or not the email has an account). */
+export async function requestPasswordReset(email: string): Promise<string> {
+  try {
+    const res = await apiClient.post('/auth/forgot-password', { email });
+    return (res.data?.message as string) ?? 'Code sent.';
+  } catch (e) {
+    throw new Error(formatApiError(e, "Couldn't send the code. Please try again."));
+  }
+}
+
+/** Sets a new password with the code from the email; the new password replaces the old one. */
+export async function resetPassword(params: { email: string; code: string; newPassword: string }): Promise<string> {
+  try {
+    const res = await apiClient.post('/auth/reset-password', params);
+    return (res.data?.message as string) ?? 'Password reset.';
+  } catch (e) {
+    throw new Error(formatApiError(e, "Couldn't reset the password. Please try again."));
+  }
+}
+
+/** Same rules as the server (and club sign-up). Null when the password is fine. */
+export function newPasswordProblem(pass: string): string | null {
+  const missing: string[] = [];
+  if (pass.length < 8) missing.push('at least 8 characters');
+  if (!/[A-Z]/.test(pass)) missing.push('at least one uppercase letter');
+  if (!/[0-9]/.test(pass)) missing.push('at least one number');
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(pass)) missing.push('at least one special character');
+  return missing.length ? `Password must contain ${missing.join(', ')}.` : null;
+}

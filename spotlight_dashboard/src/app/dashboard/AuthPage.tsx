@@ -5,6 +5,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { createClub, clubLogin, sanitizeErrorMessage, checkClubEmail, googleAuth, ClubSignupDetails } from "../api";
 import { useTheme, ThemeToggle } from "../theme";
 import { GlassSelect } from "./GlassFields";
+import { ClubForgotPassword } from "./ForgotPassword";
 import { saveCredential } from "../../saveCredential";
 import { STUDENT_LOGIN_URL, FC, FM, FB, AuthTab, validatePasswordStrength, fileToBase64 } from "./shared";
 
@@ -59,6 +60,9 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
   const { isDark } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Forgot password replaces the sign-in form inside the card; resetDone shows a note back on sign-in
+  const [forgot, setForgot] = useState(false);
+  const [resetDone, setResetDone] = useState<string | null>(null);
   const [clubName, setClubName] = useState("");
   const [department, setDepartment] = useState("");
   const [description, setDescription] = useState("");
@@ -283,7 +287,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
       <div className="min-h-full flex items-center justify-center px-6 pt-20 pb-10">
       <div className={`flex flex-col items-center gap-6 w-full ${tab === "register" && !status ? "max-w-xl" : "max-w-md"}`}>
 
-        {!status && (
+        {!status && !forgot && (
         <div className="flex gap-1 p-1 rounded-xl w-full relative" style={{
           background: isDark ? "var(--sk-surface)" : "var(--sk-raised)",
           border: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)"
@@ -319,7 +323,14 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
           backdropFilter: "blur(24px)"
         }}>
           <AnimatePresence mode="popLayout">
-            {statusCard || (
+            {statusCard || (forgot ? (
+              <ClubForgotPassword
+                initialEmail={email}
+                isDark={isDark}
+                onBack={() => setForgot(false)}
+                onDone={(message) => { setForgot(false); setPassword(""); setError(null); setResetDone(message); }}
+              />
+            ) : (
             <motion.div
               key={tab}
               initial={{ opacity: 0, y: 12 }}
@@ -477,7 +488,20 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                     </button>
                   </div>
                   <FieldError message={shownErrors.password} />
+                  {tab === "login" && (
+                    <div className="text-right pt-1">
+                      <button type="button" onClick={() => { setError(null); setResetDone(null); setForgot(true); }}
+                        className="text-xs font-semibold text-[color:var(--sk-brand)] hover:text-[color:var(--sk-brand-hover)] cursor-pointer transition-colors"
+                        style={{ fontFamily: FB }}>
+                        Forgot password?
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                {resetDone && tab === "login" && (
+                  <p className="text-xs text-[color:var(--sk-ok)] text-center font-medium" style={{ fontFamily: FB }}>{resetDone}</p>
+                )}
 
                 {error && (
                   <p className="text-xs text-[color:var(--sk-danger)] text-center font-medium" style={{ fontFamily: FB }}>{error}</p>
@@ -565,7 +589,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                 </a>
               </p>
             </motion.div>
-            )}
+            ))}
           </AnimatePresence>
         </div>
       </div>

@@ -545,7 +545,10 @@ export default function EventDetailPage() {
               {event.allowedBranches && event.allowedBranches.length > 0 ? (
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {event.allowedBranches.map((b) => (
-                    <li key={b} style={{ fontSize: 13, fontWeight: 500, color: 'var(--subtext)' }}>{b}</li>
+                    <li key={b} style={{ fontSize: 13, fontWeight: 500, color: 'var(--subtext)', display: 'flex', gap: 8 }}>
+                      <span aria-hidden="true">•</span>
+                      <span>{b} students only</span>
+                    </li>
                   ))}
                 </ul>
               ) : (

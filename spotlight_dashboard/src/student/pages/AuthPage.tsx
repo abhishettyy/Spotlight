@@ -284,6 +284,13 @@ export default function AuthPage() {
         </button>
       </div>
       {errors.password && <p style={errorStyle}>{errors.password}</p>}
+      {isLogin && (
+        <div style={{ textAlign: 'right', marginTop: 8 }}>
+          <Link to="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-crimson)' }}>
+            Forgot password?
+          </Link>
+        </div>
+      )}
     </div>
   );
 

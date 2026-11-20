@@ -463,6 +463,39 @@ class ApiService {
     }
   }
 
+  /// Forgot password, step 1: emails a 6-digit code. Returns the server's message, which is the
+  /// same whether or not the email has an account.
+  Future<String> requestPasswordReset({required String email}) async {
+    try {
+      final response = await _post(
+        '/auth/forgot-password',
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email}),
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) return (data['message'] ?? 'Code sent.') as String;
+      throw AppException(data['error'] ?? "Couldn't send the code. Please try again.");
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, "Couldn't send the code. Please check your connection."));
+    }
+  }
+
+  /// Forgot password, step 2: the code from the email and a new password, which replaces the old one.
+  Future<String> resetPassword({required String email, required String code, required String newPassword}) async {
+    try {
+      final response = await _post(
+        '/auth/reset-password',
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'code': code, 'newPassword': newPassword}),
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) return (data['message'] ?? 'Password reset.') as String;
+      throw AppException(data['error'] ?? "Couldn't reset the password. Please try again.");
+    } catch (e) {
+      throw AppException(formatExceptionMessage(e, "Couldn't reset the password. Please check your connection."));
+    }
+  }
+
   /// Signs in an existing student account with a Google ID token (no account creation).
   Future<UserModel?> googleLogin({required String idToken}) async {
     try {

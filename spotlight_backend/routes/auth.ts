@@ -8,6 +8,7 @@ import { verifyGoogleUser } from '../utils/google';
 import { ADMIN_PROFILE_ID } from '../utils/admin';
 import { clubSignInBlock } from '../utils/clubStatus';
 import { submitClubApplication, readApplicationDetails, ClubApplicationError } from '../utils/clubApplications';
+import { requestResetCode, resetPasswordWithCode } from '../utils/passwordReset';
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -350,6 +351,29 @@ router.post('/verify-password', requireAuth, async (req: Request, res: Response)
     return res.status(200).json({ valid: true });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
+  }
+});
+
+// Forgot password, step 1: email a 6-digit code (students and clubs).
+router.post('/forgot-password', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const result = await requestResetCode(req.body?.email, req.ip || 'unknown');
+    return res.status(result.status).json(result.body);
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Forgot password, step 2: the code from the email plus the new password, which replaces the old one.
+router.post('/reset-password', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email, code, newPassword } = req.body ?? {};
+    const result = await resetPasswordWithCode(email, code, newPassword);
+    return res.status(result.status).json(result.body);
+  } catch (error: any) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
 

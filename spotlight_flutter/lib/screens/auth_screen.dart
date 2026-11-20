@@ -16,6 +16,7 @@ import '../core/events_provider.dart';
 import '../core/notifications_provider.dart';
 import '../core/custom_toast.dart';
 import 'privacy_policy_screen.dart';
+import 'forgot_password_screen.dart';
 
 // Web OAuth client ID, the same one the backend checks Google ID tokens against.
 const String _googleWebClientId = String.fromEnvironment(
@@ -313,6 +314,20 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           onPressed: () =>
                               setState(() => obscurePassword = !obscurePassword),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ForgotPasswordScreen(initialEmail: _emailController.text.trim()),
+                            ),
+                          ),
+                          child: Text(
+                            'Forgot password?',
+                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
+                          ),
                         ),
                       ),
                     ] else ...[
