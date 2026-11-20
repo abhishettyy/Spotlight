@@ -19,6 +19,7 @@ import { changePassword, verifyPassword } from '@student/api/auth';
 import { buildAvatarInitials } from '@student/utils/imageUtils';
 import { toast } from 'sonner';
 import { BRANCHES } from '@student/branches';
+import SelectMenu from '@student/components/ui/SelectMenu';
 
 // No dropdowns needed — direct inputs used
 
@@ -417,20 +418,14 @@ function SheetField({
           {label}
         </label>
         {options && !disabled ? (
-          <select
+          <SelectMenu
+            variant="bare"
             value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            style={{
-              width: '100%', background: 'transparent', border: 'none', outline: 'none', padding: 0,
-              fontSize: 16, fontWeight: 500, fontFamily: 'var(--font-sans)', cursor: 'pointer',
-              color: value ? 'var(--text)' : 'var(--subtext)',
-            }}
-          >
-            <option value="" disabled>{placeholder ?? 'Select'}</option>
-            {options.map((o) => <option key={o} value={o} style={{ color: 'var(--text)', background: 'var(--surface)' }}>{o}</option>)}
-          </select>
+            onChange={(v) => onChange?.(v)}
+            options={options}
+            placeholder={placeholder}
+            onFocusChange={setFocused}
+          />
         ) : (
         <input
           type={type}

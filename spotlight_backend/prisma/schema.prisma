@@ -63,6 +63,8 @@ model Event {
   minTeamSize          Int?           @map("min_team_size")
   eventEndDate         DateTime?      @map("event_end_date")
   upiId                String?        @map("upi_id")
+  /// JSON array of branch names allowed to register; null = open to all branches
+  allowedBranches      String?        @map("allowed_branches") @db.Text
   club                 Club           @relation(fields: [clubId], references: [id], onDelete: Cascade, map: "fk_event_club")
   notifications        Notification[]
   registrations        Registration[]

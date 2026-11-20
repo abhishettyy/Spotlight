@@ -4,6 +4,7 @@ import { prisma } from '../config/db';
 import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 import { campusNow, campusEventHasEnded } from '../utils/time';
+import { readAllowedBranches, parseAllowedBranchesInput } from '../utils/branches';
 import { filterVisibleRegistrations, mapClubRegistration, countTakenPlaces, placesByEvent, ACTIVE_STATUSES } from '../utils/registrations';
 
 const router = Router();
@@ -44,6 +45,8 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         bannerUrl: e.bannerUrl ?? null,
         clubLogoUrl: e.club?.logoUrl ?? null,
         registrationCount: places.get(e.id) ?? 0,
+        // null = open to all branches
+        allowedBranches: readAllowedBranches(e.allowedBranches),
       };
     });
 
@@ -57,7 +60,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 router.post('/create', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;
-    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, bannerUrl, qrUrl, upiId } = req.body;
+    const { name, description, venue, eventDate, eventEndDate, registrationDeadline, fee, registrationLimit, eventType, teamSizeLimit, minTeamSize, bannerUrl, qrUrl, upiId, allowedBranches } = req.body;
     let { clubId } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Event name is required.' });
@@ -77,6 +80,12 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
     const club = await prisma.club.findUnique({ where: { id: clubId } });
     if (!club) {
       return res.status(404).json({ error: 'Club not found. Please refresh the page and try again.' });
+    }
+
+    // Who can register: all branches (null) or only the selected ones
+    const eligibleBranches = parseAllowedBranchesInput(allowedBranches);
+    if (eligibleBranches === 'invalid') {
+      return res.status(400).json({ error: 'Please choose the allowed branches from the list.' });
     }
 
     // College policy: every event is free, whatever the request says. A free registration is
@@ -109,6 +118,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         bannerUrl: finalBannerUrl,
         qrUrl: finalQrUrl,
         upiId: null,
+        allowedBranches: eligibleBranches ? JSON.stringify(eligibleBranches) : null,
       },
 
       include: { club: true },

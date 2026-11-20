@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
-  ChevronLeft, Share2, Bookmark, BookmarkCheck, Loader2, Calendar, Users, Clock, X,
+  ChevronLeft, Share2, Bookmark, BookmarkCheck, Loader2, Calendar, Users, Clock, X, GraduationCap,
 } from 'lucide-react';
+import { useUserStore } from '@student/store/userStore';
 import { useEventsStore } from '@student/store/eventsStore';
 import { useSavedEventsStore } from '@student/store/savedEventsStore';
 import { useAuthStore } from '@student/store/authStore';
 import { fetchUserTickets } from '@student/api/registrations';
 import {
-  isEventLive, isEventFull, isTicketConfirmed, ticketHasPaid, TicketModel, EventModel,
+  isEventLive, isEventFull, isTicketConfirmed, branchNotAllowedMessage, ticketHasPaid, TicketModel, EventModel,
 } from '@student/types/event';
 import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import EventImage from '@student/components/ui/EventImage';
@@ -128,6 +129,8 @@ export default function EventDetailPage() {
       setPendingPaymentTicket(null);
     }
   };
+
+  const studentBranch = useUserStore((s) => s.currentUser?.branch ?? null);
 
   if (isLoading && !event) return <PageLoader />;
   if (!event) return <ErrorState message="Event not found." onRetry={loadEvents} />;
@@ -516,6 +519,41 @@ export default function EventDetailPage() {
             </div>
           )}
 
+          {/* Who can register: all branches, or only the ones the club selected */}
+          <div
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--sk-radius-lg)',
+              padding: 16,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 16,
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 44, height: 44, borderRadius: '50%', background: 'var(--raised)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}
+            >
+              <GraduationCap size={20} color="var(--subtext)" strokeWidth={1.5} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Who Can Register</p>
+              {event.allowedBranches && event.allowedBranches.length > 0 ? (
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {event.allowedBranches.map((b) => (
+                    <li key={b} style={{ fontSize: 13, fontWeight: 500, color: 'var(--subtext)' }}>{b}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--subtext)' }}>Open to all branches</p>
+              )}
+            </div>
+          </div>
+
           {/* About this event */}
           <div style={{ marginTop: 28 }}>
             <h2
@@ -590,6 +628,12 @@ export default function EventDetailPage() {
                 };
                 navigate(`/events/${id}/payment?registrationId=${pendingPaymentTicket.id}`, { state });
               } else {
+                // Events limited to selected branches: say why instead of opening registration
+                const notAllowed = branchNotAllowedMessage(event, studentBranch);
+                if (notAllowed) {
+                  toast.error(notAllowed);
+                  return;
+                }
                 navigate(`/events/${id}/register`);  // a full team event opens straight on Join Team
               }
             }}

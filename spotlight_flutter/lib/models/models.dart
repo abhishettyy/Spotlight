@@ -194,6 +194,22 @@ class EventModel {
 
   final int? registrationLimit;
 
+  /// Branches allowed to register; null = open to all branches
+  final List<String>? allowedBranches;
+
+  /// Why a student of [studentBranch] can't register, or null when they can.
+  /// Same wording as the server, which also enforces it.
+  String? branchNotAllowedMessage(String? studentBranch) {
+    final allowed = allowedBranches;
+    if (allowed == null || allowed.isEmpty) return null;
+    if (studentBranch == null || studentBranch.trim().isEmpty) {
+      return 'Please add your branch to your profile before registering for this event.';
+    }
+    final b = studentBranch.trim().toLowerCase();
+    if (allowed.any((a) => a.toLowerCase() == b)) return null;
+    return '${studentBranch.trim()} students are not eligible for this event. It is open only to ${allowed.join(', ')}.';
+  }
+
   bool get isFull {
     if (registrationLimit == null || registrationLimit! <= 0) return false;
     return registrationCount >= registrationLimit!;
@@ -217,6 +233,7 @@ class EventModel {
     this.clubLogoUrl,
     required this.registrationCount,
     this.registrationLimit,
+    this.allowedBranches,
     this.registrationDeadline,
     this.minTeamSize,
     this.eventDate,
@@ -249,6 +266,9 @@ class EventModel {
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'] ?? club?['logo'] ?? json['clubLogoUrl'] ?? json['club_logo_url'],
       registrationCount: json['registrationCount'] ?? json['registration_count'] ?? 0,
       registrationLimit: json['registrationLimit'] ?? json['registration_limit'],
+      allowedBranches: (json['allowedBranches'] is List && (json['allowedBranches'] as List).isNotEmpty)
+          ? (json['allowedBranches'] as List).map((e) => e.toString()).toList()
+          : null,
       registrationDeadline: parseLocalDate(json['registration_deadline'] ?? json['registrationDeadline']),
       eventDate: parseLocalDate(json['eventDate'] ?? json['event_date'] ?? json['date']),
       eventEndDate: parseLocalDate(json['eventEndDate'] ?? json['event_end_date']),
@@ -268,6 +288,7 @@ class EventModel {
         'eventType': eventType,
         'teamSizeLimit': teamSizeLimit,
         'registrationCount': registrationCount,
+        'allowedBranches': allowedBranches,
         'registrationDeadline': registrationDeadline?.toIso8601String(),
         'eventDate': eventDate?.toIso8601String(),
         'eventEndDate': eventEndDate?.toIso8601String(),

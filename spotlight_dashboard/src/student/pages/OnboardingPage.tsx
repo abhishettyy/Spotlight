@@ -8,6 +8,7 @@ import { useUserStore } from '@student/store/userStore';
 import { useAuthStore } from '@student/store/authStore';
 import { toast } from 'sonner';
 import { BRANCHES } from '@student/branches';
+import SelectMenu from '@student/components/ui/SelectMenu';
 
 const schema = z.object({
   usn: z.string()
@@ -30,7 +31,7 @@ export default function OnboardingPage() {
   const { currentUser, setCurrentUser } = useUserStore();
   const userId = useAuthStore((s) => s.userId);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -111,10 +112,13 @@ export default function OnboardingPage() {
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
                 Branch *
               </label>
-              <select {...register('branch')} className="input-field">
-                <option value="">Select your branch</option>
-                {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
-              </select>
+              <SelectMenu
+                value={watch('branch') ?? ''}
+                onChange={(v) => setValue('branch', v, { shouldValidate: true })}
+                options={BRANCHES}
+                placeholder="Select your branch"
+                invalid={!!errors.branch}
+              />
               {errors.branch && (
                 <p style={{ color: 'var(--color-crimson)', fontSize: 12, marginTop: 4 }}>{errors.branch.message}</p>
               )}

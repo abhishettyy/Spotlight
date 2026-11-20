@@ -176,6 +176,8 @@ export async function createEvent(data: {
   teamSizeLimit?: number;
   minTeamSize?: number;
   clubId?: string;
+  /** Branches allowed to register; leave out for open to all */
+  allowedBranches?: string[];
   bannerUrl?: string;
   qrUrl?: string;
   upiId?: string;

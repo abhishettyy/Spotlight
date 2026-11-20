@@ -6,6 +6,7 @@ import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 import { campusNow, campusTodayStart, campusEventHasEnded, campusScanWindowOpen } from '../utils/time';
 import { countTakenPlaces } from '../utils/registrations';
+import { readAllowedBranches, branchNotAllowedMessage } from '../utils/branches';
 
 const router = Router();
 
@@ -33,6 +34,14 @@ function registrationClosed(event: { registrationDeadline: Date | null; eventDat
   if (!event) return false;
   const closesAt = event.registrationDeadline ?? event.eventDate;
   return !!closesAt && campusNow() > new Date(closesAt);
+}
+
+/** Refuses a student whose branch isn't allowed for this event (null when they may register). */
+async function branchRejection(event: { allowedBranches: string | null } | null | undefined, userId: string): Promise<string | null> {
+  const allowed = readAllowedBranches(event?.allowedBranches);
+  if (!allowed) return null;
+  const profile = await prisma.profile.findUnique({ where: { id: userId }, select: { branch: true } });
+  return branchNotAllowedMessage(allowed, profile?.branch);
 }
 
 /** A rule check that failed inside a registration transaction; becomes a 400 with this message. */
@@ -163,6 +172,10 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
+    // Events limited to selected branches refuse students from other branches
+    const notAllowed = await branchRejection(event, userId);
+    if (notAllowed) return res.status(403).json({ error: notAllowed });
+
     const status = (event.fee === 0) ? 'CONFIRMED' : 'PENDING';
     const registration = await prisma.$transaction(async (tx) => {
       await lockEvent(tx, eventId);
@@ -192,6 +205,10 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
     if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
     }
+
+    // Events limited to selected branches refuse students from other branches
+    const notAllowed = await branchRejection(event, userId);
+    if (notAllowed) return res.status(403).json({ error: notAllowed });
 
     // For free events (fee === 0), generate passkey immediately.
     // For paid events (fee > 0), passkey is null until payment details are submitted.
@@ -238,6 +255,10 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
     if (registrationClosed(team.event)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
     }
+
+    // Events limited to selected branches refuse students from other branches
+    const notAllowed = await branchRejection(team.event, userId);
+    if (notAllowed) return res.status(403).json({ error: notAllowed });
 
     const status = (team.event?.fee === 0) ? 'CONFIRMED' : 'PENDING';
     const maxTeamSize = team.event?.teamSizeLimit;

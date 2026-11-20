@@ -4,11 +4,14 @@ import { CheckCircle, Upload } from "lucide-react";
 import { createEvent } from "../api";
 import { FC, FM, FB, fileToBase64 } from "./shared";
 import { GlassDatePicker, GlassSelect } from "./GlassFields";
+import { BRANCHES } from "../../student/branches";
 
 type EventForm = {
   title: string; desc: string; date: string; endDate: string; deadline: string; type: string; capacity: string;
   venue: string; amount: string; qrCode: string; useDefaultQr: boolean; customUpiId: string;
   eventType: string; minTeamSize: string; teamSizeLimit: string; qrFile: File | null;
+  /** "all" = open to every branch; "selected" = only allowedBranches may register */
+  eligibility: string; allowedBranches: string[];
 };
 
 /** Every problem with the form, keyed by field. Runs on each change, so errors show as soon as a field is edited. */
@@ -37,6 +40,9 @@ function validateEventForm(formData: EventForm): Record<string, string> {
       if (!formData.qrFile && !formData.qrCode) errors.qrCode = "Custom QR code image is required.";
     }
   }
+  if (formData.eligibility === "selected" && formData.allowedBranches.length === 0) {
+    errors.allowedBranches = "Select at least one branch.";
+  }
   if (formData.eventType === "Team") {
     if (!formData.minTeamSize) errors.minTeamSize = "Min team size is required.";
     else if (parseInt(formData.minTeamSize) < 1) errors.minTeamSize = "Min team size must be at least 1.";
@@ -56,6 +62,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
   const [formData, setFormData] = useState({
     title: "", desc: "", date: "", endDate: "", deadline: "", type: "free", capacity: "", venue: "", amount: "", qrCode: "", banner: "", useDefaultQr: true, customUpiId: "",
     eventType: "Solo", minTeamSize: "1", teamSizeLimit: "",
+    eligibility: "all", allowedBranches: [] as string[],
     bannerFile: null as File | null, qrFile: null as File | null
   });
   const [submitting, setSubmitting] = useState(false);
@@ -131,6 +138,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
         minTeamSize: formData.eventType === "Team" && formData.minTeamSize ? parseInt(formData.minTeamSize) : 1,
+        allowedBranches: formData.eligibility === "selected" ? formData.allowedBranches : undefined,
         clubId: resolvedClubId,
         bannerUrl,
         qrUrl,
@@ -293,6 +301,69 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
           </AnimatePresence>
         </div>
 
+        {/* Who can register: every branch (default) or only the selected ones */}
+        <div className="space-y-3">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-1.5 relative">
+              <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Who Can Register</label>
+              <GlassSelect
+                value={formData.eligibility}
+                onChange={val => { setFormData(p => ({ ...p, eligibility: val, allowedBranches: val === "all" ? [] : p.allowedBranches })); touch("allowedBranches"); }}
+                options={[
+                  { value: "all", label: "Open to all branches" },
+                  { value: "selected", label: "Selected branches only" },
+                ]}
+              />
+            </div>
+          </div>
+          <AnimatePresence>
+            {formData.eligibility === "selected" && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                <div className="flex items-center justify-between gap-3 pt-1 pb-2">
+                  <p className="text-[11px] text-[color:var(--sk-muted)]" style={{ fontFamily: FM }}>
+                    {formData.allowedBranches.length === 0 ? "Pick the branches whose students can register." : `${formData.allowedBranches.length} of ${BRANCHES.length} branches selected`}
+                  </p>
+                  {formData.allowedBranches.length > 0 && (
+                    <button type="button" onClick={() => { setFormData(p => ({ ...p, allowedBranches: [] })); touch("allowedBranches"); }}
+                      className="text-[11px] text-[color:var(--sk-muted)] hover:text-[color:var(--sk-fg)] transition-colors cursor-pointer" style={{ fontFamily: FM }}>Clear</button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {BRANCHES.map(b => {
+                    const on = formData.allowedBranches.includes(b);
+                    return (
+                      <button
+                        key={b}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => {
+                          setFormData(p => ({
+                            ...p,
+                            // Kept in the college's order, so the list reads the same everywhere
+                            allowedBranches: on ? p.allowedBranches.filter(x => x !== b) : BRANCHES.filter(x => x === b || p.allowedBranches.includes(x)),
+                          }));
+                          touch("allowedBranches");
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer"
+                        style={{
+                          fontFamily: FB,
+                          background: on ? "color-mix(in srgb, var(--sk-brand) 14%, transparent)" : "var(--sk-surface)",
+                          border: `1px solid ${on ? "var(--sk-brand)" : "var(--sk-line)"}`,
+                          color: on ? "var(--sk-brand)" : "var(--sk-fg)",
+                          fontWeight: on ? 600 : 400,
+                        }}
+                      >
+                        {on && <CheckCircle size={12} />}
+                        {b}
+                      </button>
+                    );
+                  })}
+                </div>
+                {fieldErrors.allowedBranches && <p className="text-[11px] text-[color:var(--sk-danger)] mt-2" style={{ fontFamily: FB }}>{fieldErrors.allowedBranches}</p>}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {error && (
           <p className="text-xs text-[color:var(--sk-danger)] px-1" style={{ fontFamily: FM }}>{error}</p>

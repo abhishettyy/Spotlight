@@ -14,6 +14,7 @@ import '../core/api_service.dart';
 import '../models/models.dart';
 import '../widgets/custom_image.dart';
 import '../core/custom_toast.dart';
+import '../core/user_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class EventDetailsScreen extends StatefulWidget {
@@ -469,6 +470,53 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           ),
                         ),
                       ],
+                      // Who can register: all branches, or only the ones the club selected
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: sk.surface,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: sk.line),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: cardBg, shape: BoxShape.circle),
+                              child: Icon(Icons.school_outlined, size: 20, color: textSecondary),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Who Can Register',
+                                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: textPrimary),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (event.allowedBranches == null || event.allowedBranches!.isEmpty)
+                                    Text(
+                                      'Open to all branches',
+                                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary),
+                                    )
+                                  else
+                                    for (final b in event.allowedBranches!)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 3),
+                                        child: Text(
+                                          b,
+                                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary),
+                                        ),
+                                      ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 28),
 
                       Text(
@@ -583,6 +631,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ),
                       ).then((_) => _checkRegistration());
                     } else {
+                      // Events limited to selected branches: say why instead of opening registration
+                      final studentBranch = Provider.of<UserProvider>(context, listen: false).currentUser?.branch;
+                      final notAllowed = event.branchNotAllowedMessage(studentBranch);
+                      if (notAllowed != null) {
+                        showSpotlightToast(context, notAllowed, isError: true, duration: const Duration(seconds: 4));
+                        return;
+                      }
                       Navigator.push(
                         context,
                         SmoothRoute(

@@ -26,9 +26,23 @@ export interface EventModel {
   clubLogoUrl?: string | null;
   registrationCount: number;
   registrationLimit?: number | null;
+  /** Branches allowed to register; null = open to all branches */
+  allowedBranches?: string[] | null;
   registrationDeadline?: Date | null;
   eventDate?: Date | null;
   eventEndDate?: Date | null;
+}
+
+/**
+ * Why this student can't register for the event, or null when they can. Same wording as the
+ * server, which also enforces it.
+ */
+export function branchNotAllowedMessage(event: EventModel, studentBranch?: string | null): string | null {
+  const allowed = event.allowedBranches;
+  if (!allowed || allowed.length === 0) return null;
+  if (!studentBranch) return 'Please add your branch to your profile before registering for this event.';
+  if (allowed.some((b) => b.toLowerCase() === studentBranch.trim().toLowerCase())) return null;
+  return `${studentBranch} students are not eligible for this event. It is open only to ${allowed.join(', ')}.`;
 }
 
 // Computed helpers — ported from Dart getters
@@ -112,6 +126,9 @@ export function eventFromJson(json: Record<string, unknown>): EventModel {
     clubLogoUrl: (club?.['logoUrl'] ?? club?.['logo_url'] ?? club?.['logo'] ?? json['clubLogoUrl'] ?? json['club_logo_url'] ?? null) as string | null,
     registrationCount: (json['registrationCount'] ?? json['registration_count'] ?? 0) as number,
     registrationLimit: (json['registrationLimit'] ?? json['registration_limit'] ?? null) as number | null,
+    allowedBranches: Array.isArray(json['allowedBranches']) && (json['allowedBranches'] as unknown[]).length > 0
+      ? (json['allowedBranches'] as string[])
+      : null,
     registrationDeadline: parseDate(json['registration_deadline'] ?? json['registrationDeadline']),
     eventDate: parseDate(json['eventDate'] ?? json['event_date'] ?? json['date']),
     eventEndDate: parseDate(json['eventEndDate'] ?? json['event_end_date']),

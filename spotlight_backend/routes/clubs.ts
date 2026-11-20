@@ -5,6 +5,7 @@ import { requireAuth } from '../middlewares/auth';
 import { uploadBase64Image, deleteImage } from '../utils/storage';
 import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
 import { campusNow, campusEventHasEnded } from '../utils/time';
+import { readAllowedBranches } from '../utils/branches';
 import { ADMIN_PROFILE_ID, requireAdmin, signAdminToken, isThrottled, recordFailure, clearFailures } from '../utils/admin';
 import { verifyGoogleUser } from '../utils/google';
 import { sendClubApprovedEmail } from '../utils/mailer';
@@ -465,6 +466,7 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
         eventEndDate: e.eventEndDate ? e.eventEndDate.toISOString() : null,
         venue: e.venue ?? 'TBD',
         capacity: e.registrationLimit ?? 0,
+        allowedBranches: readAllowedBranches(e.allowedBranches),
         type: e.eventType ?? 'Solo',
         eventType: e.eventType ?? 'Solo',
         teamSizeLimit: e.teamSizeLimit,

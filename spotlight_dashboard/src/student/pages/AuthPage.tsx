@@ -12,6 +12,7 @@ import { useNotificationsStore } from '@student/store/notificationsStore';
 import { isProfileIncomplete } from '@student/types/user';
 import { toast } from 'sonner';
 import { BRANCHES } from '@student/branches';
+import SelectMenu from '@student/components/ui/SelectMenu';
 import { saveCredential } from '../../saveCredential';
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
@@ -340,21 +341,14 @@ export default function AuthPage() {
             {/* Branch: one of the college's branches. It can't be changed after sign-up. */}
             <div>
               <label style={labelStyle}>Branch</label>
-              <select
+              <SelectMenu
                 id="stu-branch"
-                name="branch"
                 value={values.branch}
-                onChange={(e) => setField('branch')(e.target.value)}
-                style={{
-                  ...inputStyle,
-                  borderColor: borderFor('branch'),
-                  color: values.branch ? 'var(--text)' : 'var(--subtext)',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="" disabled>Select your branch</option>
-                {BRANCHES.map((b) => <option key={b} value={b} style={{ color: 'var(--text)' }}>{b}</option>)}
-              </select>
+                onChange={setField('branch')}
+                options={BRANCHES}
+                placeholder="Select your branch"
+                invalid={!!errors.branch}
+              />
               {errors.branch && <p style={errorStyle}>{errors.branch}</p>}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
