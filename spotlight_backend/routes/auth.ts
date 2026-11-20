@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '../config/db';
+import { normalizeBranch, INVALID_BRANCH_MESSAGE } from '../utils/branches';
 import { signToken, requireAuth } from '../middlewares/auth';
 import { verifyGoogleUser } from '../utils/google';
 import { ADMIN_PROFILE_ID } from '../utils/admin';
@@ -67,6 +68,12 @@ router.post('/signup', async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'This email is registered to a club account.' });
     }
 
+    // Branch must be one of the college's branches (the apps show it as a dropdown)
+    const cleanBranch = branch ? normalizeBranch(branch) : null;
+    if (branch && !cleanBranch) {
+      return res.status(400).json({ error: INVALID_BRANCH_MESSAGE });
+    }
+
     if (usn) {
       const existingUsn = await prisma.profile.findUnique({ where: { usn: usn.trim() } });
       if (existingUsn) {
@@ -84,7 +91,7 @@ router.post('/signup', async (req: Request, res: Response): Promise<any> => {
         password: hashedPassword,
         fullName: name,
         usn: usn || null,
-        branch: branch || null,
+        branch: cleanBranch,
         phone: phone || null,
         year: year ? parseInt(year, 10) : null,
         sem: sem ? parseInt(sem, 10) : null,

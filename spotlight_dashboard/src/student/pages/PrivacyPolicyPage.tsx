@@ -13,7 +13,7 @@ const sections: Section[] = [
       'Account: your name, email address, phone number, USN, branch, year and semester.',
       'Sign-in: if you sign up with email, your password is stored only as a secure hash. With Google Sign-In we receive your name and email from Google and store no password.',
       'Registrations: the events you register for, their status, your team name, team members and team passkey, and the time your ticket is scanned at the event.',
-      'Payments: Spotlight does not process payments. You pay the club directly through UPI, and we store only the UPI Transaction ID (UTR) you enter. No bank, card or UPI PIN details, and no payment screenshots.',
+      'No payments: All events on Spotlight are free, so we never ask for or store any payment details.',
       'Notifications: in-app messages about your registrations and upcoming events.',
       'Technical: our servers and hosting providers keep standard request logs (such as IP address and time) for security. We do not use analytics, advertising or tracking tools.',
     ],
@@ -28,7 +28,6 @@ const sections: Section[] = [
     content: [
       'To create your account and keep your sign-in secure.',
       'To register you for events and teams, issue QR entry tickets and check you in.',
-      'To let the organizing club confirm your payment using your transaction ID.',
       'To show in-app notifications about your registrations and events. We do not send push notifications or marketing emails.',
       'To prevent duplicate registrations, misuse and unauthorized access.',
     ],
@@ -36,7 +35,7 @@ const sections: Section[] = [
   {
     title: '4. Who Can See Your Information',
     content:
-      'We do not sell, rent or share your personal information with advertisers or data brokers.\n\n• The club running an event you register for sees your name, email, phone, USN, branch, year, semester, team name, transaction ID, and registration and check-in status. Clubs may use this only to run that event.\n• The Spotlight admin may access data for support and moderation.\n• Service providers: Render hosts our server, GoDaddy hosts our database, website and images, and Google provides Google Sign-In.\n• We may disclose information if required by law or by college authorities.',
+      'We do not sell, rent or share your personal information with advertisers or data brokers.\n\n• The club running an event you register for sees your name, email, phone, USN, branch, year, semester, team name, and registration and check-in status. Clubs may use this only to run that event.\n• The Spotlight admin may access data for support and moderation.\n• Service providers: Render hosts our server, GoDaddy hosts our database, website and images, and Google provides Google Sign-In.\n• We may disclose information if required by law or by college authorities.',
   },
   {
     title: '5. Data Security',
@@ -55,9 +54,9 @@ const sections: Section[] = [
     title: '7. Using Spotlight',
     content: [
       'Give accurate details when you sign up and register; clubs rely on them to verify you.',
-      'Events, fees, refunds and entry rules are set by the organizing club. Contact the club for questions about a specific event or payment.',
+      'All events are free. Venue, timings and entry rules are set by the organizing club; contact the club for questions about a specific event.',
       'Keep your password and team passkeys private; you are responsible for activity on your account.',
-      'Do not create fake registrations, enter false transaction IDs or misuse the platform. We may suspend accounts that do.',
+      'Do not create fake registrations or misuse the platform. We may suspend accounts that do.',
     ],
   },
   {
@@ -190,7 +189,7 @@ export default function PrivacyPolicyPage() {
                 opacity: 0.7,
               }}
             >
-              Last updated: November 19, 2026
+              Last updated: November 21, 2026
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/sk_colors.dart';
+import '../core/branches.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +27,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _selectedBranch;
   bool _isLoading = false;
 
-  final List<String> _branches = ['CS', 'IS', 'EC', 'ME', 'CV', 'EE', 'AI', 'BT'];
 
   Future<void> _completeSetup() async {
     if (!_formKey.currentState!.validate()) return;
@@ -123,13 +123,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   _buildLabel('Branch'),
                   DropdownButtonFormField<String>(
-                    value: _selectedBranch,
+                    initialValue: _selectedBranch,
+                    isExpanded: true,
                     dropdownColor: Theme.of(context).cardColor,
                     style: GoogleFonts.inter(color: cs.onBackground),
                     decoration: _buildInputDecoration('Select your branch'),
-                    items: _branches.map((b) => DropdownMenuItem(
+                    items: kBranches.map((b) => DropdownMenuItem(
                       value: b,
-                      child: Text(b),
+                      child: Text(b, overflow: TextOverflow.ellipsis),
                     )).toList(),
                     onChanged: (v) => setState(() => _selectedBranch = v),
                     validator: (v) => v == null ? 'Branch is required' : null,

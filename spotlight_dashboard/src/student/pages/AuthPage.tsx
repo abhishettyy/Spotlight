@@ -11,6 +11,7 @@ import { useEventsStore } from '@student/store/eventsStore';
 import { useNotificationsStore } from '@student/store/notificationsStore';
 import { isProfileIncomplete } from '@student/types/user';
 import { toast } from 'sonner';
+import { BRANCHES } from '@student/branches';
 import { saveCredential } from '../../saveCredential';
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ function validate(v: FormValues, isLogin: boolean): Partial<Record<keyof FormVal
   if (!v.name.trim()) errors.name = 'Invalid name';
   const usn = v.usn.trim().toUpperCase();
   if (!(usn.startsWith('1MS') && usn.length >= 5)) errors.usn = 'Invalid';
-  if (!v.branch.trim()) errors.branch = 'Invalid';
+  if (!v.branch.trim()) errors.branch = 'Select your branch';
   const y = parseInt(v.year.trim(), 10);
   if (isNaN(y) || y < 1 || y > 4) errors.year = 'Invalid';
   if (!isSemValid(v.sem, v.year)) errors.sem = 'Invalid';
@@ -201,7 +202,7 @@ export default function AuthPage() {
             password: values.password.trim(),
             name: values.name.trim(),
             usn: values.usn.trim().toUpperCase(),
-            branch: values.branch.trim().toUpperCase(),
+            branch: values.branch,
             phone: values.phone.trim(),
             year: values.year.trim(),
             sem: values.sem.trim(),
@@ -336,8 +337,27 @@ export default function AuthPage() {
             {field('email', 'Email', 'Enter your email', { type: 'email', autoComplete: 'username' })}
             {passwordField}
             {field('usn', 'USN', 'Enter valid USN', { style: { ...inputStyle, borderColor: borderFor('usn'), textTransform: 'uppercase' } })}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              {field('branch', 'Branch', 'Branch', { style: { ...inputStyle, borderColor: borderFor('branch'), textTransform: 'uppercase' } })}
+            {/* Branch: one of the college's branches. It can't be changed after sign-up. */}
+            <div>
+              <label style={labelStyle}>Branch</label>
+              <select
+                id="stu-branch"
+                name="branch"
+                value={values.branch}
+                onChange={(e) => setField('branch')(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  borderColor: borderFor('branch'),
+                  color: values.branch ? 'var(--text)' : 'var(--subtext)',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="" disabled>Select your branch</option>
+                {BRANCHES.map((b) => <option key={b} value={b} style={{ color: 'var(--text)' }}>{b}</option>)}
+              </select>
+              {errors.branch && <p style={errorStyle}>{errors.branch}</p>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {field('year', 'Year', '1-4', { inputMode: 'numeric' })}
               {field('sem', 'Semester', '1-8', { inputMode: 'numeric' })}
             </div>

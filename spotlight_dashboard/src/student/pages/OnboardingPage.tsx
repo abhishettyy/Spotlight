@@ -7,6 +7,7 @@ import { updateProfile } from '@student/api/profiles';
 import { useUserStore } from '@student/store/userStore';
 import { useAuthStore } from '@student/store/authStore';
 import { toast } from 'sonner';
+import { BRANCHES } from '@student/branches';
 
 const schema = z.object({
   usn: z.string()
@@ -21,7 +22,6 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const BRANCHES = ['CS', 'IS', 'EC', 'ME', 'CV', 'EE', 'AI', 'BT'];
 
 // Equivalent to Flutter's OnboardingScreen
 // Shows after signup when profile is incomplete (missing USN/branch/phone)

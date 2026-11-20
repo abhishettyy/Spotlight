@@ -2,8 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Calendar, Users, MapPin, Eye, EyeOff, CheckCircle, ChevronLeft, Check, Upload, X, AlertTriangle, Image as ImageIcon, Camera } from "lucide-react";
-import { fetchEventRegistrations, approveRegistration, rejectRegistration, updateEvent, sanitizeErrorMessage } from "../api";
-import confetti from "canvas-confetti";
+import { fetchEventRegistrations, updateEvent, sanitizeErrorMessage } from "../api";
 import { useTheme } from "../theme";
 import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration, countPlaces } from "./shared";
 // The QR scanner library is large and only needed when a club opens the scanner
@@ -181,14 +180,11 @@ export function EventsPage({
   const editErrors: Record<string, string> = editSubmitAttempted
     ? allEditErrors
     : Object.fromEntries(Object.entries(allEditErrors).filter(([field]) => editTouched[field]));
-  // Approving and rejecting stay open until the event's end time (start + 3 h when no end is saved),
-  // matching the cutoff the API enforces
   const isEventFinished = activeEvent ? getEventStatus(activeEvent) === "previous" : false;
-  const pending = registrations.filter(r => r.status?.toLowerCase() === "pending");
-  const approved = registrations.filter(r => r.status?.toLowerCase() === "confirmed");
-  const rejected = registrations.filter(r => {
+  // All events are free, so every registration is confirmed straight away: no approval or rejection step
+  const activeRegistrations = registrations.filter(r => {
     const s = r.status?.toLowerCase();
-    return s === "rejected" || s === "cancelled";
+    return s === "confirmed" || s === "pending";
   });
 
   useEffect(() => {
@@ -245,61 +241,6 @@ export function EventsPage({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [selectedEventId]);
-
-  const handleApprove = async (id: string, e: React.MouseEvent) => {
-    if (isEventFinished) return;
-    try {
-      const docW = document.documentElement.clientWidth || 1000;
-      const docH = document.documentElement.clientHeight || 800;
-      const x = e.clientX / docW;
-      const y = e.clientY / docH;
-      confetti({
-        particleCount: 18,
-        spread: 45,
-        origin: { x, y },
-        colors: ['#10b981', '#34d399', '#6ee7b7'],
-        gravity: 0.8,
-        scalar: 0.65,
-        ticks: 90
-      });
-
-      const token = await getToken();
-      await approveRegistration(id, token ?? undefined);
-
-      onRegistrationsChange(prev =>
-        prev.map(r => {
-          if (r.id === id) {
-            return { ...r, status: 'CONFIRMED' };
-          }
-          return r;
-        })
-      );
-    } catch (e) {
-      console.error('Approve failed:', e);
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    if (isEventFinished) return;
-    try {
-      const token = await getToken();
-      const targetReg = allRegistrations.find(r2 => r2.id === id);
-      const isLeader = targetReg?.team && targetReg.user?.id === targetReg.team.leaderId;
-      const teamId = targetReg?.team?.id;
-
-      onRegistrationsChange(prev =>
-        prev.map(r => {
-          if (r.id === id || (isLeader && teamId && r.team?.id === teamId)) {
-            return { ...r, status: 'REJECTED' };
-          }
-          return r;
-        })
-      );
-      await rejectRegistration(id, token ?? undefined);
-    } catch (e) {
-      console.error('Reject failed:', e);
-    }
-  };
 
   if (activeEvent) {
     const teamGroups = new Map<string, { id: string; name: string; passkey: string; members: Registration[] }>();
@@ -380,282 +321,64 @@ export function EventsPage({
           </div>
         ) : showApprovals ? (
           <div className="mt-4 space-y-8">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-[13px] tracking-[0.4em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] mb-1" style={{ fontFamily: FM }}>Registration Approval</h1>
-                <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ fontFamily: FB }}>{pending.length} pending · {approved.length} approved · {rejected.length} rejected</p>
-              </div>
+            <div>
+              <h1 className="text-[13px] tracking-[0.4em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] mb-1" style={{ fontFamily: FM }}>Registration Details</h1>
+              <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ fontFamily: FB }}>
+                {activeRegistrations.length} {activeRegistrations.length === 1 ? "registration" : "registrations"}
+                {activeIsTeam ? ` · ${registeredCount} ${registeredCount === 1 ? "team" : "teams"}` : ""}
+              </p>
             </div>
 
-            {isEventFinished && (
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 text-xs flex items-center gap-2.5" style={{ fontFamily: FB }}>
-                <AlertTriangle size={16} className="flex-shrink-0" />
-                <span>This event has finished. Approving or rejecting pending registrations is disabled.</span>
+            {activeRegistrations.length === 0 ? (
+              <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No registrations yet.</div>
+            ) : (
+              <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
+                <Paginated items={activeRegistrations}>{pageRegs => (<div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Name</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Email</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Phone</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>USN</th>
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Branch</th>
+                      {activeIsTeam && <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Team Name</th>}
+                      <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Registered On</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                    {pageRegs.map((req) => (
+                      <tr key={req.id} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
+                        <td className="p-4 max-w-[180px]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-[color:var(--sk-raised)] dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-[color:var(--sk-muted)] dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
+                            <p className="text-sm font-medium text-[color:var(--sk-fg)] dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
+                          </div>
+                        </td>
+                        <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
+                        <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
+                        <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
+                        <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
+                        {activeIsTeam && (
+                          <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[180px]">
+                            {req.team ? (
+                              <div>
+                                <span className="font-medium text-[color:var(--sk-fg)] dark:text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
+                                <p className="text-[10px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono">{req.team.leaderId === req.user?.id ? "Leader" : "Member"}{req.team.passkey ? ` · Passkey: ${req.team.passkey}` : ""}</p>
+                              </div>
+                            ) : (
+                              <span className="text-[color:var(--sk-faint)] dark:text-[color:var(--sk-muted)] font-mono">—</span>
+                            )}
+                          </td>
+                        )}
+                        <td className="p-4 text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>)}</Paginated>
               </div>
             )}
-
-            {/* Pending requests table */}
-            <div>
-              <p className="text-[11px] tracking-[0.4em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] mb-4" style={{ fontFamily: FM }}>Pending Requests ({pending.length})</p>
-              {pending.length === 0 ? (
-                <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No pending requests — you're all caught up.</div>
-              ) : (
-                <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
-                  <Paginated items={pending}>{pagePending => (<div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Email</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Phone</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>USN</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Branch</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Team Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>UTR / Payment</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] text-left" style={{ fontFamily: FM }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      <AnimatePresence>
-                        {pagePending.map((req) => {
-                          const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
-                          return (
-                            <motion.tr key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
-                              <td className="p-4 max-w-[180px]">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-full bg-[color:var(--sk-raised)] dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-[color:var(--sk-muted)] dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                  <p className="text-sm font-medium text-[color:var(--sk-fg)] dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
-                                </div>
-                              </td>
-                              <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                              <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
-                              <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
-                              <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
-                              <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[180px]">
-                                {req.team ? (
-                                  <div>
-                                    <span className="font-medium text-[color:var(--sk-fg)] dark:text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
-                                    <p className="text-[10px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono">Passkey: {req.team.passkey || 'Pending Payment'}</p>
-                                  </div>
-                                ) : (
-                                  <span className="text-[color:var(--sk-faint)] dark:text-[color:var(--sk-muted)] font-mono">—</span>
-                                )}
-                              </td>
-                              <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[150px]">
-                                {activeEvent.price === 0 ? (
-                                  <span className="text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Free</span>
-                                ) : req.team ? (
-                                  isLeader ? (
-                                    req.transaction_id ? (
-                                      <span className="select-all text-emerald-700 dark:text-[#a3e635] bg-emerald-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-emerald-500/20 dark:border-[color:var(--sk-line)] text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
-                                    ) : (
-                                      <span className="text-amber-600 dark:text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
-                                    )
-                                  ) : (
-                                    <span className="text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] italic text-[11px]">Member</span>
-                                  )
-                                ) : (
-                                  req.transaction_id ? (
-                                    <span className="select-all text-emerald-700 dark:text-[#a3e635] bg-emerald-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-emerald-500/20 dark:border-[color:var(--sk-line)] text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
-                                  ) : (
-                                    <span className="text-amber-600 dark:text-[#e59866] text-[10px] uppercase tracking-wider">Pending Upload</span>
-                                  )
-                                )}
-                              </td>
-                              <td className="p-4 text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
-                              <td className="p-4 text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  <button
-                                    disabled={isEventFinished}
-                                    onClick={(e) => !isEventFinished && handleApprove(req.id, e)}
-                                    title="Approve Registration"
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                                      isEventFinished 
-                                        ? 'bg-[color:var(--sk-raised)] dark:bg-white/5 text-black/30 dark:text-white/30 border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] cursor-not-allowed opacity-50' 
-                                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/20 hover:scale-105 cursor-pointer'
-                                    }`}
-                                    style={{ fontFamily: FB }}
-                                  >
-                                    <Check size={14} /> Approve
-                                  </button>
-                                  <button
-                                    disabled={isEventFinished}
-                                    onClick={() => !isEventFinished && handleReject(req.id)}
-                                    title="Reject Registration"
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                                      isEventFinished 
-                                        ? 'bg-[color:var(--sk-raised)] dark:bg-white/5 text-black/30 dark:text-white/30 border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] cursor-not-allowed opacity-50' 
-                                        : 'bg-[color:var(--sk-brand)]/10 hover:bg-[color:var(--sk-brand)]/20 text-[color:var(--sk-brand)] border-[color:var(--sk-brand)]/20 hover:scale-105 cursor-pointer'
-                                    }`}
-                                    style={{ fontFamily: FB }}
-                                  >
-                                    <X size={14} /> Reject
-                                  </button>
-                                </div>
-                              </td>
-                            </motion.tr>
-                          );
-                        })}
-                      </AnimatePresence>
-                    </tbody>
-                  </table>
-                  </div>)}</Paginated>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <p className="text-[11px] tracking-[0.4em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] mb-4" style={{ fontFamily: FM }}>Approved ({approved.length})</p>
-              {approved.length === 0 ? (
-                <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No approved registrations yet.</div>
-              ) : (
-                <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
-                  <Paginated items={approved}>{pageApproved => (<div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Email</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Phone</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>USN</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Branch</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Team Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>UTR / Payment</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] text-left" style={{ fontFamily: FM }}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {pageApproved.map((req) => {
-                        const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
-                        return (
-                          <tr key={req.id} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
-                            <td className="p-4 max-w-[180px]">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-[color:var(--sk-raised)] dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-[color:var(--sk-muted)] dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                <p className="text-sm font-medium text-[color:var(--sk-fg)] dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
-                              </div>
-                            </td>
-                            <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
-                            <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
-                            <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[180px]">
-                              {req.team?.name ? (
-                                <span className="truncate block font-medium text-[color:var(--sk-fg)] dark:text-white/80" title={req.team.name}>{req.team.name}</span>
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                            <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[150px]">
-                              {activeEvent.price === 0 ? (
-                                <span className="text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Free</span>
-                              ) : req.team ? (
-                                isLeader ? (
-                                  <span className="truncate block text-[color:var(--sk-fg)] dark:text-white" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
-                                ) : (
-                                  <span className="italic text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Member</span>
-                                )
-                              ) : (
-                                <span className="truncate block text-[color:var(--sk-fg)] dark:text-white" title={req.transaction_id ?? '—'}>{req.transaction_id ?? '—'}</span>
-                              )}
-                            </td>
-                            <td className="p-4 text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
-                            <td className="p-4 text-center">
-                              <span className="text-[11px] text-green-600 dark:text-green-500 uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Approved</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  </div>)}</Paginated>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <p className="text-[11px] tracking-[0.4em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] mb-4" style={{ fontFamily: FM }}>Rejected ({rejected.length})</p>
-              {rejected.length === 0 ? (
-                <div className="p-8 rounded-xl text-center text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ background: isDark ? "var(--sk-surface)" : "#ffffff", border: isDark ? "1px dashed var(--sk-line)" : "1px dashed var(--sk-raised)", fontFamily: FB }}>No rejected registrations.</div>
-              ) : (
-                <div className="rounded-xl overflow-hidden border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] bg-white dark:bg-white/[0.005] dark:shadow-none">
-                  <Paginated items={rejected}>{pageRejected => (<div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)]" style={{ background: isDark ? "var(--sk-surface)" : "#f8fafc" }}>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Email</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Phone</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>USN</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Branch</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Team Name</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>UTR / Payment</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Date</th>
-                        <th className="p-4 text-[11px] tracking-[0.2em] uppercase text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] text-left" style={{ fontFamily: FM }}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {pageRejected.map((req) => {
-                        const isLeader = req.team ? req.team.leaderId === req.user?.id : false;
-                        return (
-                          <tr key={req.id} className="hover:bg-[color:var(--sk-surface)] dark:hover:bg-white/[0.01] transition-colors">
-                            <td className="p-4 max-w-[180px]">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-[color:var(--sk-raised)] dark:bg-white/5 flex-shrink-0 flex items-center justify-center text-xs font-bold text-[color:var(--sk-muted)] dark:text-white/50">{(req.user?.name ?? '?').charAt(0)}</div>
-                                <p className="text-sm font-medium text-[color:var(--sk-fg)] dark:text-white/80 truncate" title={req.user?.name ?? 'Unknown'} style={{ fontFamily: FB }}>{req.user?.name ?? 'Unknown'}</p>
-                              </div>
-                            </td>
-                            <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[200px] truncate" title={req.user?.email ?? '—'} style={{ fontFamily: FM }}>{req.user?.email ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[130px] truncate" title={req.user?.phone ?? '—'}>{req.user?.phone ?? '—'}</td>
-                            <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[120px] truncate" title={req.user?.usn ?? '—'}>{req.user?.usn ?? '—'}</td>
-                            <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[90px] truncate" title={req.user?.branch ?? '—'}>{req.user?.branch ?? '—'}</td>
-                            <td className="p-4 text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[180px]">
-                              {req.team ? (
-                                <div>
-                                  <span className="font-medium text-[color:var(--sk-fg)] dark:text-white/80 block truncate" title={req.team.name} style={{ fontFamily: FB }}>{req.team.name}</span>
-                                  <p className="text-[10px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono">Passkey: {req.team.passkey}</p>
-                                </div>
-                              ) : (
-                                <span className="text-[color:var(--sk-faint)] dark:text-[color:var(--sk-muted)] font-mono">—</span>
-                              )}
-                            </td>
-                            <td className="p-4 text-xs font-mono text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] max-w-[150px]">
-                              {activeEvent.price === 0 ? (
-                                <span className="text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Free</span>
-                              ) : req.team ? (
-                                isLeader ? (
-                                  req.transaction_id ? (
-                                    <span className="select-all text-red-600 dark:text-[#f87171] bg-red-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-red-500/20 dark:border-[color:var(--sk-line)] text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
-                                  ) : (
-                                    <span className="text-[color:var(--sk-faint)] dark:text-[color:var(--sk-muted)] text-[10px] uppercase tracking-wider">—</span>
-                                  )
-                                ) : (
-                                  <span className="text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] italic text-[11px]">Member</span>
-                                )
-                              ) : (
-                                req.transaction_id ? (
-                                  <span className="select-all text-red-600 dark:text-[#f87171] bg-red-500/10 dark:bg-white/5 px-2 py-0.5 rounded border border-red-500/20 dark:border-[color:var(--sk-line)] text-[11px] truncate block" title={req.transaction_id}>{req.transaction_id}</span>
-                                ) : (
-                                  <span className="text-[color:var(--sk-faint)] dark:text-[color:var(--sk-muted)] text-[10px] uppercase tracking-wider">—</span>
-                                )
-                              )}
-                            </td>
-                            <td className="p-4 text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] font-mono whitespace-nowrap">{req.created_at ? formatDateTime12H(req.created_at, false) : '—'}</td>
-                            <td className="p-4 text-center">
-                              <span className="text-[11px] text-[color:var(--sk-danger)] uppercase tracking-widest font-bold" style={{ fontFamily: FM }}>Rejected</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  </div>)}</Paginated>
-                </div>
-              )}
-            </div>
           </div>
         ) : showParticipants ? (() => {
           const dbConfirmed = registrations.filter(r => !!r.checkedInAt).map(r => ({
@@ -1224,8 +947,8 @@ export function EventsPage({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: activeIsTeam ? "Team Capacity" : "Venue Capacity", value: activeEvent.capacity || '∞' },
-                { label: activeIsTeam ? "Teams Registered" : "Registered", value: activeIsTeam ? registeredCount : registrations.length },
-                { label: "Pending Approval", value: pending.length },
+                { label: activeIsTeam ? "Teams Registered" : "Registered", value: registeredCount },
+                { label: activeIsTeam ? "Team Places Left" : "Places Left", value: activeEvent.capacity ? Math.max(0, activeEvent.capacity - registeredCount) : '∞' },
               ].map((stat, i) => (
                  <div key={i} className="p-6 rounded-2xl" style={{
                    background: isDark ? "var(--sk-surface)" : "#ffffff",
@@ -1307,13 +1030,9 @@ export function EventsPage({
 
             <div className="mt-8 pt-8 flex flex-wrap gap-5" style={{ borderTop: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)" }}>
 
-              <div 
-                onClick={() => {
-                  if (!isEventFinished) setShowApprovals(true);
-                }}
-                className={`p-5 rounded-2xl flex items-center gap-5 transition-all duration-300 ${
-                  isEventFinished ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                }`}
+              <div
+                onClick={() => setShowApprovals(true)}
+                className="p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300"
                 style={{
                   background: isDark ? "var(--sk-surface)" : "#ffffff",
                   border: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)",
@@ -1322,39 +1041,27 @@ export function EventsPage({
                   minWidth: "280px"
                 }}
                 onMouseEnter={e => {
-                  if (isEventFinished) return;
                   e.currentTarget.style.background = isDark ? "var(--sk-surface)" : "var(--sk-surface)";
                   e.currentTarget.style.borderColor = isDark ? "var(--sk-line)" : "var(--sk-raised)";
                   e.currentTarget.style.transform = "translateY(-2px)";
                 }}
                 onMouseLeave={e => {
-                  if (isEventFinished) return;
                   e.currentTarget.style.background = isDark ? "var(--sk-surface)" : "#ffffff";
                   e.currentTarget.style.borderColor = isDark ? "var(--sk-line)" : "var(--sk-raised)";
                   e.currentTarget.style.transform = "none";
                 }}
               >
-                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
                     background: isDark ? "var(--sk-surface)" : "var(--sk-surface)",
                     border: isDark ? "1px solid var(--sk-line)" : "1px solid var(--sk-line)"
                   }}
                 >
-                  <CheckCircle size={20} className={isEventFinished ? (isDark ? "text-white/30" : "text-black/30") : (isDark ? "text-white/80" : "text-[color:var(--sk-fg)]")} />
-                  {!isEventFinished && pending.length > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-[color:var(--sk-brand)] text-white text-[10px] font-bold flex items-center justify-center" style={{ fontFamily: FM }}>{pending.length}</span>
-                  )}
+                  <CheckCircle size={20} className={isDark ? "text-white/80" : "text-[color:var(--sk-fg)]"} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className={`font-medium text-lg leading-tight ${isEventFinished ? (isDark ? 'text-white/40' : 'text-[color:var(--sk-faint)]') : (isDark ? 'text-white' : 'text-[color:var(--sk-fg)]')}`} style={{ fontFamily: FC }}>Registration Approval</h3>
-                    {isEventFinished && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold uppercase tracking-wider" style={{ fontFamily: FM }}>Closed</span>
-                    )}
-                  </div>
-                  <p className="text-xs mt-1" style={{ color: isEventFinished ? (isDark ? "var(--sk-faint)" : "var(--sk-muted)") : (isDark ? "var(--sk-muted)" : "var(--sk-muted)"), fontFamily: FB }}>
-                    {isEventFinished ? "Disabled (Event has ended)" : "Review & approve pending requests"}
-                  </p>
+                  <h3 className={`font-medium text-lg leading-tight ${isDark ? 'text-white' : 'text-[color:var(--sk-fg)]'}`} style={{ fontFamily: FC }}>Registrations</h3>
+                  <p className="text-xs mt-1" style={{ color: isDark ? "var(--sk-muted)" : "var(--sk-muted)", fontFamily: FB }}>View all registration details</p>
                 </div>
               </div>
 

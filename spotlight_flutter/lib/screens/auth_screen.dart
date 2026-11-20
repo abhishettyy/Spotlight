@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../core/sk_colors.dart';
+import '../core/branches.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -386,25 +387,11 @@ class _AuthScreenState extends State<AuthScreen> {
                         },
                       ),
                       const SizedBox(height: 20),
+                      _buildBranchDropdown(),
+                      const SizedBox(height: 20),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _branchController,
-                              labelText: 'Branch',
-                              hintText: 'Branch',
-                              textCapitalization: TextCapitalization.characters,
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  if (_autoValidateMode == AutovalidateMode.always) return 'Invalid';
-                                  return null;
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
                           Expanded(
                             child: _buildTextField(
                               controller: _yearController,
@@ -495,7 +482,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           password: _passwordController.text.trim(),
                           name: _nameController.text.trim(),
                           usn: _usnController.text.trim().toUpperCase(),
-                          branch: _branchController.text.trim().toUpperCase(),
+                          branch: _branchController.text,
                           phone: _phoneController.text.trim(),
                           year: _yearController.text.trim(),
                           sem: _semController.text.trim(),
@@ -793,6 +780,66 @@ class _AuthScreenState extends State<AuthScreen> {
       width: 1,
       height: 32,
       color: Sk.of(context).line,
+    );
+  }
+
+  /// Branch: one of the college's branches. It can't be changed after sign-up.
+  Widget _buildBranchDropdown() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final subTextColor = Sk.of(context).muted;
+    final selected = _branchController.text.isEmpty ? null : _branchController.text;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'BRANCH',
+          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: subTextColor),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          // Rebuilt with a new key when the form is cleared, so the picked value resets too
+          key: ValueKey('branch-${_branchController.text}'),
+          initialValue: selected,
+          isExpanded: true,
+          dropdownColor: Theme.of(context).cardColor,
+          style: GoogleFonts.inter(color: cs.onSurface, fontSize: 15),
+          items: kBranches
+              .map((b) => DropdownMenuItem(value: b, child: Text(b, overflow: TextOverflow.ellipsis)))
+              .toList(),
+          onChanged: (v) => setState(() => _branchController.text = v ?? ''),
+          validator: (v) {
+            if (v == null || v.isEmpty) {
+              if (_autoValidateMode == AutovalidateMode.always) return 'Select your branch';
+              return null;
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: 'Select your branch',
+            hintStyle: GoogleFonts.inter(color: subTextColor.withValues(alpha: 0.6), fontSize: 15),
+            errorStyle: GoogleFonts.inter(color: Sk.of(context).danger, fontSize: 12, fontWeight: FontWeight.w500),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Sk.of(context).danger, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Sk.of(context).danger, width: 1.5),
+            ),
+            filled: true,
+            fillColor: cs.surface,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: cs.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
     );
   }
 

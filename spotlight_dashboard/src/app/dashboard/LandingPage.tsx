@@ -8,8 +8,8 @@ import { openAdminConsole } from "../siteNavigation";
 
 export const FEATURES = [
   { icon: Calendar, title: "Liquid Event Creation", desc: "Craft events with a fluid step-by-step builder. From concept to live in under two minutes."      },
-  { icon: Shield,   title: "Payment Moderation",    desc: "QR-based UPI payments verified by transaction ID, with manual approval and audit trails."     },
-  { icon: Zap,      title: "Smart Publishing",      desc: "Free events go live instantly. Paid events enter the intelligent moderation stream automatically." },
+  { icon: Shield,   title: "Free Registration",     desc: "Every event is free. Students register in a tap and are confirmed instantly."                  },
+  { icon: Zap,      title: "Smart Publishing",      desc: "Events go live as soon as you publish them, with live registration counts." },
 ];
 
 
@@ -223,7 +223,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                     {activeModal === 'contact' && 'Contact Us'}
                   </h3>
                   <p className="text-xs mt-1" style={{ fontFamily: FB, color: isDark ? "#999" : "var(--sk-muted)" }}>
-                    {activeModal === 'contact' ? 'Reach out to Spotlight Support' : 'Last Updated: November 19, 2026'}
+                    {activeModal === 'contact' ? 'Reach out to Spotlight Support' : 'Last Updated: November 21, 2026'}
                   </p>
                 </div>
                 <button onClick={() => setActiveModal(null)}
@@ -242,12 +242,12 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                   <>
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Information We Collect From Clubs</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We collect your club name, email address, password (stored only as a secure hash, or Google Sign-In instead), department, description, coordinator name and phone number, and logo. You can also add a UPI ID and payment QR code, and event details such as title, description, venue, dates, fee, capacity and banner image. New clubs can sign in only after the Spotlight admin approves their registration; the admin sees these details to decide.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">We collect your club name, email address, password (stored only as a secure hash, or Google Sign-In instead), department, description, coordinator name and phone number, and logo. For each event you add details such as title, description, venue, dates, capacity, team size and banner image. New clubs can sign in only after the Spotlight admin approves their registration; the admin sees these details to decide.</p>
                     </div>
 
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Participant Information Available to Clubs</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">When students register for your events, you see their name, email, phone number, USN, branch, year, semester, team name, UPI Transaction ID (UTR), and registration and check-in status.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">When students register for your events, you see their name, email, phone number, USN, branch, year, semester, team name, and registration and check-in status.</p>
                     </div>
 
                     <div>
@@ -257,7 +257,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
 
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Third-Party Services</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">Render hosts the Spotlight server; GoDaddy hosts the database, website and uploaded images; Google provides optional Google Sign-In; and Gmail sends your approval email. Club logos, event banners and payment QR codes are public images that anyone with the link can view.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">Render hosts the Spotlight server; GoDaddy hosts the database, website and uploaded images; Google provides optional Google Sign-In; and Gmail sends your approval email. Club logos and event banners are public images that anyone with the link can view.</p>
                     </div>
 
                     <div>
@@ -271,7 +271,7 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                   <>
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">About the Spotlight Club Dashboard</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">The Spotlight Club Dashboard lets approved clubs create, publish and manage events. Published events appear in the Spotlight app and on the Spotlight student website. Clubs review registrations, check payment transaction IDs, and scan entry tickets at the event.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">The Spotlight Club Dashboard lets approved clubs create, publish and manage events. Published events appear in the Spotlight app and on the Spotlight student website. Clubs view registrations and scan entry tickets at the event.</p>
                     </div>
 
                     <div>
@@ -285,13 +285,13 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                     </div>
 
                     <div>
-                      <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Events &amp; Payments</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">Spotlight does not process payments. Students pay your club directly through UPI and enter the transaction ID, which you check before approving them. Your club is responsible for its event details, fees, refunds and entry rules.</p>
+                      <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Events</h4>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">All events on Spotlight are free, as per college guidelines; no fee may be charged through Spotlight. Students who register are confirmed straight away. Your club is responsible for its event details, capacity and entry rules.</p>
                     </div>
 
                     <div>
                       <h4 className="text-[color:var(--sk-fg)] dark:text-white font-semibold text-sm mb-1.5">Suspension</h4>
-                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">The Spotlight admin may reject a registration or suspend a club that posts misleading events or misuses participant data.</p>
+                      <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] leading-relaxed">The Spotlight admin may suspend a club that posts misleading events or misuses participant data.</p>
                     </div>
                   </>
                 )}

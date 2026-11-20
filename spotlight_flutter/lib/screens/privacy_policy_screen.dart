@@ -69,7 +69,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Last Updated: November 19, 2026',
+                'Last Updated: November 21, 2026',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -112,8 +112,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       body: 'The events you register for and their status, your team name, team members and team passkey, the time your ticket is scanned at the event, and in-app notifications about your registrations.',
                     ),
                     buildSubSection(
-                      title: 'Payments',
-                      body: 'Spotlight does not process payments. You pay the club directly through UPI, and we store only the UPI Transaction ID (UTR) you enter. No bank, card or UPI PIN details, and no payment screenshots.',
+                      title: 'No Payments',
+                      body: 'All events on Spotlight are free, so we never ask for or store any payment details.',
                     ),
                     buildSubSection(
                       title: 'Stored Only on Your Phone',
@@ -132,7 +132,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 title: '3. How We Use Data',
                 cardBg: cardBg,
                 child: para(
-                  'To create your account and keep your sign-in secure, register you for events and teams, issue QR entry tickets and check you in, let the organizing club confirm your payment using your transaction ID, show in-app notifications about your registrations and events, and prevent duplicate registrations and misuse. We do not send push notifications or marketing emails.',
+                  'To create your account and keep your sign-in secure, register you for events and teams, issue QR entry tickets and check you in, show in-app notifications about your registrations and events, and prevent duplicate registrations and misuse. We do not send push notifications or marketing emails.',
                 ),
               ),
               _buildSectionCard(
@@ -145,7 +145,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   children: [
                     buildSubSection(
                       title: 'The Club Running the Event',
-                      body: 'Your name, email, phone, USN, branch, year, semester, team name, transaction ID, and registration and check-in status. Clubs may use this only to run that event.',
+                      body: 'Your name, email, phone, USN, branch, year, semester, team name, and registration and check-in status. Clubs may use this only to run that event.',
                     ),
                     buildSubSection(
                       title: 'The Spotlight Admin',
@@ -176,11 +176,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     ),
                     buildSubSection(
                       title: 'Copy to Clipboard',
-                      body: 'When you tap copy, a club UPI ID or team passkey is copied. The app does not read your clipboard.',
+                      body: 'When you tap copy, a team passkey is copied. The app does not read your clipboard.',
                     ),
                     buildSubSection(
                       title: 'Opening Other Apps',
-                      body: 'Links can open your UPI payment app (Google Pay, PhonePe, Paytm), email app or browser.',
+                      body: 'Links can open your email app or browser.',
                     ),
                   ],
                 ),
@@ -209,7 +209,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 title: '8. Using Spotlight',
                 cardBg: cardBg,
                 child: para(
-                  'Give accurate details; clubs rely on them to verify you. Events, fees, refunds and entry rules are set by the organizing club, so contact the club about a specific event or payment. Keep your password and team passkeys private. Do not create fake registrations or enter false transaction IDs; we may suspend accounts that do. Spotlight is meant for college students and does not knowingly collect data from children under 13.',
+                  'Give accurate details; clubs rely on them to verify you. All events are free; venue, timings and entry rules are set by the organizing club, so contact the club about a specific event. Keep your password and team passkeys private. Do not create fake registrations or misuse the platform; we may suspend accounts that do. Spotlight is meant for college students and does not knowingly collect data from children under 13.',
                 ),
               ),
               _buildSectionCard(

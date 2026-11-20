@@ -5,7 +5,7 @@ import { FC, FM, FB, parseLocalDate, formatEventHeaderDate, LiveTag, getEventSta
 
 export const QUICK_ACTIONS = [
   { id: "create",   icon: Plus,     label: "Create Event",        desc: "Launch a new event in minutes" },
-  { id: "settings", icon: Settings, label: "Update Club Profile", desc: "Edit club info, UPI ID & security" },
+  { id: "settings", icon: Settings, label: "Update Club Profile", desc: "Edit club info, logo & security" },
   { id: "events",   icon: Users,    label: "Manage Teams",        desc: "Oversee team registrations per event" },
 ];
 
@@ -75,7 +75,7 @@ export function OverviewPage({
         {[
           { label: "Total Events",        value: totalEvents,        sub: `${clubEvents.filter(e => getEventStatus(e) !== 'previous').length} active`, tab: "events", warn: false },
           { label: "Total Registrations", value: totalRegistrations, sub: "Across all events",                                                        tab: "events", warn: false },
-          { label: "Pending Approvals",   value: pendingCount,       sub: "Awaiting your review",                                                     tab: "events", warn: pendingCount > 0 },
+          { label: "Live Now",            value: clubEvents.filter(e => getEventStatus(e) === 'live').length, sub: "Happening right now",                     tab: "events", warn: false },
         ].map((k, i) => (
           <div key={k.label} className={`px-6 py-5 ${i === 0 ? "" : "border-t sm:border-t-0 sm:border-l"}`}
             style={{ borderColor: "var(--sk-line)" }}>

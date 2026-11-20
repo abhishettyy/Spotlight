@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../config/db';
+import { normalizeBranch, INVALID_BRANCH_MESSAGE } from '../utils/branches';
 import { requireAuth } from '../middlewares/auth';
 
 const router = Router();
@@ -30,9 +31,29 @@ router.put('/update', requireAuth, async (req: Request, res: Response): Promise<
     const userId = req.auth!.userId;
     const { usn, branch, phone } = req.body;
 
+    // Onboarding after Google sign-in. USN and branch are set once and can't be changed afterwards.
+    const current = await prisma.profile.findUnique({ where: { id: userId } });
+    if (!current) return res.status(404).json({ error: 'Profile not found.' });
+
+    let finalUsn = current.usn;
+    if (!finalUsn && typeof usn === 'string' && usn.trim()) {
+      const cleanUsn = usn.trim();
+      const existing = await prisma.profile.findUnique({ where: { usn: cleanUsn } });
+      if (existing && existing.id !== userId) {
+        return res.status(400).json({ error: 'This USN is already registered to another account.' });
+      }
+      finalUsn = cleanUsn;
+    }
+
+    let finalBranch = current.branch;
+    if (!finalBranch && branch) {
+      finalBranch = normalizeBranch(branch);
+      if (!finalBranch) return res.status(400).json({ error: INVALID_BRANCH_MESSAGE });
+    }
+
     const profile = await prisma.profile.update({
       where: { id: userId },
-      data: { usn, branch, phone }
+      data: { usn: finalUsn, branch: finalBranch, phone }
     });
 
     const { password: _pw, ...safeProfile } = profile as any;
@@ -53,6 +74,7 @@ router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<an
       return res.status(404).json({ error: 'Profile not found.' });
     }
 
+    // USN and branch are set once (sign-up or onboarding) and can't be changed afterwards
     let finalUsn = currentProfile.usn;
     if (!finalUsn && usn && typeof usn === 'string' && usn.trim()) {
       const cleanUsn = usn.trim();
@@ -68,7 +90,7 @@ router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<an
       data: {
         fullName: full_name !== undefined ? (full_name ? String(full_name).trim() : null) : undefined,
         usn: finalUsn !== undefined ? (finalUsn ? String(finalUsn).trim() : null) : undefined,
-        branch: branch !== undefined ? (branch ? String(branch).trim() : null) : undefined,
+        branch: currentProfile.branch ? undefined : (branch ? normalizeBranch(branch) ?? undefined : undefined),
         phone: phone !== undefined ? (phone ? String(phone).trim() : null) : undefined,
         year: year !== undefined && year !== '' ? parseInt(String(year), 10) : undefined,
         sem: sem !== undefined && sem !== '' ? parseInt(String(sem), 10) : undefined,

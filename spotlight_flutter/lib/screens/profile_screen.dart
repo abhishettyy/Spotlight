@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/sk_colors.dart';
+import '../core/branches.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -195,6 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final bool hasUsnSet = user?.usn != null && user!.usn!.isNotEmpty;
+        final bool hasBranchSet = user?.branch != null && user!.branch!.isNotEmpty;
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -221,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final bool hasChanges =
                 nameController.text.trim() != initialName.trim() ||
                 (!hasUsnSet && usnController.text.trim().toUpperCase() != initialUsn.trim().toUpperCase()) ||
-                branchController.text.trim().toUpperCase() != initialBranch.trim().toUpperCase() ||
+                (!hasBranchSet && branchController.text.trim() != initialBranch.trim()) ||
                 phoneController.text.trim() != initialPhone.trim() ||
                 yearController.text.trim() != initialYear.trim() ||
                 semController.text.trim() != initialSem.trim();
@@ -299,13 +301,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        TextFormField(
-                          controller: branchController,
-                          style: GoogleFonts.inter(color: cs.onBackground),
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: fieldDecoration('Branch', hint: 'e.g. ISE, CSE, ECE'),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Branch is required' : null,
-                        ),
+                        if (hasBranchSet)
+                          TextFormField(
+                            controller: branchController,
+                            enabled: false,
+                            style: GoogleFonts.inter(color: labelColor),
+                            decoration: fieldDecoration(
+                              'Branch',
+                              hint: 'Branch is locked',
+                              helperText: '🔒 Branch cannot be edited once set',
+                            ),
+                          )
+                        else
+                          DropdownButtonFormField<String>(
+                            initialValue: kBranches.contains(branchController.text) ? branchController.text : null,
+                            isExpanded: true,
+                            dropdownColor: Theme.of(context).cardColor,
+                            style: GoogleFonts.inter(color: cs.onSurface),
+                            decoration: fieldDecoration(
+                              'Branch',
+                              hint: 'Select your branch',
+                              helperText: 'Note: Branch cannot be edited once set',
+                            ),
+                            items: kBranches
+                                .map((b) => DropdownMenuItem(value: b, child: Text(b, overflow: TextOverflow.ellipsis)))
+                                .toList(),
+                            onChanged: (v) => branchController.text = v ?? '',
+                            validator: (v) => (v == null || v.isEmpty) ? 'Branch is required' : null,
+                          ),
                         const SizedBox(height: 16),
 
                         Row(
@@ -389,7 +412,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         userId: user.id,
                                         name: nameController.text.trim(),
                                         usn: usnController.text.trim().toUpperCase(),
-                                        branch: branchController.text.trim().toUpperCase(),
+                                        branch: hasBranchSet ? null : branchController.text,
                                         phone: phoneController.text.trim(),
                                         year: yearController.text.trim(),
                                         sem: semController.text.trim(),

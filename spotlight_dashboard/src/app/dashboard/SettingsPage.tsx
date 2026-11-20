@@ -176,38 +176,11 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
           </div>
         </div>
 
-        <div id="payment-settings" className="p-6 md:p-8 rounded-3xl" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
-          <h2 className="text-lg font-medium text-[color:var(--sk-fg)] dark:text-white mb-6" style={{ fontFamily: FB }}>Payment Settings</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Default UPI ID</label>
-              <input type="text" placeholder="club@upi" value={formData.upiId} onChange={e => setFormData(p => ({ ...p, upiId: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)", fontFamily: FB }} onFocus={e => e.currentTarget.style.borderColor = "var(--sk-line-strong)"} onBlur={e => e.currentTarget.style.borderColor = "var(--sk-line)"} />
-              {!formData.upiId && (
-                <p className="text-[11px] text-[color:var(--sk-brand)] mt-1.5 font-medium" style={{ fontFamily: FM }}>UPI ID not added yet</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Default QR Code</label>
-              <input type="file" accept="image/*" className="hidden" id="qr-upload-settings" onChange={e => {
-                const file = e.target.files?.[0];
-                if (file) setQrFile(file);
-              }} />
-              <label htmlFor="qr-upload-settings" className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-[color:var(--sk-muted)] flex items-center justify-between cursor-pointer transition-all hover:bg-[color:var(--sk-raised)] dark:hover:bg-white/[0.04]" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)", fontFamily: FB }}>
-                <span>{qrFile ? qrFile.name : (formData.qrUrl ? "QR Uploaded (Click to change)" : "Upload QR Image...")}</span>
-                <Upload size={14} className={qrFile || formData.qrUrl ? "text-green-500" : ""} />
-              </label>
-              {!formData.qrUrl && !qrFile && (
-                <p className="text-[11px] text-[color:var(--sk-danger)] mt-1.5 font-medium" style={{ fontFamily: FM }}>QR Code not uploaded yet</p>
-              )}
-            </div>
-          </div>
-        </div>
-
         <div className="p-6 md:p-8 rounded-3xl space-y-3" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[color:var(--sk-fg)] dark:text-white font-medium" style={{ fontFamily: FB }}>Save All Settings</p>
-              <p className="text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Apply updates to profile and payment settings.</p>
+              <p className="text-[11px] text-[color:var(--sk-muted)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Apply updates to your club profile.</p>
             </div>
             <button onClick={handleSaveInit} disabled={!isDirty || isSaving} className="px-6 py-2.5 bg-[color:var(--sk-brand)] hover:bg-[color:var(--sk-brand)]/80 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none" style={{ fontFamily: FB }}>Apply Changes</button>
           </div>
@@ -382,7 +355,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-semibold text-[color:var(--sk-fg)] dark:text-white" style={{ fontFamily: FC }}>Dashboard Privacy Policy</h3>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] mt-1" style={{ fontFamily: FB }}>Last Updated: November 19, 2026</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)] mt-1" style={{ fontFamily: FB }}>Last Updated: November 21, 2026</p>
                   </div>
                   <button onClick={() => setShowPrivacyModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-[color:var(--sk-raised)] dark:bg-white/5 hover:bg-[color:var(--sk-raised)] dark:hover:bg-white/10 text-[color:var(--sk-muted)] dark:text-white/60 hover:text-[color:var(--sk-fg)] dark:hover:text-white transition-colors">
                     <X size={16} />
@@ -392,12 +365,12 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-[color:var(--sk-fg)] dark:text-[#ccc] leading-relaxed border-t border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] py-6" style={{ fontFamily: FB }}>
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">About the Spotlight Club Dashboard</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">The Spotlight Club Dashboard lets approved clubs create, publish and manage events. Published events appear in the Spotlight app and on the Spotlight student website. Clubs review registrations, check payment transaction IDs, and scan entry tickets.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">The Spotlight Club Dashboard lets approved clubs create, publish and manage events. Published events appear in the Spotlight app and on the Spotlight student website. Clubs view registrations and scan entry tickets.</p>
                   </div>
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Information We Collect From Clubs</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We collect your club name, email address, password (stored only as a secure hash, or Google Sign-In instead), department, description, coordinator name and phone number, and logo. You can also add a UPI ID and payment QR code, and event details such as title, description, venue, dates, fee, capacity and banner image. New clubs can sign in only after the Spotlight admin approves their registration; the admin sees these details to decide.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">We collect your club name, email address, password (stored only as a secure hash, or Google Sign-In instead), department, description, coordinator name and phone number, and logo. For each event you add details such as title, description, venue, dates, capacity, team size and banner image. New clubs can sign in only after the Spotlight admin approves their registration; the admin sees these details to decide.</p>
                   </div>
 
                   <div>
@@ -407,7 +380,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Participant Information Available to Clubs</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">When students register for your events, you see their name, email, phone number, USN, branch, year, semester, team name, UPI Transaction ID (UTR), and registration and check-in status.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">When students register for your events, you see their name, email, phone number, USN, branch, year, semester, team name, and registration and check-in status.</p>
                   </div>
 
                   <div>
@@ -417,7 +390,7 @@ export function SettingsPage({ club, profile, getToken, onUpdate, onLogout }: { 
 
                   <div>
                     <h4 className="text-[color:var(--sk-fg)] dark:text-white font-medium text-sm mb-2">Third-Party Services</h4>
-                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Render hosts the Spotlight server; GoDaddy hosts the database, website and uploaded images; Google provides optional Google Sign-In; and Gmail sends your approval email. Club logos, event banners and payment QR codes are public images that anyone with the link can view.</p>
+                    <p className="text-xs text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]">Render hosts the Spotlight server; GoDaddy hosts the database, website and uploaded images; Google provides optional Google Sign-In; and Gmail sends your approval email. Club logos and event banners are public images that anyone with the link can view.</p>
                   </div>
 
                   <div>

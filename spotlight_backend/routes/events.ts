@@ -79,15 +79,14 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
       return res.status(404).json({ error: 'Club not found. Please refresh the page and try again.' });
     }
 
-    const parsedFee = fee ? parseFloat(fee) : 0;
+    // College policy: every event is free, whatever the request says. A free registration is
+    // confirmed immediately, so there is no payment, approval or rejection step.
+    const parsedFee = 0;
 
     const finalBannerUrl = bannerUrl ? await uploadBase64Image(bannerUrl, 'events/banners') : null;
 
-    let finalQrUrl = qrUrl || null;
-
-    if (finalQrUrl) {
-      finalQrUrl = await uploadBase64Image(finalQrUrl, 'events/qrs');
-    }
+    // No payments, so no payment QR is stored
+    const finalQrUrl = null;
 
     const startDate = eventDate ? new Date(eventDate) : campusNow();
     const defaultEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59, 999);
@@ -109,7 +108,7 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         clubId,
         bannerUrl: finalBannerUrl,
         qrUrl: finalQrUrl,
-        upiId: upiId || null,
+        upiId: null,
       },
 
       include: { club: true },

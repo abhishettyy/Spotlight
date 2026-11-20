@@ -126,7 +126,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
         venue: formData.venue || undefined,
         eventDate: formData.date || undefined,
         eventEndDate: formData.endDate || undefined,
-        fee: formData.type === "paid" ? parseInt(formData.amount) || 0 : 0,
+        fee: 0, // all events are free (college policy)
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
@@ -211,7 +211,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
           {fieldErrors.desc && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.desc}</p>}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Venue</label>
             <input type="text" placeholder="Main Auditorium" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.venue} onChange={e => { setFormData(p => ({...p, venue: e.target.value})); touch("venue"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.venue ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
@@ -224,22 +224,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
               <p className="text-[10px] text-[color:var(--sk-muted)] mt-0.5" style={{ fontFamily: FM }}>Registration closes once this many teams have registered.</p>
             )}
             {fieldErrors.capacity && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.capacity}</p>}
-          </div>
-          <div className="space-y-1.5 relative">
-            <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Pricing</label>
-            <GlassSelect
-              value={formData.type}
-              onChange={val => setFormData(p => ({...p, type: val, amount: "", qrCode: "", customUpiId: ""}))}
-              options={[
-                { value: "free", label: "Free" },
-                { value: "paid", label: "Paid" },
-              ]}
-            />
-            {formData.type === "free" && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -bottom-5 left-1 text-[11px] text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>
-                FCFS. No approval needed.
-              </motion.p>
-            )}
           </div>
         </div>
 
@@ -309,93 +293,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
           </AnimatePresence>
         </div>
 
-        <AnimatePresence>
-          {formData.type === "paid" && (
-            <motion.div
-              initial={{ height: 0, opacity: 0, marginTop: 0 }}
-              animate={{ height: "auto", opacity: 1, marginTop: 24 }}
-              exit={{ height: 0, opacity: 0, marginTop: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="p-6 rounded-2xl grid md:grid-cols-2 gap-6" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Amount (INR)</label>
-                  <input type="number" placeholder="e.g. 500" className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.amount} onChange={e => { setFormData(p => ({...p, amount: e.target.value})); touch("amount"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.amount ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
-                  {fieldErrors.amount && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.amount}</p>}
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Payment Setup</label>
-                  <div className="flex gap-2 p-1 rounded-xl" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
-                    <button onClick={() => setFormData(p => ({...p, useDefaultQr: true, customUpiId: ""}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${formData.useDefaultQr ? "bg-white/10 text-white" : "text-[color:var(--sk-muted)] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Default QR &amp; UPI</button>
-                    <button onClick={() => setFormData(p => ({...p, useDefaultQr: false}))} className={`flex-1 py-2 text-xs rounded-lg transition-all ${!formData.useDefaultQr ? "bg-white/10 text-white" : "text-[color:var(--sk-muted)] hover:text-[#ccc]"}`} style={{ fontFamily: FB }}>Custom QR &amp; UPI</button>
-                  </div>
-
-                  {!formData.useDefaultQr && (
-                    <div className="space-y-3 pt-1">
-                      <div>
-                        <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block mb-1" style={{ fontFamily: FM }}>Upload Custom QR Image</label>
-                        <input type="file" accept="image/*" className="hidden" id="qr-upload" onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setFormData(p => ({...p, qrFile: file, qrCode: file.name}));
-                            touch("qrCode");
-                          }
-                        }} />
-                        <label htmlFor="qr-upload" className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-muted)] flex items-center justify-between cursor-pointer transition-all hover:bg-white/[0.04]" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.qrCode ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }}>
-                          <span>{formData.qrFile ? formData.qrFile.name : "Upload Custom QR Image..."}</span>
-                          <Upload size={14} className={formData.qrFile ? "text-green-400" : ""} />
-                        </label>
-                        {fieldErrors.qrCode && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.qrCode}</p>}
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block mb-1" style={{ fontFamily: FM }}>Custom UPI ID (for this event)</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. event@upi"
-                          className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
-                          style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.customUpiId ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }}
-                          value={formData.customUpiId}
-                          onChange={e => { setFormData(p => ({...p, customUpiId: e.target.value})); touch("customUpiId"); }}
-                          onFocus={e => e.currentTarget.style.borderColor = fieldErrors.customUpiId ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"}
-                          onBlur={e => e.currentTarget.style.borderColor = fieldErrors.customUpiId ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}
-                        />
-                        {fieldErrors.customUpiId && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.customUpiId}</p>}
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.useDefaultQr && (
-                    <div className="space-y-2 pt-1">
-                      {clubQrUrl && clubUpiId ? (
-                        <div className="text-xs text-emerald-400 font-medium px-2 flex items-center gap-1.5" style={{ fontFamily: FB }}>
-                          <CheckCircle size={13} /> Default UPI ID: {clubUpiId}
-                        </div>
-                      ) : (
-                        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs space-y-1.5" style={{ fontFamily: FB }}>
-                          {!clubQrUrl && (
-                            <p className="text-[color:var(--sk-brand)] font-medium flex items-center gap-1.5">
-                              ⚠️ Default Payment QR Code is not uploaded in Settings.
-                            </p>
-                          )}
-                          {!clubUpiId && (
-                            <p className="text-[color:var(--sk-brand)] font-medium flex items-center gap-1.5">
-                              ⚠️ Default Payment UPI ID is not added in Settings.
-                            </p>
-                          )}
-                          <p className="text-[color:var(--sk-muted)] text-[11px] pt-0.5">
-                            Please configure payment details in <strong>Club Settings</strong> or select <strong>Custom QR &amp; UPI</strong> above.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {error && (
           <p className="text-xs text-[color:var(--sk-danger)] px-1" style={{ fontFamily: FM }}>{error}</p>

@@ -18,6 +18,7 @@ import { fetchProfileStats, editProfile } from '@student/api/profiles';
 import { changePassword, verifyPassword } from '@student/api/auth';
 import { buildAvatarInitials } from '@student/utils/imageUtils';
 import { toast } from 'sonner';
+import { BRANCHES } from '@student/branches';
 
 // No dropdowns needed — direct inputs used
 
@@ -370,6 +371,7 @@ function SheetField({
   helperText,
   helperColor = 'var(--sk-warn)',
   autoUppercase = false,
+  options,
 }: {
   label: string;
   value: string;
@@ -381,6 +383,8 @@ function SheetField({
   helperText?: React.ReactNode;
   helperColor?: string;
   autoUppercase?: boolean;
+  /** Shows a dropdown of these values instead of a text box */
+  options?: readonly string[];
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -412,6 +416,22 @@ function SheetField({
         >
           {label}
         </label>
+        {options && !disabled ? (
+          <select
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={{
+              width: '100%', background: 'transparent', border: 'none', outline: 'none', padding: 0,
+              fontSize: 16, fontWeight: 500, fontFamily: 'var(--font-sans)', cursor: 'pointer',
+              color: value ? 'var(--text)' : 'var(--subtext)',
+            }}
+          >
+            <option value="" disabled>{placeholder ?? 'Select'}</option>
+            {options.map((o) => <option key={o} value={o} style={{ color: 'var(--text)', background: 'var(--surface)' }}>{o}</option>)}
+          </select>
+        ) : (
         <input
           type={type}
           value={value}
@@ -437,6 +457,7 @@ function SheetField({
             cursor: disabled ? 'not-allowed' : 'text',
           }}
         />
+        )}
       </div>
       {helperText && (
         <div
@@ -476,6 +497,7 @@ function EditProfileModal({
   const initialSem = user.sem ?? '';
 
   const hasUsnSet = Boolean(user.usn && user.usn.trim().length > 0);
+  const hasBranchSet = Boolean(user.branch && user.branch.trim().length > 0);
 
   const [name, setName] = useState(initialName);
   const [usn, setUsn] = useState(initialUsn);
@@ -489,7 +511,7 @@ function EditProfileModal({
   const hasChanges =
     name.trim() !== initialName.trim() ||
     (!hasUsnSet && usn.trim().toUpperCase() !== initialUsn.trim().toUpperCase()) ||
-    branch.trim().toUpperCase() !== initialBranch.trim().toUpperCase() ||
+    (!hasBranchSet && branch.trim() !== initialBranch.trim()) ||
     phone.trim() !== initialPhone.trim() ||
     year.trim() !== initialYear.trim() ||
     sem.trim() !== initialSem.trim();
@@ -510,7 +532,7 @@ function EditProfileModal({
         return;
       }
     }
-    if (!branch.trim()) {
+    if (!hasBranchSet && !branch.trim()) {
       toast.error('Branch is required');
       return;
     }
@@ -543,7 +565,7 @@ function EditProfileModal({
         userId: user.id,
         name: name.trim(),
         usn: usn.trim().toUpperCase(),
-        branch: branch.trim().toUpperCase(),
+        branch: hasBranchSet ? undefined : branch,
         phone: phone.trim(),
         year: year.trim(),
         sem: sem.trim(),
@@ -660,8 +682,20 @@ function EditProfileModal({
             label="Branch"
             value={branch}
             onChange={setBranch}
-            autoUppercase
-            placeholder="e.g. ISE, CSE, ECE"
+            disabled={hasBranchSet}
+            options={BRANCHES}
+            placeholder={hasBranchSet ? 'Branch is locked' : 'Select your branch'}
+            helperText={
+              hasBranchSet ? (
+                <>
+                  <span>🔒</span>
+                  <span>Branch cannot be edited once set</span>
+                </>
+              ) : (
+                'Note: Branch cannot be edited once set'
+              )
+            }
+            helperColor={hasBranchSet ? 'var(--sk-warn)' : 'var(--subtext)'}
           />
 
           {/* Year & Semester side by side */}

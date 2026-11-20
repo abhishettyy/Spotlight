@@ -25,6 +25,16 @@ const generateUniquePasskey = async (): Promise<string> => {
   return passkey;
 };
 
+/**
+ * Registration closes at the deadline. An event with no deadline (possible only through the API;
+ * the dashboard always sets one) closes when it starts, so it can never stay open forever.
+ */
+function registrationClosed(event: { registrationDeadline: Date | null; eventDate: Date | null } | null | undefined): boolean {
+  if (!event) return false;
+  const closesAt = event.registrationDeadline ?? event.eventDate;
+  return !!closesAt && campusNow() > new Date(closesAt);
+}
+
 /** A rule check that failed inside a registration transaction; becomes a 400 with this message. */
 class RegistrationRejected extends Error {}
 
@@ -149,7 +159,7 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
-    if (event.registrationDeadline && campusNow() > new Date(event.registrationDeadline)) {
+    if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
@@ -179,7 +189,7 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return res.status(404).json({ error: 'Event not found.' });
 
-    if (event.registrationDeadline && campusNow() > new Date(event.registrationDeadline)) {
+    if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
     }
 
@@ -225,7 +235,7 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
     });
     if (!leaderReg) return res.status(404).json({ error: 'Invalid passkey.' });
 
-    if (team.event?.registrationDeadline && campusNow() > new Date(team.event.registrationDeadline)) {
+    if (registrationClosed(team.event)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
     }
 
@@ -284,7 +294,7 @@ router.put('/registrations/:id/payment', requireAuth, async (req: Request, res: 
       return res.status(403).json({ error: 'Forbidden: You cannot upload payment details for another user.' });
     }
 
-    if (registration.event?.registrationDeadline && campusNow() > new Date(registration.event.registrationDeadline)) {
+    if (registrationClosed(registration.event)) {
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
@@ -432,6 +442,10 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
 
 router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
+    // College policy: all events are free and every registration is confirmed, so clubs can no
+    // longer reject registrations. The code below is kept but no longer reachable.
+    return res.status(400).json({ error: 'Registrations can no longer be rejected.' });
+
     const id = req.params.id as string;
 
     const registration = await prisma.registration.findUnique({

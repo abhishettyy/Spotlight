@@ -79,8 +79,8 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
     return sessionStorage.getItem("spotlight_reminder_dismissed") === "true";
   });
 
+  // Only the logo matters now: all events are free, so clubs no longer need UPI or QR details
   const isProfileIncomplete = !!currentClub && (
-    !currentClub.upiId ||
     !currentClub.logoUrl ||
     currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3"
   );
@@ -411,7 +411,7 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
                   <div>
                     <h4 className="text-sm font-semibold text-white" style={{ fontFamily: FB }}>Complete Your Club Profile</h4>
                     <p className="text-xs text-[color:var(--sk-muted)]" style={{ fontFamily: FM }}>
-                      Your profile is incomplete: logo or UPI ID is missing. Please add them to customize your page.
+                      Your club logo is missing. Please add it to customize your page.
                     </p>
                   </div>
                 </div>
@@ -624,19 +624,6 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
                 </div>
               )}
 
-              {!currentClub?.upiId && (
-                <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "color-mix(in srgb, var(--sk-brand) 3%, transparent)", border: "1px dashed color-mix(in srgb, var(--sk-brand) 20%, transparent)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full bg-[color:var(--sk-brand)]" />
-                  <span className="text-xs text-[color:var(--sk-fg)] dark:text-white/90" style={{ fontFamily: FB }}>Default UPI ID is not configured</span>
-                </div>
-              )}
-
-              {!currentClub?.qrUrl && (
-                <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ background: "color-mix(in srgb, var(--sk-brand) 3%, transparent)", border: "1px dashed color-mix(in srgb, var(--sk-brand) 20%, transparent)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full bg-[color:var(--sk-brand)]" />
-                  <span className="text-xs text-[color:var(--sk-fg)] dark:text-white/90" style={{ fontFamily: FB }}>Default QR Code is not uploaded</span>
-                </div>
-              )}
             </div>
             <div className="flex gap-3">
               <button
