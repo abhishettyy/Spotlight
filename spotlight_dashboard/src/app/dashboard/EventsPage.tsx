@@ -5,7 +5,7 @@ import { Calendar, Users, MapPin, Eye, EyeOff, CheckCircle, ChevronLeft, Check, 
 import { fetchEventRegistrations, approveRegistration, rejectRegistration, updateEvent, sanitizeErrorMessage } from "../api";
 import confetti from "canvas-confetti";
 import { useTheme } from "../theme";
-import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration } from "./shared";
+import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration, countPlaces } from "./shared";
 // The QR scanner library is large and only needed when a club opens the scanner
 const TicketScannerModal = lazy(() => import("./TicketScannerModal").then(m => ({ default: m.TicketScannerModal })));
 import { EventsTable } from "./EventsTable";
@@ -57,7 +57,7 @@ export const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: 
 type EditEventForm = { date: string; endDate: string; deadline: string; venue: string; capacity: string; minTeamSize: string; teamSizeLimit: string };
 
 /** Problems with the Edit Event form, keyed by field. Dates left unchanged may already be in the past. */
-function validateEditForm(editForm: EditEventForm, editOriginal: EditEventForm, isTeam: boolean): Record<string, string> {
+function validateEditForm(editForm: EditEventForm, editOriginal: EditEventForm, isTeam: boolean, registeredCount: number): Record<string, string> {
   const now = new Date();
   const errs: Record<string, string> = {};
 
@@ -84,10 +84,12 @@ function validateEditForm(editForm: EditEventForm, editOriginal: EditEventForm, 
     }
   }
 
-  if (!editForm.capacity) errs.capacity = "Venue capacity is required.";
-  else if (isTeam && editForm.teamSizeLimit && parseInt(editForm.capacity) < parseInt(editForm.teamSizeLimit)) {
-    errs.capacity = `Venue capacity cannot be less than max team size (${editForm.teamSizeLimit}).`;
-  } else if (parseInt(editForm.capacity) < 1) errs.capacity = "Venue capacity must be at least 1.";
+  if (!editForm.capacity) errs.capacity = isTeam ? "Number of teams is required." : "Venue capacity is required.";
+  else if (parseInt(editForm.capacity) < 1) errs.capacity = isTeam ? "Allow at least 1 team." : "Venue capacity must be at least 1.";
+  else if (editForm.capacity !== editOriginal.capacity && parseInt(editForm.capacity) < registeredCount) {
+    const what = isTeam ? (registeredCount === 1 ? "team" : "teams") : (registeredCount === 1 ? "student" : "students");
+    errs.capacity = `Capacity can't be less than the ${registeredCount} ${what} already registered.`;
+  }
   return errs;
 }
 
@@ -173,7 +175,9 @@ export function EventsPage({
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
   const activeIsTeam = !!activeEvent && (activeEvent.eventType === 'Team' || (!!activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team');
-  const allEditErrors = validateEditForm(editForm, editOriginal, activeIsTeam);
+  // Places already taken: one per solo student, one per team (as the API counts them)
+  const registeredCount = countPlaces(registrations);
+  const allEditErrors = validateEditForm(editForm, editOriginal, activeIsTeam, registeredCount);
   const editErrors: Record<string, string> = editSubmitAttempted
     ? allEditErrors
     : Object.fromEntries(Object.entries(allEditErrors).filter(([field]) => editTouched[field]));
@@ -1219,8 +1223,8 @@ export function EventsPage({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: "Venue Capacity", value: activeEvent.capacity || '∞' },
-                { label: "Registered",     value: registrations.length },
+                { label: activeIsTeam ? "Team Capacity" : "Venue Capacity", value: activeEvent.capacity || '∞' },
+                { label: activeIsTeam ? "Teams Registered" : "Registered", value: activeIsTeam ? registeredCount : registrations.length },
                 { label: "Pending Approval", value: pending.length },
               ].map((stat, i) => (
                  <div key={i} className="p-6 rounded-2xl" style={{
@@ -1465,8 +1469,8 @@ export function EventsPage({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>Venue Capacity</label>
-                        <input type="number" placeholder="e.g. 200" min={1} className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: isDark ? "var(--sk-surface)" : "var(--sk-raised)", border: `1px solid ${editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); touchEdit("capacity"); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")} />
+                        <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)] font-semibold block" style={{ fontFamily: FM }}>{activeIsTeam ? "Number of Teams" : "Venue Capacity"}</label>
+                        <input type="number" placeholder={activeIsTeam ? "e.g. 20" : "e.g. 200"} min={1} className="w-full rounded-xl px-4 py-3 text-sm text-[color:var(--sk-fg)] dark:text-white outline-none transition-all" style={{ background: isDark ? "var(--sk-surface)" : "var(--sk-raised)", border: `1px solid ${editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")}`, fontFamily: FB }} value={editForm.capacity} onKeyDown={e => { if (["-", "e", "+", "."].includes(e.key)) e.preventDefault(); }} onChange={e => { const v = e.target.value; if (v === "" || parseInt(v) >= 1) { setEditForm(p => ({...p, capacity: v})); touchEdit("capacity"); } }} onFocus={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "var(--sk-danger)"} onBlur={e => e.currentTarget.style.borderColor = editErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : (isDark ? "var(--sk-raised)" : "var(--sk-raised)")} />
                         {editErrors.capacity && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{editErrors.capacity}</p>}
                       </div>
 

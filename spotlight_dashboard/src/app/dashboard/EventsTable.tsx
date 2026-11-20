@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Calendar, ChevronRight, ChevronLeft } from "lucide-react";
-import { FC, FM, FB, parseLocalDate, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration } from "./shared";
+import { FC, FM, FB, parseLocalDate, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration, countPlaces } from "./shared";
 
 export type EventsFilter = "all" | "active" | "past";
 
@@ -78,12 +78,13 @@ export function EventsTable({
   };
 
   const regBar = (ev: ClubEvent) => {
-    const regCount = allRegistrations.filter(r => r.eventId === ev.id).length;
+    // Places against capacity: teams for team events, students for solo events
+    const regCount = countPlaces(allRegistrations.filter(r => r.eventId === ev.id));
     const fill = ev.capacity > 0 ? Math.min(100, (regCount / ev.capacity) * 100) : 0;
     return (
       <div className="min-w-[120px]">
         <div className="text-xs mb-1.5" style={{ color: "var(--sk-fg)", fontFamily: FM }}>
-          {regCount}<span style={{ color: "var(--sk-muted)" }}>{ev.capacity > 0 ? ` / ${ev.capacity}` : " · Open"}</span>
+          {regCount}<span style={{ color: "var(--sk-muted)" }}>{ev.capacity > 0 ? ` / ${ev.capacity}` : " · Open"}{typeLabel(ev) === "Team" ? " teams" : ""}</span>
         </div>
         <div className="h-1 rounded-full overflow-hidden" style={{ background: "var(--sk-raised)" }}>
           <div className="h-full rounded-full" style={{ width: `${fill}%`, background: getEventStatus(ev) === "previous" ? "var(--sk-faint)" : "var(--sk-brand)" }} />

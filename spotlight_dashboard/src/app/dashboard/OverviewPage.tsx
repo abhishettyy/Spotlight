@@ -132,7 +132,7 @@ export function OverviewPage({
                     </p>
                   </div>
                   <span className="hidden sm:inline-flex text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ color: "var(--sk-muted)", borderColor: "var(--sk-line)", fontFamily: FM }}>
-                    {(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"} · {ev.capacity > 0 ? `${ev.capacity} cap` : 'Open'}
+                    {(ev.type ?? '').toLowerCase() === "team" ? "Team" : "Solo"} · {ev.capacity > 0 ? `${ev.capacity} ${(ev.type ?? '').toLowerCase() === "team" ? 'teams' : 'cap'}` : 'Open'}
                   </span>
                   {getEventStatus(ev) === 'live' ? (
                     <LiveTag />

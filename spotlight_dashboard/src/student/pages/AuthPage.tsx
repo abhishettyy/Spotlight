@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { CLUB_LOGIN_URL } from '@student/basePath';
-import { Eye, EyeOff, Loader2, Compass, QrCode, ClipboardCheck } from 'lucide-react';
+import { CLUB_LOGIN_URL, LANDING_URL } from '@student/basePath';
+import { Eye, EyeOff, Loader2, Compass, QrCode, ClipboardCheck, ChevronLeft } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { login, signup, googleLogin, AuthResult } from '@student/api/auth';
 import { fetchPublicStats } from '@student/api/events';
@@ -11,6 +11,7 @@ import { useEventsStore } from '@student/store/eventsStore';
 import { useNotificationsStore } from '@student/store/notificationsStore';
 import { isProfileIncomplete } from '@student/types/user';
 import { toast } from 'sonner';
+import { saveCredential } from '../../saveCredential';
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 const labelStyle: React.CSSProperties = {
@@ -206,6 +207,7 @@ export default function AuthPage() {
             sem: values.sem.trim(),
           });
 
+      saveCredential(values.email.trim(), values.password.trim(), isLogin ? undefined : values.name.trim());
       await finishSignIn(result, isLogin ? 'Signed in successfully!' : 'Account created successfully!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -228,6 +230,8 @@ export default function AuthPage() {
     <div>
       <label style={labelStyle}>{label}</label>
       <input
+        id={`stu-${key}`}
+        name={key}
         value={values[key]}
         onChange={(e) => setField(key)(e.target.value)}
         placeholder={placeholder}
@@ -245,6 +249,8 @@ export default function AuthPage() {
       <label style={labelStyle}>Password</label>
       <div style={{ position: 'relative' }}>
         <input
+          id="stu-password"
+          name="password"
           value={values.password}
           onChange={(e) => setField('password')(e.target.value)}
           type={showPassword ? 'text' : 'password'}
@@ -283,6 +289,8 @@ export default function AuthPage() {
     <div className="stu-auth">
       <div className="stu-auth-main">
       <div className="stu-auth-inner">
+      {/* Back to the site's landing page (it lives outside the student app, so a full page load) */}
+      <a href={LANDING_URL} className="stu-auth-back"><ChevronLeft size={16} /> Back</a>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{
@@ -319,13 +327,13 @@ export default function AuthPage() {
       <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {isLogin ? (
           <>
-            {field('email', 'Email', 'Enter your email', { type: 'email', autoComplete: 'email' })}
+            {field('email', 'Email', 'Enter your email', { type: 'email', autoComplete: 'username' })}
             {passwordField}
           </>
         ) : (
           <>
             {field('name', 'Full name', 'Enter your full name', { autoComplete: 'name' })}
-            {field('email', 'Email', 'Enter your email', { type: 'email', autoComplete: 'email' })}
+            {field('email', 'Email', 'Enter your email', { type: 'email', autoComplete: 'username' })}
             {passwordField}
             {field('usn', 'USN', 'Enter valid USN', { style: { ...inputStyle, borderColor: borderFor('usn'), textTransform: 'uppercase' } })}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>

@@ -5,6 +5,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { createClub, clubLogin, sanitizeErrorMessage, checkClubEmail, googleAuth, ClubSignupDetails } from "../api";
 import { useTheme, ThemeToggle } from "../theme";
 import { GlassSelect } from "./GlassFields";
+import { saveCredential } from "../../saveCredential";
 import { STUDENT_LOGIN_URL, FC, FM, FB, AuthTab, validatePasswordStrength, fileToBase64 } from "./shared";
 
 const DEPARTMENTS = [
@@ -191,6 +192,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
     try {
       const data = await clubLogin(email, password);
       if (data && data.token && data.profile) {
+        saveCredential(email.trim(), password);
         onLocalSignIn(data.token, data.profile);
       } else {
         setError("Sign in failed. Invalid server response.");
@@ -434,6 +436,9 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                   <label className={labelCls} style={{ fontFamily: FM }}>Email ID</label>
                   <input
                     type="email"
+                    id="club-email"
+                    name="email"
+                    autoComplete="username"
                     placeholder={tab === "register" ? "Official club or student email" : "Enter email address"}
                     required
                     className={inputCls}
@@ -450,6 +455,9 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
+                      id="club-password"
+                      name="password"
+                      autoComplete={tab === "register" ? "new-password" : "current-password"}
                       placeholder={tab === "register" ? "Create a password" : "Enter password"}
                       required
                       className="w-full rounded-xl pl-4 pr-12 py-3 text-sm text-white outline-none transition-all focus:border-white/30"

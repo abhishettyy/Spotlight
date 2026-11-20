@@ -152,6 +152,16 @@ export interface ClubEvent {
   minTeamSize?: number | null;
 }
 
+/**
+ * Places taken, which is what capacity limits: one per solo student and one per team, counting
+ * only pending and confirmed registrations (the same count the server uses).
+ */
+export function countPlaces(regs: Registration[]): number {
+  const active = regs.filter(r => r.status?.toUpperCase() === "PENDING" || r.status?.toUpperCase() === "CONFIRMED");
+  const teamIds = new Set(active.filter(r => r.team?.id).map(r => r.team!.id));
+  return active.filter(r => !r.team?.id).length + teamIds.size;
+}
+
 export interface Registration {
   id: string;
   status: string;

@@ -20,6 +20,7 @@ import {
 import { useGoogleLogin } from '@react-oauth/google';
 import { ThemeToggle } from './theme';
 import { BASE_URL } from './api';
+import { saveCredential } from '../saveCredential';
 
 type ClubStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -241,6 +242,7 @@ export default function AdminConsole() {
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(TOKEN_KEY);
     setIsAuthenticated(false);
+    setAdminEmail('');
     setAdminPasscode('');
     setClubs([]);
   }, []);
@@ -341,6 +343,7 @@ export default function AdminConsole() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Incorrect admin email or password.');
+      saveCredential(adminEmail.trim(), adminPasscode);
       finishSignIn(data.token);
     } catch (err: any) {
       setAuthError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Incorrect admin email or password.'));
@@ -458,6 +461,12 @@ export default function AdminConsole() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-ad-ink text-ad-fg">
         <div className="w-full max-w-sm">
+          <a
+            href={import.meta.env.BASE_URL}
+            className="inline-flex items-center gap-1 mb-6 -ml-1 p-1 rounded-md text-sm font-medium text-ad-muted hover:text-ad-fg transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
+          </a>
           <div className="flex items-center gap-3 mb-8">
             <img src={LOGO_SRC} alt="" className="w-9 h-9 rounded-lg border border-ad-line bg-ad-surface object-contain p-1" />
             <div className="leading-tight">
@@ -475,6 +484,7 @@ export default function AdminConsole() {
                 <label htmlFor="admin-email" className="text-sm font-medium block">Email</label>
                 <input
                   id="admin-email"
+                  name="email"
                   type="email"
                   autoComplete="username"
                   autoFocus
@@ -489,6 +499,7 @@ export default function AdminConsole() {
                 <div className="relative">
                   <input
                     id="admin-password"
+                    name="password"
                     type={showPasscode ? 'text' : 'password'}
                     autoComplete="current-password"
                     value={adminPasscode}

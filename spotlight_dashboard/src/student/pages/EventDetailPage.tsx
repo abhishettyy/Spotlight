@@ -142,9 +142,10 @@ export default function EventDetailPage() {
   const alreadyRegistered = isRegistered === true;
   const isPendingPayment = pendingPaymentTicket != null;
   const isDeadlinePassed = event.registrationDeadline ? new Date() > event.registrationDeadline : false;
-  const isClosed = isDeadlinePassed || full;
-
   const isTeam = (event.eventType ?? '').toLowerCase() === 'team';
+  // A full team event takes no new teams, but members can still join a team that already holds a place
+  const joinOnly = full && isTeam && !isDeadlinePassed;
+  const isClosed = isDeadlinePassed || (full && !joinOnly);
 
   const handleShare = async () => {
     const formattedPrice = event.price > 0 ? `₹${event.price}` : 'Free';
@@ -188,6 +189,8 @@ export default function EventDetailPage() {
     btnLabel = 'Complete Payment';
     btnColor = '#F59E0B';
     btnTextColor = '#000000';
+  } else if (joinOnly) {
+    btnLabel = 'Join a Team';
   } else if (full) {
     btnLabel = 'Registration Full';
     btnColor = 'var(--raised)';
@@ -587,7 +590,7 @@ export default function EventDetailPage() {
                 };
                 navigate(`/events/${id}/payment?registrationId=${pendingPaymentTicket.id}`, { state });
               } else {
-                navigate(`/events/${id}/register`);
+                navigate(`/events/${id}/register`);  // a full team event opens straight on Join Team
               }
             }}
             style={{

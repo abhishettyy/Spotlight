@@ -25,10 +25,9 @@ function validateEventForm(formData: EventForm): Record<string, string> {
   else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event start date.";
   if (!formData.desc.trim()) errors.desc = "Description is required.";
   if (!formData.venue.trim()) errors.venue = "Venue is required.";
-  if (!formData.capacity) errors.capacity = "Venue capacity is required.";
-  else if (formData.eventType === "Team" && formData.teamSizeLimit && parseInt(formData.capacity) < parseInt(formData.teamSizeLimit)) {
-    errors.capacity = `Venue capacity cannot be less than max team size (${formData.teamSizeLimit}).`;
-  } else if (parseInt(formData.capacity) < 2) errors.capacity = "Venue capacity must be at least 2.";
+  // Team events limit the number of teams; solo events the number of students
+  if (!formData.capacity) errors.capacity = formData.eventType === "Team" ? "Number of teams is required." : "Venue capacity is required.";
+  else if (parseInt(formData.capacity) < 1) errors.capacity = formData.eventType === "Team" ? "Allow at least 1 team." : "Venue capacity must be at least 1.";
   if (formData.type === "paid") {
     if (!formData.amount) errors.amount = "Amount is required for paid events.";
     else if (parseInt(formData.amount) < 1) errors.amount = "Amount must be at least ₹1.";
@@ -219,10 +218,10 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
             {fieldErrors.venue && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.venue}</p>}
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>Venue Capacity</label>
-            <input type="number" placeholder="e.g. 200" min={formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : 2} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); touch("capacity"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
-            {formData.eventType === "Team" && formData.teamSizeLimit && (
-              <p className="text-[10px] text-[color:var(--sk-muted)] mt-0.5" style={{ fontFamily: FM }}>Minimum venue capacity is {formData.teamSizeLimit} (Max Team Size).</p>
+            <label className="text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)] block" style={{ fontFamily: FM }}>{formData.eventType === "Team" ? "Number of Teams" : "Venue Capacity"}</label>
+            <input type="number" placeholder={formData.eventType === "Team" ? "e.g. 20" : "e.g. 200"} min={1} className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all" style={{ background: "var(--sk-surface)", border: `1px solid ${fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"}`, fontFamily: FB }} value={formData.capacity} onChange={e => { setFormData(p => ({...p, capacity: e.target.value})); touch("capacity"); }} onFocus={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 80%, transparent)" : "rgba(255,255,255,0.3)"} onBlur={e => e.currentTarget.style.borderColor = fieldErrors.capacity ? "color-mix(in srgb, var(--sk-danger) 60%, transparent)" : "var(--sk-raised)"} />
+            {formData.eventType === "Team" && (
+              <p className="text-[10px] text-[color:var(--sk-muted)] mt-0.5" style={{ fontFamily: FM }}>Registration closes once this many teams have registered.</p>
             )}
             {fieldErrors.capacity && <p className="text-[11px] text-[color:var(--sk-danger)] mt-1" style={{ fontFamily: FB }}>{fieldErrors.capacity}</p>}
           </div>

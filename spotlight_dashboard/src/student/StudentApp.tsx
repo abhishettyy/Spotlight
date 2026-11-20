@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { Toaster } from 'sonner';
 
@@ -21,21 +21,40 @@ import AppShell from '@student/components/layout/AppShell';
 
 // Pages
 import AuthPage from '@student/pages/AuthPage';
-import OnboardingPage from '@student/pages/OnboardingPage';
 import HomePage from '@student/pages/HomePage';
-import AllEventsPage from '@student/pages/AllEventsPage';
-import EventDetailPage from '@student/pages/EventDetailPage';
-import RegisterPage from '@student/pages/RegisterPage';
-import PaymentPage from '@student/pages/PaymentPage';
-import TicketsPage from '@student/pages/TicketsPage';
-import TicketDetailPage from '@student/pages/TicketDetailPage';
-import ClubsPage from '@student/pages/ClubsPage';
-import ClubEventsPage from '@student/pages/ClubEventsPage';
-import NotificationsPage from '@student/pages/NotificationsPage';
-import ProfilePage from '@student/pages/ProfilePage';
-import AboutPage from '@student/pages/AboutPage';
-import MyClubsPage from '@student/pages/MyClubsPage';
-import PrivacyPolicyPage from '@student/pages/PrivacyPolicyPage';
+
+// The sign-in and home pages are in the first download so the app appears straight away; every other
+// page is its own small file, fetched in the background once the first screen is up (see App below).
+const pageLoaders = {
+  OnboardingPage: () => import('@student/pages/OnboardingPage'),
+  AllEventsPage: () => import('@student/pages/AllEventsPage'),
+  EventDetailPage: () => import('@student/pages/EventDetailPage'),
+  RegisterPage: () => import('@student/pages/RegisterPage'),
+  PaymentPage: () => import('@student/pages/PaymentPage'),
+  TicketsPage: () => import('@student/pages/TicketsPage'),
+  TicketDetailPage: () => import('@student/pages/TicketDetailPage'),
+  ClubsPage: () => import('@student/pages/ClubsPage'),
+  ClubEventsPage: () => import('@student/pages/ClubEventsPage'),
+  NotificationsPage: () => import('@student/pages/NotificationsPage'),
+  ProfilePage: () => import('@student/pages/ProfilePage'),
+  AboutPage: () => import('@student/pages/AboutPage'),
+  MyClubsPage: () => import('@student/pages/MyClubsPage'),
+  PrivacyPolicyPage: () => import('@student/pages/PrivacyPolicyPage'),
+};
+const OnboardingPage = lazy(pageLoaders.OnboardingPage);
+const AllEventsPage = lazy(pageLoaders.AllEventsPage);
+const EventDetailPage = lazy(pageLoaders.EventDetailPage);
+const RegisterPage = lazy(pageLoaders.RegisterPage);
+const PaymentPage = lazy(pageLoaders.PaymentPage);
+const TicketsPage = lazy(pageLoaders.TicketsPage);
+const TicketDetailPage = lazy(pageLoaders.TicketDetailPage);
+const ClubsPage = lazy(pageLoaders.ClubsPage);
+const ClubEventsPage = lazy(pageLoaders.ClubEventsPage);
+const NotificationsPage = lazy(pageLoaders.NotificationsPage);
+const ProfilePage = lazy(pageLoaders.ProfilePage);
+const AboutPage = lazy(pageLoaders.AboutPage);
+const MyClubsPage = lazy(pageLoaders.MyClubsPage);
+const PrivacyPolicyPage = lazy(pageLoaders.PrivacyPolicyPage);
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const { tryAutoLogin, isAuthenticated, userId } = useAuthStore();
@@ -77,9 +96,17 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const prefetch = () => Object.values(pageLoaders).forEach((load) => load().catch(() => {}));
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(prefetch);
+    else setTimeout(prefetch, 1500);
+  }, []);
+
   return (
     <BrowserRouter basename={STUDENT_BASE}>
       <AppInitializer>
+        <Suspense fallback={null}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<PublicRoute><AuthPage /></PublicRoute>} />
@@ -96,6 +123,7 @@ export default function App() {
             <ProtectedRoute>
               <OnboardingGate>
               <AppShell>
+                <Suspense fallback={null}>
                 <Routes>
                   <Route index element={<HomePage />} />
                   <Route path="events" element={<AllEventsPage />} />
@@ -112,11 +140,13 @@ export default function App() {
                   <Route path="about" element={<AboutPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+                </Suspense>
               </AppShell>
               </OnboardingGate>
             </ProtectedRoute>
           } />
         </Routes>
+        </Suspense>
 
         {/* Toast notifications — equivalent to Flutter's showSpotlightToast */}
         <Toaster

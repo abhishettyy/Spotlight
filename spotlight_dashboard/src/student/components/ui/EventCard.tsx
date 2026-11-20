@@ -106,7 +106,10 @@ export default function EventCard({ event, compact = false }: EventCardProps) {
 
         <div style={{ marginTop: 'auto', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--border)' }}>
           <span style={{ fontSize: 12, color: 'var(--subtext)', fontWeight: 500 }}>
-            {event.registrationCount} {event.registrationCount === 1 ? 'registration' : 'registrations'}
+            {event.registrationCount}{' '}
+            {event.eventType === 'Team'
+              ? (event.registrationCount === 1 ? 'team' : 'teams')
+              : (event.registrationCount === 1 ? 'registration' : 'registrations')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>

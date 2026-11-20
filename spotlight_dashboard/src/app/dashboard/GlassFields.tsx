@@ -123,7 +123,7 @@ export function GlassDatePicker({ value, onChange, defaultTime = "12:00" }: { va
                 const d = i + 1;
                 const isSelected = selectedDate?.getDate() === d && selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear;
                 return (
-                  <button key={d} onClick={() => handleSelectDate(d)} className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-[color:var(--sk-brand)] text-white font-bold' : 'text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] dark:text-[color:var(--sk-fg)] dark:hover:bg-white/10 dark:hover:text-white'}`} style={{ fontFamily: FB }}>
+                  <button key={d} type="button" onClick={() => handleSelectDate(d)} onDoubleClick={() => { handleSelectDate(d); setOpen(false); }} title="Double-click to pick and close" className={`w-8 h-8 mx-auto rounded-full text-xs flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-[color:var(--sk-brand)] text-white font-bold' : 'text-[color:var(--sk-fg)] hover:bg-[color:var(--sk-raised)] dark:text-[color:var(--sk-fg)] dark:hover:bg-white/10 dark:hover:text-white'}`} style={{ fontFamily: FB }}>
                     {d}
                   </button>
                 );

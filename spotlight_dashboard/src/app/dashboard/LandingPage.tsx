@@ -163,26 +163,26 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => leaveTo(STUDENT_LOGIN_URL)}
-                  className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-white bg-[color:var(--sk-brand)] hover:bg-[color:var(--sk-brand-hover)] rounded-full transition-all duration-300 active:scale-95"
+                  onClick={openAdminConsole}
+                  className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-[color:var(--sk-fg)] bg-[color:var(--sk-raised)] hover:bg-[color:var(--sk-line)] border border-[color:var(--sk-line)] rounded-full transition-all duration-300 active:scale-95"
                 >
-                  <span>Login as Student</span>
+                  <span>Login as Admin</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onEnter}
-                  className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-[color:var(--sk-fg)] bg-[color:var(--sk-raised)] hover:bg-[color:var(--sk-line)] border border-[color:var(--sk-line)] rounded-full transition-all duration-300 active:scale-95"
+                  className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-white bg-[color:var(--sk-brand)] hover:bg-[color:var(--sk-brand-hover)] rounded-full transition-all duration-300 active:scale-95"
                 >
                   <span>Login as Club</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={openAdminConsole}
+                  onClick={() => leaveTo(STUDENT_LOGIN_URL)}
                   className="cursor-pointer group inline-flex items-center justify-center w-full sm:w-auto px-7 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-[color:var(--sk-fg)] bg-[color:var(--sk-raised)] hover:bg-[color:var(--sk-line)] border border-[color:var(--sk-line)] rounded-full transition-all duration-300 active:scale-95"
                 >
-                  <span>Login as Admin</span>
+                  <span>Login as Student</span>
                 </motion.button>
               </motion.div>
             </motion.div>

@@ -12,6 +12,7 @@ import PasskeyDialog from '@student/components/ui/PasskeyDialog';
 import EventSummaryCard from '@student/components/ui/EventSummaryCard';
 import type { PaymentRouteState } from '@student/pages/PaymentPage';
 import { toast } from 'sonner';
+import { isEventFull } from '@student/types/event';
 
 type Mode = 'solo' | 'create-team' | 'join-team';
 
@@ -24,6 +25,8 @@ export default function RegisterPage() {
 
   const event = events.find((e) => e.id === id);
   const isTeamEvent = event?.eventType?.toLowerCase() === 'team';
+  // Every team place is taken: no new teams, but members can still join an existing team
+  const teamsFull = !!event && isTeamEvent && isEventFull(event);
 
   const [mode, setMode] = useState<Mode>(isTeamEvent ? 'create-team' : 'solo');
   const [teamName, setTeamName] = useState('');
@@ -46,11 +49,11 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (isTeamEvent) {
-      setMode('create-team');
+      setMode(teamsFull ? 'join-team' : 'create-team');
     } else {
       setMode('solo');
     }
-  }, [isTeamEvent]);
+  }, [isTeamEvent, teamsFull]);
 
   if (!event) return <PageLoader />;
 
@@ -149,8 +152,8 @@ export default function RegisterPage() {
         </aside>
       <div>
 
-        {/* ── Team Mode Switcher (if team event) ────────────────────────── */}
-        {isTeamEvent && (
+        {/* ── Team Mode Switcher (if team event; hidden when only joining is possible) ── */}
+        {isTeamEvent && !teamsFull && (
           <div
             style={{
               height: 52,
@@ -161,7 +164,7 @@ export default function RegisterPage() {
               marginBottom: 28,
             }}
           >
-            <button
+            {!teamsFull && <button
               onClick={() => setMode('create-team')}
               style={{
                 flex: 1,
@@ -176,7 +179,7 @@ export default function RegisterPage() {
               }}
             >
               Create Team
-            </button>
+            </button>}
             <button
               onClick={() => setMode('join-team')}
               style={{
@@ -194,6 +197,13 @@ export default function RegisterPage() {
               Join Team
             </button>
           </div>
+        )}
+
+        {teamsFull && (
+          <p style={{ fontSize: 13, color: 'var(--subtext)', lineHeight: 1.5, margin: '0 0 24px' }}>
+            All team places for this event are taken, so new teams can't be created. You can still join a
+            team that's already registered using its passkey.
+          </p>
         )}
 
         {/* ── Form Fields ──────────────────────────────────────────────── */}
@@ -336,7 +346,7 @@ export default function RegisterPage() {
           {isSubmitting ? (
             <Loader2 size={20} style={{ animation: 'spin 0.8s linear infinite' }} />
           ) : (
-            'Confirm Registration'
+            mode === 'join-team' ? 'Join Now' : 'Confirm Registration'
           )}
         </button>
       </div>
