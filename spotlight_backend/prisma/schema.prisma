@@ -132,6 +132,13 @@ model PasswordReset {
   createdAt DateTime @default(now()) @map("created_at")
 }
 
+/// App-wide settings the admin can change, as key/value pairs (e.g. the emails alerted about club sign-ups)
+model AppSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+}
+
 enum ClubStatus {
   PENDING
   APPROVED

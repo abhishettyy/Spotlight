@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../config/db';
 import { JWT_SECRET } from '../middlewares/auth';
 import { ADMIN_PROFILE_ID } from './admin';
-import { sendPasswordResetCode } from './mailer';
+import { sendPasswordResetCode, sendPasswordChangedEmail } from './mailer';
 
 /** How long a code works, and how many wrong tries it allows before it's thrown away. */
 export const CODE_MINUTES = 10;
@@ -140,5 +140,8 @@ export async function resetPasswordWithCode(rawEmail: unknown, rawCode: unknown,
     await tx.passwordReset.delete({ where: { email } });
   });
   console.log(`[Auth] Password reset with an email code for ${email}`);
+  // Confirmation email, sent in the background so the user isn't kept waiting. The reset has
+  // already succeeded, so a mail failure is only logged (deliverMail never throws).
+  void sendPasswordChangedEmail({ email, name: account.name });
   return { status: 200, body: { message: 'Your password has been reset. You can now sign in with your new password.' } };
 }

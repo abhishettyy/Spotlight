@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { Club } from '@prisma/client';
 import { prisma } from '../config/db';
 import { uploadBase64Image } from './storage';
+import { getClubSignupAlertEmails } from './settings';
+import { sendClubSignupAlert } from './mailer';
 
 /** The details a club fills in on the sign-up page. */
 export interface ClubApplicationDetails {
@@ -97,7 +99,11 @@ export async function submitClubApplication(input: {
   };
 
   try {
-    return await saveApplication();
+    const club = await saveApplication();
+    // Let the admins know a club is waiting for approval. In the background: the club's sign-up
+    // doesn't wait for (or fail because of) these emails.
+    void alertAdmins(club, Boolean(existingClub));
+    return club;
   } catch (err: any) {
     // Two sign-ups with the same email at the same moment: the second hits the unique email index
     if (err?.code === 'P2002') {
@@ -154,5 +160,19 @@ export async function submitClubApplication(input: {
       });
       return club;
     });
+  }
+}
+
+/** Emails the sign-up alert list about a club waiting for approval. Never throws. */
+async function alertAdmins(club: Club, reapplied: boolean): Promise<void> {
+  try {
+    const recipients = await getClubSignupAlertEmails();
+    if (recipients.length === 0) {
+      console.warn('[Mail] No sign-up alert emails set; nobody was told about the new club', club.email);
+      return;
+    }
+    await sendClubSignupAlert(recipients, club, reapplied);
+  } catch (err: any) {
+    console.error('[Mail] Club sign-up alert failed:', err.message);
   }
 }

@@ -190,3 +190,82 @@ export async function sendPasswordResetCode(to: { email: string; name: string },
       </div>`,
   }, 'Password reset code');
 }
+
+/**
+ * Tells the account owner their password was just changed with a reset code, so they notice if it
+ * wasn't them. Returns whether the mail was sent; never throws.
+ */
+export async function sendPasswordChangedEmail(to: { email: string; name: string }): Promise<boolean> {
+  const name = escapeHtml(to.name);
+  const when = new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
+  return deliverMail({
+    to: to.email,
+    toName: to.name,
+    subject: 'Your Spotlight password was changed',
+    text:
+      `Hi ${to.name},\n\n` +
+      `The password for your Spotlight account (${to.email}) was reset on ${when} IST. ` +
+      `You can now sign in with your new password.\n\n` +
+      `If you didn't do this, reset your password again right away from the sign-in page using ` +
+      `"Forgot password?", and contact us at spotlightapp.help@gmail.com.\n\n- Team Spotlight`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
+        <h2 style="margin:0 0 16px">Your password was changed</h2>
+        <p>Hi ${name},</p>
+        <p>The password for your Spotlight account (<strong>${escapeHtml(to.email)}</strong>) was reset on
+           ${escapeHtml(when)} IST. You can now sign in with your new password.</p>
+        <p style="margin:20px 0;padding:12px 14px;border-radius:10px;background:#fdecee;color:#9f1c28;font-size:14px">
+          If you didn't do this, reset your password again right away from the sign-in page using
+          <strong>Forgot password?</strong>, and contact us at
+          <a href="mailto:spotlightapp.help@gmail.com" style="color:#9f1c28">spotlightapp.help@gmail.com</a>.
+        </p>
+        <p style="color:#666;font-size:13px">- Team Spotlight</p>
+      </div>`,
+  }, 'Password changed email');
+}
+
+/**
+ * Tells the admins a club has signed up and is waiting for approval. One email per address (the
+ * relay sends to a single recipient). Returns how many were sent; never throws.
+ */
+export async function sendClubSignupAlert(
+  recipients: string[],
+  club: { name: string; email: string; department?: string | null; coordinatorName?: string | null; coordinatorPhone?: string | null },
+  reapplied: boolean,
+): Promise<number> {
+  if (recipients.length === 0) return 0;
+  const consoleUrl = process.env.ADMIN_CONSOLE_URL || 'https://spotlight.msritise.in/admin';
+  const rows: Array<[string, string | null | undefined]> = [
+    ['Club', club.name],
+    ['Email', club.email],
+    ['Department', club.department],
+    ['Coordinator', club.coordinatorName],
+    ['Phone', club.coordinatorPhone],
+  ];
+  const heading = reapplied ? 'A club has applied again' : 'New club waiting for approval';
+  const text =
+    `${heading}\n\n` +
+    rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') +
+    `\n\nReview it in the admin console:\n${consoleUrl}\n\n- Spotlight`;
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
+      <h2 style="margin:0 0 16px">${escapeHtml(heading)}</h2>
+      <table style="border-collapse:collapse;font-size:14px;margin-bottom:24px">
+        ${rows.filter(([, v]) => v).map(([k, v]) =>
+          `<tr><td style="padding:4px 16px 4px 0;color:#666">${k}</td><td style="padding:4px 0"><strong>${escapeHtml(String(v))}</strong></td></tr>`).join('')}
+      </table>
+      <p style="margin:0 0 24px">
+        <a href="${escapeHtml(consoleUrl)}" style="background:#e63946;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600">Review in admin console</a>
+      </p>
+      <p style="color:#666;font-size:13px">You're getting this because your email is on the Spotlight sign-up alert list. The admin can change the list in the admin console.</p>
+    </div>`;
+
+  let sent = 0;
+  for (const to of recipients) {
+    const ok = await deliverMail({ to, toName: 'Spotlight admin', subject: `Approval needed: ${club.name} signed up on Spotlight`, text, html }, 'Club sign-up alert');
+    if (ok) sent++;
+  }
+  return sent;
+}

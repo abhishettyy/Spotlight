@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Bell,
   ChevronLeft,
   ChevronRight,
   X,
@@ -238,6 +239,15 @@ export default function AdminConsole() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSaving, setPwSaving] = useState(false);
 
+  // Sign-up alerts: the emails told when a new club signs up and needs approval
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [alertEmails, setAlertEmails] = useState<string[]>([]);
+  const [alertMax, setAlertMax] = useState(10);
+  const [newAlertEmail, setNewAlertEmail] = useState('');
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [alertsSaving, setAlertsSaving] = useState(false);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+
   const signOut = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(TOKEN_KEY);
@@ -252,17 +262,67 @@ export default function AdminConsole() {
     setOldPw(''); setNewPw(''); setConfirmPw(''); setShowPw(false); setPwError(null);
   };
   const closeRejectModal = () => { setRejecting(null); setRejectReason(''); };
+  const closeAlertsModal = () => { setShowAlertsModal(false); setNewAlertEmail(''); setAlertsError(null); };
+
+  const openAlertsModal = async () => {
+    setShowAlertsModal(true);
+    setAlertsError(null);
+    setAlertsLoading(true);
+    try {
+      const res = await adminFetch('/clubs/admin/settings');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load the alert emails.');
+      setAlertEmails(Array.isArray(data.signupAlertEmails) ? data.signupAlertEmails : []);
+      if (typeof data.maxSignupAlertEmails === 'number') setAlertMax(data.maxSignupAlertEmails);
+    } catch (err: any) {
+      setAlertsError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Could not load the alert emails.'));
+    } finally {
+      setAlertsLoading(false);
+    }
+  };
+
+  const addAlertEmail = () => {
+    const e = newAlertEmail.trim().toLowerCase();
+    if (!e) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { setAlertsError('Enter a valid email address.'); return; }
+    if (alertEmails.includes(e)) { setAlertsError('That email is already on the list.'); return; }
+    if (alertEmails.length >= alertMax) { setAlertsError(`Add at most ${alertMax} email addresses.`); return; }
+    setAlertEmails(list => [...list, e]);
+    setNewAlertEmail('');
+    setAlertsError(null);
+  };
+
+  const saveAlertEmails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAlertsSaving(true);
+    setAlertsError(null);
+    try {
+      const res = await adminFetch('/clubs/admin/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ signupAlertEmails: alertEmails }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save the alert emails.');
+      closeAlertsModal();
+      setActionSuccess(alertEmails.length ? 'Sign-up alert emails saved.' : 'Sign-up alerts turned off (no emails on the list).');
+    } catch (err: any) {
+      setAlertsError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Could not save the alert emails.'));
+    } finally {
+      setAlertsSaving(false);
+    }
+  };
 
   useEffect(() => {
-    if (!showPwModal && !rejecting) return;
+    if (!showPwModal && !rejecting && !showAlertsModal) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       closePwModal();
       closeRejectModal();
+      closeAlertsModal();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showPwModal, rejecting]);
+  }, [showPwModal, rejecting, showAlertsModal]);
 
   // Success messages clear themselves; errors stay until dismissed
   useEffect(() => {
@@ -564,6 +624,9 @@ export default function AdminConsole() {
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle className="mr-1" />
+            <button onClick={openAlertsModal} className={btnGhost} aria-label="Sign-up alert emails">
+              <Bell size={16} /> <span className="hidden sm:inline">Alerts</span>
+            </button>
             <button onClick={() => setShowPwModal(true)} className={btnGhost} aria-label="Change password">
               <KeyRound size={16} /> <span className="hidden sm:inline">Password</span>
             </button>
@@ -769,6 +832,79 @@ export default function AdminConsole() {
               <button type="submit" disabled={busyId === rejecting.id} className={`${btnBase} bg-ad-danger text-white hover:opacity-90`}>
                 {busyId === rejecting.id ? 'Rejecting…' : 'Reject club'}
               </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Sign-up alerts dialog: who is emailed when a new club signs up */}
+      {showAlertsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeAlertsModal}>
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="alerts-title"
+            onSubmit={saveAlertEmails}
+            onClick={e => e.stopPropagation()}
+            className="ad-card w-full max-w-md p-6 space-y-4 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="alerts-title" className="text-base font-semibold">Sign-up alert emails</h2>
+                <p className="text-sm text-ad-muted mt-1">When a new club signs up, these addresses get an email that approval is needed.</p>
+              </div>
+              <button type="button" onClick={closeAlertsModal} aria-label="Close" className="p-1 rounded-md text-ad-faint hover:text-ad-fg cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            {alertsLoading ? (
+              <p className="text-sm text-ad-muted py-4 text-center">Loading…</p>
+            ) : (
+              <>
+                {alertEmails.length === 0 ? (
+                  <p className="text-sm text-ad-muted rounded-md border border-dashed border-ad-line px-3 py-4 text-center">
+                    No emails yet. Nobody is alerted about new sign-ups.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {alertEmails.map(email => (
+                      <li key={email} className="flex items-center justify-between gap-3 rounded-md border border-ad-line px-3 py-2">
+                        <span className="text-sm truncate" title={email}>{email}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAlertEmails(list => list.filter(x => x !== email))}
+                          aria-label={`Remove ${email}`}
+                          className="p-1 rounded-md text-ad-faint hover:text-[#dc2626] cursor-pointer flex-shrink-0"
+                        >
+                          <X size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={newAlertEmail}
+                    onChange={e => { setNewAlertEmail(e.target.value); setAlertsError(null); }}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addAlertEmail(); } }}
+                    placeholder="Add an email address"
+                    aria-label="Add an email address"
+                    className={inputCls}
+                  />
+                  <button type="button" onClick={addAlertEmail} className={btnSecondary}>Add</button>
+                </div>
+                <p className="text-xs text-ad-faint">Up to {alertMax} addresses. Changes apply after you save.</p>
+              </>
+            )}
+
+            {alertsError && <p role="alert" className="text-sm font-normal text-[#dc2626] text-center">{alertsError}</p>}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={closeAlertsModal} className={btnSecondary}>Cancel</button>
+              <button type="submit" disabled={alertsSaving || alertsLoading} className={btnPrimary}>{alertsSaving ? 'Saving…' : 'Save'}</button>
             </div>
           </form>
         </div>

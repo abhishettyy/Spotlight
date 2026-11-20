@@ -63,6 +63,12 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
   // Forgot password replaces the sign-in form inside the card; resetDone shows a note back on sign-in
   const [forgot, setForgot] = useState(false);
   const [resetDone, setResetDone] = useState<string | null>(null);
+  // The "password reset" note fades on its own after a few seconds, or as soon as the club types
+  useEffect(() => {
+    if (!resetDone) return;
+    const t = setTimeout(() => setResetDone(null), 5000);
+    return () => clearTimeout(t);
+  }, [resetDone]);
   const [clubName, setClubName] = useState("");
   const [department, setDepartment] = useState("");
   const [description, setDescription] = useState("");
@@ -456,7 +462,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                     style={fieldBorder("email")}
                     aria-invalid={!!shownErrors.email}
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={e => { setEmail(e.target.value); setResetDone(null); }}
                   />
                   <FieldError message={shownErrors.email} />
                 </div>
@@ -475,7 +481,7 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
                       style={fieldBorder("password")}
                       aria-invalid={!!shownErrors.password}
                       value={password}
-                      onChange={e => setPassword(e.target.value)}
+                      onChange={e => { setPassword(e.target.value); setResetDone(null); }}
                     />
                     <button
                       type="button"

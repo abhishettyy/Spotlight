@@ -6,6 +6,7 @@ import { uploadBase64Image, deleteImage } from '../utils/storage';
 import { filterVisibleRegistrations, mapClubRegistration } from '../utils/registrations';
 import { campusNow, campusEventHasEnded } from '../utils/time';
 import { readAllowedBranches } from '../utils/branches';
+import { getClubSignupAlertEmails, cleanAlertEmails, saveClubSignupAlertEmails, MAX_ALERT_EMAILS } from '../utils/settings';
 import { ADMIN_PROFILE_ID, requireAdmin, signAdminToken, isThrottled, recordFailure, clearFailures } from '../utils/admin';
 import { verifyGoogleUser } from '../utils/google';
 import { sendClubApprovedEmail } from '../utils/mailer';
@@ -138,6 +139,26 @@ router.post('/admin/change-password', requireAdmin, async (req: Request, res: Re
       data: { password: await bcrypt.hash(newPassword, SALT_ROUNDS) },
     });
     return res.status(200).json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin settings: the emails told about each new club sign-up
+router.get('/admin/settings', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
+    return res.status(200).json({ signupAlertEmails: await getClubSignupAlertEmails(), maxSignupAlertEmails: MAX_ALERT_EMAILS });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/admin/settings', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const result = cleanAlertEmails(req.body?.signupAlertEmails);
+    if ('error' in result) return res.status(400).json({ error: result.error });
+    await saveClubSignupAlertEmails(result.emails);
+    return res.status(200).json({ signupAlertEmails: result.emails });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
