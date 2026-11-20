@@ -195,26 +195,28 @@ export async function sendPasswordResetCode(to: { email: string; name: string },
  * Tells the account owner their password was just changed with a reset code, so they notice if it
  * wasn't them. Returns whether the mail was sent; never throws.
  */
-export async function sendPasswordChangedEmail(to: { email: string; name: string }): Promise<boolean> {
+export async function sendPasswordChangedEmail(to: { email: string; name: string }, kind: 'club' | 'student'): Promise<boolean> {
   const name = escapeHtml(to.name);
+  // Clubs: "Your club login password has been changed"; students: "Your login password has been changed"
+  const what = kind === 'club' ? 'club login password' : 'login password';
   const when = new Date().toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
   return deliverMail({
     to: to.email,
     toName: to.name,
-    subject: 'Your Spotlight password was changed',
+    subject: `Your ${what} has been changed`,
     text:
       `Hi ${to.name},\n\n` +
-      `The password for your Spotlight account (${to.email}) was reset on ${when} IST. ` +
+      `Your ${what} (${to.email}) has been changed on ${when} IST. ` +
       `You can now sign in with your new password.\n\n` +
       `If you didn't do this, reset your password again right away from the sign-in page using ` +
       `"Forgot password?", and contact us at spotlightapp.help@gmail.com.\n\n- Team Spotlight`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
-        <h2 style="margin:0 0 16px">Your password was changed</h2>
+        <h2 style="margin:0 0 16px">Your ${what} has been changed</h2>
         <p>Hi ${name},</p>
-        <p>The password for your Spotlight account (<strong>${escapeHtml(to.email)}</strong>) was reset on
+        <p>Your ${what} (<strong>${escapeHtml(to.email)}</strong>) has been changed on
            ${escapeHtml(when)} IST. You can now sign in with your new password.</p>
         <p style="margin:20px 0;padding:12px 14px;border-radius:10px;background:#fdecee;color:#9f1c28;font-size:14px">
           If you didn't do this, reset your password again right away from the sign-in page using

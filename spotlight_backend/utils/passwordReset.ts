@@ -142,6 +142,6 @@ export async function resetPasswordWithCode(rawEmail: unknown, rawCode: unknown,
   console.log(`[Auth] Password reset with an email code for ${email}`);
   // Confirmation email, sent in the background so the user isn't kept waiting. The reset has
   // already succeeded, so a mail failure is only logged (deliverMail never throws).
-  void sendPasswordChangedEmail({ email, name: account.name });
+  void sendPasswordChangedEmail({ email, name: account.name }, account.kind);
   return { status: 200, body: { message: 'Your password has been reset. You can now sign in with your new password.' } };
 }

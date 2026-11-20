@@ -164,6 +164,58 @@ router.put('/admin/settings', requireAdmin, async (req: Request, res: Response):
   }
 });
 
+// ── Admin: students ─────────────────────────────────────────────────────────
+// Student accounts are profiles with no club, other than the admin's own profile.
+const studentWhere = { clubId: null, NOT: { id: ADMIN_PROFILE_ID } } as const;
+
+// Every student with only the details the admin list shows, A-Z by name
+router.get('/admin/students', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const profiles = await prisma.profile.findMany({
+      where: studentWhere,
+      select: { id: true, fullName: true, usn: true, branch: true, email: true },
+      orderBy: { fullName: 'asc' },
+    });
+    const students = profiles.map((p) => ({ id: p.id, name: p.fullName, usn: p.usn, branch: p.branch, email: p.email }));
+    return res.status(200).json({ students });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Permanently deletes a student account with its registrations, tickets and notifications.
+// A team the student leads passes to its earliest other member, or is removed if nobody is left.
+router.delete('/admin/students/:id', requireAdmin, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = req.params.id as string;
+    const student = await prisma.profile.findFirst({ where: { id, ...studentWhere }, select: { id: true, email: true, fullName: true } });
+    if (!student) return res.status(404).json({ error: 'Student not found.' });
+
+    await prisma.$transaction(async (tx) => {
+      const ledTeams = await tx.team.findMany({ where: { leaderId: id }, select: { id: true } });
+      for (const team of ledTeams) {
+        const nextLeader = await tx.registration.findFirst({
+          where: { teamId: team.id, userId: { not: id }, status: { in: ['PENDING', 'CONFIRMED'] } },
+          orderBy: { createdAt: 'asc' },
+          select: { userId: true },
+        });
+        if (nextLeader) await tx.team.update({ where: { id: team.id }, data: { leaderId: nextLeader.userId } });
+        else await tx.team.delete({ where: { id: team.id } });
+      }
+      await tx.notification.deleteMany({ where: { userId: id } });
+      await tx.passwordReset.deleteMany({ where: { email: student.email } });
+      // Registrations go with the profile (onDelete: Cascade)
+      await tx.profile.delete({ where: { id } });
+    });
+
+    console.log(`[Admin] Deleted student ${student.email}`);
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('Delete student error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 const applicationSelect = {
   id: true,
   name: true,

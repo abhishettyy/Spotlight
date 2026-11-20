@@ -17,6 +17,9 @@ import {
   Mail,
   Building2,
   User,
+  Trash2,
+  Users,
+  Building,
 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { ThemeToggle } from './theme';
@@ -205,6 +208,191 @@ function Pagination({
 
 // ── Console ──────────────────────────────────────────────────────────────────
 
+// ── Students (admin) ─────────────────────────────────────────────────────────
+
+type StudentRow = { id: string; name: string; usn: string | null; branch: string | null; email: string };
+
+/** Every student account: name, USN, department and email, with search, pages and delete. */
+function StudentsSection() {
+  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [deleting, setDeleting] = useState<StudentRow | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminFetch('/clubs/admin/students');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load students.');
+      setStudents(Array.isArray(data.students) ? data.students : []);
+    } catch (err: any) {
+      setError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Could not load students.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!success) return;
+    const t = setTimeout(() => setSuccess(null), 6000);
+    return () => clearTimeout(t);
+  }, [success]);
+
+  useEffect(() => {
+    if (!deleting) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !deleteBusy) setDeleting(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [deleting, deleteBusy]);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return students;
+    return students.filter(s =>
+      [s.name, s.usn, s.branch, s.email].some(v => (v ?? '').toLowerCase().includes(q)));
+  }, [students, query]);
+
+  useEffect(() => { setPage(1); }, [query, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setError(null);
+    try {
+      const res = await adminFetch(`/clubs/admin/students/${encodeURIComponent(deleting.id)}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not delete the student.');
+      setStudents(list => list.filter(s => s.id !== deleting.id));
+      setSuccess(`${deleting.name} was deleted.`);
+      setDeleting(null);
+    } catch (err: any) {
+      setError(err.message === 'Failed to fetch' ? 'Cannot reach the server.' : (err.message || 'Could not delete the student.'));
+      setDeleting(null);
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  const th = 'px-4 py-2.5 text-left text-xs font-medium text-ad-muted whitespace-nowrap';
+  const td = 'px-4 py-3 text-sm align-middle';
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Students</h1>
+          <p className="text-sm text-ad-muted mt-1">
+            {loading && students.length === 0 ? 'Loading…' : `${students.length} student ${students.length === 1 ? 'account' : 'accounts'}`}
+          </p>
+        </div>
+        <button onClick={load} disabled={loading} className={btnSecondary}>
+          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
+        </button>
+      </div>
+
+      {error && <Notice tone="error" onDismiss={() => setError(null)}>{error}</Notice>}
+      {success && <Notice tone="success" onDismiss={() => setSuccess(null)}>{success}</Notice>}
+
+      <section className="ad-card overflow-hidden">
+        <div className="flex items-center justify-end px-4 py-3 border-b border-ad-line">
+          <div className="relative w-full md:w-80">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ad-faint pointer-events-none" />
+            <input
+              type="search"
+              placeholder="Search name, USN, department, email"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className={`${inputCls} h-9 pl-9`}
+              aria-label="Search students"
+            />
+          </div>
+        </div>
+
+        {pageRows.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead className="bg-ad-raised/60 border-b border-ad-line">
+                <tr>
+                  <th className={th}>Name</th>
+                  <th className={th}>USN</th>
+                  <th className={th}>Department</th>
+                  <th className={th}>Email</th>
+                  <th className={`${th} text-right`}><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ad-line">
+                {pageRows.map(s => (
+                  <tr key={s.id} className="hover:bg-ad-raised/40 transition-colors">
+                    <td className={`${td} font-medium max-w-[220px]`}><span className="block truncate" title={s.name}>{s.name}</span></td>
+                    <td className={`${td} tabular whitespace-nowrap text-ad-muted`}>{s.usn || '—'}</td>
+                    <td className={`${td} text-ad-muted max-w-[260px]`}><span className="block truncate" title={s.branch ?? ''}>{s.branch || '—'}</span></td>
+                    <td className={`${td} text-ad-muted max-w-[260px]`}><span className="block truncate" title={s.email}>{s.email}</span></td>
+                    <td className={`${td} text-right`}>
+                      <button onClick={() => setDeleting(s)} className={`${btnDanger} h-8 px-2.5`} aria-label={`Delete ${s.name}`}>
+                        <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="px-4 py-12 text-center">
+            <p className="text-sm font-medium">{loading ? 'Loading students…' : query ? 'No students found' : 'No students yet'}</p>
+            {!loading && query && <p className="text-sm text-ad-muted mt-1">Try a different search.</p>}
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <Pagination total={filtered.length} page={currentPage} pageSize={pageSize} onPage={setPage} onPageSize={setPageSize} />
+        )}
+      </section>
+
+      {/* Delete confirmation */}
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !deleteBusy && setDeleting(null)}>
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="del-title"
+            onClick={e => e.stopPropagation()}
+            className="ad-card w-full max-w-md p-6 space-y-4 shadow-xl"
+          >
+            <div>
+              <h2 id="del-title" className="text-base font-semibold">Delete {deleting.name}?</h2>
+              <p className="text-sm text-ad-muted mt-1 break-words">{deleting.email}{deleting.usn ? ` · ${deleting.usn}` : ''}</p>
+            </div>
+            <p className="text-sm text-ad-fg/90">
+              This permanently deletes the student's account, event registrations, tickets and notifications. It can't be undone.
+              If they lead a team, the team passes to another member.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setDeleting(null)} disabled={deleteBusy} className={btnSecondary}>Cancel</button>
+              <button type="button" onClick={confirmDelete} disabled={deleteBusy} autoFocus
+                className={`${btnBase} bg-[#dc2626] text-white hover:bg-[#b91c1c]`}>
+                <Trash2 size={15} /> {deleteBusy ? 'Deleting…' : 'Delete student'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function AdminConsole() {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -231,6 +419,8 @@ export default function AdminConsole() {
   const [rejecting, setRejecting] = useState<ClubApplication | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
+  // Which list the admin is looking at
+  const [view, setView] = useState<'clubs' | 'students'>('clubs');
   const [showPwModal, setShowPwModal] = useState(false);
   const [oldPw, setOldPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -638,6 +828,27 @@ export default function AdminConsole() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+        {/* Section switch: club registrations or students */}
+        <div className="inline-flex p-0.5 rounded-lg bg-ad-raised border border-ad-line" role="tablist" aria-label="Admin sections">
+          {([
+            { id: 'clubs', label: 'Clubs', icon: Building },
+            { id: 'students', label: 'Students', icon: Users },
+          ] as const).map(t => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={view === t.id}
+              onClick={() => setView(t.id)}
+              className={`h-9 px-4 rounded-md text-sm inline-flex items-center gap-2 transition-colors cursor-pointer ${
+                view === t.id ? 'bg-ad-surface text-ad-fg font-medium shadow-sm' : 'text-ad-muted hover:text-ad-fg'
+              }`}
+            >
+              <t.icon size={15} /> {t.label}
+            </button>
+          ))}
+        </div>
+
+        {view === 'students' ? <StudentsSection /> : (<>
         {/* Page heading */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
@@ -790,6 +1001,7 @@ export default function AdminConsole() {
             />
           )}
         </section>
+        </>)}
       </main>
 
       {/* Reject dialog */}
