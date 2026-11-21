@@ -151,7 +151,6 @@ flutter build appbundle --release   # build/app/outputs/bundle/release/app-relea
 | `ADMIN_EMAIL` | no | Admin console sign-in email, default `spotlightapp.help@gmail.com` |
 | `MAIL_RELAY_URL` / `MAIL_RELAY_SECRET` | no | Gmail relay for all emails (see [`mail-relay/README.md`](spotlight_backend/mail-relay/README.md)); emails are skipped if no mail service is set |
 | `BREVO_API_KEY` / `SMTP_USER` / `SMTP_PASS` | no | Fallback mail services |
-| `CLUB_LOGIN_URL` / `ADMIN_CONSOLE_URL` | no | Links used in emails (default `https://spotlight.msrit.in/…`) |
 | `ADMIN_ALERT_EMAILS` | no | Fallback list for new-club alerts; normally set in the admin console |
 
 **Web app** (`spotlight_dashboard/.env`): `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, and optionally `VITE_BASE_PATH` when hosted under a sub-path.

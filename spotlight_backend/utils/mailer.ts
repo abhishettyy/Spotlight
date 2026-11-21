@@ -117,7 +117,6 @@ async function deliverMail(mail: Mail, what: string): Promise<boolean> {
 }
 
 export async function sendClubApprovedEmail(club: { name: string; email: string }): Promise<boolean> {
-  const loginUrl = process.env.CLUB_LOGIN_URL || 'https://spotlight.msrit.in/?view=auth&authTab=login';
   const name = escapeHtml(club.name);
   return deliverMail({
     to: club.email,
@@ -128,9 +127,7 @@ export async function sendClubApprovedEmail(club: { name: string; email: string 
 
 ` +
       `Your club registration on Spotlight has been approved. You can now sign in to your club dashboard ` +
-      `with the email and password (or Google account) you registered with:
-
-${loginUrl}
+      `with the email and password (or Google account) you registered with.
 
 ` +
       `- Team Spotlight`,
@@ -140,9 +137,6 @@ ${loginUrl}
         <p>Hi ${name},</p>
         <p>Your club registration on Spotlight has been approved. You can now sign in to your club dashboard
            with the email and password (or Google account) you registered with.</p>
-        <p style="margin:28px 0">
-          <a href="${escapeHtml(loginUrl)}" style="background:#e63946;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600">Sign in to Spotlight</a>
-        </p>
         <p style="color:#666;font-size:13px">- Team Spotlight</p>
       </div>`,
   }, 'Approval email');
@@ -216,7 +210,6 @@ export async function sendClubSignupAlert(
   reapplied: boolean,
 ): Promise<number> {
   if (recipients.length === 0) return 0;
-  const consoleUrl = process.env.ADMIN_CONSOLE_URL || 'https://spotlight.msrit.in/admin';
   const rows: Array<[string, string | null | undefined]> = [
     ['Club', club.name],
     ['Email', club.email],
@@ -228,7 +221,7 @@ export async function sendClubSignupAlert(
   const text =
     `${heading}\n\n` +
     rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') +
-    `\n\nReview it in the admin console:\n${consoleUrl}\n\n- Spotlight`;
+    `\n\nYou can approve or reject it from the Spotlight admin console.\n\n- Spotlight`;
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
       <h2 style="margin:0 0 16px">${escapeHtml(heading)}</h2>
@@ -236,9 +229,7 @@ export async function sendClubSignupAlert(
         ${rows.filter(([, v]) => v).map(([k, v]) =>
           `<tr><td style="padding:4px 16px 4px 0;color:#666">${k}</td><td style="padding:4px 0"><strong>${escapeHtml(String(v))}</strong></td></tr>`).join('')}
       </table>
-      <p style="margin:0 0 24px">
-        <a href="${escapeHtml(consoleUrl)}" style="background:#e63946;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600">Review in admin console</a>
-      </p>
+      <p style="margin:0 0 24px">You can approve or reject it from the Spotlight admin console.</p>
       <p style="color:#666;font-size:13px">You're getting this because your email is on the Spotlight sign-up alert list. The admin can change the list in the admin console.</p>
     </div>`;
 
