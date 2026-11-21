@@ -65,7 +65,9 @@ flowchart LR
 
 **Auth:** the API issues its own JWTs (30 days for users, 12 hours for the admin). Students and clubs sign in with email and password or Google; the API verifies Google tokens with `google-auth-library`. Passwords are hashed with bcrypt.
 
-**Images** (event banners, club logos) are uploaded as base64 to the API, which saves them in its `uploads/` folder (`UPLOAD_DIR`) and serves them at `<PUBLIC_API_URL>/uploads/...`; the URL is kept in the database. Keep that folder on a persistent disk and include it in backups. (Setting `GODADDY_UPLOAD_URL` + `UPLOAD_SECRET` sends uploads to an external `upload.php` instead.)
+**Images** (event banners, club logos) are uploaded as base64 to the API, which stores them and keeps the URL in the database. Two options:
+- **Server disk (default):** saved in the API's `uploads/` folder (`UPLOAD_DIR`) and served at `<PUBLIC_API_URL>/uploads/...`. Keep that folder on persistent storage and include it in backups.
+- **Object storage:** set `S3_BUCKET` (plus `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`, and `S3_ENDPOINT` for non-AWS providers) to use AWS S3, Cloudflare R2, Google Cloud Storage or MinIO.
 
 **Email** (club approval, new-club alerts to the admins, password reset codes) goes through a Google Apps Script relay ([`mail-relay/Code.gs`](spotlight_backend/mail-relay/Code.gs)), with Brevo or SMTP as fallbacks.
 
@@ -140,8 +142,8 @@ flutter build appbundle --release   # build/app/outputs/bundle/release/app-relea
 | `JWT_SECRET` | yes | Signs all session tokens |
 | `GOOGLE_CLIENT_ID` | yes | Verifies Google sign-in tokens |
 | `PUBLIC_API_URL` | yes | Public address of the API ending in `/api`; image URLs are built from it |
-| `UPLOAD_DIR` | no | Folder for uploaded images, default `./uploads` (keep it on a persistent disk) |
-| `GODADDY_UPLOAD_URL` / `UPLOAD_SECRET` | no | Send uploads to an external `upload.php` instead of `UPLOAD_DIR` |
+| `UPLOAD_DIR` | no | Folder for uploaded images (server-disk option), default `./uploads` |
+| `S3_BUCKET` / `S3_REGION` / `S3_ENDPOINT` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_PUBLIC_URL` | no | Object storage option; used when `S3_BUCKET` is set |
 | `PORT` | no | Defaults to `5000` |
 | `ADMIN_INITIAL_PASSWORD` | no | First admin password; random and logged once if unset |
 | `CRON_SECRET` | no | Enables `POST /notifications/event-reminders` for a scheduled job (sent as `X-Cron-Secret`) |

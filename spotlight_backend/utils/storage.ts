@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 export const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads'));
 
@@ -24,6 +25,27 @@ function apiBase(): string {
   if (configured) return configured;
   if (learnedApiBase) return learnedApiBase;
   throw new Error('Image storage is not configured (PUBLIC_API_URL is missing)');
+}
+
+type S3Config = { client: S3Client; bucket: string; publicUrl: string };
+let s3Cache: S3Config | null | undefined;
+
+function s3Config(): S3Config | null {
+  if (s3Cache !== undefined) return s3Cache;
+  const bucket = (process.env.S3_BUCKET || '').trim();
+  if (!bucket) return (s3Cache = null);
+  const publicUrl = (process.env.S3_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+  if (!publicUrl) throw new Error('Image storage is not configured (S3_PUBLIC_URL is missing)');
+  const endpoint = (process.env.S3_ENDPOINT || '').trim() || undefined;
+  const client = new S3Client({
+    region: (process.env.S3_REGION || 'auto').trim(),
+    endpoint,
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+    credentials: process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
+      ? { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY }
+      : undefined,
+  });
+  return (s3Cache = { client, bucket, publicUrl });
 }
 
 function cleanFolder(folder: string): string {
@@ -69,6 +91,25 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
 
   const dir = cleanFolder(folder);
   const name = `${crypto.randomBytes(16).toString('hex')}.${ext}`;
+
+  const s3 = s3Config();
+  if (s3) {
+    const key = `${dir}/${name}`;
+    try {
+      await s3.client.send(new PutObjectCommand({
+        Bucket: s3.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: match[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : match[1].toLowerCase(),
+        CacheControl: 'public, max-age=2592000, immutable',
+      }));
+    } catch (err: any) {
+      console.error('[Storage] Object storage upload failed:', err.message);
+      throw new Error('Image upload failed. Please try again.');
+    }
+    return `${s3.publicUrl}/${key}`;
+  }
+
   try {
     await fs.promises.mkdir(path.join(UPLOAD_DIR, dir), { recursive: true });
     await fs.promises.writeFile(path.join(UPLOAD_DIR, dir, name), bytes);
@@ -81,6 +122,18 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
 
 export async function deleteImage(publicUrl: string): Promise<boolean> {
   if (!publicUrl) return false;
+
+  const s3 = s3Config();
+  if (s3 && publicUrl.startsWith(`${s3.publicUrl}/`)) {
+    const key = decodeURIComponent(publicUrl.slice(s3.publicUrl.length + 1).split(/[?#]/)[0]);
+    if (!key || key.includes('..')) return false;
+    try {
+      await s3.client.send(new DeleteObjectCommand({ Bucket: s3.bucket, Key: key }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   const marker = '/uploads/';
   const at = publicUrl.indexOf(marker);
