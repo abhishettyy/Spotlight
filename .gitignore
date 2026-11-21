@@ -16,7 +16,8 @@
 *.pem
 *.key
 
-# ── Database dumps (contain real user data) ─────────────────────────────────
+# ── User uploads and database dumps (contain real user data) ────────────────
+uploads/
 *data_export.sql
 *complete_godaddy_database.sql
 *.db

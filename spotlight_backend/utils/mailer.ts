@@ -117,7 +117,7 @@ async function deliverMail(mail: Mail, what: string): Promise<boolean> {
 }
 
 export async function sendClubApprovedEmail(club: { name: string; email: string }): Promise<boolean> {
-  const loginUrl = process.env.CLUB_LOGIN_URL || 'https://spotlight.msritise.in/?view=auth&authTab=login';
+  const loginUrl = process.env.CLUB_LOGIN_URL || 'https://spotlight.msrit.in/?view=auth&authTab=login';
   const name = escapeHtml(club.name);
   return deliverMail({
     to: club.email,
@@ -216,7 +216,7 @@ export async function sendClubSignupAlert(
   reapplied: boolean,
 ): Promise<number> {
   if (recipients.length === 0) return 0;
-  const consoleUrl = process.env.ADMIN_CONSOLE_URL || 'https://spotlight.msritise.in/admin';
+  const consoleUrl = process.env.ADMIN_CONSOLE_URL || 'https://spotlight.msrit.in/admin';
   const rows: Array<[string, string | null | undefined]> = [
     ['Club', club.name],
     ['Email', club.email],

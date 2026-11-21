@@ -11,6 +11,7 @@ import clubsRouter from './routes/clubs';
 import registrationsRouter from './routes/registrations';
 import notificationsRouter from './routes/notifications';
 import { ensureAdminProfile } from './utils/admin';
+import { UPLOAD_DIR, rememberApiBase } from './utils/storage';
 
 declare global {
   namespace Express {
@@ -34,8 +35,19 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use((req, res, next) => {
   console.log(`[HTTP] ${req.method} ${req.path}`);
+  if (!process.env.PUBLIC_API_URL) rememberApiBase(`${req.protocol}://${req.get('host')}`);
   next();
 });
+
+const serveUploads = express.static(UPLOAD_DIR, {
+  dotfiles: 'deny',
+  index: false,
+  maxAge: '30d',
+  immutable: true,
+  setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+});
+app.use('/api/uploads', serveUploads);
+app.use('/uploads', serveUploads);
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 

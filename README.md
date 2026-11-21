@@ -59,13 +59,13 @@ flowchart LR
     APP[Flutter app] --> API
     WEB["Web app<br/>/student · dashboard · /admin"] --> API
     API[Express API<br/>Render] --> DB[(MySQL)]
-    API --> FILES[Image storage<br/>GoDaddy upload.php]
+    API --> FILES[Image storage<br/>uploads folder on the server]
     GOOGLE[Google Sign-In] -.ID token.-> API
 ```
 
 **Auth:** the API issues its own JWTs (30 days for users, 12 hours for the admin). Students and clubs sign in with email and password or Google; the API verifies Google tokens with `google-auth-library`. Passwords are hashed with bcrypt.
 
-**Images** (event banners, club logos) are uploaded as base64 to the API, which stores them through a PHP endpoint on the GoDaddy host and keeps the URL in the database.
+**Images** (event banners, club logos) are uploaded as base64 to the API, which saves them in its `uploads/` folder (`UPLOAD_DIR`) and serves them at `<PUBLIC_API_URL>/uploads/...`; the URL is kept in the database. Keep that folder on a persistent disk and include it in backups. (Setting `GODADDY_UPLOAD_URL` + `UPLOAD_SECRET` sends uploads to an external `upload.php` instead.)
 
 **Email** (club approval, new-club alerts to the admins, password reset codes) goes through a Google Apps Script relay ([`mail-relay/Code.gs`](spotlight_backend/mail-relay/Code.gs)), with Brevo or SMTP as fallbacks.
 
@@ -139,15 +139,18 @@ flutter build appbundle --release   # build/app/outputs/bundle/release/app-relea
 | `DATABASE_URL` | yes | MySQL connection string |
 | `JWT_SECRET` | yes | Signs all session tokens |
 | `GOOGLE_CLIENT_ID` | yes | Verifies Google sign-in tokens |
-| `UPLOAD_SECRET` | yes | Shared secret for the image upload endpoint |
-| `GODADDY_UPLOAD_URL` | yes | URL of `upload.php` on the file host |
+| `PUBLIC_API_URL` | yes | Public address of the API ending in `/api`; image URLs are built from it |
+| `UPLOAD_DIR` | no | Folder for uploaded images, default `./uploads` (keep it on a persistent disk) |
+| `GODADDY_UPLOAD_URL` / `UPLOAD_SECRET` | no | Send uploads to an external `upload.php` instead of `UPLOAD_DIR` |
 | `PORT` | no | Defaults to `5000` |
 | `ADMIN_INITIAL_PASSWORD` | no | First admin password; random and logged once if unset |
 | `CRON_SECRET` | no | Enables `POST /notifications/event-reminders` for a scheduled job (sent as `X-Cron-Secret`) |
 | `CAMPUS_TIME_ZONE` | no | Zone event times are entered in, default `Asia/Kolkata` |
 | `ADMIN_EMAIL` | no | Admin console sign-in email, default `spotlightapp.help@gmail.com` |
-| `SMTP_USER` / `SMTP_PASS` | no | Mail account for club approval emails (Gmail: an App Password); emails are skipped if unset |
-| `SMTP_HOST` / `SMTP_PORT` / `MAIL_FROM` / `CLUB_LOGIN_URL` | no | Mail server (default Gmail, 465), sender, and the sign-in link in the email |
+| `MAIL_RELAY_URL` / `MAIL_RELAY_SECRET` | no | Gmail relay for all emails (see [`mail-relay/README.md`](spotlight_backend/mail-relay/README.md)); emails are skipped if no mail service is set |
+| `BREVO_API_KEY` / `SMTP_USER` / `SMTP_PASS` | no | Fallback mail services |
+| `CLUB_LOGIN_URL` / `ADMIN_CONSOLE_URL` | no | Links used in emails (default `https://spotlight.msrit.in/…`) |
+| `ADMIN_ALERT_EMAILS` | no | Fallback list for new-club alerts; normally set in the admin console |
 
 **Web app** (`spotlight_dashboard/.env`): `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, and optionally `VITE_BASE_PATH` when hosted under a sub-path.
 
