@@ -463,8 +463,6 @@ class ApiService {
     }
   }
 
-  /// Forgot password, step 1: emails a 6-digit code. Returns the server's message, which is the
-  /// same whether or not the email has an account.
   Future<String> requestPasswordReset({required String email}) async {
     try {
       final response = await _post(
@@ -480,7 +478,6 @@ class ApiService {
     }
   }
 
-  /// Forgot password, step 2: the code from the email and a new password, which replaces the old one.
   Future<String> resetPassword({required String email, required String code, required String newPassword}) async {
     try {
       final response = await _post(
@@ -496,7 +493,6 @@ class ApiService {
     }
   }
 
-  /// Signs in an existing student account with a Google ID token (no account creation).
   Future<UserModel?> googleLogin({required String idToken}) async {
     try {
       final response = await _post(

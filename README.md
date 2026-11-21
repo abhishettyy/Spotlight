@@ -65,11 +65,15 @@ flowchart LR
 
 **Auth:** the API issues its own JWTs (30 days for users, 12 hours for the admin). Students and clubs sign in with email and password or Google; the API verifies Google tokens with `google-auth-library`. Passwords are hashed with bcrypt.
 
-**Images** (event banners, club logos, payment QR codes) are uploaded as base64 to the API, which stores them through a PHP endpoint on the GoDaddy host and keeps the URL in the database.
+**Images** (event banners, club logos) are uploaded as base64 to the API, which stores them through a PHP endpoint on the GoDaddy host and keeps the URL in the database.
+
+**Email** (club approval, new-club alerts to the admins, password reset codes) goes through a Google Apps Script relay ([`mail-relay/Code.gs`](spotlight_backend/mail-relay/Code.gs)), with Brevo or SMTP as fallbacks.
 
 ### Data model
 
-`Profile` (students, plus the built-in `admin`) · `Club` (status `PENDING` / `APPROVED` / `REJECTED`) · `Event` · `Team` · `Registration` (status `PENDING` / `CONFIRMED` / `REJECTED`, Transaction ID, check-in time) · `Notification`. See [`schema.prisma`](spotlight_backend/prisma/schema.prisma).
+`Profile` (students, plus the built-in `admin`) · `Club` (status `PENDING` / `APPROVED` / `REJECTED`) · `Event` (draft flag, allowed branches; all events are free) · `Team` · `Registration` (check-in time; free registrations are confirmed straight away) · `Notification` · `PasswordReset` (one-time email codes) · `AppSetting` (admin settings such as the new-club alert emails). See [`schema.prisma`](spotlight_backend/prisma/schema.prisma).
+
+Event capacity counts places: one per solo student, one per team.
 
 ### API
 
@@ -77,12 +81,12 @@ All routes are served under `/api` (and also at the root, for hosts that strip t
 
 | Prefix | Purpose |
 |---|---|
-| `/auth` | Student sign-up and login, Google sign-in, club login, password change |
-| `/profiles` | Read and edit profiles, profile stats |
-| `/clubs` | Club list and sign-up, admin login, club approvals, club registrations and stats |
-| `/events` | Event list, create and edit events, deadlines, an event's registrations |
+| `/auth` | Student sign-up and login, Google sign-in, club login, password change, forgot password (email code) |
+| `/profiles` | Read and edit profiles (USN and branch are fixed once set), profile stats |
+| `/clubs` | Club list and sign-up, admin login, club approvals, admin settings, admin student list and delete, club registrations and stats |
+| `/events` | Event list (published only), create, edit, publish or delete drafts, an event's registrations |
 | `/notifications` | List, mark read, delete |
-| `/` (registrations) | Register, teams, payment submission, approve or reject, ticket verification, public stats |
+| `/` (registrations) | Register, teams, ticket verification and check-in, public stats |
 
 ## Getting started
 
@@ -97,6 +101,8 @@ npm install                 # also runs prisma generate
 npx prisma db push          # create tables (first time only)
 npm run dev                 # http://localhost:5000/api
 ```
+
+`prisma db push` creates every table on a new database. An existing database is updated with the dated SQL files in [`spotlight_backend/prisma/`](spotlight_backend/prisma) instead (run in date order, each once); they only add tables and columns.
 
 On first start the API creates the `admin` profile. Its password is `ADMIN_INITIAL_PASSWORD` if set, otherwise a random one printed once in the server log. Change it from the admin console after signing in.
 

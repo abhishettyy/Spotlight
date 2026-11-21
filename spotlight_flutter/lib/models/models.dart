@@ -194,11 +194,8 @@ class EventModel {
 
   final int? registrationLimit;
 
-  /// Branches allowed to register; null = open to all branches
   final List<String>? allowedBranches;
 
-  /// Why a student of [studentBranch] can't register, or null when they can.
-  /// Same wording as the server, which also enforces it.
   String? branchNotAllowedMessage(String? studentBranch) {
     final allowed = allowedBranches;
     if (allowed == null || allowed.isEmpty) return null;

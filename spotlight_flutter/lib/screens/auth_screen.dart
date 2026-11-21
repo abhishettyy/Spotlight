@@ -18,13 +18,11 @@ import '../core/custom_toast.dart';
 import 'privacy_policy_screen.dart';
 import 'forgot_password_screen.dart';
 
-// Web OAuth client ID, the same one the backend checks Google ID tokens against.
 const String _googleWebClientId = String.fromEnvironment(
   'GOOGLE_WEB_CLIENT_ID',
   defaultValue: '614014299614-n10khe2om4g50ehpqb6h82tdtumkh5ot.apps.googleusercontent.com',
 );
 
-// Google sign-in is configured for Android only; iOS needs its own client ID in Info.plist first.
 final bool _googleSignInEnabled = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
 const String _googleLogoSvg = '''
@@ -121,14 +119,12 @@ class _AuthScreenState extends State<AuthScreen> {
     serverClientId: _googleWebClientId,
   );
 
-  /// Signs in an existing student with Google. Offered on the Sign In tab only; new accounts use the form.
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      // Always show the account picker instead of silently reusing the last Google account
       await _googleSignIn.signOut();
       final account = await _googleSignIn.signIn();
-      if (account == null) return; // picker closed
+      if (account == null) return;
 
       final idToken = (await account.authentication).idToken;
       if (idToken == null) {
@@ -559,7 +555,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
 
-              // Google is offered for sign-in only; new accounts are created with the sign-up form
               if (isLogin && _googleSignInEnabled) ...[
                 const SizedBox(height: 20),
                 Row(
@@ -798,7 +793,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  /// Branch: one of the college's branches. It can't be changed after sign-up.
   Widget _buildBranchDropdown() {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
@@ -814,7 +808,6 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          // Rebuilt with a new key when the form is cleared, so the picked value resets too
           key: ValueKey('branch-${_branchController.text}'),
           initialValue: selected,
           isExpanded: true,

@@ -10,10 +10,6 @@ export interface GoogleUser {
   picture?: string;
 }
 
-/**
- * Checks a Google ID token or access token was issued to Spotlight's own client and belongs to a
- * verified email. Returns that account, or null. A token issued to any other app is rejected.
- */
 export async function verifyGoogleUser(credential?: string, accessToken?: string): Promise<GoogleUser | null> {
   if (credential) {
     try {
@@ -34,7 +30,6 @@ export async function verifyGoogleUser(credential?: string, accessToken?: string
     const emailVerified = info.email_verified === true || info.email_verified === 'true';
     if (!info.email || !emailVerified) return null;
 
-    // tokeninfo carries no name or picture; userinfo does
     const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });

@@ -20,9 +20,6 @@ import 'core/clubs_provider.dart';
 import 'core/notification_prefs_provider.dart';
 import 'screens/onboarding_screen.dart';
 
-// The image host (msritise.in) currently serves a self-signed certificate, so images only load if
-// it is let through. The exception is limited to that host: the API, which carries the session
-// token, is always verified. Remove this once the image host has a valid certificate again.
 const _selfSignedImageHosts = {'msritise.in', 'www.msritise.in', 'spotlight.msritise.in'};
 
 class SpotlightHttpOverrides extends HttpOverrides {
@@ -34,22 +31,17 @@ class SpotlightHttpOverrides extends HttpOverrides {
   }
 }
 
-/// Widest the app content gets; on tablets and foldables it stays centred at this width.
 const double kMaxContentWidth = 600;
 
-/// Largest system font scale the layout follows; above this text stops growing so cards don't overflow.
 const double kMaxTextScale = 1.3;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = SpotlightHttpOverrides();
-  // Portrait only: the layouts are designed for a tall screen
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(const SpotlightApp());
 }
 
-/// Applies the app-wide size limits: caps the font scale and, on wide screens, centres the content
-/// at [kMaxContentWidth] (screens see that width through MediaQuery, so their maths stays correct).
 Widget _responsiveFrame(BuildContext context, Widget? child) {
   final mq = MediaQuery.of(context);
   final width = math.min(mq.size.width, kMaxContentWidth);

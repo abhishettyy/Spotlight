@@ -2,11 +2,6 @@ import { Registration, Profile, Team, Prisma } from '@prisma/client';
 
 const ACTIVE_STATUSES: Array<'PENDING' | 'CONFIRMED'> = ['PENDING', 'CONFIRMED'];
 
-/**
- * Places taken at an event, which is what venue capacity limits: each solo registration is one
- * place and each team is one place, however many members it has. Rejected registrations free
- * their place; a team stops counting once none of its members is pending or confirmed.
- */
 export async function countTakenPlaces(db: Prisma.TransactionClient, eventId: string): Promise<number> {
   const solo = await db.registration.count({
     where: { eventId, teamId: null, status: { in: ACTIVE_STATUSES } },
@@ -17,7 +12,6 @@ export async function countTakenPlaces(db: Prisma.TransactionClient, eventId: st
   return solo + teams;
 }
 
-/** The same count for many events at once, from their pending and confirmed registrations. */
 export function placesByEvent(rows: Array<{ eventId: string; teamId: string | null }>): Map<string, number> {
   const solo = new Map<string, number>();
   const teams = new Map<string, Set<string>>();
@@ -39,11 +33,6 @@ export { ACTIVE_STATUSES };
 
 type RegistrationWithEventFee = Registration & { event: { fee: number } };
 
-/**
- * Registrations a club should see. Unpaid registrations for paid events stay hidden until the
- * student (or their team) submits payment details. Team ids are per event, so this gives the same
- * result for one event's registrations or for a whole club's.
- */
 export function filterVisibleRegistrations<T extends RegistrationWithEventFee>(registrations: T[]): T[] {
   const teamIdsWithPayment = new Set(
     registrations.filter(r => r.teamId && r.transactionId !== null).map(r => r.teamId)
@@ -62,7 +51,6 @@ export function filterVisibleRegistrations<T extends RegistrationWithEventFee>(r
   });
 }
 
-/** Shape the club dashboard expects for a registration row. */
 export function mapClubRegistration(r: Registration & { profile: Profile | null; team: Team | null }) {
   return {
     id: r.id,

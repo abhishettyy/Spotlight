@@ -11,7 +11,6 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
     return base64Str; 
   }
 
-  // Upload to the GoDaddy web folder (saves to public_html/spotlight.msritise.in/uploads/)
   const godaddyUploadUrl = process.env.GODADDY_UPLOAD_URL || 'https://spotlight.msritise.in/upload.php';
   const uploadSecret = getUploadSecret();
 
@@ -33,7 +32,6 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
           }),
         });
       } catch (sslErr: any) {
-        // Fallback to HTTP if HTTPS certificate is still issuing on GoDaddy
         const httpUrl = godaddyUploadUrl.replace('https://', 'http://');
         console.warn(`[Storage] HTTPS attempt failed (${sslErr.message}). Retrying over HTTP: ${httpUrl}`);
         response = await fetch(httpUrl, {
@@ -66,7 +64,6 @@ export async function uploadBase64Image(base64Str: string, folder: string): Prom
     }
   }
 
-  // Never store the raw base64 image in the database
   throw new Error('Image upload failed. Please try again.');
 }
 

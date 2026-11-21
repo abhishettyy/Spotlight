@@ -31,10 +31,6 @@ class _MainLayoutState extends State<MainLayout> {
         ? mq.viewPadding.bottom
         : mq.padding.bottom;
 
-    // Android 3-button navigation bar height is ~48-56dp.
-    // When reported, float 16dp above it.
-    // When unreported (or on 3-button devices with 0 insets), use 68.0
-    // so the navbar is lifted 50% up and never collides with system buttons.
     final double navBottom = sysBottom >= 48 ? (sysBottom + 16) : 68.0;
 
     final sk = Sk.of(context);
@@ -55,7 +51,6 @@ class _MainLayoutState extends State<MainLayout> {
             right: 24,
             child: Container(
               height: 70,
-              // Web bottom nav: surface, line border, large shadow (light only)
               decoration: BoxDecoration(
                 color: sk.surface,
                 borderRadius: BorderRadius.circular(35),
@@ -81,7 +76,6 @@ class _MainLayoutState extends State<MainLayout> {
   Widget _buildNavItem(int index, IconData icon, String label, {int? badge}) {
     final isSelected = _currentIndex == index;
     final sk = Sk.of(context);
-    // Active tab is an inverse pill (text colour fill, page colour content), like the web
     final activeContent = sk.canvas;
 
     return GestureDetector(

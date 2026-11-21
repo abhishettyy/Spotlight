@@ -1,15 +1,10 @@
 import { prisma } from '../config/db';
 
-/** Emails told about each new club sign-up, so an admin can review it. Edited in the admin console. */
 export const CLUB_SIGNUP_ALERT_KEY = 'club_signup_alert_emails';
 export const MAX_ALERT_EMAILS = 10;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * The saved alert emails. Before the admin saves any, falls back to the ADMIN_ALERT_EMAILS
- * environment variable (comma-separated), so a fresh setup can still be alerted.
- */
 export async function getClubSignupAlertEmails(): Promise<string[]> {
   try {
     const row = await prisma.appSetting.findUnique({ where: { key: CLUB_SIGNUP_ALERT_KEY } });
@@ -26,7 +21,6 @@ export async function getClubSignupAlertEmails(): Promise<string[]> {
     .filter((e) => EMAIL_RE.test(e));
 }
 
-/** Checks and tidies a list sent from the admin console. Returns an error message or the clean list. */
 export function cleanAlertEmails(input: unknown): { emails: string[] } | { error: string } {
   if (!Array.isArray(input)) return { error: 'Send a list of email addresses.' };
   const emails: string[] = [];

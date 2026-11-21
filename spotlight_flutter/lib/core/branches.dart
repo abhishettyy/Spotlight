@@ -1,5 +1,3 @@
-/// The college's branches, shown as a dropdown at sign-up and onboarding. The backend accepts
-/// only these (spotlight_backend/utils/branches.ts), and the student website has the same list.
 const List<String> kBranches = [
   'Aerospace Engineering',
   'Artificial Intelligence and Data Science',

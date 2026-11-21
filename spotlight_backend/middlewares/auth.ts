@@ -14,10 +14,6 @@ export function signToken(userId: string): string {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
 }
 
-/**
- * The user id from a Spotlight session token, or null. Only tokens this API signed are accepted;
- * Google tokens are exchanged for a session token at /auth/google and /auth/google-student instead.
- */
 function userIdFromRequest(req: Request): string | null {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;

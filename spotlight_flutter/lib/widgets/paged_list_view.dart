@@ -3,10 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../core/sk_colors.dart';
 
-/// A vertical list that shows [items] one page at a time, with a page bar under the last
-/// item (the same pattern as the student website). Drop-in for `ListView.separated`, so it
-/// still works inside a `RefreshIndicator`. Changing [resetKey] (a search, filter or tab)
-/// goes back to the first page.
 class PagedListView<T> extends StatefulWidget {
   final List<T> items;
   final Widget Function(BuildContext context, T item) itemBuilder;
@@ -88,9 +84,8 @@ class _PagedListViewState<T> extends State<PagedListView<T>> {
   }
 }
 
-/// "13–24 of 40" with previous / page numbers / next, crimson for the current page.
 class PagerBar extends StatelessWidget {
-  final int page; // zero-based
+  final int page;
   final int totalPages;
   final int from;
   final int to;
@@ -111,7 +106,6 @@ class PagerBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final sk = Sk.of(context);
 
-    // First, last, and the pages next to the current one; gaps become "…"
     final numbers = <int?>[];
     for (var n = 0; n < totalPages; n++) {
       if (n == 0 || n == totalPages - 1 || (n - page).abs() <= 1) {

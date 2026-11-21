@@ -6,15 +6,9 @@ import { prisma } from '../config/db';
 import { JWT_SECRET } from '../middlewares/auth';
 
 export const ADMIN_PROFILE_ID = 'admin';
-/** The admin signs in with this email (password or Google). Stored on the admin profile. */
 export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'spotlightapp.help@gmail.com').trim().toLowerCase();
 const SALT_ROUNDS = 10;
 
-/**
- * Makes sure the built-in "admin" profile exists and carries ADMIN_EMAIL. The first password comes
- * from ADMIN_INITIAL_PASSWORD, or is generated and printed to the log once. It is only set when the
- * row is first created, so changing it later is never overwritten.
- */
 export async function ensureAdminProfile(): Promise<void> {
   try {
     const existing = await prisma.profile.findUnique({ where: { id: ADMIN_PROFILE_ID } });
@@ -56,13 +50,11 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): a
       const decoded = jwt.verify(header.substring(7), JWT_SECRET) as { adminId?: string };
       if (decoded && decoded.adminId === ADMIN_PROFILE_ID) return next();
     } catch {
-      // fall through to 401
     }
   }
   return res.status(401).json({ error: 'Unauthorized: admin sign-in required.' });
 };
 
-// Simple in-memory throttle for admin password attempts.
 const attempts = new Map<string, { count: number; first: number }>();
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 8;

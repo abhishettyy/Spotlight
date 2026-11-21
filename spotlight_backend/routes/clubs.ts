@@ -17,7 +17,6 @@ const SALT_ROUNDS = 10;
 
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
-    // Students only ever see approved clubs
     const clubs = await prisma.club.findMany({
       where: { status: 'APPROVED' },
       orderBy: { name: 'asc' },
@@ -39,8 +38,6 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// The signed-in club's own details, including the coordinator (used to prefill letters).
-// Only the club itself gets these; the public list above leaves them out.
 router.get('/mine', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const profile = await prisma.profile.findUnique({ where: { id: req.auth!.userId }, select: { clubId: true } });
@@ -77,7 +74,6 @@ router.post('/check-email', async (req: Request, res: Response): Promise<any> =>
       return res.status(400).json({ exists: true, error: 'This email address is already registered to a club.' });
     }
 
-    // A rejected club may sign up again with the same email (its own club-admin profile included)
     if (existingProfile && !(existingClub && existingProfile.clubId === existingClub.id)) {
       if (existingProfile.clubId === null && existingProfile.password !== null) {
         return res.status(400).json({ exists: true, error: 'This email address is already registered to a student account.' });
@@ -113,7 +109,6 @@ router.post('/admin/login', async (req: Request, res: Response): Promise<any> =>
   }
 });
 
-// Admin sign-in with the Google account whose email is the admin profile's email
 router.post('/admin/google', async (req: Request, res: Response): Promise<any> => {
   try {
     const key = req.ip || 'unknown';
@@ -161,7 +156,6 @@ router.post('/admin/change-password', requireAdmin, async (req: Request, res: Re
   }
 });
 
-// Admin settings: the emails told about each new club sign-up
 router.get('/admin/settings', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
     return res.status(200).json({ signupAlertEmails: await getClubSignupAlertEmails(), maxSignupAlertEmails: MAX_ALERT_EMAILS });
@@ -181,11 +175,8 @@ router.put('/admin/settings', requireAdmin, async (req: Request, res: Response):
   }
 });
 
-// ── Admin: students ─────────────────────────────────────────────────────────
-// Student accounts are profiles with no club, other than the admin's own profile.
 const studentWhere = { clubId: null, NOT: { id: ADMIN_PROFILE_ID } } as const;
 
-// Every student with only the details the admin list shows, A-Z by name
 router.get('/admin/students', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
     const profiles = await prisma.profile.findMany({
@@ -200,8 +191,6 @@ router.get('/admin/students', requireAdmin, async (req: Request, res: Response):
   }
 });
 
-// Permanently deletes a student account with its registrations, tickets and notifications.
-// A team the student leads passes to its earliest other member, or is removed if nobody is left.
 router.delete('/admin/students/:id', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -221,7 +210,6 @@ router.delete('/admin/students/:id', requireAdmin, async (req: Request, res: Res
       }
       await tx.notification.deleteMany({ where: { userId: id } });
       await tx.passwordReset.deleteMany({ where: { email: student.email } });
-      // Registrations go with the profile (onDelete: Cascade)
       await tx.profile.delete({ where: { id } });
     });
 
@@ -248,7 +236,6 @@ const applicationSelect = {
   reviewedAt: true,
 } as const;
 
-// Every club with its sign-up details and approval state, newest first, for the admin console
 router.get('/applications', requireAdmin, async (req: Request, res: Response): Promise<any> => {
   try {
     const clubs = await prisma.club.findMany({
@@ -302,7 +289,6 @@ router.post('/:id/reject', requireAdmin, async (req: Request, res: Response): Pr
   }
 });
 
-// Club sign-up. Files the registration as PENDING; the club can sign in once the admin approves it.
 router.post('/', async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
@@ -421,7 +407,6 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
   }
 });
 
-// Every visible registration across the club's events, in one request (same rows as /events/:id/registrations)
 router.get('/:id/registrations', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const clubId = req.params.id as string;
@@ -534,7 +519,6 @@ router.get('/:id/dashboard-stats', requireAuth, async (req: Request, res: Respon
       } : null,
     }));
 
-    // Pending count per event (a team counts once), built in one pass instead of filtering per event
     const pendingByEvent = new Map<string, { solo: number; teams: Set<string> }>();
     for (const r of filteredRegistrations) {
       if (r.status !== 'PENDING') continue;

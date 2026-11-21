@@ -117,8 +117,6 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<
   }
 });
 
-// Sends "event is today" reminders. Meant for a scheduled job, which must send the
-// X-Cron-Secret header matching CRON_SECRET; without CRON_SECRET set the endpoint is off.
 router.post('/event-reminders', async (req: Request, res: Response): Promise<any> => {
   const cronSecret = process.env.CRON_SECRET;
   const sentSecret = req.headers['x-cron-secret'];
@@ -157,7 +155,6 @@ router.post('/event-reminders', async (req: Request, res: Response): Promise<any
         }),
       ]);
 
-      // A second run on the same day only reaches people not reminded yet
       const remindedIds = new Set(alreadyReminded.map(n => n.userId));
       const userIds = [...new Set(registrations.map(r => r.userId))].filter(id => !remindedIds.has(id));
       if (userIds.length === 0) continue;

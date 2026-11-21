@@ -17,7 +17,6 @@ import '../widgets/event_card.dart';
 import '../core/sk_colors.dart';
 import 'clubs_screen.dart';
 
-// The home page shows a preview; "See all" opens the full, paged lists
 const int _homeEventLimit = 8;
 const int _homeClubLimit = 12;
 

@@ -5,11 +5,9 @@ import { JWT_SECRET } from '../middlewares/auth';
 import { ADMIN_PROFILE_ID } from './admin';
 import { sendPasswordResetCode, sendPasswordChangedEmail } from './mailer';
 
-/** How long a code works, and how many wrong tries it allows before it's thrown away. */
 export const CODE_MINUTES = 10;
 const MAX_ATTEMPTS = 5;
 
-/** Requests allowed per hour: per email (so nobody can flood an inbox) and per visitor IP. */
 const PER_EMAIL_PER_HOUR = 3;
 const PER_IP_PER_HOUR = 10;
 const HOUR = 60 * 60 * 1000;
@@ -28,12 +26,10 @@ function underLimit(map: Map<string, number[]>, key: string, limit: number): boo
   return true;
 }
 
-/** Keyed hash of a code: the database never holds the code itself. */
 function hashCode(email: string, code: string): string {
   return crypto.createHmac('sha256', JWT_SECRET).update(`${email}:${code}`).digest('hex');
 }
 
-/** Same rules as club sign-up, now for everyone who sets a password this way. */
 export function passwordProblem(pass: unknown): string | null {
   if (typeof pass !== 'string') return 'Please enter a new password.';
   const missing: string[] = [];
@@ -44,13 +40,15 @@ export function passwordProblem(pass: unknown): string | null {
   return missing.length ? `Password must contain ${missing.join(', ')}.` : null;
 }
 
-/**
- * The account a reset email belongs to: a club (club sign-in uses the club's password) or a
- * student. The admin is never reset this way; it has Google sign-in and Change Password.
- */
-async function findAccount(email: string): Promise<{ kind: 'club'; clubId: string; name: string } | { kind: 'student'; profileId: string; name: string } | null> {
+type Account =
+  | { kind: 'club'; clubId: string; name: string }
+  | { kind: 'student' | 'admin'; profileId: string; name: string };
+
+async function findAccount(email: string): Promise<Account | null> {
   const club = await prisma.club.findUnique({ where: { email } });
   if (club) return { kind: 'club', clubId: club.id, name: club.name };
+  const admin = await prisma.profile.findFirst({ where: { id: ADMIN_PROFILE_ID, email } });
+  if (admin) return { kind: 'admin', profileId: admin.id, name: 'Spotlight admin' };
   const profile = await prisma.profile.findFirst({
     where: { email, clubId: null, NOT: { id: ADMIN_PROFILE_ID } },
   });
@@ -60,7 +58,6 @@ async function findAccount(email: string): Promise<{ kind: 'club'; clubId: strin
 
 export type ResetResult = { status: number; body: Record<string, unknown> };
 
-/** Answer shown whether or not the email has an account, so the form can't reveal who is registered. */
 const SENT_MESSAGE = "If an account exists for this email, we've sent a 6-digit code to it. Check your inbox and spam folder.";
 
 export async function requestResetCode(rawEmail: unknown, ip: string): Promise<ResetResult> {
@@ -76,7 +73,6 @@ export async function requestResetCode(rawEmail: unknown, ip: string): Promise<R
   const account = await findAccount(email);
   if (!account) return { status: 200, body: { message: SENT_MESSAGE } };
 
-  // A new code replaces any earlier one for this email
   const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
   const expiresAt = new Date(Date.now() + CODE_MINUTES * 60 * 1000);
   await prisma.passwordReset.upsert({
@@ -128,7 +124,6 @@ export async function resetPasswordWithCode(rawEmail: unknown, rawCode: unknown,
     return invalid;
   }
 
-  // The new password replaces the old one; the code can't be used again
   const hash = await bcrypt.hash(newPassword as string, 10);
   await prisma.$transaction(async (tx) => {
     if (account.kind === 'club') {
@@ -140,8 +135,6 @@ export async function resetPasswordWithCode(rawEmail: unknown, rawCode: unknown,
     await tx.passwordReset.delete({ where: { email } });
   });
   console.log(`[Auth] Password reset with an email code for ${email}`);
-  // Confirmation email, sent in the background so the user isn't kept waiting. The reset has
-  // already succeeded, so a mail failure is only logged (deliverMail never throws).
   void sendPasswordChangedEmail({ email, name: account.name }, account.kind);
   return { status: 200, body: { message: 'Your password has been reset. You can now sign in with your new password.' } };
 }

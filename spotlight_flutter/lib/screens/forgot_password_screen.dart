@@ -6,8 +6,6 @@ import '../core/sk_colors.dart';
 import '../core/api_service.dart';
 import '../core/custom_toast.dart';
 
-/// Forgot password: 1) email a 6-digit code, 2) enter the code and a new password, which replaces
-/// the old one. Pops back to sign-in when done.
 class ForgotPasswordScreen extends StatefulWidget {
   final String initialEmail;
   const ForgotPasswordScreen({super.key, this.initialEmail = ''});
@@ -43,7 +41,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  /// Same rules as the server and club sign-up. Null when the password is fine.
   String? _passwordProblem(String p) {
     final missing = <String>[];
     if (p.length < 8) missing.add('at least 8 characters');

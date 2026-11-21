@@ -12,9 +12,6 @@ import 'custom_image.dart';
 
 const _months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-/// Event tile used on Home, All Events and Saved. Shows the same details as the web app's
-/// EventCard: date chip, club, LIVE, category, title, date/time, venue, deadline,
-/// registrations, price and bookmark.
 class EventCard extends StatelessWidget {
   final EventModel event;
   final double? width;
@@ -32,10 +29,8 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sk = Sk.of(context);
-    // Text sits on the image's dark gradient in both themes, so it uses the dark-theme text colours
     const onImage = Sk.dark;
 
-    // Same source as the web card: event start, else the registration deadline
     final chipDate = event.startDate ?? event.registrationDeadline;
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
     final hasClub = event.clubName != null && event.clubName!.isNotEmpty;
@@ -293,7 +288,6 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  // Web .stu-img-chip: surface fill, small shadow
   Widget _chip(
     Sk sk, {
     required Widget child,

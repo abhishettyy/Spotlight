@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'sk_colors.dart';
 
-/// App-wide toast, styled like the web app's toasts: surface background, primary text,
-/// a thin border, and an icon tinted by type (success green, error red, warning amber).
 void showSpotlightToast(
   BuildContext context,
   String message, {

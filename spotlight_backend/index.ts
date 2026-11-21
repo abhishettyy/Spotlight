@@ -23,8 +23,6 @@ declare global {
 }
 
 const app = express();
-// Render (and cPanel) sit behind a proxy: use the visitor's address from X-Forwarded-For, so the
-// admin sign-in throttle counts each visitor separately instead of everyone as the proxy
 app.set('trust proxy', 1);
 app.use(cors({
   origin: true,
@@ -45,7 +43,6 @@ app.get(['/', '/api', '/api/health', '/health'], (req: Request, res: Response): 
   return res.status(200).json({ status: 'success', message: 'Spotlight API Server is live!' });
 });
 
-// Support both /api/... and direct /... (resilient to Passenger/Apache prefix stripping)
 const mountRoutes = (basePath: string) => {
   const prefix = basePath ? `/${basePath.replace(/^\/+|\/+$/g, '')}` : '';
   app.use(`${prefix}/auth`, authRouter);

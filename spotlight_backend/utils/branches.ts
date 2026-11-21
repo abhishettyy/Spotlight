@@ -1,7 +1,3 @@
-/**
- * The college's branches. Students pick one at sign-up (or onboarding after Google sign-in);
- * the student website and the Flutter app show this same list, so keep the three in step.
- */
 export const BRANCHES = [
   'Aerospace Engineering',
   'Artificial Intelligence and Data Science',
@@ -22,7 +18,6 @@ export const BRANCHES = [
   'Medical Electronics Engineering',
 ] as const;
 
-/** The branch exactly as listed, or null when it isn't one of the college's branches. */
 export function normalizeBranch(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const v = value.trim().toLowerCase();
@@ -31,10 +26,6 @@ export function normalizeBranch(value: unknown): string | null {
 
 export const INVALID_BRANCH_MESSAGE = 'Please choose your branch from the list.';
 
-/**
- * Event eligibility, as stored in Event.allowedBranches: null means open to all branches,
- * otherwise a JSON array of branch names from BRANCHES.
- */
 export function readAllowedBranches(stored: string | null | undefined): string[] | null {
   if (!stored) return null;
   try {
@@ -47,10 +38,6 @@ export function readAllowedBranches(stored: string | null | undefined): string[]
   }
 }
 
-/**
- * Checks what a club sent when creating an event. Nothing, an empty list or every branch means
- * open to all (null). Returns 'invalid' when a name isn't one of the college's branches.
- */
 export function parseAllowedBranchesInput(input: unknown): string[] | null | 'invalid' {
   if (input === undefined || input === null || input === '') return null;
   if (!Array.isArray(input)) return 'invalid';
@@ -61,11 +48,9 @@ export function parseAllowedBranchesInput(input: unknown): string[] | null | 'in
     if (!clean.includes(b)) clean.push(b);
   }
   if (clean.length === 0 || clean.length === BRANCHES.length) return null;
-  // Keep the college's order, so the list reads the same everywhere
   return BRANCHES.filter((b) => clean.includes(b));
 }
 
-/** Why this student can't register, or null when their branch is allowed. */
 export function branchNotAllowedMessage(allowed: string[] | null, studentBranch: string | null | undefined): string | null {
   if (!allowed) return null;
   if (!studentBranch) return 'Please add your branch to your profile before registering for this event.';

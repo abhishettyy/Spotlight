@@ -5,7 +5,6 @@ import { uploadBase64Image } from './storage';
 import { getClubSignupAlertEmails } from './settings';
 import { sendClubSignupAlert } from './mailer';
 
-/** The details a club fills in on the sign-up page. */
 export interface ClubApplicationDetails {
   name: string;
   description: string;
@@ -15,12 +14,10 @@ export interface ClubApplicationDetails {
   logoUrl?: string | null;
 }
 
-/** A sign-up the API refuses, with the message to show. */
 export class ClubApplicationError extends Error {}
 
 const clean = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 
-/** Reads and checks the sign-up details from a request body; throws ClubApplicationError if any are missing. */
 export function readApplicationDetails(body: any): ClubApplicationDetails {
   const details = {
     name: clean(body?.name),
@@ -49,17 +46,10 @@ export function readApplicationDetails(body: any): ClubApplicationDetails {
   return details;
 }
 
-/**
- * Files a club sign-up as PENDING for the admin to review. A new email creates the club and its
- * club-admin profile; an email whose earlier sign-up was rejected re-applies with the new details.
- * An email that already belongs to a pending or approved club, or to any other account, is refused,
- * so a sign-up can never reset an existing club's password or take over someone's account.
- */
 export async function submitClubApplication(input: {
   email: string;
   passwordHash: string | null;
   details: ClubApplicationDetails;
-  /** Profile id for a new club-admin profile (Google sign-ups pass their google_ id). */
   profileId?: string;
 }): Promise<Club> {
   const email = input.email.trim().toLowerCase();
@@ -100,12 +90,9 @@ export async function submitClubApplication(input: {
 
   try {
     const club = await saveApplication();
-    // Let the admins know a club is waiting for approval. In the background: the club's sign-up
-    // doesn't wait for (or fail because of) these emails.
     void alertAdmins(club, Boolean(existingClub));
     return club;
   } catch (err: any) {
-    // Two sign-ups with the same email at the same moment: the second hits the unique email index
     if (err?.code === 'P2002') {
       throw new ClubApplicationError('This email address is already registered.');
     }
@@ -113,7 +100,6 @@ export async function submitClubApplication(input: {
   }
 
   async function saveApplication(): Promise<Club> {
-    // Re-application after a rejection: same club row, fresh details, back in the queue
     if (existingClub) {
       return prisma.$transaction(async (tx) => {
         const club = await tx.club.update({
@@ -163,7 +149,6 @@ export async function submitClubApplication(input: {
   }
 }
 
-/** Emails the sign-up alert list about a club waiting for approval. Never throws. */
 async function alertAdmins(club: Club, reapplied: boolean): Promise<void> {
   try {
     const recipients = await getClubSignupAlertEmails();

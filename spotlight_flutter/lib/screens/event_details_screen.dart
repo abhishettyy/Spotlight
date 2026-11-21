@@ -175,7 +175,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final sk = Sk.of(context);
 
     final pageBg = sk.canvas;
-    final cardBg = sk.raised; // icon circles in the info cards
+    final cardBg = sk.raised;
     final textPrimary = sk.fg;
     final textSecondary = sk.muted;
     final footerBg = sk.surface;
@@ -203,7 +203,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
     final bool isFull = event.isFull;
     final bool deadlinePassed = event.registrationDeadline != null && DateTime.now().isAfter(event.registrationDeadline!);
-    // A full team event takes no new teams, but members can still join a team that already holds a place
     final bool joinOnly = isFull && event.eventType == 'Team' && !deadlinePassed;
     final bool isClosed = deadlinePassed || (isFull && !joinOnly);
 
@@ -256,11 +255,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Poster
                 GestureDetector(
                   onTap: () => _openFullPoster(imageUrl),
                   child: Container(
-                    // About 4:3.5 of the screen width, so small phones keep room for the details
                     height: (MediaQuery.sizeOf(context).width * 0.85).clamp(240.0, 420.0),
                     width: double.infinity,
                     color: sk.raised,
@@ -275,7 +272,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ),
                 ),
 
-                // Event Details Container
                 Container(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                   child: Column(
@@ -470,7 +466,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           ),
                         ),
                       ],
-                      // Who can register: all branches, or only the ones the club selected
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -639,7 +634,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ),
                       ).then((_) => _checkRegistration());
                     } else {
-                      // Events limited to selected branches: say why instead of opening registration
                       final studentBranch = Provider.of<UserProvider>(context, listen: false).currentUser?.branch;
                       final notAllowed = event.branchNotAllowedMessage(studentBranch);
                       if (notAllowed != null) {

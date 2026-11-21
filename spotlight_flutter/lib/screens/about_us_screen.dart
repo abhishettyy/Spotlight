@@ -63,7 +63,6 @@ class AboutUsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Title & Sub-heading
               Center(
                 child: Column(
                   children: [
@@ -108,7 +107,6 @@ class AboutUsScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Why Spotlight Section (Compact Summary)
               Text(
                 'WHY SPOTLIGHT?',
                 style: GoogleFonts.inter(
@@ -172,7 +170,6 @@ class AboutUsScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Developers Section Header
               Text(
                 'DEVELOPERS',
                 style: GoogleFonts.inter(
@@ -184,7 +181,6 @@ class AboutUsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
 
-              // Developer 1: Abhish Shetty
               _buildDeveloperTile(
                 context,
                 name: 'Abhish Shetty',
@@ -199,7 +195,6 @@ class AboutUsScreen extends StatelessWidget {
                 isDark: isDark,
               ),
 
-              // Developer 2: Shyamanth Nagaraja Shetty
               _buildDeveloperTile(
                 context,
                 name: 'Shyamanth Nagaraja Shetty',
@@ -216,7 +211,6 @@ class AboutUsScreen extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // Testing Section Header
               Text(
                 'TESTING',
                 style: GoogleFonts.inter(
@@ -228,7 +222,6 @@ class AboutUsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
 
-              // Testing: Patel Jashmin Kumar
               _buildDeveloperTile(
                 context,
                 name: 'Patel Jashmin Kumar',
@@ -294,7 +287,6 @@ class AboutUsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                // Avatar Circle
                 Container(
                   width: 42,
                   height: 42,
@@ -311,7 +303,6 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +366,6 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // LinkedIn Pill
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(

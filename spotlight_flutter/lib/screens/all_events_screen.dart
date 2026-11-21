@@ -18,7 +18,7 @@ class AllEventsScreen extends StatefulWidget {
 class _AllEventsScreenState extends State<AllEventsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  String _selectedFormatFilter = 'All'; // 'All', 'Solo', 'Team'
+  String _selectedFormatFilter = 'All';
 
   @override
   void dispose() {

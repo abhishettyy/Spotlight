@@ -22,7 +22,6 @@ class CustomImage extends StatelessWidget {
     this.errorBuilder,
   });
 
-  // Same as the web's missing-banner placeholder: raised fill, faint calendar icon
   static Widget buildPlaceholder({double? width, double? height, IconData icon = Icons.calendar_today_outlined}) {
     return Builder(
       builder: (context) {
@@ -56,7 +55,6 @@ class CustomImage extends StatelessWidget {
       return errorBuilder?.call(context, 'Empty URL', null) ?? buildPlaceholder(width: width, height: height);
     }
 
-    // Strip all linebreaks and whitespace from URL string
     String cleanUrl = url!.replaceAll(RegExp(r'[\r\n\s]+'), '').trim();
 
     if (_isBase64(cleanUrl)) {
@@ -170,7 +168,6 @@ class _SmartHttpImageState extends State<_SmartHttpImage> {
         }
       }
     } catch (_) {
-      // Fallback for self-signed SSL or network issues with spotlight.msritise.in
       if (cleanUriStr.contains('spotlight.msritise.in')) {
         try {
           final fallbackUri = Uri.parse(cleanUriStr.replaceFirst('https://', 'http://'));

@@ -22,7 +22,6 @@ class RegisterScreen extends StatefulWidget {
   final String? eventType;
   final int? teamSizeLimit;
   final String? upiId;
-  /// Every team place is taken: only joining an existing team is offered
   final bool joinOnly;
 
   const RegisterScreen({
@@ -278,7 +277,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
 
                   if (widget.eventType == 'Team') ...[
-                    // The Create/Join switcher is hidden when only joining is possible
                     if (!widget.joinOnly) Container(
                       height: 54,
                       padding: const EdgeInsets.all(4),

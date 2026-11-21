@@ -5,7 +5,6 @@ import { requireAuth } from '../middlewares/auth';
 
 const router = Router();
 
-// Profiles hold email, phone and USN, so only the owner can read theirs
 router.get('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
@@ -31,7 +30,6 @@ router.put('/update', requireAuth, async (req: Request, res: Response): Promise<
     const userId = req.auth!.userId;
     const { usn, branch, phone } = req.body;
 
-    // Onboarding after Google sign-in. USN and branch are set once and can't be changed afterwards.
     const current = await prisma.profile.findUnique({ where: { id: userId } });
     if (!current) return res.status(404).json({ error: 'Profile not found.' });
 
@@ -74,7 +72,6 @@ router.put('/edit', requireAuth, async (req: Request, res: Response): Promise<an
       return res.status(404).json({ error: 'Profile not found.' });
     }
 
-    // USN and branch are set once (sign-up or onboarding) and can't be changed afterwards
     let finalUsn = currentProfile.usn;
     if (!finalUsn && usn && typeof usn === 'string' && usn.trim()) {
       const cleanUsn = usn.trim();

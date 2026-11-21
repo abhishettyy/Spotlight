@@ -12,7 +12,6 @@ class ThemeProvider extends ChangeNotifier {
     _loadSavedTheme();
   }
 
-  // Same key and values as the web app ('dark' / 'light'); dark stays the default
   Future<void> _loadSavedTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final savedDark = prefs.getString(_themeKey) != 'light';

@@ -709,7 +709,6 @@ class _TicketScreenState extends State<TicketScreen> {
       );
   }
 
-  // Same pill as the web StatusBadge: fixed colours on a dark translucent fill in both themes
   Widget _statusBadge(TicketModel ticket) {
     Widget pill(Color color, Widget icon, String label) => Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

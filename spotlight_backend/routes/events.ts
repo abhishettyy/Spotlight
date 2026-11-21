@@ -11,13 +11,11 @@ const router = Router();
 
 router.get('/', async (req: Request, res: Response): Promise<any> => {
   try {
-    // Students only ever see published events; drafts stay with their club
     const events = await prisma.event.findMany({
       where: { isDraft: false },
       include: { club: true },
       orderBy: { eventDate: 'asc' },
     });
-    // Places taken, as the capacity check counts them: one per solo student, one per team
     const places = placesByEvent(await prisma.registration.findMany({
       where: { status: { in: ACTIVE_STATUSES }, event: { isDraft: false } },
       select: { eventId: true, teamId: true },
@@ -47,7 +45,6 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         bannerUrl: e.bannerUrl ?? null,
         clubLogoUrl: e.club?.logoUrl ?? null,
         registrationCount: places.get(e.id) ?? 0,
-        // null = open to all branches
         allowedBranches: readAllowedBranches(e.allowedBranches),
       };
     });
@@ -84,19 +81,15 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
       return res.status(404).json({ error: 'Club not found. Please refresh the page and try again.' });
     }
 
-    // Who can register: all branches (null) or only the selected ones
     const eligibleBranches = parseAllowedBranchesInput(allowedBranches);
     if (eligibleBranches === 'invalid') {
       return res.status(400).json({ error: 'Please choose the allowed branches from the list.' });
     }
 
-    // College policy: every event is free, whatever the request says. A free registration is
-    // confirmed immediately, so there is no payment, approval or rejection step.
     const parsedFee = 0;
 
     const finalBannerUrl = bannerUrl ? await uploadBase64Image(bannerUrl, 'events/banners') : null;
 
-    // No payments, so no payment QR is stored
     const finalQrUrl = null;
 
     const startDate = eventDate ? new Date(eventDate) : campusNow();
@@ -121,7 +114,6 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
         qrUrl: finalQrUrl,
         upiId: null,
         allowedBranches: eligibleBranches ? JSON.stringify(eligibleBranches) : null,
-        // Saved as a draft: the club publishes it later from the event page
         isDraft: draft === true,
       },
 
@@ -135,7 +127,6 @@ router.post('/create', requireAuth, async (req: Request, res: Response): Promise
   }
 });
 
-/** The event, if it belongs to the signed-in user's club; otherwise an error response to send. */
 async function ownedEvent(req: Request, id: string): Promise<{ event: any } | { status: number; error: string }> {
   const event = await prisma.event.findUnique({ where: { id } });
   if (!event) return { status: 404, error: 'Event not found.' };
@@ -146,7 +137,6 @@ async function ownedEvent(req: Request, id: string): Promise<{ event: any } | { 
   return { event };
 }
 
-// Publishes a draft: students can see it and register from now on
 router.post('/:id/publish', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const found = await ownedEvent(req, req.params.id as string);
@@ -164,7 +154,6 @@ router.post('/:id/publish', requireAuth, async (req: Request, res: Response): Pr
   }
 });
 
-// Deletes a draft. Only drafts can be deleted: a published event may already have registrations.
 router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const found = await ownedEvent(req, req.params.id as string);
@@ -195,12 +184,9 @@ router.put('/:id', requireAuth, async (req: Request, res: Response): Promise<any
     if (!profile || !profile.clubId || profile.clubId !== existingEvent.clubId) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to modify this event.' });
     }
-    // An event can be updated before and during it, never after it has ended
     if (campusEventHasEnded({ eventDate: existingEvent.eventDate, eventEndDate: existingEvent.eventEndDate })) {
       return res.status(400).json({ error: 'This event has ended and can no longer be updated.' });
     }
-    // Capacity counts places (a solo student or a whole team), as at registration. Only a changed
-    // capacity is checked, so an event that is already over-full can still get other updates.
     if (registrationLimit !== undefined) {
       const newLimit = parseInt(registrationLimit, 10);
       if (!Number.isFinite(newLimit) || newLimit < 1) {

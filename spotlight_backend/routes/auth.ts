@@ -69,7 +69,6 @@ router.post('/signup', async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'This email is registered to a club account.' });
     }
 
-    // Branch must be one of the college's branches (the apps show it as a dropdown)
     const cleanBranch = branch ? normalizeBranch(branch) : null;
     if (branch && !cleanBranch) {
       return res.status(400).json({ error: INVALID_BRANCH_MESSAGE });
@@ -208,8 +207,6 @@ router.post('/club-login', async (req: Request, res: Response): Promise<any> => 
   }
 });
 
-// Club sign-in with Google, and Google sign-up: with `signup` details and an email no club uses yet
-// (or whose sign-up was rejected), it files a pending registration for the admin to review.
 router.post('/google', async (req: Request, res: Response): Promise<any> => {
   const { credential, access_token, signup } = req.body;
 
@@ -229,8 +226,6 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
 
     let club = await prisma.club.findUnique({ where: { email } });
 
-    // Sign-up always goes through the application checks, so an email that already belongs to a
-    // pending or approved club, or to a student, gets a clear message instead of a sign-in
     if (signup) {
       const details = readApplicationDetails(signup);
       if (!details.logoUrl && payload.picture) details.logoUrl = payload.picture;
@@ -283,7 +278,6 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// Student sign-in with Google. Signs in existing student accounts only; new students sign up with email and password.
 router.post('/google-student', async (req: Request, res: Response): Promise<any> => {
   const { credential, access_token } = req.body;
 
@@ -354,7 +348,6 @@ router.post('/verify-password', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// Forgot password, step 1: email a 6-digit code (students and clubs).
 router.post('/forgot-password', async (req: Request, res: Response): Promise<any> => {
   try {
     const result = await requestResetCode(req.body?.email, req.ip || 'unknown');
@@ -365,7 +358,6 @@ router.post('/forgot-password', async (req: Request, res: Response): Promise<any
   }
 });
 
-// Forgot password, step 2: the code from the email plus the new password, which replaces the old one.
 router.post('/reset-password', async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, code, newPassword } = req.body ?? {};
@@ -442,9 +434,6 @@ router.post('/change-password', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// Returns the signed-in user's own profile, replacing a placeholder name if a better one is sent.
-// The posted email is never used to find a profile: merging by email let any signed-in user
-// take over another account (password, club, registrations).
 router.post('/sync', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.auth!.userId;

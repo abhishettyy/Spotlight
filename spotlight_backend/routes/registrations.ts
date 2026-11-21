@@ -26,17 +26,12 @@ const generateUniquePasskey = async (): Promise<string> => {
   return passkey;
 };
 
-/**
- * Registration closes at the deadline. An event with no deadline (possible only through the API;
- * the dashboard always sets one) closes when it starts, so it can never stay open forever.
- */
 function registrationClosed(event: { registrationDeadline: Date | null; eventDate: Date | null } | null | undefined): boolean {
   if (!event) return false;
   const closesAt = event.registrationDeadline ?? event.eventDate;
   return !!closesAt && campusNow() > new Date(closesAt);
 }
 
-/** Refuses a student whose branch isn't allowed for this event (null when they may register). */
 async function branchRejection(event: { allowedBranches: string | null } | null | undefined, userId: string): Promise<string | null> {
   const allowed = readAllowedBranches(event?.allowedBranches);
   if (!allowed) return null;
@@ -44,13 +39,8 @@ async function branchRejection(event: { allowedBranches: string | null } | null 
   return branchNotAllowedMessage(allowed, profile?.branch);
 }
 
-/** A rule check that failed inside a registration transaction; becomes a 400 with this message. */
 class RegistrationRejected extends Error {}
 
-/**
- * Locks the event row until the transaction ends, so registrations for the same event run one at a time.
- * Without it, two students taking the last seat (or team spot) at once could both pass the capacity check.
- */
 async function lockEvent(tx: Prisma.TransactionClient, eventId: string) {
   await tx.$queryRaw`SELECT id FROM \`Event\` WHERE id = ${eventId} FOR UPDATE`;
 }
@@ -63,7 +53,6 @@ async function assertNotRegistered(tx: Prisma.TransactionClient, eventId: string
   if (alreadyRegistered) throw new RegistrationRejected('You are already registered for this event.');
 }
 
-/** Capacity is in places: one per solo student, one per team (see countTakenPlaces). */
 async function assertEventHasCapacity(tx: Prisma.TransactionClient, eventId: string, registrationLimit: number | null) {
   if (!registrationLimit) return;
   const taken = await countTakenPlaces(tx, eventId);
@@ -166,14 +155,12 @@ router.post('/register', requireAuth, async (req: Request, res: Response): Promi
     if (!eventId || !name || !usn) return res.status(400).json({ error: 'Missing fields.' });
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
-    // Drafts aren't published yet, so students can't register for them
     if (!event || event.isDraft) return res.status(404).json({ error: 'Event not found.' });
 
     if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed.' });
     }
 
-    // Events limited to selected branches refuse students from other branches
     const notAllowed = await branchRejection(event, userId);
     if (notAllowed) return res.status(403).json({ error: notAllowed });
 
@@ -201,19 +188,15 @@ router.post('/teams/create', requireAuth, async (req: Request, res: Response): P
     if (!eventId || !teamName || !leaderUsn) return res.status(400).json({ error: 'Missing fields.' });
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
-    // Drafts aren't published yet, so students can't register for them
     if (!event || event.isDraft) return res.status(404).json({ error: 'Event not found.' });
 
     if (registrationClosed(event)) {
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot create a new team.' });
     }
 
-    // Events limited to selected branches refuse students from other branches
     const notAllowed = await branchRejection(event, userId);
     if (notAllowed) return res.status(403).json({ error: notAllowed });
 
-    // For free events (fee === 0), generate passkey immediately.
-    // For paid events (fee > 0), passkey is null until payment details are submitted.
     const passkey = (event.fee === 0) ? await generateUniquePasskey() : null;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -258,7 +241,6 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       return res.status(400).json({ error: 'Registration deadline has passed. You cannot join this team.' });
     }
 
-    // Events limited to selected branches refuse students from other branches
     const notAllowed = await branchRejection(team.event, userId);
     if (notAllowed) return res.status(403).json({ error: notAllowed });
 
@@ -275,7 +257,6 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response): Pro
       if (maxTeamSize && currentMemberCount >= maxTeamSize) {
         throw new RegistrationRejected('This team is already full.');
       }
-      // No capacity check here: the team already holds its place, so members joining it take no more
 
       return tx.registration.create({
         data: {
@@ -368,7 +349,6 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
     if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to approve registrations for this event.' });
     }
-    // Open until the event's end time, including every day of a multi-day event
     if (registration.event && campusEventHasEnded(registration.event)) {
       return res.status(400).json({ error: 'Cannot approve registrations after the event has ended.' });
     }
@@ -465,8 +445,6 @@ router.put('/registrations/:id/approve', requireAuth, async (req: Request, res: 
 
 router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res: Response): Promise<any> => {
   try {
-    // College policy: all events are free and every registration is confirmed, so clubs can no
-    // longer reject registrations. The code below is kept but no longer reachable.
     return res.status(400).json({ error: 'Registrations can no longer be rejected.' });
 
     const id = req.params.id as string;
@@ -486,7 +464,6 @@ router.delete('/registrations/:id/reject', requireAuth, async (req: Request, res
     if (!profile || !profile.clubId || profile.clubId !== registration.event?.clubId) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to reject registrations for this event.' });
     }
-    // Open until the event's end time, including every day of a multi-day event
     if (registration.event && campusEventHasEnded(registration.event)) {
       return res.status(400).json({ error: 'Cannot reject registrations after the event has ended.' });
     }

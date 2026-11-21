@@ -1,9 +1,5 @@
 import { ClubStatus } from '@prisma/client';
 
-/**
- * Why a club can't sign in yet, or null once it is approved. Sign-in answers 403 with this message,
- * and `code` lets the dashboard show the matching screen.
- */
 export function clubSignInBlock(club: { status: ClubStatus; rejectionReason: string | null }):
   { code: 'CLUB_PENDING' | 'CLUB_REJECTED'; error: string } | null {
   if (club.status === 'PENDING') {

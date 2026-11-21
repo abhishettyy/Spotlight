@@ -1,59 +1,38 @@
 import 'package:flutter/material.dart';
 
-/// The web app's Skyline colour tokens (spotlight_dashboard/src/student/student.css,
-/// `--sk-*`), for both themes. Screens take colours from here instead of hard-coding
-/// them, so the app and the website always look the same.
-///
-///   final sk = Sk.of(context);
-///   Container(color: sk.surface, child: Text('Hi', style: TextStyle(color: sk.fg)));
 class Sk {
   final bool isDark;
 
-  /// Page background (--sk-canvas / --bg)
   final Color canvas;
 
-  /// Cards, panels, bottom bar (--sk-surface / --surface)
   final Color surface;
 
-  /// Inputs, hover rows, segmented-control track, image placeholders (--sk-raised / --raised)
   final Color raised;
 
-  /// Borders and dividers (--sk-line / --border)
   final Color line;
 
-  /// Input and search borders (--sk-line-strong)
   final Color lineStrong;
 
-  /// Primary text (--sk-fg / --text)
   final Color fg;
 
-  /// Secondary text (--sk-muted / --subtext)
   final Color muted;
 
-  /// Hints, placeholders, disabled text (--sk-faint)
   final Color faint;
 
-  /// Buttons, links, accents (--sk-brand): Spotlight crimson in both themes, as in the
-  /// club dashboard and the student website.
   final Color brand;
   final Color brandSoft;
 
-  /// Text and icons on a brand fill (--sk-on-brand)
   final Color onBrand;
 
-  /// Success: confirmed, approved (--sk-ok)
   final Color ok;
   final Color okSoft;
 
-  /// Warnings: deadlines, pending (--sk-warn)
   final Color warn;
   final Color warnSoft;
 
-  /// Neutral status (--sk-info)
   final Color info;
   final Color infoSoft;
 
-  /// Errors, destructive actions, LIVE (--sk-danger)
   final Color danger;
   final Color dangerSoft;
 
@@ -82,7 +61,6 @@ class Sk {
 
   static const light = Sk._(
     isDark: false,
-    // Warm cream, matching the student website's light theme
     canvas: Color(0xFFF5F4F2),
     surface: Color(0xFFFDFCFA),
     raised: Color(0xFFF0EFEC),
@@ -92,16 +70,16 @@ class Sk {
     muted: Color(0xFF57534E),
     faint: Color(0xFF78716C),
     brand: Color(0xFFE63946),
-    brandSoft: Color(0x1AE63946), // 10%
+    brandSoft: Color(0x1AE63946),
     onBrand: Color(0xFFFFFFFF),
     ok: Color(0xFF15803D),
-    okSoft: Color(0x1A16A34A), // 10%
+    okSoft: Color(0x1A16A34A),
     warn: Color(0xFFB45309),
-    warnSoft: Color(0x24F59E0B), // 14%
+    warnSoft: Color(0x24F59E0B),
     info: Color(0xFF52525B),
-    infoSoft: Color(0x1452525B), // 8%
+    infoSoft: Color(0x1452525B),
     danger: Color(0xFFD93025),
-    dangerSoft: Color(0x1AD93025), // 10%
+    dangerSoft: Color(0x1AD93025),
   );
 
   static const dark = Sk._(
@@ -115,22 +93,21 @@ class Sk {
     muted: Color(0xFFA0A0A8),
     faint: Color(0xFF74747C),
     brand: Color(0xFFE63946),
-    brandSoft: Color(0x29E63946), // 16%
+    brandSoft: Color(0x29E63946),
     onBrand: Color(0xFFFFFFFF),
     ok: Color(0xFF81C995),
-    okSoft: Color(0x2481C995), // 14%
+    okSoft: Color(0x2481C995),
     warn: Color(0xFFFDD663),
-    warnSoft: Color(0x24FDD663), // 14%
+    warnSoft: Color(0x24FDD663),
     info: Color(0xFFA0A0A8),
-    infoSoft: Color(0x24A0A0A8), // 14%
+    infoSoft: Color(0x24A0A0A8),
     danger: Color(0xFFF28B82),
-    dangerSoft: Color(0x24F28B82), // 14%
+    dangerSoft: Color(0x24F28B82),
   );
 
   static Sk of(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? dark : light;
 
-  /// Card / bottom-bar shadow (--sk-shadow); none in dark mode, like the web
   List<BoxShadow>? get shadow => isDark
       ? null
       : const [
@@ -138,7 +115,6 @@ class Sk {
           BoxShadow(color: Color(0x0D18181B), blurRadius: 3, offset: Offset(0, 1)),
         ];
 
-  /// Large floating shadow (--sk-shadow-lg); none in dark mode
   List<BoxShadow>? get shadowLg => isDark
       ? null
       : const [

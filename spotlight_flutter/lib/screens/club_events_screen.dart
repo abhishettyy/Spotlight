@@ -209,7 +209,6 @@ class _EventCard extends StatelessWidget {
           border: Border.all(color: Sk.of(context).line),
           boxShadow: null,
         ),
-        // The image fills the card's full height, however many detail lines it has
         child: IntrinsicHeight(
           child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,

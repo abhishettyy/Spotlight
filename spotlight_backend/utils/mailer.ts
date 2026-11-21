@@ -1,11 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
 
-// Outgoing mail, used only to tell a club its registration was approved. Three ways to send, in order:
-//  - MAIL_RELAY_URL + MAIL_RELAY_SECRET: the Google Apps Script relay in mail-relay/Code.gs. It runs in the
-//    admin Gmail account, so the mail is really sent from that Gmail, over HTTPS (works on Render's free plan).
-//  - BREVO_API_KEY: Brevo's HTTPS API. The sender (MAIL_FROM_EMAIL) must be verified in Brevo under Senders.
-//  - SMTP_USER + SMTP_PASS: plain SMTP, e.g. Gmail with an App Password (blocked on some hosts).
-// With none configured, mail is skipped and the approval still goes through.
 
 const DEFAULT_SENDER = 'spotlightapp.help@gmail.com';
 
@@ -46,7 +40,6 @@ interface Mail {
 }
 
 async function sendWithRelay(url: string, secret: string, mail: Mail): Promise<void> {
-  // Apps Script answers a POST with a redirect to the result; fetch follows it.
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -63,7 +56,7 @@ async function sendWithRelay(url: string, secret: string, mail: Mail): Promise<v
   });
   const body = await res.text().catch(() => '');
   let result: { ok?: boolean; message?: string } = {};
-  try { result = JSON.parse(body); } catch { /* not JSON: wrong URL or deployment access */ }
+  try { result = JSON.parse(body); } catch {}
   if (!res.ok || result.ok !== true) {
     throw new Error(`Mail relay answered ${res.status}: ${result.message || body.slice(0, 200)}`);
   }
@@ -100,10 +93,6 @@ async function sendWithSmtp(mailer: Transporter, mail: Mail): Promise<void> {
   });
 }
 
-/**
- * Sends one email through the first configured service: the Gmail relay, then Brevo, then SMTP.
- * Returns whether it was sent; never throws. `what` names the email in the logs.
- */
 async function deliverMail(mail: Mail, what: string): Promise<boolean> {
   const relayUrl = process.env.MAIL_RELAY_URL;
   const relaySecret = process.env.MAIL_RELAY_SECRET;
@@ -127,7 +116,6 @@ async function deliverMail(mail: Mail, what: string): Promise<boolean> {
   }
 }
 
-/** Emails the club that it can now sign in. Returns whether the mail was sent; never throws. */
 export async function sendClubApprovedEmail(club: { name: string; email: string }): Promise<boolean> {
   const loginUrl = process.env.CLUB_LOGIN_URL || 'https://spotlight.msritise.in/?view=auth&authTab=login';
   const name = escapeHtml(club.name);
@@ -160,7 +148,6 @@ ${loginUrl}
   }, 'Approval email');
 }
 
-/** Emails a forgot-password code. Returns whether the mail was sent; never throws. */
 export async function sendPasswordResetCode(to: { email: string; name: string }, code: string, minutes: number): Promise<boolean> {
   const name = escapeHtml(to.name);
   return deliverMail({
@@ -191,14 +178,9 @@ export async function sendPasswordResetCode(to: { email: string; name: string },
   }, 'Password reset code');
 }
 
-/**
- * Tells the account owner their password was just changed with a reset code, so they notice if it
- * wasn't them. Returns whether the mail was sent; never throws.
- */
-export async function sendPasswordChangedEmail(to: { email: string; name: string }, kind: 'club' | 'student'): Promise<boolean> {
+export async function sendPasswordChangedEmail(to: { email: string; name: string }, kind: 'club' | 'student' | 'admin'): Promise<boolean> {
   const name = escapeHtml(to.name);
-  // Clubs: "Your club login password has been changed"; students: "Your login password has been changed"
-  const what = kind === 'club' ? 'club login password' : 'login password';
+  const what = kind === 'club' ? 'club login password' : kind === 'admin' ? 'admin login password' : 'login password';
   const when = new Date().toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
@@ -228,10 +210,6 @@ export async function sendPasswordChangedEmail(to: { email: string; name: string
   }, 'Password changed email');
 }
 
-/**
- * Tells the admins a club has signed up and is waiting for approval. One email per address (the
- * relay sends to a single recipient). Returns how many were sent; never throws.
- */
 export async function sendClubSignupAlert(
   recipients: string[],
   club: { name: string; email: string; department?: string | null; coordinatorName?: string | null; coordinatorPhone?: string | null },

@@ -40,3 +40,7 @@ services:
         sync: false
       - key: CLUB_LOGIN_URL
         sync: false
+      - key: ADMIN_CONSOLE_URL
+        sync: false
+      - key: ADMIN_ALERT_EMAILS
+        sync: false
