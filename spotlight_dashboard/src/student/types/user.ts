@@ -1,4 +1,3 @@
-// Ported from spotlight_flutter/lib/core/user_provider.dart
 
 export interface UserModel {
   id: string;

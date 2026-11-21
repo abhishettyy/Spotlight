@@ -7,7 +7,6 @@ import { submitPayment } from '@student/api/registrations';
 import PasskeyDialog from '@student/components/ui/PasskeyDialog';
 import { toast } from 'sonner';
 
-/** What the caller knows about the payment, like the arguments of Flutter's PaymentScreen. */
 export interface PaymentRouteState {
   eventName: string;
   price: number;
@@ -78,9 +77,7 @@ export default function PaymentPage() {
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Payment</h1>
       </div>
 
-      {/* Mobile keeps the Flutter order (summary, UPI, QR, form); desktop puts summary + QR left, UPI + form right */}
       <div className={`stu-pay${upiId ? '' : ' stu-pay--no-upi'}`}>
-      {/* Summary */}
       <div className="stu-pay-summary" style={{ background: 'var(--surface)', borderRadius: 16, padding: 20, textAlign: 'center', marginBottom: 24 }}>
         <p style={{ color: 'var(--subtext)', fontSize: 14 }}>Paying for</p>
         <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginTop: 8 }}>{eventName}</p>
@@ -95,7 +92,6 @@ export default function PaymentPage() {
         <p style={{ fontSize: 32, fontWeight: 700, color: 'var(--color-crimson)', marginTop: 16 }}>₹{price.toFixed(0)}</p>
       </div>
 
-      {/* UPI ID */}
       {upiId && (
         <div className="stu-pay-upi">
           <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -120,7 +116,6 @@ export default function PaymentPage() {
         </div>
       )}
 
-      {/* QR */}
       <div className="stu-pay-qr" style={{ textAlign: 'center', marginBottom: 24 }}>
         <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 16 }}>Scan QR to Pay</p>
         <div style={{
@@ -135,7 +130,6 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      {/* Transaction ID */}
       <div className="stu-pay-form">
       <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>Transaction ID</p>
       <input

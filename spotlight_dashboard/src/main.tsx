@@ -6,8 +6,6 @@ if (import.meta.env.PROD) {
   console.info = () => {};
 }
 
-// Three areas share this site: the student app (/student), the admin console (/admin)
-// and the club dashboard (everything else). Each is loaded on its own so their styles never mix.
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const path = window.location.pathname.slice(base.length) || "/";
 const root = createRoot(document.getElementById("root")!);

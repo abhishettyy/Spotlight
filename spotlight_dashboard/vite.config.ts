@@ -12,9 +12,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
 
-    // Installable app for the student area only. The service worker is scoped to
-    // /student/, so the club dashboard and admin console never run through it.
-    // The manifest is public/student.webmanifest, linked from src/student/main.tsx.
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
@@ -22,7 +19,6 @@ export default defineConfig({
       scope: `${base}student/`,
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2}', 'svg/*.svg', 'student-icons/*.png', 'student.webmanifest'],
-        // The club dashboard bundle and its on-demand pages (dash-*) are never needed under /student/
         globIgnores: ['**/mountDashboard-*', '**/dash-*'],
         navigateFallback: `${base}index.html`,
         navigateFallbackAllowlist: [new RegExp(`^${base}student(/|$)`)],
@@ -52,7 +48,6 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Club dashboard pages load on demand; the dash- prefix keeps them out of the student service worker
         chunkFileNames: (chunk) => {
           const ids = chunk.moduleIds.map((id) => id.replace(/\\/g, '/'));
           const dashboardOnly = ids.some((id) => id.includes('/src/app/dashboard/')) && !ids.some((id) => id.includes('/src/student/'));

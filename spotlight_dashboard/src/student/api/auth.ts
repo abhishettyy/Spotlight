@@ -1,5 +1,3 @@
-// Ported from spotlight_flutter/lib/core/api_service.dart — auth methods
-// POST /auth/signup, /auth/login, /auth/google-student, /auth/verify-password, /auth/change-password
 
 import apiClient, { formatApiError } from './client';
 import { userFromJson, UserModel } from '@student/types/user';
@@ -62,7 +60,6 @@ export async function login(params: LoginParams): Promise<AuthResult> {
   }
 }
 
-/** Signs in an existing student account with a Google access token (no account creation). */
 export async function googleLogin(accessToken: string): Promise<AuthResult> {
   try {
     const res = await apiClient.post('/auth/google-student', { access_token: accessToken });
@@ -93,9 +90,7 @@ export async function changePassword(oldPassword: string, newPassword: string): 
   }
 }
 
-// ── Forgot password (POST /auth/forgot-password, /auth/reset-password) ─────────
 
-/** Emails a 6-digit reset code. Resolves with the server's message (same whether or not the email has an account). */
 export async function requestPasswordReset(email: string): Promise<string> {
   try {
     const res = await apiClient.post('/auth/forgot-password', { email });
@@ -105,7 +100,6 @@ export async function requestPasswordReset(email: string): Promise<string> {
   }
 }
 
-/** Sets a new password with the code from the email; the new password replaces the old one. */
 export async function resetPassword(params: { email: string; code: string; newPassword: string }): Promise<string> {
   try {
     const res = await apiClient.post('/auth/reset-password', params);
@@ -115,7 +109,6 @@ export async function resetPassword(params: { email: string; code: string; newPa
   }
 }
 
-/** Same rules as the server (and club sign-up). Null when the password is fine. */
 export function newPasswordProblem(pass: string): string | null {
   const missing: string[] = [];
   if (pass.length < 8) missing.push('at least 8 characters');

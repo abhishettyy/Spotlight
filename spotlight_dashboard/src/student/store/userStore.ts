@@ -1,5 +1,3 @@
-// Replaces Flutter UserProvider
-// Caches user in localStorage (equivalent to SharedPreferences)
 
 import { create } from 'zustand';
 import { UserModel, userFromJson } from '@student/types/user';
@@ -38,7 +36,6 @@ export const useUserStore = create<UserState>((set) => ({
         set({ currentUser: user });
       }
     } catch {
-      // ignore
     }
   },
 }));

@@ -1,4 +1,3 @@
-// Ported from spotlight_flutter/lib/core/api_service.dart — notification methods
 
 import apiClient, { formatApiError } from './client';
 import { notificationFromJson, NotificationModel } from '@student/types/notification';
@@ -25,7 +24,6 @@ export async function markAllNotificationsRead(): Promise<void> {
     const userId = localStorage.getItem('userId') ?? '';
     await apiClient.put('/notifications/read', { userId });
   } catch {
-    // silently fail like Flutter
   }
 }
 

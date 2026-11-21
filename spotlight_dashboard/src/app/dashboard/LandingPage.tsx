@@ -26,15 +26,12 @@ export function LandingPage({ onEnter, onRegister }: { onEnter: () => void; onRe
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'contact' | null>(null);
   const [leaving, setLeaving] = useState(false);
 
-  // The student site is a separate app (a full page load); fade out first so the switch isn't abrupt
   const leaveTo = (url: string) => {
     if (leaving) return;
     setLeaving(true);
     setTimeout(() => { window.location.href = url; }, 200);
   };
 
-  // Back from the student site can restore this page from the browser's back/forward cache exactly as
-  // it was left, faded out; show it again
   useEffect(() => {
     const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) setLeaving(false); };
     window.addEventListener("pageshow", onPageShow);

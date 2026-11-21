@@ -1,5 +1,3 @@
-// Replaces Flutter AuthProvider
-// Token persistence in localStorage (equivalent to SharedPreferences)
 
 import { create } from 'zustand';
 
@@ -7,7 +5,6 @@ interface AuthState {
   token: string | null;
   userId: string | null;
   isAuthenticated: boolean;
-  /** Set by logout; the page is leaving for the landing page, so route guards must not redirect. */
   signingOut: boolean;
   setSession: (token: string, userId: string) => void;
   logout: () => void;

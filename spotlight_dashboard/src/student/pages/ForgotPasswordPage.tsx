@@ -4,7 +4,6 @@ import { ChevronLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { requestPasswordReset, resetPassword, newPasswordProblem } from '@student/api/auth';
 
-// Same look as the sign-in page
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 6 };
 const inputStyle: React.CSSProperties = {
   background: 'var(--surface)', border: '1px solid transparent', borderRadius: 'var(--sk-radius-lg)',
@@ -24,10 +23,6 @@ const linkBtnStyle: React.CSSProperties = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_SECONDS = 30;
 
-/**
- * Forgot password: 1) email a 6-digit code, 2) enter the code and a new password, which replaces
- * the old one. Works for any student account, including Google ones (they gain a password).
- */
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'email' | 'reset'>('email');

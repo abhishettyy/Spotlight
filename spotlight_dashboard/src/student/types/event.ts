@@ -1,4 +1,3 @@
-// Ported from spotlight_flutter/lib/models/models.dart
 
 export interface EventClubInfo {
   id?: string;
@@ -26,17 +25,12 @@ export interface EventModel {
   clubLogoUrl?: string | null;
   registrationCount: number;
   registrationLimit?: number | null;
-  /** Branches allowed to register; null = open to all branches */
   allowedBranches?: string[] | null;
   registrationDeadline?: Date | null;
   eventDate?: Date | null;
   eventEndDate?: Date | null;
 }
 
-/**
- * Why this student can't register for the event, or null when they can. Same wording as the
- * server, which also enforces it.
- */
 export function branchNotAllowedMessage(event: EventModel, studentBranch?: string | null): string | null {
   const allowed = event.allowedBranches;
   if (!allowed || allowed.length === 0) return null;
@@ -45,7 +39,6 @@ export function branchNotAllowedMessage(event: EventModel, studentBranch?: strin
   return `${studentBranch} students are not eligible for this event. It is open only to ${allowed.join(', ')}.`;
 }
 
-// Computed helpers — ported from Dart getters
 export function getEventStartDate(event: EventModel): Date | null {
   if (event.eventDate) return event.eventDate;
   if (!event.date) return null;
@@ -135,7 +128,6 @@ export function eventFromJson(json: Record<string, unknown>): EventModel {
   };
 }
 
-// Ticket types
 export interface TicketEventInfo {
   id: string;
   title: string;

@@ -13,7 +13,6 @@ const NAV_ITEMS = [
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 
-// Desktop sidebar - shown on lg+ screens
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,7 +24,6 @@ export function Sidebar() {
 
   return (
     <aside className="stu-sidebar">
-      {/* Nav items */}
       <nav className="stu-nav" aria-label="Main">
         {items.map(({ icon: Icon, label, path, badge }: { icon: typeof Home; label: string; path: string; badge?: number }) => {
           const active = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -59,7 +57,6 @@ export function Sidebar() {
   );
 }
 
-// Mobile bottom navigation - shown on <lg screens
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,7 +112,6 @@ export function BottomNav() {
   );
 }
 
-// ── Sidebar Install App button ────────────────────────────────────────────────
 function SidebarInstallBtn() {
   const { canInstall, isInstalled, install } = usePWAInstall();
   const [installing, setInstalling] = useState(false);

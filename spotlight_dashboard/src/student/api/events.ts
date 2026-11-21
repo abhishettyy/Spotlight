@@ -1,5 +1,3 @@
-// Ported from spotlight_flutter/lib/core/api_service.dart — events methods
-// GET /events, GET /public/stats
 
 import apiClient, { formatApiError } from './client';
 import { eventFromJson, EventModel } from '@student/types/event';

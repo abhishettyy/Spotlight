@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 
-/**
- * A dropdown styled like the rest of the student app (the browser's own <select> list can't be
- * themed). Click or Enter/Space opens it; arrow keys move, Enter picks, Escape closes.
- * variant "field" looks like a text box; "bare" sits inside a box that draws its own frame.
- */
 export default function SelectMenu({
   id,
   value,
@@ -30,7 +25,6 @@ export default function SelectMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Close when clicking anywhere else
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -40,7 +34,6 @@ export default function SelectMenu({
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  // On open, highlight the chosen option and scroll it into view
   useEffect(() => {
     if (!open) return;
     const i = Math.max(0, options.indexOf(value));

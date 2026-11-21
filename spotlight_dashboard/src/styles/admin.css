@@ -1,4 +1,3 @@
-/* Admin console (rendered at /admin). Maps the shared Skyline tokens to the ad-* utilities it uses. */
 @theme inline {
   --color-ad-ink: var(--sk-canvas);
   --color-ad-surface: var(--sk-surface);

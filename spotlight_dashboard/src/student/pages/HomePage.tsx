@@ -16,7 +16,6 @@ import { EmptyState } from '@student/components/ui/States';
 import { getGreeting } from '@student/utils/dateUtils';
 import { isEventUpcoming } from '@student/types/event';
 
-// The home page shows a preview; "See all" opens the full, paged lists
 const HOME_EVENT_LIMIT = 8;
 const HOME_CLUB_LIMIT = 12;
 
@@ -35,7 +34,6 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
-  // Same as Flutter's pull-to-refresh: events, clubs and notifications together
   useEffect(() => {
     loadEvents();
     loadClubs();
@@ -149,7 +147,6 @@ export default function HomePage() {
 
   return (
     <div className="stu-page stu-page--wide">
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ color: 'var(--subtext)', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
@@ -207,7 +204,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Search bar */}
       <div style={{ position: 'relative', marginBottom: 24 }}>
         <Search
           size={16}
@@ -231,7 +227,6 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Category filters */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 28, scrollbarWidth: 'none' }}>
         {filters.map((f) => (
           <button key={f} className="stu-chip" aria-pressed={activeFilter === f} onClick={() => setActiveFilter(f)}>
@@ -240,7 +235,6 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Featured Events */}
       <section style={{ marginBottom: 48 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Featured Events</h2>
@@ -254,7 +248,6 @@ export default function HomePage() {
         {renderEvents()}
       </section>
 
-      {/* Active Clubs */}
       <section style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Active Clubs</h2>
@@ -324,7 +317,6 @@ function ClubAvatar({ club, onClick }: { club: ClubModel; onClick: () => void })
   );
 }
 
-// Mobile install button: the sidebar's Install App button only exists on desktop
 function MobileInstallBtn() {
   const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -372,7 +364,6 @@ function MobileInstallBtn() {
   );
 }
 
-// Mobile theme switch: the sidebar's theme button only exists on desktop
 function MobileThemeBtn() {
   const { isDark, toggle } = useThemeStore();
   return (

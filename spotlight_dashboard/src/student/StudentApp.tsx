@@ -2,7 +2,6 @@ import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { Toaster } from 'sonner';
 
-// Stores
 import { useAuthStore } from '@student/store/authStore';
 import { useUserStore } from '@student/store/userStore';
 import { useEventsStore } from '@student/store/eventsStore';
@@ -12,19 +11,14 @@ import { getProfile } from '@student/api/profiles';
 import { isProfileIncomplete } from '@student/types/user';
 import { STUDENT_BASE } from '@student/basePath';
 
-// Route guards
 import ProtectedRoute from '@student/routes/ProtectedRoute';
 import PublicRoute from '@student/routes/PublicRoute';
 
-// Layout
 import AppShell from '@student/components/layout/AppShell';
 
-// Pages
 import AuthPage from '@student/pages/AuthPage';
 import HomePage from '@student/pages/HomePage';
 
-// The sign-in and home pages are in the first download so the app appears straight away; every other
-// page is its own small file, fetched in the background once the first screen is up (see App below).
 const pageLoaders = {
   OnboardingPage: () => import('@student/pages/OnboardingPage'),
   ForgotPasswordPage: () => import('@student/pages/ForgotPasswordPage'),
@@ -66,7 +60,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { load: loadNotifications } = useNotificationsStore();
 
   useEffect(() => {
-    // Try to restore session from localStorage (equivalent to Flutter's tryAutoLogin)
     const didLogin = tryAutoLogin();
     if (didLogin) {
       loadFromCache();
@@ -75,7 +68,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isAuthenticated && userId) {
-      // Prefetch profile, events, clubs, notifications (parallel like Flutter providers)
       getProfile(userId).then((user) => {
         if (user) setCurrentUser(user);
       });
@@ -88,7 +80,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Like Flutter's AppInitializer: a signed-in user with an incomplete profile goes to onboarding
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const currentUser = useUserStore((s) => s.currentUser);
   if (currentUser && isProfileIncomplete(currentUser)) {
@@ -110,18 +101,14 @@ export default function App() {
       <AppInitializer>
         <Suspense fallback={null}>
         <Routes>
-          {/* Public routes */}
           <Route path="/login" element={<PublicRoute><AuthPage /></PublicRoute>} />
           <Route path="/login/:tab" element={<PublicRoute><AuthPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
-          {/* Onboarding — protected but pre-main */}
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
 
-          {/* Privacy policy — always accessible */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
-          {/* Protected app routes */}
           <Route path="/*" element={
             <ProtectedRoute>
               <OnboardingGate>
@@ -151,7 +138,6 @@ export default function App() {
         </Routes>
         </Suspense>
 
-        {/* Toast notifications — equivalent to Flutter's showSpotlightToast */}
         <Toaster
           position="bottom-center"
           toastOptions={{

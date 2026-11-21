@@ -259,7 +259,6 @@
   animation: scanlaser 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
 }
 
-/* Mobile & Tablet Performance & Touch Scroll Optimizations */
 @media (max-width: 1024px) {
   .blob {
     display: none !important;
@@ -280,65 +279,63 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Optimize heavy backdrop blurs on mobile GPUs */
   [style*="backdropFilter"], [style*="backdrop-filter"] {
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
   }
 
-  /* Standard Mobile Typography Scale Overrides */
   :root {
     --font-size: 15px;
   }
 
   h1 {
-    font-size: 1.5rem !important; /* 24px on mobile */
+    font-size: 1.5rem !important;
     line-height: 1.3 !important;
   }
 
   h2 {
-    font-size: 1.25rem !important; /* 20px on mobile */
+    font-size: 1.25rem !important;
     line-height: 1.35 !important;
   }
 
   h3 {
-    font-size: 1.0625rem !important; /* 17px on mobile */
+    font-size: 1.0625rem !important;
     line-height: 1.4 !important;
   }
 
   .text-4xl {
-    font-size: 1.75rem !important; /* 28px on mobile */
+    font-size: 1.75rem !important;
     line-height: 1.25 !important;
   }
 
   .text-3xl {
-    font-size: 1.5rem !important; /* 24px on mobile */
+    font-size: 1.5rem !important;
     line-height: 1.3 !important;
   }
 
   .text-2xl {
-    font-size: 1.3125rem !important; /* 21px on mobile */
+    font-size: 1.3125rem !important;
     line-height: 1.35 !important;
   }
 
   .text-xl {
-    font-size: 1.1875rem !important; /* 19px on mobile */
+    font-size: 1.1875rem !important;
   }
 
   .text-lg {
-    font-size: 1.0625rem !important; /* 17px on mobile */
+    font-size: 1.0625rem !important;
   }
 
   .text-base {
-    font-size: 0.9375rem !important; /* 15px on mobile */
+    font-size: 0.9375rem !important;
   }
 
   .text-sm {
-    font-size: 0.875rem !important; /* 14px on mobile */
+    font-size: 0.875rem !important;
   }
 
   .text-xs {
-    font-size: 0.8125rem !important; /* 13px on mobile */
+    font-size: 0.8125rem !important;
   }
 
   .tracking-\[0\.4em\], .tracking-\[0\.5em\], .tracking-\[0\.32em\], .tracking-\[0\.3em\] {
@@ -346,9 +343,6 @@
   }
 }
 
-/* ==========================================================================
-   SkylineOS - Comprehensive Light Theme Styling
-   ========================================================================== */
 
 html.light {
   background-color: var(--sk-canvas) !important;
@@ -360,7 +354,6 @@ html.light body {
   color: var(--sk-fg) !important;
 }
 
-/* Headings in Light Mode */
 html.light h1:not(button):not(button *),
 html.light h2:not(button):not(button *),
 html.light h3:not(button):not(button *),
@@ -370,12 +363,10 @@ html.light h6:not(button):not(button *) {
   color: var(--sk-fg) !important;
 }
 
-/* All white text classes become dark readable charcoal in Light Mode, except on saturated colored action buttons & badges */
 html.light .text-white:not([class*="bg-[color:var(--sk-brand)]"]):not([class*="bg-[color:var(--sk-danger)]"]):not([class*="bg-[color:var(--sk-fg)]"]):not([class*="bg-[color:var(--sk-brand)]"] *):not([class*="bg-[#DE3F0F]"]):not([class*="bg-[#DE3F0F]"] *):not(.bg-primary):not(.bg-primary *):not(.bg-emerald-600):not(.bg-emerald-600 *):not(.bg-red-600):not(.bg-red-600 *):not(.bg-blue-600):not(.bg-blue-600 *):not(.banner-modal-close-btn):not(.banner-modal-close-btn *) {
   color: var(--sk-fg) !important;
 }
 
-/* Secondary / Ghost / Filter / Cancel / Table buttons with faint white backgrounds or borders */
 html.light button.bg-white\/5,
 html.light button.bg-white\/10,
 html.light button.bg-white\/20,
@@ -407,7 +398,6 @@ html.light label.bg-white\/20:hover {
   color: var(--sk-fg) !important;
 }
 
-/* All non-colored buttons in Light Mode get dark charcoal text and inherit color on icons */
 html.light button:not([class*="bg-[color:var(--sk-brand)]"]):not([class*="bg-[color:var(--sk-danger)]"]):not([class*="bg-[color:var(--sk-fg)]"]):not([class*="bg-[#DE3F0F]"]):not(.bg-primary):not(.bg-emerald-600):not(.bg-red-600):not(.bg-blue-600):not(.banner-modal-close-btn) {
   color: var(--sk-fg);
 }
@@ -417,7 +407,6 @@ html.light button:not([class*="bg-[color:var(--sk-brand)]"]):not([class*="bg-[co
   stroke: currentColor !important;
 }
 
-/* Ghost / muted button text classes */
 html.light button.text-white\/40,
 html.light button.text-white\/50,
 html.light button.text-white\/60 {
@@ -430,14 +419,12 @@ html.light button.text-white\/60:hover {
   color: var(--sk-fg) !important;
 }
 
-/* Preserve crisp white text on explicitly dark containers/elements in light theme */
 html.light .bg-black .text-white,
 html.light .bg-black span.text-white,
 html.light .bg-slate-900 .text-white {
   color: #ffffff !important;
 }
 
-/* Faint whites and light grays become readable dark text */
 html.light .text-\[\#ffffff\],
 html.light .text-\[\#f9fafb\],
 html.light .text-\[\var(--sk-raised)\],
@@ -449,7 +436,6 @@ html.light .text-white\/80 {
   color: var(--sk-fg) !important;
 }
 
-/* Section overlines & tracking labels (#f3f4f6) -> Clean high-contrast dark text */
 html.light [style*="#f3f4f6"],
 html.light [style*="243, 244, 246"],
 html.light [style*="243,244,246"],
@@ -463,7 +449,6 @@ html.light .tracking-widest {
   color: var(--sk-fg) !important;
 }
 
-/* Secondary & Muted text -> Slate-600 / Slate-700 with clear contrast */
 html.light [style*="#94a3b8"],
 html.light [style*="148, 163, 184"],
 html.light [style*="#d1d5db"],
@@ -492,7 +477,6 @@ html.light .text-white\/30 {
   color: var(--sk-muted) !important;
 }
 
-/* Status indicators high-contrast in light mode */
 html.light .text-emerald-400 {
   color: #047857 !important;
 }
@@ -514,18 +498,15 @@ html.light .text-\[\#ff949d\] {
   color: #b91c1c !important;
 }
 
-/* Select dropdown options */
 html.light select option {
   background-color: var(--sk-canvas) !important;
   color: var(--sk-fg) !important;
 }
 
-/* In light mode, remove dimming on past event cards */
 html.light .opacity-60 {
   opacity: 1 !important;
 }
 
-/* Cards, Panels & Containers */
 html.light div[style*="background: rgba(255,255,255,0.0"]:not(.pointer-events-none):not([style*="gradient"]),
 html.light div[style*="background: rgba(255, 255, 255, 0.0"]:not(.pointer-events-none):not([style*="gradient"]),
 html.light div[style*="background:rgba(255,255,255,0.0"]:not(.pointer-events-none):not([style*="gradient"]),
@@ -548,7 +529,6 @@ html.light .bg-white\/5 {
   box-shadow: none !important;
 }
 
-/* Decorative overlays & gradients inside cards must NEVER have borders, backgrounds, or shadows */
 html.light .pointer-events-none,
 html.light div[style*="radial-gradient"],
 html.light div[style*="linear-gradient"] {
@@ -556,21 +536,18 @@ html.light div[style*="linear-gradient"] {
   box-shadow: none !important;
 }
 
-/* Recent Activity Feed - clean without boxes */
 .activity-feed-container,
 .activity-feed-container * {
   background: transparent !important;
   box-shadow: none !important;
 }
 
-/* Card hover states */
 html.light div[style*="rgba(255,255,255,0.0"]:hover,
 html.light div[style*="rgba(255, 255, 255, 0.0"]:hover {
   border-color: rgba(0, 0, 0, 0.16) !important;
   box-shadow: none !important;
 }
 
-/* Borders */
 html.light .border-white\/5,
 html.light .border-white\/10,
 html.light .border-white\/\[0\.05\],
@@ -582,7 +559,6 @@ html.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Form Inputs, Textareas, Selects */
 html.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]),
 html.light textarea,
 html.light select {
@@ -605,7 +581,6 @@ html.light select:focus {
   box-shadow: 0 0 0 3px rgba(23, 23, 26, 0.08) !important;
 }
 
-/* File upload label buttons */
 html.light label[for*="upload"],
 html.light label[for*="logo"],
 html.light label[for*="qr"],
@@ -615,7 +590,6 @@ html.light label.cursor-pointer[class*="rounded-xl"] {
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
 }
 
-/* Tables */
 html.light table thead tr {
   background-color: var(--sk-raised) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
@@ -634,7 +608,6 @@ html.light table tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.025) !important;
 }
 
-/* Modals & Dialog Overlays in Light Mode */
 html.light div[style*="background: #0a0a0a"],
 html.light div[style*="background:#0a0a0a"],
 html.light div[style*="background: #0c0c0c"],
@@ -649,7 +622,6 @@ html.light div[style*="rgba(15,15,15"] {
   box-shadow: none !important;
 }
 
-/* Keep White Text on Primary & Accent Badges/Buttons */
 html.light button.bg-\[\var(--sk-brand)\],
 html.light button.bg-\[\var(--sk-brand)\] *,
 html.light .bg-\[\var(--sk-brand)\],
@@ -663,7 +635,6 @@ html.light .bg-primary * {
   color: #ffffff !important;
 }
 
-/* Full banner modal close button: a raised chip in the current theme (dark X in light, light X in dark) */
 .banner-modal-close-btn {
   border: none !important;
   outline: none !important;
@@ -677,7 +648,6 @@ html.light .bg-primary * {
   stroke: var(--sk-fg) !important;
 }
 
-/* Hide browser default password reveal and clear buttons (Edge, IE, Chrome) */
 input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-contacts-auto-fill-button,
@@ -689,7 +659,6 @@ input::-webkit-credentials-auto-fill-button {
   height: 0 !important;
 }
 
-/* Password eye icons and input action buttons - never show a background box */
 .password-toggle-btn,
 button.password-toggle,
 div.relative > button.absolute,
@@ -724,11 +693,7 @@ html.light .password-toggle-btn svg {
   stroke: currentColor !important;
 }
 
-/* ==========================================================================
-   Light theme: standard form styling (dark theme unaffected)
-   ========================================================================== */
 
-/* Inputs: white with a clear border, crimson focus ring */
 html.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
 html.light textarea,
 html.light select,
@@ -748,7 +713,6 @@ html.light textarea::placeholder {
   color: var(--sk-faint) !important;
 }
 
-/* Form labels: sentence case instead of tiny spaced-out capitals */
 html.light label.uppercase.tracking-widest {
   text-transform: none !important;
   letter-spacing: 0 !important;
@@ -756,7 +720,6 @@ html.light label.uppercase.tracking-widest {
   font-weight: 500 !important;
 }
 
-/* File upload buttons: white like the inputs, light grey on hover */
 html.light label[for*="upload"],
 html.light label[for*="logo"],
 html.light label[for*="qr"],
@@ -771,7 +734,6 @@ html.light label.cursor-pointer[class*="rounded-xl"]:hover {
   background-color: var(--sk-raised) !important;
 }
 
-/* Light theme: keep the red border on fields with an error */
 html.light input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
 html.light input[style*="sk-danger"]:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
 html.light textarea[aria-invalid="true"],
@@ -780,7 +742,6 @@ html.light .glass-select-trigger[aria-invalid="true"] {
   border-color: var(--sk-danger) !important;
 }
 
-/* Light theme: a soft crimson glow behind the page so it isn't flat white (page roots use bg-background) */
 html.light .bg-background {
   background-image: radial-gradient(1100px 560px at -5% -15%, rgba(230, 57, 70, 0.10), transparent 60%), radial-gradient(900px 520px at 105% -10%, rgba(230, 57, 70, 0.06), transparent 62%), radial-gradient(1000px 600px at 50% 120%, rgba(230, 57, 70, 0.04), transparent 60%) !important;
   background-attachment: fixed !important;

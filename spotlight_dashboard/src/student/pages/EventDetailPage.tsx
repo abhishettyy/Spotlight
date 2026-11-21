@@ -72,7 +72,6 @@ export default function EventDetailPage() {
   const { isSaved, toggle } = useSavedEventsStore();
   const { isAuthenticated } = useAuthStore();
 
-  // null = still checking (mirrors Flutter's `bool? _isRegistered`)
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [pendingPaymentTicket, setPendingPaymentTicket] = useState<TicketModel | null>(null);
   const [posterOpen, setPosterOpen] = useState(false);
@@ -83,7 +82,6 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     if (events.length === 0) loadEvents();
-    // Re-evaluate the deadline every second, like Flutter's _deadlineTimer
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -92,7 +90,6 @@ export default function EventDetailPage() {
     if (isAuthenticated) checkRegistration();
   }, [id, isAuthenticated]);
 
-  // Ported from EventDetailsScreen._checkRegistration
   const checkRegistration = async () => {
     try {
       const currentUserId = localStorage.getItem('userId') ?? '';
@@ -146,7 +143,6 @@ export default function EventDetailPage() {
   const isPendingPayment = pendingPaymentTicket != null;
   const isDeadlinePassed = event.registrationDeadline ? new Date() > event.registrationDeadline : false;
   const isTeam = (event.eventType ?? '').toLowerCase() === 'team';
-  // A full team event takes no new teams, but members can still join a team that already holds a place
   const joinOnly = full && isTeam && !isDeadlinePassed;
   const isClosed = isDeadlinePassed || (full && !joinOnly);
 
@@ -166,7 +162,6 @@ export default function EventDetailPage() {
           url: window.location.href,
         });
       } catch {
-        // cancelled share
       }
     } else {
       await navigator.clipboard.writeText(window.location.href);
@@ -174,7 +169,6 @@ export default function EventDetailPage() {
     }
   };
 
-  // ── Bottom CTA state (mirrors Flutter) ───────────────────────────────────
   let btnLabel = 'Register Now';
   let btnColor = 'var(--sk-brand)';
   let btnTextColor = 'var(--sk-on-brand)';
@@ -206,10 +200,8 @@ export default function EventDetailPage() {
 
   return (
     <div className="stu-ed" style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
-      {/* Mobile: poster on top, content below. Desktop: poster left (sticky), content right. */}
       <div className="stu-ed-grid">
 
-        {/* ── Poster ────────────────────────────────────────────────────── */}
         <div
           className="stu-ed-poster"
           style={{ cursor: posterOk ? 'zoom-in' : 'default' }}
@@ -223,7 +215,6 @@ export default function EventDetailPage() {
             onStatusChange={setPosterOk}
           />
 
-          {/* Circle back button (top-left) */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -251,7 +242,6 @@ export default function EventDetailPage() {
             <ChevronLeft size={22} strokeWidth={2.5} style={{ marginRight: 2 }} />
           </button>
 
-          {/* Circle share button (top-right) */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -280,13 +270,10 @@ export default function EventDetailPage() {
           </button>
         </div>
 
-        {/* ── Content Container ─────────────────────────────────────────── */}
         <div className="stu-ed-content">
 
-          {/* Category pill + Price pill row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* Glass pill – category / solo / team */}
               <span
                 style={{
                   padding: '7px 14px',
@@ -302,7 +289,6 @@ export default function EventDetailPage() {
                 {event.category}
               </span>
 
-              {/* LIVE badge */}
               {live && (
                 <span
                   style={{
@@ -333,7 +319,6 @@ export default function EventDetailPage() {
               )}
             </div>
 
-            {/* Price pill */}
             <span
               style={{
                 padding: '6px 12px',
@@ -349,7 +334,6 @@ export default function EventDetailPage() {
             </span>
           </div>
 
-          {/* Title */}
           <h1
             style={{
               fontSize: 22,
@@ -363,7 +347,6 @@ export default function EventDetailPage() {
             {event.title}
           </h1>
 
-          {/* Venue */}
           <p
             style={{
               fontSize: 15,
@@ -375,7 +358,6 @@ export default function EventDetailPage() {
             Venue: {event.venue}
           </p>
 
-          {/* Hosted by */}
           {event.clubName && (
             <p
               onClick={() => event.clubId && navigate(`/clubs/${event.clubId}`)}
@@ -391,7 +373,6 @@ export default function EventDetailPage() {
             </p>
           )}
 
-          {/* Deadline */}
           {event.registrationDeadline && (
             <div
               style={{
@@ -416,7 +397,6 @@ export default function EventDetailPage() {
           )}
           {!event.registrationDeadline && <div style={{ marginBottom: 28 }} />}
 
-          {/* Date & Time card */}
           <div
             style={{
               background: 'var(--surface)',
@@ -467,7 +447,6 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          {/* Team Format card (only for team events) */}
           {isTeam && (
             <div
               style={{
@@ -519,7 +498,6 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          {/* Who can register: all branches, or only the ones the club selected */}
           <div
             style={{
               background: 'var(--surface)',
@@ -557,7 +535,6 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          {/* About this event */}
           <div style={{ marginTop: 28 }}>
             <h2
               style={{
@@ -581,10 +558,7 @@ export default function EventDetailPage() {
             </p>
           </div>
 
-        {/* ── Action bar: fixed to the screen bottom on mobile (Flutter bottomNavigationBar),
-               sticky at the bottom of the details column on desktop ─────────────── */}
         <div className="event-detail-bottom-bar">
-          {/* Bookmark circle */}
           <button
             onClick={() => {
               const wasSaved = isSaved(event.id);
@@ -614,7 +588,6 @@ export default function EventDetailPage() {
             )}
           </button>
 
-          {/* Register Now pill */}
           <button
             disabled={btnDisabled}
             onClick={() => {
@@ -631,13 +604,12 @@ export default function EventDetailPage() {
                 };
                 navigate(`/events/${id}/payment?registrationId=${pendingPaymentTicket.id}`, { state });
               } else {
-                // Events limited to selected branches: say why instead of opening registration
                 const notAllowed = branchNotAllowedMessage(event, studentBranch);
                 if (notAllowed) {
                   toast.error(notAllowed);
                   return;
                 }
-                navigate(`/events/${id}/register`);  // a full team event opens straight on Join Team
+                navigate(`/events/${id}/register`);
               }
             }}
             style={{
@@ -667,7 +639,6 @@ export default function EventDetailPage() {
         </div>
         </div>
 
-        {/* ── Full-screen poster overlay ───────────────────────────────────── */}
         {posterOpen && posterOk && event.imageUrl && (
           <div
             onClick={() => setPosterOpen(false)}
@@ -702,7 +673,6 @@ export default function EventDetailPage() {
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                // Theme chip, same as the club dashboard's banner viewer: dark X in light theme, light X in dark
                 background: 'var(--sk-raised)',
                 border: 'none',
                 color: 'var(--sk-fg)',

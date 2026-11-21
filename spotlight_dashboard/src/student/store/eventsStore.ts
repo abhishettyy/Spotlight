@@ -1,4 +1,3 @@
-// Replaces Flutter EventsProvider: shows cached events first, then refreshes from the API
 
 import { create } from 'zustand';
 import { EventModel, eventFromJson } from '@student/types/event';
@@ -29,7 +28,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   error: null,
 
   loadEvents: async () => {
-    // Only show a spinner when there is nothing cached to display
     set({ isLoading: get().events.length === 0, error: null });
     try {
       const { events, raw } = await fetchEvents();

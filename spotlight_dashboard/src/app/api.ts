@@ -130,7 +130,6 @@ async function request(path: string, options: RequestInit = {}, token?: string) 
     }
     return sanitizeImageUrls(data);
   } catch (err: any) {
-    // Keep the server's error code (e.g. CLUB_PENDING) so pages can show the matching screen
     const wrapped: any = new Error(sanitizeErrorMessage(err));
     wrapped.code = err?.code;
     wrapped.status = err?.status;
@@ -149,12 +148,10 @@ export async function clubLogin(email: string, password: string) {
   });
 }
 
-/** The signed-in club's own details, including the coordinator (for prefilling letters) */
 export async function fetchMyClub(token?: string) {
   return request('/clubs/mine', {}, token);
 }
 
-// Drafts: publish one (students can see it and register), or delete one that's no longer needed
 export async function publishEvent(id: string, token?: string) {
   return request(`/events/${encodeURIComponent(id)}/publish`, { method: 'POST' }, token);
 }
@@ -163,7 +160,6 @@ export async function deleteDraftEvent(id: string, token?: string) {
   return request(`/events/${encodeURIComponent(id)}`, { method: 'DELETE' }, token);
 }
 
-// Forgot password: email a 6-digit code, then set a new password with it (replaces the old one)
 export async function requestPasswordReset(email: string) {
   return request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
 }
@@ -199,9 +195,7 @@ export async function createEvent(data: {
   teamSizeLimit?: number;
   minTeamSize?: number;
   clubId?: string;
-  /** Branches allowed to register; leave out for open to all */
   allowedBranches?: string[];
-  /** Save without publishing: hidden from students until published */
   draft?: boolean;
   bannerUrl?: string;
   qrUrl?: string;
@@ -248,7 +242,6 @@ export async function checkClubEmail(email: string) {
   });
 }
 
-/** The details a club fills in on the sign-up page; the admin reviews them before the club can sign in. */
 export interface ClubSignupDetails {
   name: string;
   description: string;
@@ -258,7 +251,6 @@ export interface ClubSignupDetails {
   logoUrl?: string;
 }
 
-/** Club Google sign-in; with `signup`, files a pending registration instead (answers { pending: true }). */
 export async function googleAuth(authPayload: { credential?: string; access_token?: string; signup?: ClubSignupDetails }) {
   return request('/auth/google', {
     method: 'POST',
@@ -306,7 +298,6 @@ export async function rejectRegistration(registrationId: string, token?: string)
   }, token);
 }
 
-/** All visible registrations for a club's events, fetched in a single request. */
 export async function fetchAllRegistrationsForEvents(
   clubId: string,
   events: { id: string; title: string }[],
@@ -317,7 +308,6 @@ export async function fetchAllRegistrationsForEvents(
     const data = await request(`/clubs/${clubId}/registrations`, {}, token);
     return data.registrations ?? [];
   } catch {
-    // Older backend without the club-wide endpoint: fall back to one request per event
   }
   const results = await Promise.allSettled(
     events.map(ev =>

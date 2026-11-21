@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { fetchClubs, fetchAllRegistrationsForEvents, fetchClubDashboardStats } from "../api";
 import { ClubEvent, Registration } from "./shared";
 
-/** The signed-in club session, saved by the sign-in page. */
 function readSession(): { token: string | null; profile: any } {
   const token = localStorage.getItem("spotlight_token");
   try {
@@ -63,7 +62,6 @@ export function useSpotlightData() {
     }
   };
 
-  /** The profile saved at sign-in; club details are re-read with the clubs list. */
   const refreshProfile = async (): Promise<any> => readSession().profile ?? profile;
 
   useEffect(() => {

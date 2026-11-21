@@ -8,7 +8,6 @@ import { formatDate } from '@student/utils/dateUtils';
 import { toast } from 'sonner';
 import Paginated from '@student/components/ui/Paginated';
 
-// Same buckets as NotificationsScreen._formatTime
 function formatTime(dt?: Date | null): string {
   if (!dt) return '';
   const diffMs = Date.now() - dt.getTime();

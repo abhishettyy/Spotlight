@@ -6,7 +6,6 @@ interface PublicRouteProps {
   children: React.ReactNode;
 }
 
-// Redirect to home if already authenticated
 export default function PublicRoute({ children }: PublicRouteProps) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (isAuthenticated) {

@@ -18,7 +18,6 @@ export function LoadingSpinner({ size = 32, color = 'var(--color-crimson)' }: Lo
   );
 }
 
-// Centered full-page loader
 export function PageLoader() {
   return (
     <div
@@ -34,7 +33,6 @@ export function PageLoader() {
   );
 }
 
-// Add spin keyframe to global styles dynamically
 if (!document.getElementById('spin-keyframe')) {
   const style = document.createElement('style');
   style.id = 'spin-keyframe';

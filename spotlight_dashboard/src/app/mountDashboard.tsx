@@ -10,7 +10,6 @@ import "../styles/index.css";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-/** The admin console on /admin, the club site everywhere else; follows Back/Forward without reloading. */
 function SiteRoot() {
   const [isAdmin, setIsAdmin] = useState(isAdminPath);
 
@@ -23,7 +22,6 @@ function SiteRoot() {
   return isAdmin ? <AdminConsole /> : <App />;
 }
 
-/** Renders the club dashboard and admin console. */
 export function mountDashboard(root: Root) {
   root.render(
     <StrictMode>

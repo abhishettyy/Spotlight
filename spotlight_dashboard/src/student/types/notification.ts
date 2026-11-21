@@ -1,4 +1,3 @@
-// Ported from spotlight_flutter/lib/models/models.dart NotificationModel
 
 export interface NotificationModel {
   id: string;

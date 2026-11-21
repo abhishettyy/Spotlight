@@ -1,7 +1,3 @@
-// Ported from spotlight_flutter/lib/core/api_service.dart — registration methods
-// POST /register, /teams/create, /teams/join
-// PUT /registrations/:id/payment
-// GET /user/tickets
 
 import apiClient, { formatApiError } from './client';
 import { ticketFromJson, TicketModel } from '@student/types/event';
@@ -59,7 +55,6 @@ export async function joinTeam(params: {
   }
 }
 
-/** Submits the UPI transaction ID. For a paid team, the response carries the team passkey. */
 export async function submitPayment(params: {
   registrationId: string;
   transactionId: string;

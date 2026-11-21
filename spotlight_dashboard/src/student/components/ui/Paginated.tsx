@@ -1,11 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-/**
- * Shows a long list one page at a time. `children` renders the current page's items; the page bar
- * appears only when there is more than one page. Changing `resetKey` (a search, filter or tab)
- * goes back to page 1.
- */
 export default function Paginated<T>({
   items,
   children,
@@ -30,7 +25,6 @@ export default function Paginated<T>({
 
   const goTo = (n: number) => {
     setPage(n);
-    // Bring the top of the list back into view when it has scrolled off the screen
     const el = topRef.current;
     if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };

@@ -1,4 +1,3 @@
-// Replaces Flutter NotificationPrefsProvider
 
 import { create } from 'zustand';
 
@@ -25,7 +24,6 @@ export const useNotificationPrefsStore = create<NotificationPrefsState>((set, ge
     try {
       localStorage.setItem(KEY, String(enabled));
     } catch {
-      // preference just won't persist
     }
     set({ enabled });
   },

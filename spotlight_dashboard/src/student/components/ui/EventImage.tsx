@@ -7,15 +7,10 @@ interface EventImageProps {
   className?: string;
   style?: CSSProperties;
   loading?: 'lazy' | 'eager';
-  /** Shown when there is no image or it fails to load; defaults to a calendar icon. */
   fallback?: ReactNode;
   onStatusChange?: (ok: boolean) => void;
 }
 
-/**
- * Event banner with a placeholder for missing or unreachable images
- * (deleted storage, a host with an invalid certificate), so cards never show an empty box.
- */
 export default function EventImage({ src, alt = '', className, style, loading, fallback, onStatusChange }: EventImageProps) {
   const [failed, setFailed] = useState(false);
 

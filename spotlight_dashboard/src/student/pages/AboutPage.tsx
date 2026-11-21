@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 
-// Content ported from about_us_screen.dart
 const DEVELOPERS = [
   {
     name: 'Abhish Shetty',

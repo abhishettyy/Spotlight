@@ -1,8 +1,6 @@
 export function getImageFallback(url?: string | null): string {
   if (!url) return '';
-  // If URL starts with http/https, use as is
   if (url.startsWith('http')) return url;
-  // Otherwise return empty (will show fallback)
   return '';
 }
 

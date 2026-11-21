@@ -15,7 +15,6 @@ import { BRANCHES } from '@student/branches';
 import SelectMenu from '@student/components/ui/SelectMenu';
 import { saveCredential } from '../../saveCredential';
 
-// ─── Shared Styles ────────────────────────────────────────────────────────────
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 13,
@@ -24,7 +23,6 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 
-// Focus ring and resting shadow come from `.stu-auth input` in student.css
 const inputStyle: React.CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid transparent',
@@ -84,7 +82,6 @@ const errorStyle: React.CSSProperties = {
   marginTop: 4,
 };
 
-// ─── Validation (mirrors auth_screen.dart) ───────────────────────────────────
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 interface FormValues {
@@ -125,7 +122,6 @@ function validate(v: FormValues, isLogin: boolean): Partial<Record<keyof FormVal
   return errors;
 }
 
-// ─── Main Auth Page ──────────────────────────────────────────────────────────
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -298,9 +294,7 @@ export default function AuthPage() {
     <div className="stu-auth">
       <div className="stu-auth-main">
       <div className="stu-auth-inner">
-      {/* Back to the site's landing page (it lives outside the student app, so a full page load) */}
       <a href={LANDING_URL} className="stu-auth-back"><ChevronLeft size={16} /> Back</a>
-      {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{
           fontSize: 32,
@@ -317,7 +311,6 @@ export default function AuthPage() {
         </p>
       </div>
 
-      {/* Pill Tab Switcher */}
       <div className="stu-seg" role="tablist" style={{ marginBottom: 28 }}>
         {[{ label: 'Sign In', login: true }, { label: 'Sign Up', login: false }].map(({ label, login: tabIsLogin }) => (
           <button
@@ -345,7 +338,6 @@ export default function AuthPage() {
             {field('email', 'Email', 'Enter your email', { type: 'email', autoComplete: 'username' })}
             {passwordField}
             {field('usn', 'USN', 'Enter valid USN', { style: { ...inputStyle, borderColor: borderFor('usn'), textTransform: 'uppercase' } })}
-            {/* Branch: one of the college's branches. It can't be changed after sign-up. */}
             <div>
               <label style={labelStyle}>Branch</label>
               <SelectMenu
@@ -372,7 +364,6 @@ export default function AuthPage() {
             : isLogin ? 'Sign In' : 'Create Account'}
         </button>
 
-        {/* Google is offered for sign-in only; new accounts are created with the sign-up form */}
         {isLogin && GOOGLE_ENABLED && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -420,7 +411,6 @@ export default function AuthPage() {
       </div>
       </div>
 
-      {/* Desktop-only side panel */}
       <div className="stu-auth-side stu-auth-side-only">
         <div>
           <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '3px', color: 'var(--sk-brand)' }}>SPOTLIGHT</p>
@@ -437,11 +427,9 @@ export default function AuthPage() {
   );
 }
 
-/** Stats and "Why Spotlight?" — below the form on mobile (sign-in tab), in the side panel on desktop. */
 function AuthInfo({ stats }: { stats: { events: number; clubs: number; students: number } }) {
   return (
     <>
-      {/* Stats Card */}
       <div style={{
         marginTop: 40,
         background: 'var(--surface)',
@@ -470,7 +458,6 @@ function AuthInfo({ stats }: { stats: { events: number; clubs: number; students:
         ))}
       </div>
 
-      {/* Why Spotlight section */}
       <div style={{ marginTop: 48 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
           Why Spotlight?

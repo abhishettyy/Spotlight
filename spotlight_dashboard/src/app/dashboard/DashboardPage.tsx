@@ -6,7 +6,6 @@ import { FC, FM, FB, PageFallback } from "./shared";
 import { useSpotlightData } from "./useSpotlightData";
 import { OverviewPage } from "./OverviewPage";
 
-// Tabs other than the overview are downloaded on demand, then prefetched once the dashboard is up
 const loadEventsPage = () => import("./EventsPage");
 const loadCreateEventPage = () => import("./CreateEventPage");
 const loadSettingsPage = () => import("./SettingsPage");
@@ -53,7 +52,6 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
     getToken,
   } = useSpotlightData();
 
-  // Fetch the other tabs' code in the background so switching tabs stays instant
   useEffect(() => {
     const prefetch = () => { loadEventsPage(); loadCreateEventPage(); loadSettingsPage(); };
     const id = window.setTimeout(prefetch, 1500);
@@ -79,7 +77,6 @@ export function DashboardPage({ userEmail, onSignOut }: { userEmail: string; onS
     return sessionStorage.getItem("spotlight_reminder_dismissed") === "true";
   });
 
-  // Only the logo matters now: all events are free, so clubs no longer need UPI or QR details
   const isProfileIncomplete = !!currentClub && (
     !currentClub.logoUrl ||
     currentClub.logoUrl === "https://images.unsplash.com/photo-1516321318423-f06f85e504b3"

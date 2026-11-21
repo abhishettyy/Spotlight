@@ -33,7 +33,6 @@ export function IOSInstallModal({ onClose }: IOSInstallModalProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close */}
         <button
           onClick={onClose}
           style={{
@@ -55,7 +54,6 @@ export function IOSInstallModal({ onClose }: IOSInstallModalProps) {
           <X size={16} />
         </button>
 
-        {/* Icon + title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
           <div
             style={{
@@ -81,7 +79,6 @@ export function IOSInstallModal({ onClose }: IOSInstallModalProps) {
           </div>
         </div>
 
-        {/* Steps */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {[
             {

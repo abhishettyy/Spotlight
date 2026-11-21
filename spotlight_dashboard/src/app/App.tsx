@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { FB, View, AuthTab, PageFallback } from "./dashboard/shared";
 import { LandingPage } from "./dashboard/LandingPage";
 
-// The landing page ships with the first load; sign-in and the dashboard are downloaded when needed
 const AuthPage = lazy(() => import("./dashboard/AuthPage").then(m => ({ default: m.AuthPage })));
 const DashboardPage = lazy(() => import("./dashboard/DashboardPage").then(m => ({ default: m.DashboardPage })));
 
@@ -122,7 +121,6 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground"
       style={{ fontFamily: FB }}
     >
-      {/* Liquid blobs */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden>
         <div className="blob blob-1" />
         <div className="blob blob-2" />

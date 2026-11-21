@@ -1,10 +1,7 @@
-// Axios client with JWT auth interceptor
-// Equivalent to ApiService._getHeaders() in Flutter
 
 import axios from 'axios';
 import { studentUrl } from '@student/basePath';
 
-// Same backend as the club dashboard (and the Flutter app); normalised to end in /api like dashboard api.ts
 const BASE_URL = (() => {
   let base = String(import.meta.env.VITE_API_URL || 'https://spotlight-backend-x0q7.onrender.com/api')
     .replace(/\s+/g, '')
@@ -22,7 +19,6 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-// Attach auth token on every request — equivalent to Flutter's _getHeaders()
 apiClient.interceptors.request.use((config) => {
   config.headers['ngrok-skip-browser-warning'] = 'true';
   const token = localStorage.getItem('auth_token');
@@ -32,9 +28,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// An expired/invalid session token ends the session. /auth/* routes are skipped:
-// they answer 401 for a wrong password (login, verify-password, change-password),
-// which must surface as an error message, not a logout.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -49,11 +42,9 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Equivalent to ApiService.formatExceptionMessage()
 export function formatApiError(error: unknown, defaultMsg: string): string {
   if (!error) return defaultMsg;
 
-  // Prefer the backend's own message, as Flutter does with data['error']
   if (axios.isAxiosError(error)) {
     if (!error.response) {
       return 'Connection error. Please check your internet connection and try again.';

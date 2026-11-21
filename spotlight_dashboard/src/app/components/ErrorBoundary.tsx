@@ -24,7 +24,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
-    // Clear URL query parameters that might have caused the error (e.g. invalid eventId)
     if (window.location.search) {
       window.history.replaceState({}, "", window.location.pathname);
     }

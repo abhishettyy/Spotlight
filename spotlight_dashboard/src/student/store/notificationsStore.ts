@@ -1,4 +1,3 @@
-// Replaces Flutter NotificationsProvider
 
 import { create } from 'zustand';
 import { NotificationModel } from '@student/types/notification';

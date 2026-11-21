@@ -24,8 +24,6 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 
-// Equivalent to Flutter's OnboardingScreen
-// Shows after signup when profile is incomplete (missing USN/branch/phone)
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { currentUser, setCurrentUser } = useUserStore();
@@ -62,7 +60,6 @@ export default function OnboardingPage() {
       }}
     >
       <div style={{ width: '100%', maxWidth: 440 }}>
-        {/* Header */}
         <div style={{ marginBottom: 32, textAlign: 'center' }}>
           <div
             style={{

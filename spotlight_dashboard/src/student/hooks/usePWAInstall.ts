@@ -18,10 +18,6 @@ let installed = false;
 const subscribers = new Set<() => void>();
 const notify = () => subscribers.forEach((fn) => fn());
 
-/**
- * Captures the browser's install prompt as soon as the app starts. The event can fire before
- * any component using usePWAInstall is mounted, so listening only inside the hook misses it.
- */
 export function listenForInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -44,7 +40,6 @@ export function usePWAInstall(): UsePWAInstall {
   const [canInstall, setCanInstall] = useState(() => !!deferredPrompt);
   const [isInstalled, setIsInstalled] = useState(() => installed || isStandalone());
 
-  // Detect iOS (Safari has no install prompt; the app shows manual "Add to Home Screen" steps)
   const isIOS =
     /iphone|ipad|ipod/i.test(navigator.userAgent) &&
     !(window.navigator as Navigator & { standalone?: boolean }).standalone;

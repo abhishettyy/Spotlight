@@ -1,4 +1,3 @@
-// Replaces Flutter ClubsProvider: shows cached clubs first, then refreshes from the API
 
 import { create } from 'zustand';
 import { ClubModel, clubFromJson } from '@student/types/club';

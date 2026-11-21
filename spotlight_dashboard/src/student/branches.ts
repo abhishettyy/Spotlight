@@ -1,7 +1,3 @@
-/**
- * The college's branches, shown as a dropdown at sign-up and onboarding. The backend accepts only
- * these (spotlight_backend/utils/branches.ts), and the Flutter app has the same list.
- */
 export const BRANCHES = [
   'Aerospace Engineering',
   'Artificial Intelligence and Data Science',

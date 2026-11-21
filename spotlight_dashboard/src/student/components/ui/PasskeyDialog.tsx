@@ -4,13 +4,11 @@ import { toast } from 'sonner';
 interface PasskeyDialogProps {
   title: string;
   message: string;
-  /** Omit to show the message only (e.g. a paid team before payment). */
   passkey?: string;
   actionLabel: string;
   onAction: () => void;
 }
 
-/** Non-dismissible dialog used after team creation and payment, like Flutter's AlertDialogs. */
 export default function PasskeyDialog({ title, message, passkey, actionLabel, onAction }: PasskeyDialogProps) {
   return (
     <div

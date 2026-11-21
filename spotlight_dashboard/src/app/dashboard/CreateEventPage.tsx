@@ -10,11 +10,9 @@ type EventForm = {
   title: string; desc: string; date: string; endDate: string; deadline: string; type: string; capacity: string;
   venue: string; amount: string; qrCode: string; useDefaultQr: boolean; customUpiId: string;
   eventType: string; minTeamSize: string; teamSizeLimit: string; qrFile: File | null;
-  /** "all" = open to every branch; "selected" = only allowedBranches may register */
   eligibility: string; allowedBranches: string[];
 };
 
-/** Every problem with the form, keyed by field. Runs on each change, so errors show as soon as a field is edited. */
 function validateEventForm(formData: EventForm): Record<string, string> {
   const errors: Record<string, string> = {};
   const now = new Date();
@@ -28,7 +26,6 @@ function validateEventForm(formData: EventForm): Record<string, string> {
   else if (formData.date && new Date(formData.deadline) >= new Date(formData.date)) errors.deadline = "Deadline must be before the event start date.";
   if (!formData.desc.trim()) errors.desc = "Description is required.";
   if (!formData.venue.trim()) errors.venue = "Venue is required.";
-  // Team events limit the number of teams; solo events the number of students
   if (!formData.capacity) errors.capacity = formData.eventType === "Team" ? "Number of teams is required." : "Venue capacity is required.";
   else if (parseInt(formData.capacity) < 1) errors.capacity = formData.eventType === "Team" ? "Allow at least 1 team." : "Venue capacity must be at least 1.";
   if (formData.type === "paid") {
@@ -67,7 +64,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // A field shows its error once it has been edited, and every field does after a publish attempt
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const touch = (field: string) => setTouched(t => (t[field] ? t : { ...t, [field]: true }));
@@ -76,7 +72,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
     ? allErrors
     : Object.fromEntries(Object.entries(allErrors).filter(([field]) => touched[field]));
 
-  // Which button is working: publish now, or save as a draft to publish later
   const [savingDraft, setSavingDraft] = useState(false);
 
   const handleSubmit = async (asDraft = false) => {
@@ -137,7 +132,7 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
         venue: formData.venue || undefined,
         eventDate: formData.date || undefined,
         eventEndDate: formData.endDate || undefined,
-        fee: 0, // all events are free (college policy)
+        fee: 0,
         registrationLimit: formData.capacity ? parseInt(formData.capacity) : undefined,
         eventType: formData.eventType,
         teamSizeLimit: formData.eventType === "Team" && formData.teamSizeLimit ? parseInt(formData.teamSizeLimit) : undefined,
@@ -306,7 +301,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
           </AnimatePresence>
         </div>
 
-        {/* Who can register: every branch (default) or only the selected ones */}
         <div className="space-y-3">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-1.5 relative">
@@ -344,7 +338,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
                         onClick={() => {
                           setFormData(p => ({
                             ...p,
-                            // Kept in the college's order, so the list reads the same everywhere
                             allowedBranches: on ? p.allowedBranches.filter(x => x !== b) : BRANCHES.filter(x => x === b || p.allowedBranches.includes(x)),
                           }));
                           touch("allowedBranches");
@@ -393,7 +386,6 @@ export function CreateEventPage({ clubId, onCreated, getToken, clubQrUrl, clubUp
               "Publish Event"
             )}
           </motion.button>
-          {/* Draft: saved for the club only; publish it later from the event page */}
           <motion.button
             whileHover={submitting ? undefined : { scale: 1.02 }}
             whileTap={submitting ? undefined : { scale: 0.98 }}

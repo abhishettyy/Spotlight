@@ -70,7 +70,6 @@ export function OverviewPage({
         <p className="mt-1 text-xs sm:text-sm text-[color:var(--sk-muted)] dark:text-[color:var(--sk-muted)]" style={{ fontFamily: FB }}>Manage your club's events, registrations, and track performance in real-time.</p>
       </motion.div>
 
-      {/* Key metrics — single divided strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 rounded-xl overflow-hidden" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
         {[
           { label: "Total Events",        value: totalEvents,        sub: `${clubEvents.filter(e => !e.isDraft && getEventStatus(e) !== 'previous').length} active${clubEvents.some(e => e.isDraft) ? ` · ${clubEvents.filter(e => e.isDraft).length} draft` : ''}`, tab: "events", warn: false },
@@ -91,7 +90,6 @@ export function OverviewPage({
         ))}
       </div>
 
-      {/* Upcoming & Live Events strip — live */}
       <div>
         <div className="flex items-end justify-between mb-5">
           <div>
@@ -114,7 +112,6 @@ export function OverviewPage({
           <div className="rounded-xl overflow-hidden" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
             {[...clubEvents.filter(e => getEventStatus(e) !== 'previous')]
               .sort((x, y) => {
-                // Live events first, drafts last
                 const r = (e: ClubEvent) => (e.isDraft ? 2 : getEventStatus(e) === 'live' ? 0 : 1);
                 if (r(x) !== r(y)) return r(x) - r(y);
                 return (parseLocalDate(x.eventDate || x.date)?.getTime() ?? 0) - (parseLocalDate(y.eventDate || y.date)?.getTime() ?? 0);
@@ -149,7 +146,6 @@ export function OverviewPage({
         )}
       </div>
 
-      {/* Quick Actions + Live Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
         <div className="lg:col-span-2">
           <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-3 sm:mb-5 text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Quick Actions</p>
@@ -184,7 +180,6 @@ export function OverviewPage({
           </div>
         </div>
 
-        {/* Live Activity Feed */}
         <div className="activity-feed-container">
           <p className="text-[11px] tracking-[0.5em] uppercase mb-4 text-[color:var(--sk-fg)] dark:text-[color:var(--sk-fg)]" style={{ fontFamily: FM }}>Recent Activity</p>
           <div className="space-y-1">

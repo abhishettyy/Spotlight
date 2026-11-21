@@ -39,7 +39,6 @@ export default function TicketsPage() {
     if (events.length === 0) loadEvents();
   }, []);
 
-  // Cache-first, then network — mirrors TicketScreen._loadTickets
   const loadTickets = async () => {
     const hasCached = tickets.length > 0;
     if (!hasCached) {
@@ -136,7 +135,6 @@ export default function TicketsPage() {
 
   return (
     <div className="stu-page stu-page--list">
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-1px' }}>
@@ -158,7 +156,6 @@ export default function TicketsPage() {
         </button>
       </div>
 
-      {/* Tab switcher */}
       <div className="stu-seg" role="tablist" style={{ marginBottom: 24 }}>
         {TABS.map((tab) => (
           <button
@@ -178,7 +175,6 @@ export default function TicketsPage() {
   );
 }
 
-// ── Ticket card (ported from TicketScreen._buildTicketCard) ───────────────────
 function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; currentUserId: string; onOpen: () => void }) {
   const event = ticket.event;
   const status = ticket.status.toUpperCase();
@@ -199,7 +195,6 @@ function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; cu
   const effectiveCount = isFreeEvent ? joinedCount : confirmedCount;
   const isTeamIncomplete = ticket.team != null && effectiveCount < minRequired;
 
-  // Date / time lines, same formatting as the Flutter card
   const start = event?.eventDate ?? null;
   const end = event?.eventEndDate ?? null;
   let dateStr = 'TBD';
@@ -241,7 +236,6 @@ function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; cu
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden' }}>
-      {/* Banner */}
       <div style={{ height: 140, background: 'var(--raised)', position: 'relative', overflow: 'hidden' }}>
         <EventImage src={event?.imageUrl} loading="lazy" />
         <div style={{ position: 'absolute', top: 14, right: 14 }}>
@@ -334,7 +328,6 @@ function TicketCard({ ticket, currentUserId, onOpen }: { ticket: TicketModel; cu
   );
 }
 
-// ── Status badge (ported from TicketScreen._statusBadge) ──────────────────────
 function StatusBadge({ ticket }: { ticket: TicketModel }) {
   const pill = (color: string, icon: React.ReactNode, label: string) => (
     <span style={{

@@ -81,7 +81,6 @@ export function EventsTable({
   };
 
   const regBar = (ev: ClubEvent) => {
-    // Places against capacity: teams for team events, students for solo events
     const regCount = countPlaces(allRegistrations.filter(r => r.eventId === ev.id));
     const fill = ev.capacity > 0 ? Math.min(100, (regCount / ev.capacity) * 100) : 0;
     return (
@@ -108,7 +107,6 @@ export function EventsTable({
         <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: "var(--sk-fg)", fontFamily: FC }}>All Events</h1>
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="inline-flex p-0.5 rounded-lg self-start" style={{ background: "var(--sk-raised)", border: "1px solid var(--sk-line)" }}>
           {tabs.map(t => {
@@ -131,7 +129,6 @@ export function EventsTable({
         </div>
       </div>
 
-      {/* Table */}
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--sk-surface)", border: "1px solid var(--sk-line)" }}>
         <div className={`hidden md:grid ${gridCols} gap-4 px-5 h-10 items-center text-[11px] uppercase tracking-[0.15em]`} style={{ background: "var(--sk-raised)", borderBottom: "1px solid var(--sk-line)", color: "var(--sk-muted)", fontFamily: FM }}>
           <span>Event</span>
@@ -183,7 +180,6 @@ export function EventsTable({
           </div>
         )}
 
-        {/* Pagination footer */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 text-xs" style={{ borderTop: "1px solid var(--sk-line)", background: "var(--sk-raised)", color: "var(--sk-muted)", fontFamily: FM }}>
           <div className="flex items-center gap-3">
             <span>{from}–{to} of {rows.length}</span>

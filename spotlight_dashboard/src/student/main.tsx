@@ -9,7 +9,6 @@ import { listenForInstallPrompt } from './hooks/usePWAInstall';
 const SITE_BASE = import.meta.env.BASE_URL;
 const GOOGLE_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-/** The HTML page is shared with the club dashboard, so the PWA tags are added only here. */
 function addPwaHeadTags() {
   const tags: Array<[string, Record<string, string>]> = [
     ['link', { rel: 'manifest', href: `${SITE_BASE}student.webmanifest` }],
@@ -27,7 +26,6 @@ function addPwaHeadTags() {
   }
 }
 
-/** Renders the student app; main.tsx loads this module only for /student URLs. */
 export function mountStudentApp(root: Root) {
   document.title = 'Spotlight';
   addPwaHeadTags();

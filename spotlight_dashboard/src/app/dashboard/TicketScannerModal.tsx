@@ -171,12 +171,9 @@ export function TicketScannerModal({
               >
                 <div id="qr-reader-canvas" className="w-full h-full" />
 
-                {/* Professional Viewfinder Overlay */}
                 <div className="absolute inset-0 pointer-events-none z-10 p-4">
-                  {/* Subtle Laser Scanline */}
                   <div className="absolute inset-x-4 h-[1.5px] bg-gradient-to-r from-transparent via-[color:var(--sk-brand)] to-transparent animate-scanlaser pointer-events-none opacity-80" />
 
-                  {/* Elegant Corner Guides */}
                   <div className="absolute top-4 left-4 w-5 h-5 border-t border-l border-white/40 rounded-tl" />
                   <div className="absolute top-4 right-4 w-5 h-5 border-t border-r border-white/40 rounded-tr" />
                   <div className="absolute bottom-4 left-4 w-5 h-5 border-b border-l border-white/40 rounded-bl" />
@@ -195,7 +192,6 @@ export function TicketScannerModal({
               </p>
             </div>
 
-            {/* Manual Entry */}
             <div className="flex-1 flex flex-col justify-center gap-4 w-full text-center lg:text-left">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-[color:var(--sk-fg)] dark:text-white/60 uppercase tracking-wider" style={{ fontFamily: FM }}>
@@ -247,9 +243,7 @@ export function TicketScannerModal({
             </div>
           </div>
         ) : (
-          /* Inline Result Panel */
           <div className="space-y-5">
-            {/* Verified Header Bar */}
             <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
@@ -275,7 +269,6 @@ export function TicketScannerModal({
               </button>
             </div>
 
-            {/* Scanned Attendee Profile Summary */}
             {scanResult.attendee && (
               <div className="p-5 rounded-xl bg-[color:var(--sk-raised)] dark:bg-white/[0.02] border border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] space-y-3">
                 <div className="flex items-center justify-between border-b border-[color:var(--sk-line)] dark:border-[color:var(--sk-line)] pb-2.5">
@@ -312,7 +305,6 @@ export function TicketScannerModal({
               </div>
             )}
 
-            {/* Team Members List */}
             {scanResult.team && scanResult.team.members.length > 0 && (
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">

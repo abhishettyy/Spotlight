@@ -11,7 +11,6 @@ interface EventCardProps {
   compact?: boolean;
 }
 
-/** Event tile used in lists. Shows the same details as the Flutter app's event card. */
 export default function EventCard({ event, compact = false }: EventCardProps) {
   const navigate = useNavigate();
   const { isSaved, toggle } = useSavedEventsStore();
@@ -83,7 +82,7 @@ export default function EventCard({ event, compact = false }: EventCardProps) {
           style={{
             fontSize: 16, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3, letterSpacing: '-0.01em',
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0,
-            minHeight: '2.6em', // always reserve two lines so every card is the same height
+            minHeight: '2.6em',
           }}
         >
           {event.title}

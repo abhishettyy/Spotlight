@@ -1,21 +1,14 @@
-/* Light palette: cool neutral greys (zinc scale) on white, as in Vercel Geist and Linear,
-   so the crimson brand reads clean instead of muddy against beige. Dark palette: neutral near-black.
-   SkylineOS design tokens: the single source of colour, type and shape for all three areas
-   (student site, club dashboard, admin console). Every area's own variables alias these.
-
-   Principles: one typeface (Inter), neutral surfaces, near-black (never #000) in dark mode,
-   Brand colours: Spotlight crimson for primary actions and focus, Green for success, Yellow for warnings, neutral grey for info, thin borders instead of glows. */
 
 :root, .light {
-  --sk-canvas: #f5f4f2;     /* page background: warm light grey so white cards stand apart */
-  --sk-surface: #fdfcfa;    /* cards, panels, sidebars */
-  --sk-raised: #f0efec;     /* inputs, hover rows, segmented controls */
-  --sk-line: #e7e5e1;       /* borders, dividers */
+  --sk-canvas: #f5f4f2;
+  --sk-surface: #fdfcfa;
+  --sk-raised: #f0efec;
+  --sk-line: #e7e5e1;
   --sk-line-strong: #d6d3cd;
-  --sk-fg: #1c1917;         /* primary text, 17:1 on white */
-  --sk-muted: #57534e;      /* secondary text, 7.7:1 */
-  --sk-faint: #78716c;      /* hints, meta, 4.8:1 (still AA) */
-  --sk-brand: #e63946;      /* college crimson */
+  --sk-fg: #1c1917;
+  --sk-muted: #57534e;
+  --sk-faint: #78716c;
+  --sk-brand: #e63946;
   --sk-brand-hover: #cc2a3a;
   --sk-brand-soft: rgba(230, 57, 70, 0.10);
   --sk-ok: #15803d;   --sk-ok-soft: rgba(22, 163, 74, 0.10);

@@ -9,10 +9,6 @@ const labelCls = "text-[11px] uppercase tracking-widest text-[color:var(--sk-fg)
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_SECONDS = 30;
 
-/**
- * Club forgot password, shown inside the sign-in card: 1) email a 6-digit code, 2) enter the code
- * and a new password, which replaces the old one. `onDone` returns to sign-in with a message.
- */
 export function ClubForgotPassword({ initialEmail, isDark, onBack, onDone }: {
   initialEmail: string; isDark: boolean; onBack: () => void; onDone: (message: string) => void;
 }) {

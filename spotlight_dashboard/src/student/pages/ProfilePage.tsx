@@ -21,9 +21,7 @@ import { toast } from 'sonner';
 import { BRANCHES } from '@student/branches';
 import SelectMenu from '@student/components/ui/SelectMenu';
 
-// No dropdowns needed — direct inputs used
 
-// ── Shared row button ──────────────────────────────────────────────────────
 function SettingsRow({
   icon,
   label,
@@ -73,7 +71,6 @@ function SettingsRow({
   );
 }
 
-// ── Section label ──────────────────────────────────────────────────────────
 function SectionLabel({ text }: { text: string }) {
   return (
     <p
@@ -129,7 +126,6 @@ export default function ProfilePage() {
   };
 
   if (!currentUser) {
-    // Keep Sign Out reachable even if the profile can't be loaded
     return (
       <div className="stu-page stu-page--medium">
         <p style={{ color: 'var(--subtext)', marginBottom: 24 }}>Loading profile…</p>
@@ -140,11 +136,9 @@ export default function ProfilePage() {
 
   return (
     <div className="stu-page stu-page--medium">
-      {/* Single column on mobile; two columns on desktop */}
       <div className="stu-split stu-split--even" style={{ gap: 0, columnGap: 40 }}>
       <div>
 
-      {/* ── Profile Header ─────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
         <div
           style={{
@@ -186,7 +180,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Stats Row ──────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 28 }}>
         {[
           { icon: <Ticket size={22} color="var(--color-crimson)" strokeWidth={1.8} />, label: 'Events', value: statsLoading ? 0 : stats.eventsCount, to: '/tickets' },
@@ -216,7 +209,6 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* ── Academic Profile ─────────────────────────── */}
       <SectionLabel text="Academic Profile" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
         <SettingsRow icon={<IdCard size={18} strokeWidth={1.8} />} label="USN" rightLabel={currentUser.usn || 'Not set'} showChevron={false} />
@@ -228,7 +220,6 @@ export default function ProfilePage() {
       </div>
       <div>
 
-      {/* ── Preferences ──────────────────────────────── */}
       <SectionLabel text="Preferences" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
         <PWAInstallRow />
@@ -256,7 +247,6 @@ export default function ProfilePage() {
         />
       </div>
 
-      {/* ── Support & About Us ───────────────────────── */}
       <SectionLabel text="Support & About Us" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
         <SettingsRow
@@ -276,7 +266,6 @@ export default function ProfilePage() {
         />
       </div>
 
-      {/* ── Sign Out ─────────────────────────────────── */}
       <SignOutBtn onLogout={handleLogout} />
       </div>
       </div>
@@ -299,7 +288,6 @@ export default function ProfilePage() {
   );
 }
 
-// ── Sign Out button ──────────────────────────────────────────────────────────
 function SignOutBtn({ onLogout }: { onLogout: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -332,7 +320,6 @@ function SignOutBtn({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-// ── Edit button ────────────────────────────────────────────────────────────
 function EditBtn({ onClick }: { onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -384,7 +371,6 @@ function SheetField({
   helperText?: React.ReactNode;
   helperColor?: string;
   autoUppercase?: boolean;
-  /** Shows a dropdown of these values instead of a text box */
   options?: readonly string[];
 }) {
   const [focused, setFocused] = useState(false);
@@ -511,7 +497,6 @@ function EditProfileModal({
     year.trim() !== initialYear.trim() ||
     sem.trim() !== initialSem.trim();
 
-  // Validation as in ProfileScreen._showEditSheet; then the password must be confirmed
   const handleSave = () => {
     if (!name.trim()) {
       toast.error('Name is required');
@@ -603,7 +588,6 @@ function EditProfileModal({
           boxShadow: 'none',
         }}
       >
-        {/* Grab Handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 16px 0' }}>
           <div
             style={{
@@ -615,7 +599,6 @@ function EditProfileModal({
           />
         </div>
 
-        {/* Title & Subtitle */}
         <div style={{ marginBottom: 24 }}>
           <h2
             style={{
@@ -641,9 +624,7 @@ function EditProfileModal({
           </p>
         </div>
 
-        {/* Fields Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Full Name */}
           <SheetField
             label="Full Name"
             value={name}
@@ -651,7 +632,6 @@ function EditProfileModal({
             placeholder="Enter your full name"
           />
 
-          {/* USN */}
           <SheetField
             label="USN"
             value={usn}
@@ -672,7 +652,6 @@ function EditProfileModal({
             helperColor={hasUsnSet ? 'var(--sk-warn)' : 'var(--subtext)'}
           />
 
-          {/* Branch */}
           <SheetField
             label="Branch"
             value={branch}
@@ -693,7 +672,6 @@ function EditProfileModal({
             helperColor={hasBranchSet ? 'var(--sk-warn)' : 'var(--subtext)'}
           />
 
-          {/* Year & Semester side by side */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <SheetField
               label="Year"
@@ -717,7 +695,6 @@ function EditProfileModal({
             />
           </div>
 
-          {/* Phone Number */}
           <SheetField
             label="Phone Number"
             value={phone}
@@ -730,7 +707,6 @@ function EditProfileModal({
             maxLength={10}
           />
 
-          {/* Save Changes button */}
           <button
             onClick={handleSave}
             disabled={!hasChanges || isLoading}
@@ -775,7 +751,6 @@ function EditProfileModal({
   );
 }
 
-// ── Confirm Password dialog (ported from _showPasswordConfirmDialog) ─────────
 function ConfirmPasswordDialog({
   userId,
   onCancel,
@@ -848,7 +823,6 @@ function ConfirmPasswordDialog({
   );
 }
 
-// Ported from ProfileScreen._showUpdatePasswordModal
 function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -904,7 +878,6 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   </Modal>;
 }
 
-// ── Shared modal helpers ─────────────────────────────────────────────────────
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
@@ -959,15 +932,12 @@ function PasswordInput({ value, onChange, show, onToggle, placeholder, autoFocus
   );
 }
 
-// ── PWA Install Row ──────────────────────────────────────────────────────────
 function PWAInstallRow() {
   const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [installing, setInstalling] = useState(false);
 
-  // Hide when already installed and not iOS
   if (isInstalled && !isIOS) return null;
-  // Hide if browser doesn't support install and it's not iOS
   if (!canInstall && !isIOS) return null;
 
   const handleInstall = async () => {

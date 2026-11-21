@@ -3,7 +3,6 @@ import { EventModel } from '@student/types/event';
 import { formatEventHeaderDate } from '@student/utils/dateUtils';
 import EventImage from '@student/components/ui/EventImage';
 
-/** Compact event overview shown beside forms on desktop (register, payment). */
 export default function EventSummaryCard({ event }: { event: EventModel }) {
   const dateStr = event.eventDate?.toISOString() ?? event.date ?? null;
   const endDateStr = event.eventEndDate?.toISOString() ?? null;

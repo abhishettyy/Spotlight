@@ -1,5 +1,3 @@
-// Ported from dashboard's parseLocalDate and formatDateTime12H
-// Equivalent to Flutter's parseLocalDate in models.dart
 
 export function parseLocalDate(raw?: string | null): Date | null {
   if (!raw) return null;

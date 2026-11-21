@@ -87,7 +87,6 @@ export default function PrivacyPolicyPage() {
         paddingBottom: 60,
       }}
     >
-      {/* Header */}
       <div
         style={{
           position: 'sticky',
@@ -130,7 +129,6 @@ export default function PrivacyPolicyPage() {
       </div>
 
       <div className="stu-page stu-page--read">
-        {/* Hero */}
         <div
           style={{
             background: 'var(--surface)',
@@ -194,7 +192,6 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
 
-        {/* Sections */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {sections.map((section) => (
             <div
@@ -277,7 +274,6 @@ export default function PrivacyPolicyPage() {
           ))}
         </div>
 
-        {/* Footer note */}
         <p
           style={{
             textAlign: 'center',

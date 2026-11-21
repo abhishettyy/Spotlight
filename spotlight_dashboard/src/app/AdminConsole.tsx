@@ -69,7 +69,6 @@ const formatDate = (iso: string) =>
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
-// ── Small building blocks ────────────────────────────────────────────────────
 
 const inputCls =
   'w-full h-10 px-3 rounded-lg bg-ad-raised border border-ad-line text-sm text-ad-fg placeholder:text-ad-faint outline-none focus:border-ad-brand transition-colors';
@@ -206,13 +205,8 @@ function Pagination({
   );
 }
 
-// ── Console ──────────────────────────────────────────────────────────────────
-
-// ── Students (admin) ─────────────────────────────────────────────────────────
-
 type StudentRow = { id: string; name: string; usn: string | null; branch: string | null; email: string };
 
-/** Every student account: name, USN, department and email, with search, pages and delete. */
 function StudentsSection() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -361,7 +355,6 @@ function StudentsSection() {
         )}
       </section>
 
-      {/* Delete confirmation */}
       {deleting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !deleteBusy && setDeleting(null)}>
           <div
@@ -393,6 +386,151 @@ function StudentsSection() {
   );
 }
 
+const RESET_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function newPasswordProblem(pass: string): string | null {
+  const missing: string[] = [];
+  if (pass.length < 8) missing.push('at least 8 characters');
+  if (!/[A-Z]/.test(pass)) missing.push('an uppercase letter');
+  if (!/[0-9]/.test(pass)) missing.push('a number');
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass)) missing.push('a special character');
+  return missing.length ? `Password needs ${missing.join(', ')}.` : null;
+}
+
+async function postJson(path: string, body: unknown) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+  return data;
+}
+
+function AdminForgotPassword({ initialEmail, onBack, onDone }: {
+  initialEmail: string; onBack: () => void; onDone: (message: string) => void;
+}) {
+  const [step, setStep] = useState<'email' | 'reset'>('email');
+  const [email, setEmail] = useState(initialEmail);
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  const friendly = (err: any) => (err?.message === 'Failed to fetch' ? 'Cannot reach the server.' : err?.message || 'Something went wrong.');
+
+  const sendCode = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError(null);
+    if (!RESET_EMAIL_RE.test(email.trim())) { setError('Enter a valid email address.'); return; }
+    setBusy(true);
+    try {
+      const data = await postJson('/auth/forgot-password', { email: email.trim() });
+      setNotice(data.message || 'Code sent.');
+      setStep('reset');
+      setResendIn(30);
+    } catch (err: any) {
+      setError(friendly(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!/^\d{6}$/.test(code.trim())) { setError('Enter the 6-digit code from the email.'); return; }
+    const problem = newPasswordProblem(password);
+    if (problem) { setError(problem); return; }
+    if (password !== confirm) { setError('Passwords do not match.'); return; }
+    setBusy(true);
+    try {
+      const data = await postJson('/auth/reset-password', { email: email.trim(), code: code.trim(), newPassword: password });
+      onDone(data.message || 'Your password has been reset. You can now sign in.');
+    } catch (err: any) {
+      setError(friendly(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <button type="button" onClick={onBack} className="inline-flex items-center gap-1 -ml-1 mb-4 p-1 rounded-md text-sm text-ad-muted hover:text-ad-fg cursor-pointer">
+        <ChevronLeft size={16} /> Back to sign in
+      </button>
+      <h1 className="text-lg font-semibold">Forgot password</h1>
+      <p className="text-sm text-ad-muted mt-1">
+        {step === 'email' ? "Enter the admin email and we'll send a 6-digit code to reset the password." : notice}
+      </p>
+
+      {step === 'email' ? (
+        <form onSubmit={sendCode} className="mt-6 space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="admin-fp-email" className="text-sm font-medium block">Email</label>
+            <input id="admin-fp-email" name="email" type="email" autoComplete="username" autoFocus
+              value={email} onChange={e => setEmail(e.target.value)} className={inputCls} />
+          </div>
+          {error && <p role="alert" className="text-sm font-normal text-[#dc2626] text-center">{error}</p>}
+          <button type="submit" disabled={busy} className={`${btnPrimary} w-full h-10`}>
+            {busy ? 'Sending code…' : 'Send code'}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={reset} className="mt-6 space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="admin-fp-code" className="text-sm font-medium block">6-digit code</label>
+            <input id="admin-fp-code" name="code" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={6}
+              value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className={`${inputCls} tracking-[0.4em] text-base font-semibold`} />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="admin-fp-password" className="text-sm font-medium block">New password</label>
+            <div className="relative">
+              <input id="admin-fp-password" name="password" type={show ? 'text' : 'password'} autoComplete="new-password"
+                value={password} onChange={e => setPassword(e.target.value)} className={`${inputCls} pr-10`} />
+              <button type="button" onClick={() => setShow(v => !v)} aria-label={show ? 'Hide password' : 'Show password'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-ad-faint hover:text-ad-fg cursor-pointer">
+                {show ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <p className="text-xs text-ad-faint">At least 8 characters, with an uppercase letter, a number and a special character.</p>
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="admin-fp-confirm" className="text-sm font-medium block">Confirm new password</label>
+            <input id="admin-fp-confirm" name="confirm" type={show ? 'text' : 'password'} autoComplete="new-password"
+              value={confirm} onChange={e => setConfirm(e.target.value)} className={inputCls} />
+          </div>
+          {error && <p role="alert" className="text-sm font-normal text-[#dc2626] text-center">{error}</p>}
+          <button type="submit" disabled={busy} className={`${btnPrimary} w-full h-10`}>
+            {busy ? 'Resetting…' : 'Reset password'}
+          </button>
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <button type="button" onClick={() => { setStep('email'); setCode(''); setError(null); }} className="text-ad-muted hover:text-ad-fg cursor-pointer">
+              Use a different email
+            </button>
+            <button type="button" disabled={busy || resendIn > 0} onClick={() => sendCode()}
+              className={`font-medium text-ad-brand ${busy || resendIn > 0 ? 'opacity-50 cursor-default' : 'hover:underline cursor-pointer'}`}>
+              {resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code'}
+            </button>
+          </div>
+        </form>
+      )}
+    </>
+  );
+}
+
 export default function AdminConsole() {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -419,8 +557,14 @@ export default function AdminConsole() {
   const [rejecting, setRejecting] = useState<ClubApplication | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  // Which list the admin is looking at
   const [view, setView] = useState<'clubs' | 'students'>('clubs');
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!resetNotice) return;
+    const t = setTimeout(() => setResetNotice(null), 6000);
+    return () => clearTimeout(t);
+  }, [resetNotice]);
   const [showPwModal, setShowPwModal] = useState(false);
   const [oldPw, setOldPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -429,7 +573,6 @@ export default function AdminConsole() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSaving, setPwSaving] = useState(false);
 
-  // Sign-up alerts: the emails told when a new club signs up and needs approval
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [alertEmails, setAlertEmails] = useState<string[]>([]);
   const [alertMax, setAlertMax] = useState(10);
@@ -514,7 +657,6 @@ export default function AdminConsole() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showPwModal, rejecting, showAlertsModal]);
 
-  // Success messages clear themselves; errors stay until dismissed
   useEffect(() => {
     if (!actionSuccess) return;
     const t = setTimeout(() => setActionSuccess(null), 6000);
@@ -699,14 +841,12 @@ export default function AdminConsole() {
     });
   }, [clubs, searchQuery, statusFilter]);
 
-  // Back to the first page whenever the visible set changes shape
   useEffect(() => { setPage(1); }, [searchQuery, statusFilter, pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(filteredClubs.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageClubs = filteredClubs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // ── Sign-in ────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-ad-ink text-ad-fg">
@@ -726,8 +866,16 @@ export default function AdminConsole() {
           </div>
 
           <div className="ad-card p-6">
+            {forgotPassword ? (
+              <AdminForgotPassword
+                initialEmail={adminEmail}
+                onBack={() => setForgotPassword(false)}
+                onDone={(message) => { setForgotPassword(false); setAdminPasscode(''); setAuthError(null); setResetNotice(message); }}
+              />
+            ) : (<>
             <h1 className="text-lg font-semibold">Sign in</h1>
             <p className="text-sm text-ad-muted mt-1">Review and approve club registrations.</p>
+            {resetNotice && <p role="status" className="mt-4 text-sm text-ad-ok text-center">{resetNotice}</p>}
 
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
               <div className="space-y-1.5">
@@ -753,7 +901,7 @@ export default function AdminConsole() {
                     type={showPasscode ? 'text' : 'password'}
                     autoComplete="current-password"
                     value={adminPasscode}
-                    onChange={(e) => setAdminPasscode(e.target.value)}
+                    onChange={(e) => { setAdminPasscode(e.target.value); setResetNotice(null); }}
                     className={`${inputCls} pr-10`}
                   />
                   <button
@@ -765,6 +913,13 @@ export default function AdminConsole() {
                     {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </div>
+
+              <div className="text-right -mt-1">
+                <button type="button" onClick={() => { setAuthError(null); setResetNotice(null); setForgotPassword(true); }}
+                  className="text-sm font-medium text-ad-brand hover:underline cursor-pointer">
+                  Forgot password?
+                </button>
               </div>
 
               {authError && <p role="alert" className="text-sm font-normal text-[#dc2626] text-center">{authError}</p>}
@@ -788,13 +943,13 @@ export default function AdminConsole() {
             >
               <GoogleIcon /> Continue with Google
             </button>
+            </>)}
           </div>
         </div>
       </div>
     );
   }
 
-  // ── Console ────────────────────────────────────────────────────────────────
   const filterTabs: { id: StatusFilter; label: string }[] = [
     { id: 'PENDING', label: 'Pending' },
     { id: 'APPROVED', label: 'Approved' },
@@ -804,7 +959,6 @@ export default function AdminConsole() {
 
   return (
     <div className="min-h-screen bg-ad-ink text-ad-fg">
-      {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-ad-line bg-ad-surface/90 backdrop-blur">
         <div className="max-w-6xl mx-auto h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -828,7 +982,6 @@ export default function AdminConsole() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-        {/* Section switch: club registrations or students */}
         <div className="inline-flex p-0.5 rounded-lg bg-ad-raised border border-ad-line" role="tablist" aria-label="Admin sections">
           {([
             { id: 'clubs', label: 'Clubs', icon: Building },
@@ -849,7 +1002,6 @@ export default function AdminConsole() {
         </div>
 
         {view === 'students' ? <StudentsSection /> : (<>
-        {/* Page heading */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Club registrations</h1>
@@ -863,7 +1015,6 @@ export default function AdminConsole() {
         {actionError && <Notice tone="error" onDismiss={() => setActionError(null)}>{actionError}</Notice>}
         {actionSuccess && <Notice tone="success" onDismiss={() => setActionSuccess(null)}>{actionSuccess}</Notice>}
 
-        {/* Stats */}
         <div className="ad-card grid grid-cols-3 divide-x divide-ad-line">
           {[
             { label: 'Awaiting review', value: counts.PENDING },
@@ -877,7 +1028,6 @@ export default function AdminConsole() {
           ))}
         </div>
 
-        {/* Registration list */}
         <section className="ad-card overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 border-b border-ad-line">
             <div className="inline-flex p-0.5 rounded-lg bg-ad-raised border border-ad-line self-start overflow-x-auto max-w-full" role="tablist">
@@ -1004,7 +1154,6 @@ export default function AdminConsole() {
         </>)}
       </main>
 
-      {/* Reject dialog */}
       {rejecting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeRejectModal}>
           <form
@@ -1049,7 +1198,6 @@ export default function AdminConsole() {
         </div>
       )}
 
-      {/* Sign-up alerts dialog: who is emailed when a new club signs up */}
       {showAlertsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeAlertsModal}>
           <form
@@ -1122,7 +1270,6 @@ export default function AdminConsole() {
         </div>
       )}
 
-      {/* Change password dialog */}
       {showPwModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closePwModal}>
           <form

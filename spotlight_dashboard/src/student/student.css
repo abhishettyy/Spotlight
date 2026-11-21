@@ -1,27 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import "tailwindcss" source(none); /* base reset only: the student pages use no utility classes */
+@import "tailwindcss" source(none);
 
-/* Spotlight design system: shared Skyline tokens (zinc light / near-black dark, Spotlight crimson brand, Inter). */
-/* Light palette: Radix Colors "Sand" (warm, low-glare). Dark palette: neutral near-black.
-   SkylineOS design tokens: the single source of colour, type and shape for all three areas
-   (student site, club dashboard, admin console). Every area's own variables alias these.
-
-   Principles: one typeface (Inter), neutral surfaces, near-black (never #000) in dark mode,
-   Brand colours: Spotlight crimson for primary actions and focus, Green for success, Yellow for warnings, neutral grey for info, thin borders instead of glows. */
 
 :root, .light {
-  --sk-canvas: #f5f4f2;     /* page background: warm light grey so white cards stand apart */
-  --sk-surface: #fdfcfa;    /* cards, panels, sidebars */
-  --sk-raised: #f0efec;     /* inputs, hover rows, segmented controls */
-  --sk-line: #e7e5e1;       /* borders, dividers */
+  --sk-canvas: #f5f4f2;
+  --sk-surface: #fdfcfa;
+  --sk-raised: #f0efec;
+  --sk-line: #e7e5e1;
   --sk-line-strong: #d6d3cd;
-  --sk-fg: #1c1917;         /* primary text */
-  --sk-muted: #57534e;      /* secondary text */
-  --sk-faint: #78716c;      /* hints, meta */
-  --sk-brand: #e63946;       /* buttons, links, accents: Spotlight crimson, as in the club dashboard */
+  --sk-fg: #1c1917;
+  --sk-muted: #57534e;
+  --sk-faint: #78716c;
+  --sk-brand: #e63946;
   --sk-brand-hover: #cc2a3a;
   --sk-brand-soft: rgba(230, 57, 70, 0.10);
-  --sk-on-brand: #ffffff;    /* text and icons on a brand fill */
+  --sk-on-brand: #ffffff;
   --sk-ok: #15803d;   --sk-ok-soft: rgba(22, 163, 74, 0.10);
   --sk-warn: #b45309; --sk-warn-soft: rgba(245, 158, 11, 0.14);
   --sk-info: #52525b; --sk-info-soft: rgba(82, 82, 91, 0.08);
@@ -79,7 +72,6 @@ html { font-family: var(--sk-font); scroll-behavior: smooth; }
   --color-crimson-dim: var(--sk-brand-soft);
   --font-sans: var(--sk-font);
 
-  /* both themes come from styles/tokens.css */
   --bg: var(--sk-canvas);
   --surface: var(--sk-surface);
   --raised: var(--sk-raised);
@@ -158,7 +150,6 @@ body {
 
 a { color: inherit; }
 
-/* Badges */
 .badge-live {
   background: var(--sk-danger-soft);
   color: var(--sk-danger);
@@ -192,7 +183,6 @@ a { color: inherit; }
   font-weight: 700;
 }
 
-/* Animations (keyframe names are prefixed so they cannot clash with other areas) */
 @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in { animation: fade-in 0.3s ease forwards; }
@@ -206,12 +196,7 @@ a { color: inherit; }
 @keyframes sheetSlideUp { from { transform: translateY(100%); opacity: 0.9; } to { transform: translateY(0); opacity: 1; } }
 .sheet-slide-up { animation: sheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Responsive layout. Base rules are the mobile layout (mirrors the Flutter app);
-   the 1024px+ rules give desktop its own layout next to the 220px sidebar.
-   ───────────────────────────────────────────────────────────────────────────── */
 
-/* Shared controls */
 .stu-search {
   width: 100%; padding: 12px 40px; border-radius: 12px; outline: none;
   background: var(--surface); border: 1px solid transparent; box-shadow: var(--sk-shadow);
@@ -221,7 +206,6 @@ a { color: inherit; }
 .stu-search::placeholder { color: var(--sk-faint); }
 .stu-search:focus { border-color: var(--sk-brand); box-shadow: 0 0 0 3px var(--sk-brand-soft); }
 
-/* Filter chips: inverse fill when selected, so red stays reserved for actions */
 .stu-chip {
   flex-shrink: 0; padding: 8px 16px; border-radius: 99px; cursor: pointer; white-space: nowrap;
   background: var(--surface); border: 1px solid var(--border); color: var(--subtext);
@@ -230,7 +214,6 @@ a { color: inherit; }
 .stu-chip:hover { color: var(--text); border-color: var(--sk-line-strong); }
 .stu-chip[aria-pressed='true'] { background: var(--sk-brand); border-color: var(--sk-brand); color: var(--sk-on-brand); font-weight: 600; }
 
-/* Segmented control (tickets tabs, sign-in tabs) */
 .stu-seg { display: flex; padding: 4px; border-radius: 12px; background: var(--raised); }
 .stu-seg-btn {
   flex: 1; padding: 10px 0; border: none; border-radius: 9px; cursor: pointer; background: transparent;
@@ -244,10 +227,8 @@ a { color: inherit; }
 .stu-auth input:focus { box-shadow: 0 0 0 3px var(--sk-brand-soft); }
 .stu-auth input::placeholder { color: var(--sk-faint); }
 
-/* Labels sitting on top of event images */
 .stu-img-chip { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
 
-/* Page containers */
 .stu-page { width: 100%; margin: 0 auto; padding: 24px 20px; }
 .stu-page--wide { max-width: 1200px; }
 .stu-page--list { max-width: 680px; }
@@ -255,16 +236,13 @@ a { color: inherit; }
 .stu-page--form { max-width: 480px; }
 .stu-page--medium { max-width: 640px; }
 
-/* Card grids and lists */
 .stu-card-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 .stu-list { display: flex; flex-direction: column; gap: 12px; }
 .stu-list--tickets { gap: 20px; }
 
-/* Horizontal swipe rows (home); become wrapping grids on desktop */
 .stu-scroller { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
 .stu-scroller > .stu-scroller-item { min-width: 280px; max-width: 300px; flex-shrink: 0; }
 .stu-club-row { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-/* Page bar under long lists */
 .stu-paginated { scroll-margin-top: 16px; }
 .stu-pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .stu-pager-count { font-size: 13px; color: var(--subtext); font-variant-numeric: tabular-nums; }
@@ -279,7 +257,6 @@ a { color: inherit; }
 .stu-pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .stu-pager-gap { padding: 0 4px; color: var(--subtext); }
 
-/* Event details */
 .stu-ed { padding-bottom: 110px; }
 .stu-ed-grid { max-width: 720px; margin: 0 auto; }
 .stu-ed-poster { position: relative; height: 320px; width: 100%; background: var(--raised); overflow: hidden; }
@@ -292,17 +269,14 @@ a { color: inherit; }
   background: var(--surface); border-top: 1px solid var(--border);
 }
 
-/* Two-column pages (register, payment, profile): stacked on mobile */
 .stu-split { display: flex; flex-direction: column; gap: 24px; }
 .stu-split-aside { display: none; }
 
-/* Ticket pass */
 .stu-pass, .stu-pass-head { max-width: 440px; margin: 0 auto; }
 .stu-pass-head { margin-bottom: 20px; }
 .stu-pass-divider { display: flex; align-items: center; width: 100%; }
 .stu-pass-dash { flex: 1; height: 0; border-top: 1.5px dashed var(--sk-line-strong); margin: 0 8px; }
 
-/* Sign-in page */
 .stu-auth { min-height: 100dvh; background: var(--bg); padding: 52px 24px 40px; }
 .stu-auth-inner { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
 .stu-auth-back {
@@ -320,7 +294,6 @@ a { color: inherit; }
 
   .stu-card-grid { gap: 20px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
   .stu-list--grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-  /* Same column sizing as the home page event cards */
   .stu-list--tickets { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-items: start; }
 
   .stu-scroller { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); overflow: visible; }
@@ -365,7 +338,6 @@ a { color: inherit; }
   .stu-auth { padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .stu-auth-inner { max-width: 440px; width: 100%; padding: 64px 24px; justify-content: center; }
   .stu-auth-main { order: 2; display: flex; align-items: center; justify-content: center; }
-  /* Pinned to the screen height, so the longer Sign Up form doesn't push its content down */
   .stu-auth-side {
     order: 1; display: flex; align-items: center; justify-content: center;
     background: var(--surface); border-right: 1px solid var(--border); padding: 64px 48px;
@@ -377,10 +349,8 @@ a { color: inherit; }
 }
 .stu-auth-side-only { display: none; }
 
-/* Used by inline `animation: 'spin ...'` styles across the site */
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Sidebar navigation (desktop) */
 .stu-sidebar {
   position: fixed; inset: 0 auto 0 0; width: 220px; z-index: 100;
   display: flex; flex-direction: column; gap: 4px; padding: 20px 12px 16px;
@@ -408,15 +378,12 @@ a { color: inherit; }
 }
 .stu-sidebar-foot { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
 
-/* Shown only below the desktop breakpoint, where the sidebar is hidden */
 .stu-mobile-only { display: flex; }
 @media (min-width: 1024px) { .stu-mobile-only { display: none; } }
 
-/* Light theme: inputs get a visible border instead of a near-invisible shadow */
 .light .input-field { border-color: var(--sk-line-strong); box-shadow: none; }
 .light .input-field:focus { border-color: var(--color-crimson); box-shadow: 0 0 0 3px var(--sk-brand-soft); }
 
-/* Light theme: a soft crimson glow behind the page so it isn't flat white */
 .light body {
   background-color: var(--sk-canvas);
   background-image: radial-gradient(1100px 560px at -5% -15%, rgba(230, 57, 70, 0.10), transparent 60%), radial-gradient(900px 520px at 105% -10%, rgba(230, 57, 70, 0.06), transparent 62%), radial-gradient(1000px 600px at 50% 120%, rgba(230, 57, 70, 0.04), transparent 60%);
@@ -433,7 +400,6 @@ a { color: inherit; }
     var(--sk-canvas);
 }
 
-/* ── SelectMenu: themed dropdown (components/ui/SelectMenu.tsx) ─────────────── */
 .stu-select { position: relative; width: 100%; }
 .stu-select-trigger {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -473,7 +439,6 @@ a { color: inherit; }
 @keyframes stu-select-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .stu-select-list { animation: none; } }
 
-/* Forgot password: one centred column (no side panel) */
 .stu-auth--single { display: flex !important; justify-content: center; align-items: flex-start; }
 .stu-auth--single .stu-auth-inner { width: 100%; }
 @media (min-width: 1024px) { .stu-auth--single .stu-auth-inner { padding: 72px 24px; } }

@@ -25,7 +25,6 @@ export default function RegisterPage() {
 
   const event = events.find((e) => e.id === id);
   const isTeamEvent = event?.eventType?.toLowerCase() === 'team';
-  // Every team place is taken: no new teams, but members can still join an existing team
   const teamsFull = !!event && isTeamEvent && isEventFull(event);
 
   const [mode, setMode] = useState<Mode>(isTeamEvent ? 'create-team' : 'solo');
@@ -57,13 +56,10 @@ export default function RegisterPage() {
 
   if (!event) return <PageLoader />;
 
-  // Locked non-editable credentials from user account profile
   const fullName = currentUser?.name ?? '';
   const usn = currentUser?.usn ?? '';
   const phone = currentUser?.phone ?? '';
 
-  // Mirrors the tail of RegisterScreen._submit: paid solo/create-team go to payment,
-  // everything else refreshes data and returns home.
   const finish = (registrationId?: string, referenceCode?: string) => {
     if (event.price > 0 && mode !== 'join-team' && registrationId) {
       const state: PaymentRouteState = {
@@ -100,7 +96,6 @@ export default function RegisterPage() {
         finish(regId, regId);
       } else if (mode === 'create-team') {
         const result = await createTeam({ eventId: event.id, teamName: teamName.trim(), leaderUsn: usn.trim() });
-        // The dialog's button continues the flow via finish()
         setTeamCreatedModal({ passkey: result.passkey, registrationId: result.registrationId });
       } else {
         await joinTeam({ eventId: event.id, passkey: passkey.trim() });
@@ -116,7 +111,6 @@ export default function RegisterPage() {
   return (
     <div className="stu-page stu-page--form" style={{ color: 'var(--text)' }}>
 
-      {/* ── Top Bar ────────────────────────────────────────────────────── */}
       <div
         style={{
           marginBottom: 28,
@@ -152,7 +146,6 @@ export default function RegisterPage() {
         </aside>
       <div>
 
-        {/* ── Team Mode Switcher (if team event; hidden when only joining is possible) ── */}
         {isTeamEvent && !teamsFull && (
           <div
             style={{
@@ -206,23 +199,18 @@ export default function RegisterPage() {
           </p>
         )}
 
-        {/* ── Form Fields ──────────────────────────────────────────────── */}
         {mode === 'solo' && (
           <>
-            {/* Full Name (locked) */}
             <LockedCredentialField label="Full Name" value={fullName} />
 
-            {/* USN (locked) */}
             <LockedCredentialField label="USN" value={usn} />
 
-            {/* Phone Number (locked) */}
             <LockedCredentialField label="Phone Number" value={phone} />
           </>
         )}
 
         {mode === 'create-team' && (
           <>
-            {/* Team Name (editable) */}
             <div
               style={{
                 background: 'var(--raised)',
@@ -252,13 +240,10 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Your USN (locked) */}
             <LockedCredentialField label="Your USN" value={usn} />
 
-            {/* Phone Number (locked) */}
             <LockedCredentialField label="Phone Number" value={phone} />
 
-            {/* Team Passkey Notice */}
             <div
               style={{
                 padding: '14px 18px',
@@ -282,7 +267,6 @@ export default function RegisterPage() {
 
         {mode === 'join-team' && (
           <>
-            {/* Team Passkey (editable) */}
             <div
               style={{
                 background: 'var(--raised)',
@@ -314,12 +298,10 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Phone Number (locked) */}
             <LockedCredentialField label="Phone Number" value={phone} />
           </>
         )}
 
-        {/* ── Confirm Registration Button ──────────────────────────────── */}
         <button
           disabled={isSubmitting}
           onClick={handleSubmit}
@@ -352,7 +334,6 @@ export default function RegisterPage() {
       </div>
       </div>
 
-      {/* ── Team Created Dialog ────────────────────────────────────────── */}
       {teamCreatedModal && (
         teamCreatedModal.passkey ? (
           <PasskeyDialog
@@ -375,7 +356,6 @@ export default function RegisterPage() {
   );
 }
 
-// ── Locked Non-Editable Credential Field ──────────────────────────────────────
 function LockedCredentialField({ label, value }: { label: string; value: string }) {
   return (
     <div

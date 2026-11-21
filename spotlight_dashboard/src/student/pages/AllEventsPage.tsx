@@ -93,7 +93,6 @@ export default function AllEventsPage() {
         </h1>
       </div>
 
-      {/* Search */}
       <div style={{ position: 'relative', marginBottom: 12 }}>
         <Search
           size={16}
@@ -118,7 +117,6 @@ export default function AllEventsPage() {
         )}
       </div>
 
-      {/* Format filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {FORMAT_FILTERS.map((f) => (
           <button

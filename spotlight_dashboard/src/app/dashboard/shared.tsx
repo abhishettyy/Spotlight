@@ -148,17 +148,12 @@ export interface ClubEvent {
   qrUrl?: string | null;
   registrationDeadline?: string | null;
   pendingCount?: number;
-  /** Saved but not published: hidden from students until the club publishes it */
   isDraft?: boolean;
   description?: string | null;
   teamSizeLimit?: number | null;
   minTeamSize?: number | null;
 }
 
-/**
- * Places taken, which is what capacity limits: one per solo student and one per team, counting
- * only pending and confirmed registrations (the same count the server uses).
- */
 export function countPlaces(regs: Registration[]): number {
   const active = regs.filter(r => r.status?.toUpperCase() === "PENDING" || r.status?.toUpperCase() === "CONFIRMED");
   const teamIds = new Set(active.filter(r => r.team?.id).map(r => r.team!.id));
@@ -197,8 +192,6 @@ export function validatePasswordStrength(pass: string): { valid: boolean; messag
   return { valid: true, message: null };
 }
 
-/** Shown while a page's code is still downloading (pages are loaded on demand). */
-/** Reads an image as a data URL, scaled to at most 1200px and re-encoded as JPEG to keep uploads small. */
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {

@@ -33,7 +33,6 @@ const DEPARTMENTS = [
   "Other",
 ].map(d => ({ value: d, label: d }));
 
-/** After sign-up, or when signing in before approval: what the club sees instead of the form. */
 type StatusScreen = { kind: "submitted" | "pending" | "rejected"; message?: string; email?: string } | null;
 
 const inputCls = "w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30";
@@ -43,7 +42,6 @@ const errorBorder = "1px solid color-mix(in srgb, var(--sk-danger) 70%, transpar
 
 type SignupField = "clubName" | "department" | "description" | "coordinatorName" | "coordinatorPhone" | "email" | "password";
 type SignupErrors = Partial<Record<SignupField, string>>;
-/** Fields in the order they appear on the form, so the first problem is the one scrolled to. */
 const SIGNUP_FIELDS: SignupField[] = ["clubName", "department", "description", "coordinatorName", "coordinatorPhone", "email", "password"];
 const DETAIL_FIELDS: SignupField[] = ["clubName", "department", "description", "coordinatorName", "coordinatorPhone"];
 
@@ -60,10 +58,8 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
   const { isDark } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Forgot password replaces the sign-in form inside the card; resetDone shows a note back on sign-in
   const [forgot, setForgot] = useState(false);
   const [resetDone, setResetDone] = useState<string | null>(null);
-  // The "password reset" note fades on its own after a few seconds, or as soon as the club types
   useEffect(() => {
     if (!resetDone) return;
     const t = setTimeout(() => setResetDone(null), 5000);
@@ -85,7 +81,6 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
   const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
-  // Which sign-up fields to show errors for: none until a submit, only the club details for Google sign-up
   const [checkFields, setCheckFields] = useState<SignupField[]>([]);
 
   const resetForm = () => {
@@ -94,7 +89,6 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
     setError(null); setShowPassword(false); setStatus(null); setCheckFields([]);
   };
 
-  /** Pending / rejected sign-in answers become a status screen; anything else is an inline error. */
   const handleAuthError = (err: any, fallback: string) => {
     if (err?.code === "CLUB_PENDING") {
       setStatus({ kind: "pending", message: err.message });
@@ -105,7 +99,6 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
     }
   };
 
-  /** Every sign-up field with a problem, and what to fix. */
   const signupErrors = ((): SignupErrors => {
     const errors: SignupErrors = {};
     if (!clubName.trim()) errors.clubName = "Enter the club name.";
@@ -125,11 +118,9 @@ export function AuthPage({ tab, onTabChange, onBack, onLocalSignIn, initialError
     return errors;
   })();
 
-  // Errors shown under the fields; they clear as each field is fixed
   const shownErrors: SignupErrors = {};
   for (const f of checkFields) if (signupErrors[f]) shownErrors[f] = signupErrors[f];
 
-  /** Shows errors for the given fields and scrolls to the first one; returns whether they are all valid. */
   const checkSignupFields = (fields: SignupField[]): boolean => {
     setCheckFields(fields);
     const first = SIGNUP_FIELDS.find(f => fields.includes(f) && signupErrors[f]);

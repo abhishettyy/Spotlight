@@ -1,5 +1,3 @@
-// Ported from spotlight_flutter/lib/core/api_service.dart — clubs methods
-// GET /clubs
 
 import apiClient, { formatApiError } from './client';
 import { clubFromJson, ClubModel } from '@student/types/club';
@@ -25,7 +23,6 @@ export async function fetchClubs(): Promise<ClubModel[]> {
         const raw = JSON.parse(cached) as unknown[];
         return raw.map((c) => clubFromJson(c as Record<string, unknown>));
       } catch {
-        // fall through to the error
       }
     }
     throw new Error(formatApiError(e, 'Failed to fetch clubs.'));

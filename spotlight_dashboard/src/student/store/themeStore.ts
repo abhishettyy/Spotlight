@@ -1,5 +1,3 @@
-// Replaces Flutter ThemeProvider. Shares the 'spotlight_theme' key and the html
-// dark/light classes with the club dashboard, so both areas keep the same theme.
 
 import { create } from 'zustand';
 
@@ -35,7 +33,6 @@ export const useThemeStore = create<ThemeState>((set) => ({
       try {
         localStorage.setItem(THEME_KEY, newDark ? 'dark' : 'light');
       } catch {
-        // theme just won't persist
       }
       applyTheme(newDark);
       return { isDark: newDark };

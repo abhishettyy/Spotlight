@@ -74,7 +74,6 @@ function formatTicketDates(
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // Cached tickets first so the QR shows offline, like the Flutter app
   const cached = loadCachedTickets().find((t) => t.id === id) ?? null;
   const [ticket, setTicket] = useState<TicketModel | null>(cached);
   const [isLoading, setIsLoading] = useState(!cached);
@@ -89,7 +88,6 @@ export default function TicketDetailPage() {
 
   if (isLoading) return <PageLoader />;
 
-  // Only confirmed tickets have a QR pass (the tickets list never opens any other)
   if (!ticket || !isTicketConfirmed(ticket)) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
@@ -141,7 +139,6 @@ export default function TicketDetailPage() {
   return (
     <div className="stu-page" style={{ color: 'var(--text)' }}>
 
-      {/* ── Top Bar ────────────────────────────────────────────────────── */}
       <div
         className="stu-pass-head"
         style={{
@@ -171,7 +168,6 @@ export default function TicketDetailPage() {
         </h1>
       </div>
 
-      {/* ── Main Ticket Card ───────────────────────────────────────────── */}
       <div
         className="stu-pass"
         style={{
@@ -182,7 +178,6 @@ export default function TicketDetailPage() {
           position: 'relative',
         }}
       >
-        {/* Top Half (left side on desktop) */}
         <div className="stu-pass-main" style={{ padding: '28px 24px 20px', textAlign: 'center' }}>
           <h2
             style={{
@@ -197,7 +192,6 @@ export default function TicketDetailPage() {
             {event?.title || 'Event Pass'}
           </h2>
 
-          {/* Info Chips */}
           <div
             style={{
               display: 'flex',
@@ -207,7 +201,6 @@ export default function TicketDetailPage() {
               marginBottom: 8,
             }}
           >
-            {/* Date Chip */}
             <div
               style={{
                 display: 'inline-flex',
@@ -225,7 +218,6 @@ export default function TicketDetailPage() {
               <span>{formattedDate}</span>
             </div>
 
-            {/* Time Chip */}
             {formattedTime && (
               <div
                 style={{
@@ -246,7 +238,6 @@ export default function TicketDetailPage() {
             )}
           </div>
 
-          {/* Venue Chip */}
           <div
             style={{
               display: 'inline-flex',
@@ -264,7 +255,6 @@ export default function TicketDetailPage() {
             <span>{venue}</span>
           </div>
 
-          {/* Team Info if Team Event */}
           {ticket.team && (
             <div style={{ marginTop: 16 }}>
               <div
@@ -304,7 +294,6 @@ export default function TicketDetailPage() {
                 <Copy size={12} color="var(--subtext)" />
               </div>
 
-              {/* Members */}
               {ticket.team.members && ticket.team.members.length > 0 && (
                 <div
                   style={{
@@ -367,7 +356,6 @@ export default function TicketDetailPage() {
           )}
         </div>
 
-        {/* ── Perforation Divider (horizontal on mobile, vertical on desktop) ── */}
         <div className="stu-pass-divider" style={{ position: 'relative' }}>
           <div
             className="stu-pass-notch"
@@ -380,7 +368,6 @@ export default function TicketDetailPage() {
           />
         </div>
 
-        {/* ── Bottom Half (QR stub; right side on desktop) ─────────────── */}
         <div
           style={{
             padding: '24px 24px 28px',
@@ -390,7 +377,6 @@ export default function TicketDetailPage() {
             justifyContent: 'center',
           }}
         >
-          {/* Real QR Code SVG Box */}
           <div
             style={{
               padding: 16,
@@ -411,7 +397,6 @@ export default function TicketDetailPage() {
             />
           </div>
 
-          {/* Subtitle */}
           <p
             style={{
               fontSize: 12,
@@ -424,7 +409,6 @@ export default function TicketDetailPage() {
             Scan at the venue
           </p>
 
-          {/* Ticket ID / Passkey pill */}
           <div
             onClick={handleCopy}
             title="Click to copy"
@@ -474,7 +458,6 @@ export default function TicketDetailPage() {
             )}
           </div>
 
-          {/* Registration Fee Row */}
           <div
             style={{
               display: 'flex',

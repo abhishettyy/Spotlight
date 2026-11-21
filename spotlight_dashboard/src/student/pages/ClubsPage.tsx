@@ -19,7 +19,6 @@ export default function ClubsPage() {
     load();
   }, []);
 
-  // Like ClubsScreen._loadClubs: add any club that only appears on an event
   const clubs = useMemo(() => {
     const seen = new Set(storeClubs.map((c) => c.id));
     const merged: ClubModel[] = [...storeClubs];
@@ -36,7 +35,6 @@ export default function ClubsPage() {
   const query = searchQuery.toLowerCase().trim();
   const filteredClubs = clubs.filter((c) => !query || c.name.toLowerCase().includes(query));
 
-  // Upcoming events per club, matched by id or name
   const activeEventCount = (club: ClubModel) => events.filter((e) => {
     const cid = e.clubId ?? e.clubName;
     const isThisClub = cid === club.id || (!!e.clubName && e.clubName.toLowerCase() === club.name.toLowerCase());
@@ -47,7 +45,6 @@ export default function ClubsPage() {
 
   return (
     <div className="stu-page stu-page--list">
-      {/* Header */}
       <h1
         style={{
           fontSize: 28,
@@ -63,7 +60,6 @@ export default function ClubsPage() {
         Discover campus clubs and explore their events
       </p>
 
-      {/* Search */}
       <div style={{ position: 'relative', marginBottom: 20, maxWidth: 560 }}>
         <Search
           size={16}
@@ -146,7 +142,6 @@ function ClubRow({
         (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
       }}
     >
-      {/* Club Avatar */}
       <div
         style={{
           width: 52,
@@ -173,7 +168,6 @@ function ClubRow({
         )}
       </div>
 
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p
           style={{
@@ -193,7 +187,6 @@ function ClubRow({
         </p>
       </div>
 
-      {/* Chevron */}
       <ChevronRight size={18} color="var(--subtext)" style={{ flexShrink: 0 }} />
     </div>
   );

@@ -4,7 +4,6 @@ import { useSavedEventsStore } from '@student/store/savedEventsStore';
 import { useNotificationsStore } from '@student/store/notificationsStore';
 import { LANDING_URL } from '@student/basePath';
 
-/** Ends the student session, clears per-user data and returns to the site's landing page. */
 export function useSignOut() {
   const logout = useAuthStore((s) => s.logout);
   const clearUser = useUserStore((s) => s.clearUser);
@@ -15,7 +14,6 @@ export function useSignOut() {
     clearSaved();
     clearUser();
     useNotificationsStore.setState({ notifications: [], unreadCount: 0, error: null });
-    // The landing page belongs to the dashboard app, outside the student router
     window.location.replace(LANDING_URL);
   };
 }

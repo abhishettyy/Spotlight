@@ -2,12 +2,6 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FM } from "./shared";
 
-/**
- * Shows a long list one page at a time, with the same footer as the events table.
- * `children` renders the current page's items. The footer appears only when there is more than one
- * page size's worth of items. Changing `resetKey` (e.g. a search query) goes back to page 1.
- * `variant="table"` attaches the footer to a bordered table container; "plain" floats it below a grid.
- */
 export function Paginated<T>({
   items,
   children,
@@ -38,7 +32,6 @@ export function Paginated<T>({
 
   const goTo = (n: number) => {
     setPage(n);
-    // Bring the top of the list back into view when it has scrolled off the screen
     const el = topRef.current;
     if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };

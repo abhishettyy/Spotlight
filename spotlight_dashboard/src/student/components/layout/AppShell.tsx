@@ -16,14 +16,10 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-// Main app shell — responsive layout equivalent to Flutter's MainLayout
-// Desktop: Fixed sidebar (220px) + scrollable main content
-// Mobile:  No sidebar + fixed bottom navigation
 export default function AppShell({ children }: AppShellProps) {
   const isDesktop = useIsDesktop();
   const location = useLocation();
 
-  // Hide mobile bottom navigation on detail screens that have their own action bars
   const isDetailScreen =
     /^\/events\/[^/]+/.test(location.pathname) ||
     /^\/tickets\/[^/]+/.test(location.pathname);

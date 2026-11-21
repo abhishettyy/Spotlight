@@ -8,7 +8,6 @@ import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { getEventStartDate, isEventUpcoming } from '@student/types/event';
 import Paginated from '@student/components/ui/Paginated';
 
-/** Name/logo passed by the caller, for clubs that only exist on an event or ticket. */
 export interface ClubRouteState {
   name?: string;
   logoUrl?: string | null;
@@ -31,7 +30,6 @@ export default function ClubEventsPage() {
   const clubName = club?.name ?? routeState?.name ?? events.find((e) => e.clubId === id)?.clubName ?? id;
   const logoUrl = club?.logoUrl ?? routeState?.logoUrl ?? null;
 
-  // Upcoming events of this club (matched by id or name), soonest first
   const clubEvents = useMemo(() => events
     .filter((e) => {
       const isThisClub = e.clubId === id || (!!e.clubName && e.clubName.toLowerCase() === clubName.toLowerCase());
@@ -48,7 +46,6 @@ export default function ClubEventsPage() {
 
   return (
     <div className="stu-page stu-page--wide">
-      {/* Club header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <button
           onClick={() => navigate(-1)}

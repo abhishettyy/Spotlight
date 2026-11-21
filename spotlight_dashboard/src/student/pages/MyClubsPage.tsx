@@ -7,7 +7,6 @@ import { PageLoader } from '@student/components/ui/LoadingSpinner';
 import { EmptyState } from '@student/components/ui/States';
 import Paginated from '@student/components/ui/Paginated';
 
-// Ported from registered_clubs_screen.dart: clubs the user has registered events with
 export default function MyClubsPage() {
   const navigate = useNavigate();
   const [clubs, setClubs] = useState<ClubModel[]>([]);

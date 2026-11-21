@@ -1,4 +1,3 @@
-// Ported from spotlight_flutter/lib/core/api_service.dart — profile methods
 
 import apiClient, { formatApiError } from './client';
 import { userFromJson, UserModel } from '@student/types/user';

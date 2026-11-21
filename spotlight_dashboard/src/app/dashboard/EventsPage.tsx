@@ -6,7 +6,6 @@ import { fetchEventRegistrations, updateEvent, sanitizeErrorMessage, publishEven
 import { RequestLetterModal } from "./RequestLetter";
 import { useTheme } from "../theme";
 import { FC, FM, FB, parseLocalDate, formatDateTime12H, formatEventHeaderDate, LiveTag, getEventStatus, ClubEvent, Registration, countPlaces } from "./shared";
-// The QR scanner library is large and only needed when a club opens the scanner
 const TicketScannerModal = lazy(() => import("./TicketScannerModal").then(m => ({ default: m.TicketScannerModal })));
 import { EventsTable } from "./EventsTable";
 import { GlassDatePicker } from "./GlassFields";
@@ -24,14 +23,12 @@ export const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: 
 
   const now = new Date();
 
-  // 7:00 AM on the morning of event date
   const morningStart = new Date(
     eventStart.getFullYear(),
     eventStart.getMonth(),
     eventStart.getDate(),
     7, 0, 0, 0
   );
-  // If event starts earlier than 7 AM (e.g. Midnight 00:00), windowStart opens 2 hours before start
   const windowStart = eventStart < morningStart 
     ? new Date(eventStart.getTime() - 2 * 60 * 60 * 1000)
     : morningStart;
@@ -56,7 +53,6 @@ export const checkScanStatus = (eventDateStr?: string | null, eventEndDateStr?: 
 
 type EditEventForm = { date: string; endDate: string; deadline: string; venue: string; capacity: string; minTeamSize: string; teamSizeLimit: string };
 
-/** Problems with the Edit Event form, keyed by field. Dates left unchanged may already be in the past. */
 function validateEditForm(editForm: EditEventForm, editOriginal: EditEventForm, isTeam: boolean, registeredCount: number): Record<string, string> {
   const now = new Date();
   const errs: Record<string, string> = {};
@@ -122,7 +118,6 @@ export function EventsPage({
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "", minTeamSize: "1", teamSizeLimit: "" });
   const [editOriginal, setEditOriginal] = useState({ date: "", endDate: "", deadline: "", venue: "", capacity: "", minTeamSize: "1", teamSizeLimit: "" });
-  // An edited field shows its error immediately; every field does after a save attempt
   const [editTouched, setEditTouched] = useState<Record<string, boolean>>({});
   const [editSubmitAttempted, setEditSubmitAttempted] = useState(false);
   const touchEdit = (...fields: string[]) => setEditTouched(t => ({ ...t, ...Object.fromEntries(fields.map(f => [f, true])) }));
@@ -175,7 +170,6 @@ export function EventsPage({
 
   const activeEvent = EVENTS.find(e => e.id === selectedEventId);
   const activeIsTeam = !!activeEvent && (activeEvent.eventType === 'Team' || (!!activeEvent.teamSizeLimit && activeEvent.teamSizeLimit > 1) || activeEvent.type === 'Team');
-  // Places already taken: one per solo student, one per team (as the API counts them)
   const registeredCount = countPlaces(registrations);
   const allEditErrors = validateEditForm(editForm, editOriginal, activeIsTeam, registeredCount);
   const editErrors: Record<string, string> = editSubmitAttempted
@@ -183,7 +177,6 @@ export function EventsPage({
     : Object.fromEntries(Object.entries(allEditErrors).filter(([field]) => editTouched[field]));
   const isEventFinished = activeEvent ? getEventStatus(activeEvent) === "previous" : false;
 
-  // Drafts: publish (students can see it and register) or delete
   const [draftBusy, setDraftBusy] = useState<"publish" | "delete" | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [confirmDeleteDraft, setConfirmDeleteDraft] = useState(false);
@@ -221,7 +214,6 @@ export function EventsPage({
       setConfirmDeleteDraft(false);
     }
   };
-  // All events are free, so every registration is confirmed straight away: no approval or rejection step
   const activeRegistrations = registrations.filter(r => {
     const s = r.status?.toLowerCase();
     return s === "confirmed" || s === "pending";
@@ -239,7 +231,6 @@ export function EventsPage({
 
     let inFlight = false;
     const poll = async () => {
-      // Skip while the tab is hidden, or while the previous request is still running on a slow server
       if (inFlight || document.hidden) return;
       inFlight = true;
       try {
@@ -271,7 +262,6 @@ export function EventsPage({
     poll();
 
     const intervalId = setInterval(poll, 4000);
-    // Catch up as soon as the club comes back to the tab
     const onVisible = () => { if (!document.hidden) poll(); };
     document.addEventListener("visibilitychange", onVisible);
 
@@ -931,7 +921,6 @@ export function EventsPage({
 
             {showLetter && <RequestLetterModal event={activeEvent} getToken={getToken} onClose={() => setShowLetter(false)} />}
 
-            {/* Draft: not visible to students yet */}
             {activeEvent.isDraft && (
               <div className="p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4"
                 style={{ background: "color-mix(in srgb, var(--sk-warn) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--sk-warn) 30%, transparent)" }}>

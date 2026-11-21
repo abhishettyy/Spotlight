@@ -1,5 +1,3 @@
-// Replaces Flutter SavedEventsProvider
-// Saves event IDs to localStorage
 
 import { create } from 'zustand';
 
@@ -9,7 +7,7 @@ function loadSaved(): Set<string> {
   try {
     const raw = localStorage.getItem(SAVED_KEY);
     if (raw) return new Set(JSON.parse(raw) as string[]);
-  } catch { /* ignore */ }
+  } catch {}
   return new Set();
 }
 
