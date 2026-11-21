@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/favicon.png" alt="Spotlight" width="72" />
-
 # Spotlight
 
 **Campus event platform for Ramaiah Institute of Technology.** Students discover and register for club events, clubs manage registrations and check people in by QR code, and an admin controls which clubs can join.
