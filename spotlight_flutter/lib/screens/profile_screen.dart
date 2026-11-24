@@ -1305,19 +1305,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(icon, color: cs.onBackground, size: 24),
             const SizedBox(width: 16),
+            Text(title,
+                maxLines: 1,
+                softWrap: false,
+                style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onBackground)),
+            const SizedBox(width: 16),
             Expanded(
-              child: Text(title,
-                  style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: cs.onBackground)),
+              child: trailingText == null
+                  ? const SizedBox.shrink()
+                  : Text(trailingText,
+                      textAlign: TextAlign.right,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                          fontSize: 14,
+                          height: 1.3,
+                          color: subText,
+                          fontWeight: FontWeight.w500)),
             ),
-            if (trailingText != null)
-              Text(trailingText,
-                  style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: subText,
-                      fontWeight: FontWeight.w500)),
             if (onTap != null) ...[
               if (trailingText != null) const SizedBox(width: 8),
               Icon(Icons.chevron_right, color: subText, size: 20),
