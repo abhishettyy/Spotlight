@@ -7,6 +7,8 @@ import '../core/custom_toast.dart';
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
 
+  static const _appVersion = '1.0.7';
+
   Future<void> _openLinkedIn(BuildContext context, String urlString) async {
     final uri = Uri.parse(urlString);
     try {
@@ -93,7 +95,7 @@ class AboutUsScreen extends StatelessWidget {
                         border: Border.all(color: accentRed.withOpacity(0.2)),
                       ),
                       child: Text(
-                        'Version 1.0.0',
+                        'Version $_appVersion',
                         style: GoogleFonts.inter(
                           fontSize: 10.5,
                           color: accentRed,
@@ -239,7 +241,7 @@ class AboutUsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  'Spotlight v1.0.0',
+                  'Spotlight v$_appVersion',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: subTextColor.withOpacity(0.6),
