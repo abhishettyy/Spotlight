@@ -5,7 +5,6 @@ import '../core/sk_colors.dart';
 import '../core/custom_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_image.dart';
@@ -14,6 +13,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'ticket_details_screen.dart';
 import '../core/smooth_route.dart';
 import '../core/api_service.dart';
+import '../core/date_format.dart';
 import '../core/saved_events_provider.dart';
 import '../core/events_provider.dart';
 import '../models/models.dart';
@@ -393,33 +393,10 @@ class _TicketScreenState extends State<TicketScreen> {
     final clubName = event?.clubName ?? '';
     final venue = event?.venue ?? 'TBD';
 
-    String dateStr = 'TBD';
-    String timeStr = '';
-    final st = event?.startDate;
+    final start = event?.startDate;
     final end = event?.eventEndDate;
-
-    if (st != null) {
-      dateStr = DateFormat('MMM d, yyyy').format(st);
-      final startTimeStr = DateFormat('h:mm a').format(st);
-      if (end != null) {
-        final endTimeStr = DateFormat('h:mm a').format(end);
-        if (st.year == end.year && st.month == end.month && st.day == end.day) {
-          timeStr = '$startTimeStr - $endTimeStr';
-        } else {
-          timeStr = '$startTimeStr → ${DateFormat('MMM d, h:mm a').format(end)}';
-        }
-      } else {
-        timeStr = startTimeStr;
-      }
-    } else if (event?.date != null) {
-      final dt = DateTime.tryParse(event!.date!);
-      if (dt != null) {
-        dateStr = DateFormat('MMM d, yyyy').format(dt);
-        timeStr = DateFormat('h:mm a').format(dt);
-      } else {
-        dateStr = event.date!;
-      }
-    }
+    final dateStr = start == null ? event?.date ?? 'TBD' : formatEventDate(start);
+    final timeStr = formatEventTimeRange(start, end);
 
     final isFreeEvent = (event?.price ?? 0) == 0;
     final isPaidEvent = !isFreeEvent;
@@ -455,8 +432,8 @@ class _TicketScreenState extends State<TicketScreen> {
               'title': title,
               'venue': venue,
               'date': event?.date ?? '',
-              'eventDate': event?.eventDate?.toIso8601String() ?? event?.startDate?.toIso8601String(),
-              'eventEndDate': event?.eventEndDate?.toIso8601String(),
+              'eventDate': start?.toUtc().toIso8601String(),
+              'eventEndDate': end?.toUtc().toIso8601String(),
               'qr_code_string': (ticket.team != null && ticket.team!.passkey.isNotEmpty)
                   ? ticket.team!.passkey
                   : ticket.id,

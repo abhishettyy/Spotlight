@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/date_format.dart';
+
 class Club {
   final String id;
   final String name;
@@ -14,23 +16,6 @@ class Club {
       email: json['email'],
     );
   }
-}
-
-DateTime? parseLocalDate(dynamic raw) {
-  if (raw == null) return null;
-  final str = raw.toString().trim();
-  if (str.isEmpty) return null;
-  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?').firstMatch(str);
-  if (match != null) {
-    final year = int.parse(match.group(1)!);
-    final month = int.parse(match.group(2)!);
-    final day = int.parse(match.group(3)!);
-    final hour = match.group(4) != null ? int.parse(match.group(4)!) : 0;
-    final minute = match.group(5) != null ? int.parse(match.group(5)!) : 0;
-    final second = match.group(6) != null ? int.parse(match.group(6)!) : 0;
-    return DateTime(year, month, day, hour, minute, second);
-  }
-  return DateTime.tryParse(str);
 }
 
 class Event {
@@ -69,8 +54,11 @@ class Event {
       eventType: json['event_type'],
       fee: json['fee'] ?? 0,
       registrationLimit: json['registration_limit'],
-      registrationDeadline: parseLocalDate(json['registration_deadline'] ?? json['registrationDeadline']),
-      eventDate: parseLocalDate(json['event_date'] ?? json['eventDate'] ?? json['date']),
+      registrationDeadline: parseEventDate(
+        json['registration_deadline'] ?? json['registrationDeadline'],
+      ),
+      eventDate: parseEventDate(json['event_date'] ?? json['eventDate']) ??
+          parseEventDate(json['date']),
       qrUrl: json['qr_url'],
       club: json['clubs'] != null ? Club.fromJson(json['clubs']) : null,
     );
@@ -157,11 +145,7 @@ class EventModel {
   final DateTime? eventDate;
   final DateTime? eventEndDate;
 
-  DateTime? get startDate {
-    if (eventDate != null) return eventDate;
-    if (date == null || date!.trim().isEmpty) return null;
-    return DateTime.tryParse(date!);
-  }
+  DateTime? get startDate => eventDate ?? parseEventDate(date);
 
   DateTime? get effectiveEndDate {
     if (eventEndDate != null) return eventEndDate;
@@ -237,7 +221,7 @@ class EventModel {
     this.eventEndDate,
   });
 
-  factory EventModel.fromJson(Map<String, dynamic> json) {
+  factory EventModel.fromJson(Map<String, dynamic> json, {bool fromCache = false}) {
     final club = json['club'] as Map<String, dynamic>?;
     String categoryStr = json['category'] ?? 'Other';
     if (categoryStr == 'Individual') categoryStr = 'Solo';
@@ -266,9 +250,19 @@ class EventModel {
       allowedBranches: (json['allowedBranches'] is List && (json['allowedBranches'] as List).isNotEmpty)
           ? (json['allowedBranches'] as List).map((e) => e.toString()).toList()
           : null,
-      registrationDeadline: parseLocalDate(json['registration_deadline'] ?? json['registrationDeadline']),
-      eventDate: parseLocalDate(json['eventDate'] ?? json['event_date'] ?? json['date']),
-      eventEndDate: parseLocalDate(json['eventEndDate'] ?? json['event_end_date']),
+      registrationDeadline: parseEventDate(
+        json['registration_deadline'] ?? json['registrationDeadline'],
+        assumeUtc: fromCache,
+      ),
+      eventDate: parseEventDate(
+            json['eventDate'] ?? json['event_date'],
+            assumeUtc: fromCache,
+          ) ??
+          parseEventDate(json['date']),
+      eventEndDate: parseEventDate(
+        json['eventEndDate'] ?? json['event_end_date'],
+        assumeUtc: fromCache,
+      ),
     );
   }
 
@@ -286,9 +280,9 @@ class EventModel {
         'teamSizeLimit': teamSizeLimit,
         'registrationCount': registrationCount,
         'allowedBranches': allowedBranches,
-        'registrationDeadline': registrationDeadline?.toIso8601String(),
-        'eventDate': eventDate?.toIso8601String(),
-        'eventEndDate': eventEndDate?.toIso8601String(),
+        'registrationDeadline': registrationDeadline?.toUtc().toIso8601String(),
+        'eventDate': eventDate?.toUtc().toIso8601String(),
+        'eventEndDate': eventEndDate?.toUtc().toIso8601String(),
         'club': {
           'id': clubId,
           'name': clubName,
@@ -340,11 +334,7 @@ class TicketEventInfo {
   final DateTime? eventDate;
   final DateTime? eventEndDate;
 
-  DateTime? get startDate {
-    if (eventDate != null) return eventDate;
-    if (date == null || date!.trim().isEmpty) return null;
-    return DateTime.tryParse(date!);
-  }
+  DateTime? get startDate => eventDate ?? parseEventDate(date);
 
   DateTime? get effectiveEndDate {
     if (eventEndDate != null) return eventEndDate;
@@ -409,8 +399,9 @@ class TicketEventInfo {
       clubName: club?['name'],
       clubLogoUrl: club?['logoUrl'] ?? club?['logo_url'],
       imageUrl: json['bannerUrl'] ?? json['banner_url'] ?? json['image_url'] ?? json['imageUrl'],
-      eventDate: parseLocalDate(json['eventDate'] ?? json['event_date'] ?? json['date']),
-      eventEndDate: parseLocalDate(json['eventEndDate'] ?? json['event_end_date']),
+      eventDate: parseEventDate(json['eventDate'] ?? json['event_date']) ??
+          parseEventDate(json['date']),
+      eventEndDate: parseEventDate(json['eventEndDate'] ?? json['event_end_date']),
     );
   }
 }

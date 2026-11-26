@@ -31,7 +31,8 @@ class EventCard extends StatelessWidget {
     final sk = Sk.of(context);
     const onImage = Sk.dark;
 
-    final chipDate = event.startDate ?? event.registrationDeadline;
+    final chipInstant = event.startDate ?? event.registrationDeadline;
+    final chipDate = chipInstant == null ? null : campusDateParts(chipInstant);
     final price = event.price > 0 ? '₹${event.price.toStringAsFixed(0)}' : 'Free';
     final hasClub = event.clubName != null && event.clubName!.isNotEmpty;
 

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'payment_screen.dart';
+import '../core/date_format.dart';
 import '../core/smooth_route.dart';
 import '../core/events_provider.dart';
 import '../core/saved_events_provider.dart';
@@ -94,38 +95,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           _pendingPaymentTicket = null;
         });
       }
-    }
-  }
-
-  String _formatDeadline(DateTime deadline) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final hourInt = deadline.hour % 12 == 0 ? 12 : deadline.hour % 12;
-    final amPm = deadline.hour >= 12 ? 'PM' : 'AM';
-    final minStr = deadline.minute.toString().padLeft(2, '0');
-    return '${months[deadline.month - 1]} ${deadline.day}, ${deadline.year} · $hourInt:$minStr $amPm';
-  }
-
-  String _formatDateTimeRange(DateTime? start, DateTime? end) {
-    if (start == null && end == null) return 'TBD';
-    final st = start ?? DateTime.now();
-    final en = end ?? st.add(const Duration(hours: 3));
-
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    String formatTime(DateTime d) {
-      final hourInt = d.hour % 12 == 0 ? 12 : d.hour % 12;
-      final amPm = d.hour >= 12 ? 'PM' : 'AM';
-      final minStr = d.minute.toString().padLeft(2, '0');
-      return '$hourInt:$minStr $amPm';
-    }
-
-    String formatDate(DateTime d) {
-      return '${months[d.month - 1]} ${d.day}, ${d.year}';
-    }
-
-    if (st.year == en.year && st.month == en.month && st.day == en.day) {
-      return '${formatDate(st)} · ${formatTime(st)} - ${formatTime(en)}';
-    } else {
-      return '${formatDate(st)} · ${formatTime(st)} → ${formatDate(en)} · ${formatTime(en)}';
     }
   }
 
@@ -351,7 +320,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Deadline: ${_formatDeadline(event.registrationDeadline!)}',
+                                  'Deadline: ${formatDeadline(event.registrationDeadline!)}',
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
                                     color: Sk.of(context).warn,
@@ -401,7 +370,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _formatDateTimeRange(event.startDate, event.effectiveEndDate),
+                                    formatEventHeaderDate(event.startDate, event.eventEndDate),
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -559,7 +528,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       '${event.clubName != null && event.clubName!.isNotEmpty ? ' hosted by ${event.clubName}' : ''} '
                       'on Spotlight!\n\n'
                       '📍 Venue: ${event.venue}\n'
-                      '📅 Date: ${event.date ?? 'TBA'}\n'
+                      '📅 Date: ${formatEventHeaderDate(event.startDate, event.eventEndDate)}\n'
                       '🏷️ Price: $formattedPrice\n\n'
                       'Download the Spotlight app to register now!';
                   Share.share(shareText);

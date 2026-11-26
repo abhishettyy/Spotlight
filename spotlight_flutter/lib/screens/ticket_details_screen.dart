@@ -4,8 +4,7 @@ import '../core/custom_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:intl/intl.dart';
-import '../models/models.dart';
+import '../core/date_format.dart';
 
 class TicketDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> ticket;
@@ -20,42 +19,17 @@ class TicketDetailsScreen extends StatelessWidget {
     final subText = Sk.of(context).muted;
 
     final title = ticket['title'] ?? 'Event Pass';
-    final dateStr = ticket['date'] ?? '';
-    final eventDateRaw = ticket['eventDate'] ?? ticket['event_date'];
-    final eventEndDateRaw = ticket['eventEndDate'] ?? ticket['event_end_date'];
-
-    DateTime? startDate;
-    DateTime? endDate;
-
-    if (eventDateRaw != null && eventDateRaw.toString().isNotEmpty) {
-      startDate = parseLocalDate(eventDateRaw);
-    } else if (dateStr.isNotEmpty) {
-      startDate = parseLocalDate(dateStr);
-    }
-
-    if (eventEndDateRaw != null && eventEndDateRaw.toString().isNotEmpty) {
-      endDate = parseLocalDate(eventEndDateRaw);
-    }
-
-    String formattedDate = 'TBD';
-    String formattedTime = '';
-
-    if (startDate != null) {
-      formattedDate = DateFormat('dd MMM, yyyy').format(startDate);
-      final startTimeStr = DateFormat('h:mm a').format(startDate);
-      if (endDate != null) {
-        final endTimeStr = DateFormat('h:mm a').format(endDate);
-        if (startDate.year == endDate.year && startDate.month == endDate.month && startDate.day == endDate.day) {
-          formattedTime = '$startTimeStr - $endTimeStr';
-        } else {
-          formattedTime = '$startTimeStr → ${DateFormat('MMM d, h:mm a').format(endDate)}';
-        }
-      } else {
-        formattedTime = startTimeStr;
-      }
-    } else if (dateStr.isNotEmpty) {
-      formattedDate = dateStr;
-    }
+    final dateStr = ticket['date']?.toString() ?? '';
+    final startDate =
+        parseEventDate(ticket['eventDate'] ?? ticket['event_date']) ??
+        parseEventDate(dateStr);
+    final endDate = parseEventDate(
+      ticket['eventEndDate'] ?? ticket['event_end_date'],
+    );
+    final formattedDate = startDate == null
+        ? (dateStr.isEmpty ? 'TBD' : dateStr)
+        : formatEventDate(startDate);
+    final formattedTime = formatEventTimeRange(startDate, endDate);
 
     final venue = ticket['venue'] ?? 'No Venue';
     final qrCodeString = ticket['qr_code_string'] ?? 'unknown';

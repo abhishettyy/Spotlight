@@ -31,7 +31,9 @@ class EventsProvider with ChangeNotifier {
       final cachedJson = prefs.getString(_cacheKey);
       if (cachedJson != null && cachedJson.isNotEmpty) {
         final List<dynamic> decoded = json.decode(cachedJson);
-        _events = decoded.map((e) => EventModel.fromJson(e as Map<String, dynamic>)).toList();
+        _events = decoded
+            .map((e) => EventModel.fromJson(e as Map<String, dynamic>, fromCache: true))
+            .toList();
         notifyListeners();
       }
     } catch (e) {
